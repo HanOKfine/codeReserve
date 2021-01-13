@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>10 React 如何定义更新队列以及它们之间的相互作用关系？</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="让你具备框架设计者思维与视野">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "1";
+	var chapter_id = "2275";
+	var chapter_title = "10 React 如何定义更新队列以及它们之间的相互作用关系？";
+	var aid = "86";
+	var a_name = "剖析 React 内部运行机制";
+	var a_price = "58.00";
+	var a_pic = "https://img.mukewang.com/5f2d03ab0001a77605400720.jpg";
+	var userId = 0;
+
+	var column_id = '86';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-17&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			10 React 如何定义更新队列以及它们之间的相互作用关系？
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5f2d0d4100010fce06400359.jpg')"></div>
+	
+	
+		<a href="/read/86">
+			<div class="course-entry">
+				<img src="https://img1.mukewang.com/5f2e6fea000152a305000500-40-40.jpg" alt="上古鹏">
+				<h3>剖析 React 内部运行机制</h3>
+				<p>上古鹏 · 资深前端研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">没有引发任何行动的思想都不是思想，而是梦想。 <p class="author">—— 马丁</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="前言">前言</h2>
+</div><div class="cl-preview-section"><p>更新（update）与更新队列（updateQueue）是 React 应用程序运行时内部维护的两个携带更新数据的对象，如何定义两者的对象结构以及两者之间的关系对于 React 来说是非常关键的。本文将主要介绍 React 对更新与更新队列的定义，更新加入更新队列及处理更新队列的逻辑。</p>
+</div><div class="cl-preview-section"><p>面试官经常会问到这样一个问题：<strong>在一段代码中连续使用多个<code>setState(...)</code>时 React 的处理方式是什么？</strong></p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token comment">// 同步更新</span>
+<span class="token function">handleClick</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">setState</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+			count<span class="token punctuation">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>count <span class="token operator">+</span> <span class="token number">1</span>
+		<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">setState</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+    text<span class="token punctuation">:</span> <span class="token string">'点击计数'</span> <span class="token operator">+</span> <span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>count
+  <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">// 异步更新</span>
+<span class="token function">handleClick</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">setState</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+			count<span class="token punctuation">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>count <span class="token operator">+</span> <span class="token number">1</span>
+		<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">setTimeout</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">setState</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+      text<span class="token punctuation">:</span> <span class="token string">'点击计数'</span> <span class="token operator">+</span> <span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>count
+    <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token number">1000</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><center><font size="2">代码示例 2.7.1 连续多个 setState 操作</font></center>
+</div><div class="cl-preview-section"><p>在代码示例 2.7.1 中，如果有多个同步<code>setState(...)</code>操作，React 会将它们的更新（update）先后依次加入到更新队列（updateQueue），在应用程序的 render 阶段处理更新队列时会将队列中的所有更新合并成一个，<strong>合并原则是相同属性的更新取最后一次的值</strong>。如果有异步<code>setState(...)</code>操作，则先进行同步更新，异步更新则遵循 EventLoop 原理后续处理。那么，React 对更新和更新队列是如何定义的呢？</p>
+</div><div class="cl-preview-section"><h2 id="react-对更新（update）的定义">React 对更新（update）的定义</h2>
+</div><div class="cl-preview-section"><p>React 对更新对象（update）的定义见代码示例 2.7.2。</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token comment">// 源码位置：packages/react-reconciler/src/ReactUpdateQueue.js</span>
+<span class="token keyword">function</span> <span class="token function">createUpdate</span><span class="token punctuation">(</span>expirationTime<span class="token punctuation">,</span> suspenseConfig<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">var</span> update <span class="token operator">=</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 过期时间与任务优先级相关联</span>
+    expirationTime<span class="token punctuation">:</span> expirationTime<span class="token punctuation">,</span>
+    suspenseConfig<span class="token punctuation">:</span> suspenseConfig<span class="token punctuation">,</span>
+		<span class="token comment">// tag用于标识更新的类型如UpdateState，ReplaceState，ForceUpdate等</span>
+    tag<span class="token punctuation">:</span> UpdateState<span class="token punctuation">,</span>
+    <span class="token comment">// 更新内容</span>
+    payload<span class="token punctuation">:</span> <span class="token keyword">null</span><span class="token punctuation">,</span>
+    <span class="token comment">// 更新完成后的回调</span>
+    callback<span class="token punctuation">:</span> <span class="token keyword">null</span><span class="token punctuation">,</span>
+		<span class="token comment">// 下一个更新（任务）</span>
+    next<span class="token punctuation">:</span> <span class="token keyword">null</span><span class="token punctuation">,</span>
+    <span class="token comment">// 下一个副作用</span>
+    nextEffect<span class="token punctuation">:</span> <span class="token keyword">null</span>
+  <span class="token punctuation">}</span><span class="token punctuation">;</span>
+  <span class="token punctuation">{</span>
+    <span class="token comment">// 优先级会根据任务体系中当前任务队列的执行情况而定</span>
+    update<span class="token punctuation">.</span>priority <span class="token operator">=</span> <span class="token function">getCurrentPriorityLevel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">return</span> update<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><center><font size="2">代码示例 2.7.2 React 对更新对象的定义</font></center>
+</div><div class="cl-preview-section"><p>每一个更新对象都有自己的过期时间（<code>expirationTime</code>）、更新内容（<code>payload</code>），优先级（<code>priority</code>）以及指向下一个更新的引用（<code>next</code>）。其中当前更新的优先级由任务体系统一指定。</p>
+</div><div class="cl-preview-section"><h2 id="react-对更新队列（updatequeue）的定义">React 对更新队列（updateQueue）的定义</h2>
+</div><div class="cl-preview-section"><p>React 对更新队列对象（updateQueue）的定义见代码示例 2.7.3。</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token comment">// 源码位置：packages/react-reconciler/src/ReactUpdateQueue.js</span>
+<span class="token keyword">function</span> <span class="token function">createUpdateQueue</span><span class="token punctuation">(</span>baseState<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">var</span> queue <span class="token operator">=</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 当前的state</span>
+    baseState<span class="token punctuation">:</span> baseState<span class="token punctuation">,</span>
+    <span class="token comment">// 队列中第一个更新</span>
+    firstUpdate<span class="token punctuation">:</span> <span class="token keyword">null</span><span class="token punctuation">,</span>
+    <span class="token comment">// 队列中的最后一个更新</span>
+    lastUpdate<span class="token punctuation">:</span> <span class="token keyword">null</span><span class="token punctuation">,</span>
+    <span class="token comment">// 队列中第一个捕获类型的update</span>
+    firstCapturedUpdate<span class="token punctuation">:</span> <span class="token keyword">null</span><span class="token punctuation">,</span>
+    <span class="token comment">// 队列中第一个捕获类型的update</span>
+    lastCapturedUpdate<span class="token punctuation">:</span> <span class="token keyword">null</span><span class="token punctuation">,</span>
+    <span class="token comment">// 第一个副作用</span>
+    firstEffect<span class="token punctuation">:</span> <span class="token keyword">null</span><span class="token punctuation">,</span>
+    <span class="token comment">// 最后一个副作用</span>
+    lastEffect<span class="token punctuation">:</span> <span class="token keyword">null</span><span class="token punctuation">,</span>
+    firstCapturedEffect<span class="token punctuation">:</span> <span class="token keyword">null</span><span class="token punctuation">,</span>
+    lastCapturedEffect<span class="token punctuation">:</span> <span class="token keyword">null</span>
+  <span class="token punctuation">}</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> queue<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><center><font size="2">代码示例 2.7.3 React 对更新队列对象的定义</font></center>
+</div><div class="cl-preview-section"><p>值得注意的是，更新队列的数据结构不是数组，而是一个普通对象（一个单向链表结构）。要想实现数据驱动页面更新，更新内容需要加入到更新队列，这个过程的逻辑是什么样的呢？</p>
+</div><div class="cl-preview-section"><h2 id="react-将更新加入到更新队列">React 将更新加入到更新队列</h2>
+</div><div class="cl-preview-section"><p>当我们使用<code>setState(...)</code>时， React 会创建一个更新（update）对象，然后通过调用<code>enqueueUpdate</code>函数将其加入到更新队列（updateQueue），见代码示例 2.7.4。</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token comment">// 源码位置：packages/react-reconciler/src/ReactUpdateQueue.js</span>
+<span class="token comment">// 每次setState都会创建update并入updateQueue</span>
+<span class="token keyword">function</span> <span class="token function">enqueueUpdate</span><span class="token punctuation">(</span>fiber<span class="token punctuation">,</span> update<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token comment">// 每个Fiber结点都有自己的updateQueue，其初始值为null，一般只有ClassComponent类型的结点updateQueue才会被赋值</span>
+  <span class="token comment">// fiber.alternate指向的是该结点在workInProgress树上面对应的结点</span>
+  <span class="token keyword">var</span> alternate <span class="token operator">=</span> fiber<span class="token punctuation">.</span>alternate<span class="token punctuation">;</span>
+  <span class="token keyword">var</span> queue1 <span class="token operator">=</span> <span class="token keyword">void</span> <span class="token number">0</span><span class="token punctuation">;</span>
+  <span class="token keyword">var</span> queue2 <span class="token operator">=</span> <span class="token keyword">void</span> <span class="token number">0</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>alternate <span class="token operator">===</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 如果fiber.alternate不存在</span>
+    queue1 <span class="token operator">=</span> fiber<span class="token punctuation">.</span>updateQueue<span class="token punctuation">;</span>
+    queue2 <span class="token operator">=</span> <span class="token keyword">null</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>queue1 <span class="token operator">===</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      queue1 <span class="token operator">=</span> fiber<span class="token punctuation">.</span>updateQueue <span class="token operator">=</span> <span class="token function">createUpdateQueue</span><span class="token punctuation">(</span>fiber<span class="token punctuation">.</span>memoizedState<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 如果fiber.alternate存在，也就是说存在current树上的结点和workInProgress树上的结点都存在</span>
+    queue1 <span class="token operator">=</span> fiber<span class="token punctuation">.</span>updateQueue<span class="token punctuation">;</span>
+    queue2 <span class="token operator">=</span> alternate<span class="token punctuation">.</span>updateQueue<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>queue1 <span class="token operator">===</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>queue2 <span class="token operator">===</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 如果两个结点上面均没有updateQueue，则为它们分别创建queue</span>
+        queue1 <span class="token operator">=</span> fiber<span class="token punctuation">.</span>updateQueue <span class="token operator">=</span> <span class="token function">createUpdateQueue</span><span class="token punctuation">(</span>fiber<span class="token punctuation">.</span>memoizedState<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        queue2 <span class="token operator">=</span> alternate<span class="token punctuation">.</span>updateQueue <span class="token operator">=</span> <span class="token function">createUpdateQueue</span><span class="token punctuation">(</span>alternate<span class="token punctuation">.</span>memoizedState<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 如果只有其中一个存在updateQueue，则将另一个结点的updateQueue克隆到该结点</span>
+        queue1 <span class="token operator">=</span> fiber<span class="token punctuation">.</span>updateQueue <span class="token operator">=</span> <span class="token function">cloneUpdateQueue</span><span class="token punctuation">(</span>queue2<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>queue2 <span class="token operator">===</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 如果只有其中一个存在updateQueue，则将另一个结点的updateQueue克隆到该结点</span>
+        queue2 <span class="token operator">=</span> alternate<span class="token punctuation">.</span>updateQueue <span class="token operator">=</span> <span class="token function">cloneUpdateQueue</span><span class="token punctuation">(</span>queue1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 如果两个结点均有updateQueue，则不需要处理</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>queue2 <span class="token operator">===</span> <span class="token keyword">null</span> <span class="token operator">||</span> queue1 <span class="token operator">===</span> queue2<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 经过上面的处理后，只有一个queue1或者queue1 == queue2的话，就将更新对象update加入到queue1</span>
+    <span class="token function">appendUpdateToQueue</span><span class="token punctuation">(</span>queue1<span class="token punctuation">,</span> update<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 经过上面的处理后，如果两个queue均存在</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>queue1<span class="token punctuation">.</span>lastUpdate <span class="token operator">===</span> <span class="token keyword">null</span> <span class="token operator">||</span> queue2<span class="token punctuation">.</span>lastUpdate <span class="token operator">===</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token comment">// 只要有一个queue不为null，就需要将将update加入到queue中</span>
+      <span class="token function">appendUpdateToQueue</span><span class="token punctuation">(</span>queue1<span class="token punctuation">,</span> update<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token function">appendUpdateToQueue</span><span class="token punctuation">(</span>queue2<span class="token punctuation">,</span> update<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+      <span class="token comment">// 如果两个都不是空队列，由于两个结构共享，所以只在queue1加入update</span>
+      <span class="token function">appendUpdateToQueue</span><span class="token punctuation">(</span>queue1<span class="token punctuation">,</span> update<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token comment">// 仍然需要在queue2中，将lastUpdate指向update</span>
+      queue2<span class="token punctuation">.</span>lastUpdate <span class="token operator">=</span> update<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+  <span class="token operator">...</span>
+<span class="token punctuation">}</span>
+  
+<span class="token keyword">function</span> <span class="token function">appendUpdateToQueue</span><span class="token punctuation">(</span>queue<span class="token punctuation">,</span> update<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>queue<span class="token punctuation">.</span>lastUpdate <span class="token operator">===</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 如果队列为空，则第一个更新和最后一个更新都赋值当前更新</span>
+    queue<span class="token punctuation">.</span>firstUpdate <span class="token operator">=</span> queue<span class="token punctuation">.</span>lastUpdate <span class="token operator">=</span> update<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 如果队列不为空，将update加入到队列的末尾</span>
+    queue<span class="token punctuation">.</span>lastUpdate<span class="token punctuation">.</span>next <span class="token operator">=</span> update<span class="token punctuation">;</span>
+    queue<span class="token punctuation">.</span>lastUpdate <span class="token operator">=</span> update<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><center><font size="2">代码示例 2.7.4 更新加入到更新队列逻辑</font></center>
+</div><div class="cl-preview-section"><p>在<code>enqueueUpdate</code>函数中，React 将更新加入到更新队列时会同时维护两个队列对象 queue1 和 queue2，其中 queue1 是应用程序运行过程中 current 树上当前 Fiber 结点最新队列，queue2 是应用程序上一次更新时（workInProgress 树）Fiber 结点的更新队列，它们之间的相互逻辑是下面这样的。</p>
+</div><div class="cl-preview-section"><ul>
+<li>queue1 取的是<code>fiber.updateQueue</code>，queue2 取的是<code>fiber.alternate.updateQueue</code>；</li>
+<li>如果两者均为<code>null</code>，则调用<code>createUpdateQueue(...)</code>获取初始队列；</li>
+<li>如果两者之一为<code>null</code>，则调用<code>cloneUpdateQueue(...)</code>从对方中获取队列；</li>
+<li>如果两者均不为<code>null</code>，则将<code>update</code>作为<code>lastUpdate</code>加入多 queue1 中。</li>
+</ul>
+</div><div class="cl-preview-section"><p>前面提到 React 的更新队列在内存中的结构是一个单链表，代码示例 2.7.1 中同步情况下连续执行两个<code>setState(...)</code>后更新队列在内存中的结构如图 2.7.1这样。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f3128180001072515420548.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><center><font size="2">图 2.7.1 React 应用程序运行时更新队列的结构</font></center>
+</div><div class="cl-preview-section"><p>值得注意的是，整个更新队列对象通过<code>firstUpdate</code>属性和更新对象的<code>next</code>属性层层引用形成了链表结构。同时更新队列对象中也可以通过<code>lastUpdate</code>属性直接连接到最后一个更新对象，即<code>updateQueue.firstUpdate.next...next</code>的值会一直和<code>updateQueue.lastUpdate</code>执行的更新对象相同。</p>
+</div><div class="cl-preview-section"><h2 id="react-如何处理更新队列">React 如何处理更新队列</h2>
+</div><div class="cl-preview-section"><p>React 应用程序运行到 render 阶段时会处理更新队列，处理更新队列的函数是<code>processUpdateQueue</code>，见代码示例 2.7.5。</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token comment">// 源码位置：packages/react-reconciler/src/ReactUpdateQueue.js</span>
+<span class="token keyword">function</span> <span class="token function">processUpdateQueue</span><span class="token punctuation">(</span>workInProgress<span class="token punctuation">,</span> queue<span class="token punctuation">,</span> props<span class="token punctuation">,</span> instance<span class="token punctuation">,</span> renderExpirationTime<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token operator">...</span>
+  <span class="token comment">// 从队列中取出第一个更新</span>
+  <span class="token keyword">var</span> update <span class="token operator">=</span> queue<span class="token punctuation">.</span>firstUpdate<span class="token punctuation">;</span>
+  <span class="token keyword">var</span> resultState <span class="token operator">=</span> newBaseState<span class="token punctuation">;</span>
+  <span class="token comment">// 遍历更新队列，处理更新</span>
+  <span class="token keyword">while</span> <span class="token punctuation">(</span>update <span class="token operator">!==</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token operator">...</span>
+    <span class="token comment">// 如果第一个更新不为空，紧接着要遍历更新队列</span>
+    <span class="token comment">// getStateFromUpdate函数用于合并更新，合并方式见下面函数实现</span>
+    resultState <span class="token operator">=</span> <span class="token function">getStateFromUpdate</span><span class="token punctuation">(</span>workInProgress<span class="token punctuation">,</span> queue<span class="token punctuation">,</span> update<span class="token punctuation">,</span> resultState<span class="token punctuation">,</span> props<span class="token punctuation">,</span> instance<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token operator">...</span>
+    update <span class="token operator">=</span> update<span class="token punctuation">.</span>next<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token operator">...</span>
+  <span class="token comment">// 设置当前fiber结点的memoizedState</span>
+  workInProgress<span class="token punctuation">.</span>memoizedState <span class="token operator">=</span> resultState<span class="token punctuation">;</span>
+  <span class="token operator">...</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">// 获取下一个更新对象并与现有state对象合并</span>
+<span class="token keyword">function</span> <span class="token function">getStateFromUpdate</span><span class="token punctuation">(</span>workInProgress<span class="token punctuation">,</span> queue<span class="token punctuation">,</span> update<span class="token punctuation">,</span> prevState<span class="token punctuation">,</span> nextProps<span class="token punctuation">,</span> instance<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">switch</span> <span class="token punctuation">(</span>update<span class="token punctuation">.</span>tag<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">case</span> UpdateState<span class="token punctuation">:</span>
+      	<span class="token punctuation">{</span>
+        	<span class="token keyword">var</span> _payload2 <span class="token operator">=</span> update<span class="token punctuation">.</span>payload<span class="token punctuation">;</span>
+        	<span class="token keyword">var</span> partialState <span class="token operator">=</span> <span class="token keyword">void</span> <span class="token number">0</span><span class="token punctuation">;</span>
+        	<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">typeof</span> _payload2 <span class="token operator">===</span> <span class="token string">'function'</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+          	<span class="token comment">// setState传入的参数_payload2类型是function</span>
+          	<span class="token operator">...</span>
+         	 partialState <span class="token operator">=</span> _payload2<span class="token punctuation">.</span><span class="token function">call</span><span class="token punctuation">(</span>instance<span class="token punctuation">,</span> prevState<span class="token punctuation">,</span> nextProps<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          	<span class="token operator">...</span>
+        	<span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+          	<span class="token comment">// setState传入的参数_payload2类型是object</span>
+          	partialState <span class="token operator">=</span> _payload2<span class="token punctuation">;</span>
+        	<span class="token punctuation">}</span>
+        	<span class="token comment">// 合并当前state和上一个state.</span>
+       	 <span class="token keyword">return</span> <span class="token function">_assign</span><span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">,</span> prevState<span class="token punctuation">,</span> partialState<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><center><font size="2">代码示例 2.7.5 React 处理更新队列</font></center>
+</div><div class="cl-preview-section"><p>代码示例 2.7.5 中，<code>processUpdateQueue</code>函数用于处理更新队列，在该函数内部使用循环的方式来遍历队列，通过<code>update.next</code>依次取出更新（对象）进行合并，合并更新对象的方式是：</p>
+</div><div class="cl-preview-section"><ul>
+<li>如果<code>setState</code>传入的参数类型是<code>function</code>，则通过<code>payload2.call(instance, prevState, nextProps)</code>获取更新对象；</li>
+<li>如果<code>setState</code>传入的参数类型是object，则可直接获取更新对象；</li>
+<li>最后通过使用<code>Object.assign()</code>合并两个更新对象并返回，如果属性相同的情况下则取最后一次值。</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="小结">小结</h2>
+</div><div class="cl-preview-section"><p>更新和更新队列的处理是 React 应用程序渲染过程中必须要做的工作，它们携带了更新内容的详细信息。更新和更新队列的数据类型均是普通 JavaScript 对象，而不是数组类型。在处理更新队列时，React 会根据更新对象中携带的<code>state</code>相同属性进行合并，保留队列中最后一次属性值，以此作为前后结点 diff 的数据。</p>
+</div><div class="cl-preview-section"><p>在本节提到了 current 树和 workInProgress 树，它们到底是什么呢？在下一章介绍 React Fiber 架构时将会揭开它们的面纱。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img2.mukewang.com/5f2d0d45000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=86">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '10 React 如何定义更新队列以及它们之间的相互作用关系？',
+					'CID': '2275',
+					'Teacher': '上古鹏'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "10 React 如何定义更新队列以及它们之间的相互作用关系？",
+                    desc: "让你具备框架设计者思维与视野",
+                    imgUrl: 'https:https://img.mukewang.com/5f2d03ab0001a77605400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5f2d03ab0001a77605400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/86',
+                    link: 'https://m.imooc.com/read/86'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

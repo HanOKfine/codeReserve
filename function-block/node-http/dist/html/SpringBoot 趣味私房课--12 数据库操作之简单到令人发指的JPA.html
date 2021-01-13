@@ -1,0 +1,1111 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>12 数据库操作之简单到令人发指的JPA</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="够吃管饱的SpringBoot大餐">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "12";
+	var chapter_id = "1808";
+	var chapter_title = "12 数据库操作之简单到令人发指的JPA";
+	var aid = "75";
+	var a_name = "SpringBoot 趣味私房课";
+	var a_price = "58.00";
+	var a_pic = "https://img2.mukewang.com/5e9cfd1f0001ece605400720.jpg";
+	var userId = 0;
+
+	var column_id = '75';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-26&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			12 数据库操作之简单到令人发指的JPA
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img.mukewang.com/5e9d00320001c72306400359.jpg')"></div>
+	
+	
+		<a href="/read/75">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5e776f3c000149fd10801080-40-40.jpg" alt="刘水镜">
+				<h3>SpringBoot 趣味私房课</h3>
+				<p>刘水镜 · 知名 A.I. 公司 Java 工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">知识是一种快乐，而好奇则是知识的萌芽。<p class="author">——培根</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>硬盘有价，数据无价。数据对于一个企业的重要性不言而喻。试想一下，如果腾讯的用户数据丢失会出现什么后果？可能你跟很多人就此就断了联系。再也看不到女神在朋友圈的各种动态了。这可能对于你的影响不算太大，那么再试想一下，如果支付宝或者银行的数据丢失会怎样？想到这里直冒冷汗，真担心我那两位数的存款会不翼而飞呀！</p>
+</div><div class="cl-preview-section"><p>数据是基础，一切的应用因为有了数据才变得有意义。从社交工具到金融产品，再到 A.I. （人工智能）无一不是因为有了数据才变得有价值。说到数据通常会涉及到两个方面——数据安全和数据处理（操作）。数据安全跟我们大多数的开发人员关系没有那么紧密，我们的精力通常会放在数据操作上。在这一小节中，我们一起来学习一下 Spring Boot 为我们提供的数据操作组件—— Spring Data JPA。</p>
+</div><div class="cl-preview-section"><h1 id="��史发展">1. 历史发展</h1>
+</div><div class="cl-preview-section"><p>持久化操作（对数据库的操作）一直都是 Java 的核心内容，在 Java 的发展历史中，数据库持久化层面的框架也在不断地发展与更新。</p>
+</div><div class="cl-preview-section"><p>JDBC（ Java DataBase Connectivity ）是 Java 中访问数据库的规范，由 SUN 公司制定（目前 SUN 已经被 Oracle 收购）。原生的 JDBC 代码臃肿、冗余，非常难用。这一度使得 Java EE 在当时备受质疑。所以 SUN 公司推出了大名鼎鼎的 EJB，现在已经很少人有提及 EJB 了，当年曾经大名鼎鼎也是因为是 SUN 公司的产品（连技术圈也开始拼爹了）。但由于 EJB 太重量级，太难用，很快就被当时的新晋小生 Hibernate 所取代（事实再一次告诉我们，爹再牛逼也只能帮你一时，关键还得看自己）。</p>
+</div><div class="cl-preview-section"><p>Hibernate 凭借自身强大的功能迅速走红，与 Struts 和 Spring 组成了当时风靡一时的 SSH 三人组。后来 SUN 公司借鉴了 Hibernate 的设计思路，制定了 JPA（ Java Persistence API ）规范。在 Hibernate 后来的版本中，也实现了对于 JPA 的完全支持。这也使 HIbernate 在当时进一步巩固了自己在持久层框架的霸主地位。</p>
+</div><div class="cl-preview-section"><p>随着互联网的发展，尤其是移动互联网的飞速扩展，HIbernate 对于性能和灵活性的需求显得捉襟见肘，已经无法满足日新月异的互联网业务场景了。这个时候，又一个年轻人站了出来，它就是 Mybatis。Mybatis 凭借着其简单、高效、灵活等特点迅速成为了新时代的宠儿。</p>
+</div><div class="cl-preview-section"><h1 id="两种思路">2. 两种思路</h1>
+</div><div class="cl-preview-section"><p>数据库持久层框架通常可以分为两种类型，两者的关注对象不同。其中一种关注的重心是数据库（表），对 JDBC 做一定的封装，将 JDBC 冗余的样板代码 “隐藏” 起来，使其变得方便和快捷，此中的代表就是 Mybatis；另一种的关注重心则是 Java Entity。通过实体类来映射表之间的关系，HIbernate 就是这一分类中的翘楚（ Spring Data JPA 就是基于 HIbernate 实现的）。</p>
+</div><div class="cl-preview-section"><p>Spring Data JPA 对 JPA（ Java Persistence API ）进行了进一步的封装，使得对数据库的常用操作变得异常简单。到底能有多简单呢？简单到令人无法相信，不信？那我们走着瞧！</p>
+</div><div class="cl-preview-section"><h1 id="动手">3. 动手</h1>
+</div><div class="cl-preview-section"><h2 id="准备">3.1 准备</h2>
+</div><div class="cl-preview-section"><p>在使用 Spring Data JPA 之前，我们需要做一些准备工作。因为 Spring Data JPA 是持久层的组件，那么我们肯定会就要用到数据库了。所以，我们需要先安装数据库，不用说你也想到了，我们使用的数据库是 MySQL（如何安装 MySQL 就不用我多说了吧）。MySQL 安装完成后，我们需要创建一个数据库，在本专栏里，数据库的名字叫做 springboot，当然你也可以选择你喜欢的名字。</p>
+</div><div class="cl-preview-section"><h2 id="添加依赖">3.2 添加依赖</h2>
+</div><div class="cl-preview-section"><p>要使用 Spring Data JPA 我们需要在 pom 文件中添加如下依赖：</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>spring-boot-starter-data-jpa<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>mysql<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>mysql-connector-java<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="添加配置">3.3 添加配置</h2>
+</div><div class="cl-preview-section"><p>添加完依赖，我们需要增加一些配置，才能让我们的工程访问到数据库。我们需要在 application.yml 文件中添加如下配置：</p>
+</div><div class="cl-preview-section"><pre class="  language-yaml"><code class="prism  language-yaml"><span class="token comment">#数据源配置</span>
+<span class="token key atrule">spring</span><span class="token punctuation">:</span>
+  <span class="token key atrule">datasource</span><span class="token punctuation">:</span>
+    <span class="token key atrule">url</span><span class="token punctuation">:</span> jdbc<span class="token punctuation">:</span>mysql<span class="token punctuation">:</span>//127.0.0.1<span class="token punctuation">:</span>3306/springboot<span class="token punctuation">?</span>characterEncoding=utf8<span class="token important">&amp;useSSL</span>=false
+    <span class="token key atrule">driver-class-name</span><span class="token punctuation">:</span> com.mysql.jdbc.Driver
+    <span class="token key atrule">username</span><span class="token punctuation">:</span> root
+    <span class="token key atrule">password</span><span class="token punctuation">:</span> <span class="token number">123456</span>
+  <span class="token key atrule">jpa</span><span class="token punctuation">:</span>
+    <span class="token key atrule">hibernate</span><span class="token punctuation">:</span>
+      <span class="token key atrule">ddl-auto</span><span class="token punctuation">:</span> update
+    <span class="token key atrule">show-sql</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+    <span class="token key atrule">database-platform</span><span class="token punctuation">:</span> org.hibernate.dialect.MySQL5InnoDBDialect
+</code></pre>
+</div><div class="cl-preview-section"><p>配置介绍：</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>url</strong> 数据库地址与参数</li>
+<li><strong>driver-class-name</strong> 连接数据库的驱动</li>
+<li><strong>username</strong> 数据库用户名</li>
+<li><strong>password</strong> 数据库密码</li>
+</ul>
+</div><div class="cl-preview-section"><p>上面四项配置比较简单，稍微有点编程经验的一看就能明白是什么，这里就不过多介绍了。我们简单说一下 jpa 下面的几项配置：</p>
+</div><div class="cl-preview-section"><p><strong>show-sql</strong> 很简单，设为 true 代表打印 sql，false 则为不打印；</p>
+</div><div class="cl-preview-section"><p><strong>database-platform</strong> 也不难，用来指定使用哪种 MySQL 的存储引擎，我们这里使用的是 InnoDB。</p>
+</div><div class="cl-preview-section"><p><strong>ddl-auto</strong> 这个配置简单说一下，它有四个值可选，具体含义如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>create 每次启动重新创建表（启动过程中原来的数据会被清除）</li>
+<li>create-drop 每次启动重新创建表，并在程序结束是删除表，如果表不存在会报错</li>
+<li>update 每次启动如表结构不一致，则更新表结构，原数居会保留（一般使用该项）</li>
+<li>validate 每次启动验证表结构，如果不一致则报错</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="创建实体">3.4 创建实体</h2>
+</div><div class="cl-preview-section"><p>我们可以在之前创建的 User 类中加入如下注解，使其变成我们的实体类：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Data</span>
+<span class="token annotation punctuation">@Entity</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">User</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@Id</span>
+    <span class="token annotation punctuation">@GeneratedValue</span>
+    <span class="token keyword">private</span> Integer id<span class="token punctuation">;</span>
+  
+    <span class="token keyword">private</span> String name<span class="token punctuation">;</span>
+  
+  <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>注解介绍：</p>
+</div><div class="cl-preview-section"><p>在 User 类中，我们是用了三个新注解——@Entity、@Id 和 @GeneratedValue。@Entity 用来声明 User 是一个实体类，将会与数据库里的 user 表对应起来；@Id 和 @GeneratedValue 则标识 user 的 id 属性为 user 表的自增 Id。</p>
+</div><div class="cl-preview-section"><p>如果想要自定义表名，比如想要让与 User 类对应的表叫做 t_user 的话，那么只需要使用 @Table(name = “t_user”) 即可。同样想要自定义列名也非常简单，比如想要将 name 与表里的 user_name 对应，只需要在 name 属性上加上 @Column(name = “user_name”) 即可。</p>
+</div><div class="cl-preview-section"><h2 id="生成表结构">3.5 生成表结构</h2>
+</div><div class="cl-preview-section"><p>接下来我们可以让 Spring Data JPA 根据实体类来生成表结构了，启动程序，会在控制台看到如下日志：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql">Hibernate: 
+<span class="token keyword">create</span> <span class="token keyword">table</span> <span class="token keyword">user</span> 
+<span class="token punctuation">(</span>id <span class="token keyword">integer</span> <span class="token operator">not</span> <span class="token boolean">null</span><span class="token punctuation">,</span> age <span class="token keyword">integer</span> <span class="token operator">not</span> <span class="token boolean">null</span><span class="token punctuation">,</span> birth_day <span class="token keyword">date</span><span class="token punctuation">,</span> 
+email <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">255</span><span class="token punctuation">)</span><span class="token punctuation">,</span> name <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">255</span><span class="token punctuation">)</span> <span class="token operator">not</span> <span class="token boolean">null</span><span class="token punctuation">,</span> <span class="token keyword">primary</span> <span class="token keyword">key</span> <span class="token punctuation">(</span>id<span class="token punctuation">)</span><span class="token punctuation">)</span> 
+<span class="token keyword">engine</span><span class="token operator">=</span><span class="token keyword">InnoDB</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>看到上面的日志输出，说明 user 表被创建了，我们可以登录 MySQL 去验证一下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9ac1840001fc8605220362.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>我们看到，user 表已经被成功创建。我们再检查一下 user 表的结构是否符合我们的预期，使用 desc user 命令查看，结果如下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9ac17a00019eea12240492.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>OK，user 表的结构跟我们的 User 实体类一致。</p>
+</div><div class="cl-preview-section"><h2 id="完善剩余代码">3.6 完善剩余代码</h2>
+</div><div class="cl-preview-section"><p>创建 User 类的持久化接口 UserRepository：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">UserRepository</span> <span class="token keyword">extends</span> <span class="token class-name">JpaRepository</span><span class="token operator">&lt;</span>User<span class="token punctuation">,</span>Integer<span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+    
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>UserRepository 中不需要写任何代码，但依然可以帮我们完成增删改查的操作，下面我们继续。</p>
+</div><div class="cl-preview-section"><p>创建 UserController 并实现增删改查四个方法：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Api</span>
+<span class="token annotation punctuation">@RestController</span>
+<span class="token annotation punctuation">@RequestMapping</span><span class="token punctuation">(</span><span class="token string">"/users"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">UserController</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@Autowired</span>
+    <span class="token keyword">private</span> UserRepository userRepository<span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@ApiOperation</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"根据id获取用户信息"</span><span class="token punctuation">)</span>
+    <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/{id}"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> User <span class="token function">get</span><span class="token punctuation">(</span><span class="token annotation punctuation">@PathVariable</span> <span class="token keyword">int</span> id<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> userRepository<span class="token punctuation">.</span><span class="token function">findById</span><span class="token punctuation">(</span>id<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@ApiOperation</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"创建用户"</span><span class="token punctuation">)</span>
+    <span class="token annotation punctuation">@PostMapping</span><span class="token punctuation">(</span><span class="token string">""</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> User <span class="token function">create</span><span class="token punctuation">(</span><span class="token annotation punctuation">@RequestBody</span> User user<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> userRepository<span class="token punctuation">.</span><span class="token function">save</span><span class="token punctuation">(</span>user<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@ApiOperation</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"更新用户"</span><span class="token punctuation">)</span>
+    <span class="token annotation punctuation">@PutMapping</span><span class="token punctuation">(</span><span class="token string">""</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> User <span class="token function">update</span><span class="token punctuation">(</span><span class="token annotation punctuation">@RequestBody</span> User user<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> userRepository<span class="token punctuation">.</span><span class="token function">save</span><span class="token punctuation">(</span>user<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@ApiOperation</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"删除用户"</span><span class="token punctuation">)</span>
+    <span class="token annotation punctuation">@DeleteMapping</span><span class="token punctuation">(</span><span class="token string">"/{id}"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">delete</span><span class="token punctuation">(</span><span class="token annotation punctuation">@PathVariable</span> Integer id<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        userRepository<span class="token punctuation">.</span><span class="token function">deleteById</span><span class="token punctuation">(</span>id<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="效果">3.7 效果</h2>
+</div><div class="cl-preview-section"><p>接下来我们启动程序，打开 Swagger 去验证一下这些接口是否好用。首先，我们调用 create 方法来创建一个 user。</p>
+</div><div class="cl-preview-section"><p>参数如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-json"><code class="prism  language-json"><span class="token punctuation">{</span>
+  <span class="token string">"age"</span><span class="token punctuation">:</span> <span class="token number">18</span><span class="token punctuation">,</span>
+  <span class="token string">"birthDay"</span><span class="token punctuation">:</span> <span class="token string">"2011-01-01"</span><span class="token punctuation">,</span>
+  <span class="token string">"email"</span><span class="token punctuation">:</span> <span class="token string">"xiaoming@imooc.com"</span><span class="token punctuation">,</span>
+  <span class="token string">"name"</span><span class="token punctuation">:</span> <span class="token string">"小明"</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>执行完成后，登录 MySQL 查看，结果如下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9ac1690001f25011840314.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>我们通过 Controller 中的 create 方法 调用了 UserRepository 中的 save 方法成功插入了一条用户信息。其他方法的效果就不在这里一一演示了，留给你自己去把玩吧。</p>
+</div><div class="cl-preview-section"><h1 id="扩展">4. 扩展</h1>
+</div><div class="cl-preview-section"><h2 id="基于方法名查询">4.1 基于方法名查询</h2>
+</div><div class="cl-preview-section"><p>假如我想要个性化查询怎么办呢？比如我想按照年龄来查询用户，其实也非常简单，只需要按照 Spring Data JPA 的规范在 UserRepository 中定义相应的接口即可。没错，就是只定义个接口，不需要写实现！</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">UserRepository</span> <span class="token keyword">extends</span> <span class="token class-name">JpaRepository</span><span class="token operator">&lt;</span>User<span class="token punctuation">,</span>Integer<span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> List<span class="token operator">&lt;</span>User<span class="token operator">&gt;</span> <span class="token function">findByAge</span><span class="token punctuation">(</span>Integer age<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在 UserRepository 中加入上面一句代码就完成了根据年龄查询用户的功能。当然，我们需要在 Controller 里面调用一下：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@ApiOperation</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"根据年龄查询用户"</span><span class="token punctuation">)</span>
+<span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/age/{age}"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> List<span class="token operator">&lt;</span>User<span class="token operator">&gt;</span> <span class="token function">getByAge</span><span class="token punctuation">(</span><span class="token annotation punctuation">@PathVariable</span> Integer age<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> userRepository<span class="token punctuation">.</span><span class="token function">findByAge</span><span class="token punctuation">(</span>age<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>OK，这样就搞定了，可以去 Swagger 上测试一下了，效果就不在这里展示了。</p>
+</div><div class="cl-preview-section"><p><strong>更多关键字规则对照表：</strong></p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>关键字</th>
+<th>例子</th>
+<th>JPQL 片段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>And</td>
+<td>findByLastnameAndFirstname</td>
+<td>… where x.lastname = ?1 and x.firstname = ?2</td>
+</tr>
+<tr>
+<td>Or</td>
+<td>findByLastnameOrFirstname</td>
+<td>… where x.lastname = ?1 or x.firstname = ?2</td>
+</tr>
+<tr>
+<td>Is,Equals</td>
+<td>findByFirstname,findByFirstnameIs,findByFirstnameEquals</td>
+<td>… where x.firstname = ?1</td>
+</tr>
+<tr>
+<td>Between</td>
+<td>findByStartDateBetween</td>
+<td>… where x.startDate between ?1 and ?2</td>
+</tr>
+<tr>
+<td>LessThan</td>
+<td>findByAgeLessThan</td>
+<td>… where x.age &lt; ?1</td>
+</tr>
+<tr>
+<td>LessThanEqual</td>
+<td>findByAgeLessThanEqual</td>
+<td>… where x.age &lt;= ?1</td>
+</tr>
+<tr>
+<td>GreaterThan</td>
+<td>findByAgeGreaterThan</td>
+<td>… where x.age &gt; ?1</td>
+</tr>
+<tr>
+<td>GreaterThanEqual</td>
+<td>findByAgeGreaterThanEqual</td>
+<td>… where x.age &gt;= ?1</td>
+</tr>
+<tr>
+<td>After</td>
+<td>findByStartDateAfter</td>
+<td>… where x.startDate &gt; ?1</td>
+</tr>
+<tr>
+<td>Before</td>
+<td>findByStartDateBefore</td>
+<td>… where x.startDate &lt; ?1</td>
+</tr>
+<tr>
+<td>IsNull</td>
+<td>findByAgeIsNull</td>
+<td>… where x.age is null</td>
+</tr>
+<tr>
+<td>IsNotNull,NotNull</td>
+<td>findByAge(Is)NotNull</td>
+<td>… where x.age not null</td>
+</tr>
+<tr>
+<td>Like</td>
+<td>findByFirstnameLike</td>
+<td>… where x.firstname like ?1</td>
+</tr>
+<tr>
+<td>NotLike</td>
+<td>findByFirstnameNotLike</td>
+<td>… where x.firstname not like ?1</td>
+</tr>
+<tr>
+<td>StartingWith</td>
+<td>findByFirstnameStartingWith</td>
+<td>… where x.firstname like ?1 (parameter bound with appended %)</td>
+</tr>
+<tr>
+<td>EndingWith</td>
+<td>findByFirstnameEndingWith</td>
+<td>… where x.firstname like ?1 (parameter bound with prepended %)</td>
+</tr>
+<tr>
+<td>Containing</td>
+<td>findByFirstnameContaining</td>
+<td>… where x.firstname like ?1 (parameter bound wrapped in %)</td>
+</tr>
+<tr>
+<td>OrderBy</td>
+<td>findByAgeOrderByLastnameDesc</td>
+<td>… where x.age = ?1 order by x.lastname desc</td>
+</tr>
+<tr>
+<td>Not</td>
+<td>findByLastnameNot</td>
+<td>… where x.lastname &lt;&gt; ?1</td>
+</tr>
+<tr>
+<td>In</td>
+<td>findByAgeIn(Collection ages)</td>
+<td>… where x.age in ?1</td>
+</tr>
+<tr>
+<td>NotIn</td>
+<td>findByAgeNotIn(Collection ages)</td>
+<td>… where x.age not in ?1</td>
+</tr>
+<tr>
+<td>True</td>
+<td>findByActiveTrue()</td>
+<td>… where x.active = true</td>
+</tr>
+<tr>
+<td>False</td>
+<td>findByActiveFalse()</td>
+<td>… where x.active = false</td>
+</tr>
+<tr>
+<td>IgnoreCase</td>
+<td>findByFirstnameIgnoreCase</td>
+<td>… where UPPER(x.firstame) = UPPER(?1)</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><h2 id="分页、排序">4.2 分页、排序</h2>
+</div><div class="cl-preview-section"><p>那么想要分页、排序该怎么办呢？支持吗？方便吗？必须的！而且比上面的还简单，UserRepository 中不需要添加任何内容，直接在 Controller 里调用即可：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@ApiOperation</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"分页获取用户列表"</span><span class="token punctuation">)</span>
+<span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">""</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> Page<span class="token operator">&lt;</span>User<span class="token operator">&gt;</span> <span class="token function">list</span><span class="token punctuation">(</span>String property<span class="token punctuation">,</span> String direction<span class="token punctuation">,</span> Integer page<span class="token punctuation">,</span> Integer size<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+    Pageable pageable <span class="token operator">=</span> PageRequest<span class="token punctuation">.</span><span class="token function">of</span><span class="token punctuation">(</span>page<span class="token punctuation">,</span> size<span class="token punctuation">,</span> Sort<span class="token punctuation">.</span>Direction<span class="token punctuation">.</span><span class="token function">fromString</span><span class="token punctuation">(</span>direction<span class="token punctuation">)</span><span class="token punctuation">,</span>property<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">return</span> userRepository<span class="token punctuation">.</span><span class="token function">findAll</span><span class="token punctuation">(</span>pageable<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>PS：页码从 0 开始哦</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>打完收工！就是如此简单，两行代码解决战斗！</p>
+</div><div class="cl-preview-section"><p>嗯，这操作很 Spring Boot！这种感觉就像在《万事开头难？Spring Boot表示不服！》小节讲的一样，Spring Boot 就是想让你只专注于你想专注的事情，其他脏活累活它来帮你完成。其实这些都是基于一个理念——约定由于配置。</p>
+</div><div class="cl-preview-section"><h1 id="总结">5. 总结</h1>
+</div><div class="cl-preview-section"><p>这一小节我们学习了 Spring Data JPA 的相关内容，对其特点与用法有了比较全面的认识。并且通过几个小例子进一步巩固了对它的理解。这里只是对 Spring Data JPA 进行了一些初步的学习，其实它还有很多很强大的功能，比如我们可以使用 JPQL 来执行自定义操作，还可以使用原生 SQL 去开发我们想要的功能。这些功能可以通过 @Query 注解来实现，另外还可以像 Mybatis 那样基于 Example 进行查询，或者使用 JPA Query 等高级特性。更多有意思的功能等待你去发现。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img2.mukewang.com/5e996c5100011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6556">
+						<img src="https://img2.mukewang.com/545862ce000135c202200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">金色年华ch</h4>
+						<div class="comment-text">有个问题一直困惑着我，我在controller中加入注解@RequestMapping(name="/users")，启动后访问swagger页面，会直接调用find接口。把注解中的name去掉后就正常了</div>
+						<div>
+							
+								<div class="reply">讲师回复：没太看懂你的问题。调用find接口是什么意思？</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-16</span>
+						<a href="/read/commentdetail/6556">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6556" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6506">
+						<img src="https://img.mukewang.com/5b8cd5720001b2d702000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕数据2402482</h4>
+						<div class="comment-text">看了这么多章了，看的出来作者确实用心了，纯干货啊，而且通俗易懂，感谢，这个专栏买的值啊！</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-12</span>
+						<a href="/read/commentdetail/6506">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6506" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6331">
+						<img src="https://img3.mukewang.com/545863b500014e4602200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">icookie1314</h4>
+						<div class="comment-text">@JsonIgnoreProperties(value={"hibernateLazyInitializer","handler","fieldHandler"})
+我的实体类必须加上这个注解才可以用 不然就报错 Type definition error: [simple type, class org.hibernate.proxy.pojo.bytebuddy.ByteBuddyInterceptor]; nested exception is com.fasterxml.jackson.databind.exc.InvalidDefinitionException: No serializer found for class org.hibernate.proxy.pojo.bytebuddy.ByteBuddyInterceptor and no properties discovered to create BeanSerializer (to avoid exception, disable SerializationFeature.FAIL_ON_EMPTY_BEANS) (through reference chain: com.stte.taye.entity.User$HibernateProxy$nOstJlcX[\"hibernateLazyInitializer\"])"
+
+
+请问老师这个是什么情况?</div>
+						<div>
+							
+								<div class="reply">讲师回复：可能跟你用的版本有关，可以加微信详聊：liushuijinger</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-28</span>
+						<a href="/read/commentdetail/6331">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6331" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6178">
+						<img src="https://img3.mukewang.com/5b8cf3630001959102000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_慕圣5563177</h4>
+						<div class="comment-text">真香</div>
+						<div>
+							
+								<div class="reply">讲师回复：哈哈</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-17</span>
+						<a href="/read/commentdetail/6178">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6178" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6024">
+						<img src="https://img1.mukewang.com/533e4d3d0001ed7802000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">jaydenwang</h4>
+						<div class="comment-text">问下JPA的方法名必须是表的实体类的属性名拼接而成的么？例如查询只能是findByUser()，user是属性名</div>
+						<div>
+							
+								<div class="reply">讲师回复：是的，必须是属性名，约定由于配置原则。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-02</span>
+						<a href="/read/commentdetail/6024">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6024" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5944">
+						<img src="https://img3.mukewang.com/5a2cef030001da1301000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_Sophia_20</h4>
+						<div class="comment-text">实体类里面导入依赖出现了问题，两个小时才解决了,真的心塞，我想问老师平时是如何解决问题的呢？有时候不过太诡异了，定位的问题完全不同。
+
+因为实体类里面关于
+@Id
+    @GeneratedValue
+    private Integer id;
+
+id 是主键，但是关于id的包有两个分别是
+import org.springframework.data.annotation.Id;
+import javax.persistence.*;
+
+选的是第一个，导致各种诡异bug，最终重新敲项目，一步步来，才定位到是包导入错了。
+关于问题解决，博主能否给出更多的建议呢？</div>
+						<div>
+							
+								<div class="reply">讲师回复：哈哈，有时候也需要找谷歌</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-27</span>
+						<a href="/read/commentdetail/5944">
+							<span class="icon r"><i class="imwap-comment"></i><em>4</em></span>
+						</a>
+						<span data-cid="5944" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5808">
+						<img src="https://img4.mukewang.com/5333a28f00019e7702100210-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">fenkapian</h4>
+						<div class="comment-text">弱弱的问一下  spring支持spring data jpa吗 还是说spring boot才支持？</div>
+						<div>
+							
+								<div class="reply">讲师回复：支持。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-11</span>
+						<a href="/read/commentdetail/5808">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5808" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5801">
+						<img src="https://img4.mukewang.com/5b8cf6740001a3b602000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">穆女生</h4>
+						<div class="comment-text">我想问下jpa怎么分页查询的同时进行模糊查询</div>
+						<div>
+							
+								<div class="reply">讲师回复：可以在 UserRepository 中添加接口，例如：Page findByNameContaining(String name, Pageable pageable);  就可以根据 name 来模糊查询了。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-11</span>
+						<a href="/read/commentdetail/5801">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5801" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5694">
+						<img src="https://img1.mukewang.com/5b7a07c300015a2409600960-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">江海豪</h4>
+						<div class="comment-text">已经改好了 ,在配置里面 ,我瞎了 .</div>
+						<div>
+							
+								<div class="reply">讲师回复：棒！</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-01</span>
+						<a href="/read/commentdetail/5694">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5694" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5693">
+						<img src="https://img3.mukewang.com/5b7a07c300015a2409600960-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">江海豪</h4>
+						<div class="comment-text">http://localhost:8080/springboot/rest/user/1  又可以   http://localhost:8080/springboot/hello  又不可以 .  springboot能去掉吗??</div>
+						<div>
+							
+								<div class="reply">讲师回复：项目的 context-path 是 /springboot</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-01</span>
+						<a href="/read/commentdetail/5693">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5693" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5692">
+						<img src="https://img4.mukewang.com/5b7a07c300015a2409600960-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">江海豪</h4>
+						<div class="comment-text">单独下载了 第12章节, 浏览器请求http://localhost:8080/hello 就报 HTTP Status 404 – Not Found</div>
+						<div>
+							
+								<div class="reply">讲师回复：试试 http://localhost:8080/springboot/hello</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-01</span>
+						<a href="/read/commentdetail/5692">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5692" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5322">
+						<img src="https://img3.mukewang.com/545850ae0001b79902200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">wmhello</h4>
+						<div class="comment-text">很好  很方便
+等待老师更新</div>
+						<div>
+							
+								<div class="reply">讲师回复：感谢支持，每周一到周五准时更新呦</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-05</span>
+						<a href="/read/commentdetail/5322">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5322" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=75">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '12 数据库操作之简单到令人发指的JPA',
+					'CID': '1808',
+					'Teacher': '刘水镜'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "12 数据库操作之简单到令人发指的JPA",
+                    desc: "够吃管饱的SpringBoot大餐",
+                    imgUrl: 'https:https://img2.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/75',
+                    link: 'https://m.imooc.com/read/75'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

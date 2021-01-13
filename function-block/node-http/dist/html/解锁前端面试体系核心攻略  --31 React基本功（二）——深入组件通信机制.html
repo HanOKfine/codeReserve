@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>31 React基本功（二）——深入组件通信机制</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="拉开你与普通面试者的差距">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "2";
+	var chapter_id = "2009";
+	var chapter_title = "31 React基本功（二）——深入组件通信机制";
+	var aid = "70";
+	var a_name = "解锁前端面试体系核心攻略  ";
+	var a_price = "78.00";
+	var a_pic = "https://img4.mukewang.com/5e5c85e1000116c505400720.jpg";
+	var userId = 0;
+
+	var column_id = '70';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-26&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			31 React基本功（二）——深入组件通信机制
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5ecc72640001555606400426.jpg')"></div>
+	
+	
+		<a href="/read/70">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/5e50a213000179ce12800720-40-40.jpg" alt="修言">
+				<h3>解锁前端面试体系核心攻略  </h3>
+				<p>修言 · 大型互联网公司业务线Owner</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">散步促进我的思想。我的身体必须不断运动，脑筋才会开动起来。 <p class="author">—— 卢梭</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>大家知道，<strong>组件化、数据驱动、单向数据流是 React 的重要特性</strong>。</p>
+</div><div class="cl-preview-section"><p>涉及 React 基础层次的面试，“通信机制”这个话题，会是一个绝佳的切入点。通过考察候选人对通信机制的理解，可以帮助面试官确认非常多的信息：比如你对组件关系的理解是否全面，对单向数据流的原则认知是否到位，比如你对 Context API 是否了解、对 Event Bus 是否了解等等等等。</p>
+</div><div class="cl-preview-section"><p>简单来说——这是一道绝对的高频考题！</p>
+</div><div class="cl-preview-section"><h2 id="section"></h2>
+</div><div class="cl-preview-section"><h2 id="图解-react-组件间关系">图解 React 组件间关系</h2>
+</div><div class="cl-preview-section"><p>在 React 世界里，组件间的关系基本可以由这三种来概括：</p>
+</div><div class="cl-preview-section"><p><strong>父子关系（嵌套）</strong>：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ecc73e00001925309560614.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><strong>兄弟关系（平行）</strong>：<br>
+<img src="https://img.mukewang.com/5ecc73b80001b51711080668.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><strong>深层嵌套关系（子子孙孙无穷尽也）</strong></p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ecc73ad000155ee10320634.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>​</p>
+</div><div class="cl-preview-section"><h2 id="父子组件通信">父子组件通信</h2>
+</div><div class="cl-preview-section"><p>这是最常见、也最好解决的一个通信场景：react的数据流是单向的，最常见的操作就是通过props由父组件向子组件传递数据。</p>
+</div><div class="cl-preview-section"><p>举个例子：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token operator">...</span><span class="token punctuation">(</span>省略基础依赖的 <span class="token keyword">import</span><span class="token punctuation">)</span>
+<span class="token keyword">import</span> Child <span class="token keyword">from</span> <span class="token string">'子组件的引用路径'</span>   
+
+<span class="token keyword">class</span> <span class="token class-name">Father</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span> <span class="token punctuation">{</span>
+  <span class="token function">constructor</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">super</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>state <span class="token operator">=</span> <span class="token punctuation">{</span>
+      <span class="token comment">// 父组件具有“组件标题颜色”信息，需要带给子组件</span>
+      titleColor<span class="token punctuation">:</span> <span class="token string">'#fff'</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token function-variable function">changeColor</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+      <span class="token comment">// 点击后，父子组件标题同时变更颜色</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">setState</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+        titleColor<span class="token punctuation">:</span> <span class="token string">'#000'</span>
+      <span class="token punctuation">}</span><span class="token punctuation">)</span>
+  <span class="token punctuation">}</span>
+
+
+  <span class="token comment">// 渲染</span>
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>
+      <span class="token operator">&lt;</span>div<span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span>h1 style<span class="token operator">=</span><span class="token punctuation">{</span><span class="token punctuation">{</span>color<span class="token punctuation">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>titleColor<span class="token punctuation">}</span><span class="token punctuation">}</span><span class="token operator">&gt;</span>我是父标题<span class="token operator">&lt;</span><span class="token operator">/</span>h1<span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span>button onClick<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>changeColor<span class="token punctuation">}</span><span class="token operator">&gt;</span>点我变色<span class="token operator">&lt;</span><span class="token operator">/</span>button<span class="token operator">&gt;</span>
+        <span class="token comment">// 子组件中以 props 的形式传入和父组件同步的 titleColor</span>
+        <span class="token operator">&lt;</span>Child titleColor<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>titleColor<span class="token punctuation">}</span> <span class="token operator">/</span><span class="token operator">&gt;</span>
+      <span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>子组件中，可以通过 props 来拿到父组件的数据：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">Child</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span> <span class="token punctuation">{</span>
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> <span class="token punctuation">{</span> titleColor <span class="token punctuation">}</span> <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>props
+    <span class="token comment">// 此处省略渲染细节</span>
+    <span class="token keyword">return</span> <span class="token operator">...</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="子组件向父组件通信">子组件向父组件通信</h3>
+</div><div class="cl-preview-section"><p>由于 React 数据流是单向的，子组件没法直接向父组件抛出数据。不过，可以通过父组件向子组件传递一个函数形式的 props 来达到我们的目的：父组件将作用域为自身的函数传递给子组件，子组件在调用该函数时，把目标数据以函数入参的形式交到父组件手中即可。</p>
+</div><div class="cl-preview-section"><p>举个例子：</p>
+</div><div class="cl-preview-section"><p>父组件中将方法传入子组件：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token operator">...</span><span class="token punctuation">(</span>省略基础依赖的 <span class="token keyword">import</span><span class="token punctuation">)</span>
+<span class="token keyword">import</span> Child <span class="token keyword">from</span> <span class="token string">'子组件的引用路径'</span>   
+
+<span class="token keyword">class</span> <span class="token class-name">Father</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span><span class="token punctuation">{</span>
+  state <span class="token operator">=</span> <span class="token punctuation">{</span>
+    titleColor<span class="token punctuation">:</span> <span class="token string">'#fff'</span>
+  <span class="token punctuation">}</span><span class="token punctuation">;</span>
+  
+  <span class="token comment">// 父组件中存在一个允许自定义标题颜色的方法</span>
+  <span class="token function-variable function">changeColor</span> <span class="token operator">=</span> <span class="token punctuation">(</span>color<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">setState</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+      titleColor
+    <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>
+      <span class="token operator">&lt;</span>div<span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span>h1 style<span class="token operator">=</span><span class="token punctuation">{</span><span class="token punctuation">{</span>color<span class="token punctuation">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>titleColor<span class="token punctuation">}</span><span class="token punctuation">}</span><span class="token operator">&gt;</span>我是父标题<span class="token operator">&lt;</span><span class="token operator">/</span>h1<span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span>button onClick<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>changeColor<span class="token punctuation">}</span><span class="token operator">&gt;</span>点我变色<span class="token operator">&lt;</span><span class="token operator">/</span>button<span class="token operator">&gt;</span>
+        <span class="token comment">// 子组件中以 props 的形式收到父组件中的 changeColor 方法</span>
+        <span class="token operator">&lt;</span>Child changeColor<span class="token operator">=</span><span class="token punctuation">{</span>color <span class="token operator">=&gt;</span> <span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span><span class="token function">changeColor</span><span class="token punctuation">(</span>color<span class="token punctuation">)</span><span class="token punctuation">}</span> <span class="token operator">/</span><span class="token operator">&gt;</span>
+      <span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>子组件在调用该函数时，把目标数据以函数入参的形式交到父组件手中：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">Child</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span><span class="token punctuation">{</span>
+  <span class="token function">componentDidMount</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">setTimeout</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+      <span class="token comment">// 调用父组件的方法</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span><span class="token function">changeColor</span><span class="token punctuation">(</span><span class="token string">'#000'</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token number">1000</span><span class="token punctuation">)</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 此处省略渲染细节</span>
+    <span class="token keyword">return</span> <span class="token operator">...</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="兄弟组件通信">兄弟组件通信</h2>
+</div><div class="cl-preview-section"><p>兄弟组件乍一看没啥关联，但别忘了，它们有同一个爹。</p>
+</div><div class="cl-preview-section"><p>结合咱们上面的分析，爹可以把话带给儿子，儿子也可以把话带给爹。那么儿子A说给爹的话，爹也可以带给儿子B。如此一来，兄弟组件通信就不是啥问题了。</p>
+</div><div class="cl-preview-section"><p>我们梳理一下这个过程的实现流程：在父组件中定义一个作用域是它自己的方法（这个事件用来修改某个特定的 state），以 props 的形式传递给儿子 A，同时把这个事件里涉及的 state 值，以 props 的形式传递给儿子 B。这样当我们在 A 中调用父组件的方法、修改这个目标 state 值后，会触发父组件的 state 更新，进而自然就会触发儿子 B 的 props 传值更新。</p>
+</div><div class="cl-preview-section"><p>我们用一个例子来理解一下这个过程：</p>
+</div><div class="cl-preview-section"><p>首先是父组件：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token operator">...</span><span class="token punctuation">(</span>省略基础依赖的 <span class="token keyword">import</span><span class="token punctuation">)</span>
+<span class="token keyword">import</span> ChildA <span class="token keyword">from</span> <span class="token string">'子组件A的引用路径'</span>   
+<span class="token keyword">import</span> ChildB <span class="token keyword">from</span> <span class="token string">'子组件B的引用路径'</span>   
+
+<span class="token keyword">class</span> <span class="token class-name">Father</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span><span class="token punctuation">{</span>
+  state <span class="token operator">=</span> <span class="token punctuation">{</span>
+    titleColor<span class="token punctuation">:</span> <span class="token string">'#fff'</span>
+  <span class="token punctuation">}</span><span class="token punctuation">;</span>
+  
+  <span class="token comment">// 父组件中存在一个允许自定义标题颜色的方法</span>
+  <span class="token function-variable function">changeColor</span> <span class="token operator">=</span> <span class="token punctuation">(</span>color<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">setState</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+      titleColor
+    <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>
+      <span class="token operator">&lt;</span>div<span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span>h1 style<span class="token operator">=</span><span class="token punctuation">{</span><span class="token punctuation">{</span>color<span class="token punctuation">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>titleColor<span class="token punctuation">}</span><span class="token punctuation">}</span><span class="token operator">&gt;</span>我是父标题<span class="token operator">&lt;</span><span class="token operator">/</span>h1<span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span>button onClick<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>changeColor<span class="token punctuation">}</span><span class="token operator">&gt;</span>点我变色<span class="token operator">&lt;</span><span class="token operator">/</span>button<span class="token operator">&gt;</span>
+        <span class="token comment">// 子组件A中以 props 的形式收到父组件中的 changeColor 方法</span>
+        <span class="token operator">&lt;</span>ChildA changeColor<span class="token operator">=</span><span class="token punctuation">{</span>color <span class="token operator">=&gt;</span> <span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span><span class="token function">changeColor</span><span class="token punctuation">(</span>color<span class="token punctuation">)</span><span class="token punctuation">}</span> <span class="token operator">/</span><span class="token operator">&gt;</span>
+        <span class="token comment">// 子组件B中以 props 的形式传入和父组件同步的 titleColor</span>
+        <span class="token operator">&lt;</span>ChildB titleColor<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>titleColor<span class="token punctuation">}</span> <span class="token operator">/</span><span class="token operator">&gt;</span>
+      <span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>子组件 A 中，触发父组件 state 的改变：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">ChildA</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span><span class="token punctuation">{</span>
+  <span class="token function">componentDidMount</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">setTimeout</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+      <span class="token comment">// 调用父组件的方法</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span><span class="token function">changeColor</span><span class="token punctuation">(</span><span class="token string">'#000'</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token number">1000</span><span class="token punctuation">)</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 此处省略渲染细节</span>
+    <span class="token keyword">return</span> <span class="token operator">...</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>子组件 B 中，对应的 props 就会同步为父组件新的 state 值：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">ChildB</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span> <span class="token punctuation">{</span>
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 这个值也更新了</span>
+    <span class="token keyword">const</span> <span class="token punctuation">{</span> titleColor <span class="token punctuation">}</span> <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>props
+    <span class="token comment">// 此处省略渲染细节</span>
+    <span class="token keyword">return</span> <span class="token operator">...</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="深层嵌套的组件间通信">深层嵌套的组件间通信</h2>
+</div><div class="cl-preview-section"><p>在过去，涉及深层嵌套、或者说任意两个组件之间这样跨度较大的通信，我们一般是直接通过全局事件总线（Event Bus）或者引入 Redux 来解决。</p>
+</div><div class="cl-preview-section"><p>不过随着 React16.3 版本的发布，在深层嵌套这个场景下，有了一个新的答案：<strong>使用 Context API。</strong></p>
+</div><div class="cl-preview-section"><p>大家注意，Context API 可不是随着 React16.3 的发布而出现的。事实上，React在很早就支持了context，只是官方并不推荐我们使用它：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>The vast majority of applications do not need to use context.</p>
+<p>If you want your application to be stable, don’t use context. It is an experimental API and it is likely to break in future releases of React.</p>
+<p>(绝大多数应用程序不需要使用 context。如果你想让你的应用更稳定，不要使用context。因为这是一个实验性的API，在未来的React版本中可能会被更改。)</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>好消息是，从 React16.3 开始，Context API 得到了升级，不再作为不稳定的实验性能力存在。现在，我们可以放心地使用 Context API 了。</p>
+</div><div class="cl-preview-section"><h3 id="理解-context-api">理解 Context API</h3>
+</div><div class="cl-preview-section"><h4 id="context-api-是干嘛的？">Context API 是干嘛的？</h4>
+</div><div class="cl-preview-section"><blockquote>
+<p>Context 提供了一个无需为每层组件手动添加 props，就能在组件树间进行数据传递的方法。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>一般来说，在 React 应用中，数据只能通过 props 属性自上而下传递。</p>
+</div><div class="cl-preview-section"><p>但当我们想要跨 N 个层级传递某个数据时，逐层传递就会变得非常繁琐，而且还会带来不必要的数据更新（比如说一些全局性质的数据，用户名、用户权限等）。</p>
+</div><div class="cl-preview-section"><p>Context 面向这类场景，提供了一种在组件之间共享此类值的方式，它允许我们不必显式地通过组件树的逐层传递 props。</p>
+</div><div class="cl-preview-section"><h4 id="context-的用法">Context 的用法</h4>
+</div><div class="cl-preview-section"><p>我们直接通过一个实例来理解它的用法：</p>
+</div><div class="cl-preview-section"><p>现在我们立足 A 组件，想要把 A 的标题颜色信息传递给千里之外的 E 组件，它们的嵌套关系正如下图一样，深不可测：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ecc7399000155ee10320634.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">A</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span><span class="token punctuation">{</span>
+  state <span class="token operator">=</span> <span class="token punctuation">{</span>
+    titleColor<span class="token punctuation">:</span> <span class="token string">'#fff'</span>
+  <span class="token punctuation">}</span><span class="token punctuation">;</span>
+  
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>
+      <span class="token operator">&lt;</span>div<span class="token operator">&gt;</span>
+        <span class="token comment">// 省略 B 组件引入逻辑</span>
+      <span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>大家脑补一下，如果是使用 props，那么我需要在 A 组件中把 titleColor 传给 B，然后 B 传 C、C 传 D、D 传 E…这种操作蠢极了。</p>
+</div><div class="cl-preview-section"><p>现在有了 Context API，我不必去理会那些无聊的“中间商”只需要把注意力放在数据的源头组件和数据的接收方上就可以了：</p>
+</div><div class="cl-preview-section"><p>（注意源头组件（Provider）会接受一个 value 作为 props，这个值会修改你在创建 Context 时设定的默认值）</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token comment">// 用 React.createContext 可以为当前的 titleColor 创建一个 context（“#fff”为默认值）。</span>
+<span class="token comment">// React.createContext 方法会返回一个带有 Provider 和 Consumer 的对象。</span>
+<span class="token keyword">const</span> TitleColorContext <span class="token operator">=</span> React<span class="token punctuation">.</span><span class="token function">createContext</span><span class="token punctuation">(</span><span class="token string">'#fff'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name">A</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span> <span class="token punctuation">{</span>
+
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>
+      <span class="token comment">// 使用一个 Provider（提供者） 来将当前的 titleColor 传递给下面的组件树。</span>
+          <span class="token operator">&lt;</span>TitleColorContext<span class="token punctuation">.</span>Provider value<span class="token operator">=</span><span class="token string">"#000"</span><span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span>div<span class="token operator">&gt;</span>
+          <span class="token comment">// 省略 B 组件引入逻辑</span>
+        <span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>
+      <span class="token operator">&lt;</span><span class="token operator">/</span>TitleColorContext<span class="token punctuation">.</span>Provider<span class="token operator">&gt;</span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>    
+</code></pre>
+</div><div class="cl-preview-section"><p>随后我们可以在 E 组件里去访问这个 Context（注意 Consumer 表示消费者，它接受一个 render props 作为唯一的 children。render props 是一个函数，这个函数会接收到 Context 传递的数据作为参数，并且需要返回一个组件），形式上类似这样：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token operator">&lt;</span>MyContext<span class="token punctuation">.</span>Consumer<span class="token operator">&gt;</span>
+  <span class="token punctuation">{</span>value <span class="token operator">=&gt;</span> <span class="token comment">/* 基于 context 值进行渲染*/</span><span class="token punctuation">}</span>
+<span class="token operator">&lt;</span><span class="token operator">/</span>MyContext<span class="token punctuation">.</span>Consumer<span class="token operator">&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>对应到我们这个例子里，就是这样：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">E</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span> <span class="token punctuation">{</span>
+
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token operator">&lt;</span>TitleColorContext<span class="token punctuation">.</span>Consumer<span class="token operator">&gt;</span>
+      <span class="token punctuation">{</span>
+        <span class="token punctuation">(</span>titleColor<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">(</span>
+          <span class="token operator">&lt;</span>h1 style<span class="token operator">=</span><span class="token punctuation">{</span><span class="token punctuation">{</span> color<span class="token punctuation">:</span> titleColor <span class="token punctuation">}</span><span class="token punctuation">}</span><span class="token operator">&gt;</span>
+                我是 E 标题
+            <span class="token operator">&lt;</span><span class="token operator">/</span>h1<span class="token operator">&gt;</span>
+        <span class="token punctuation">)</span>
+      <span class="token punctuation">}</span>
+    <span class="token operator">&lt;</span><span class="token operator">/</span>TitleColorContext<span class="token punctuation">.</span>Consumer<span class="token operator">&gt;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>大功告成！</p>
+</div><div class="cl-preview-section"><h2 id="任意组件间通信">任意组件间通信</h2>
+</div><div class="cl-preview-section"><p>这种场景需要我们召唤 Event-Bus。</p>
+</div><div class="cl-preview-section"><p>关于 Event-Bus，用过它的同学会知道，这货简直是万金油。不夸张地说，它可以解决我们本文描述的所有场景下的通信问题。也正是因为它够强，一直是面试过程中的一个稳定热点。</p>
+</div><div class="cl-preview-section"><p>不过，鉴于 Event-Bus 本身和 React 关系不大、同时更多地涉及了设计模式中的考点，我们后面会在“算法与设计模式”这一章为它单开小节来作介绍。在本章，我们仍然把篇幅留给 React。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img1.mukewang.com/5ecc726900011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6943">
+						<img src="https://img1.mukewang.com/533e4d5b0001d57502200203-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">精慕门9457844</h4>
+						<div class="comment-text">什么是Event-Bus？？？</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-10-10</span>
+						<a href="/read/commentdetail/6943">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6943" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6539">
+						<img src="https://img2.mukewang.com/54584f540001558402200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">Valar丶Morghulis</h4>
+						<div class="comment-text">什么是Event-Bus？</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-14</span>
+						<a href="/read/commentdetail/6539">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6539" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥78.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=70">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '31 React基本功（二）——深入组件通信机制',
+					'CID': '2009',
+					'Teacher': '修言'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "31 React基本功（二）——深入组件通信机制",
+                    desc: "拉开你与普通面试者的差距",
+                    imgUrl: 'https:https://img4.mukewang.com/5e5c85e1000116c505400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5e5c85e1000116c505400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/70',
+                    link: 'https://m.imooc.com/read/70'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

@@ -1,0 +1,910 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>39 如何快速排查生产问题</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="全面掌握迈向高级工程师的必备技能">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "1";
+	var chapter_id = "2198";
+	var chapter_title = "39 如何快速排查生产问题";
+	var aid = "82";
+	var a_name = "网络编程之Netty一站式精讲";
+	var a_price = "68.00";
+	var a_pic = "https://img3.mukewang.com/5f052aa90001f15b05400720.jpg";
+	var userId = 0;
+
+	var column_id = '82';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-28&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			39 如何快速排查生产问题
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img4.mukewang.com/5f0597480001a91406400359.jpg')"></div>
+	
+	
+		<a href="/read/82">
+			<div class="course-entry">
+				<img src="https://img3.mukewang.com/5d9c91f40001dcac05000500-40-40.jpg" alt="彤哥读源码">
+				<h3>网络编程之Netty一站式精讲</h3>
+				<p>彤哥读源码 · 互联网大厂项目经理</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">耐心是一切聪明才智的基础。<p class="author">——柏拉图</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">前言</h1>
+</div><div class="cl-preview-section"><p>你好，我是彤哥。</p>
+</div><div class="cl-preview-section"><p>上一节，我们一起从监控的角度对实战项目做了增强，有了监控，不仅可以预防生产问题，还可以协助解决生产问题。</p>
+</div><div class="cl-preview-section"><p>本节，我们就来谈谈如何快速排查生产问题。</p>
+</div><div class="cl-preview-section"><p>好了， 进入今天的学习吧。</p>
+</div><div class="cl-preview-section"><h1 id="如何快速排查生产问题？">如何快速排查生产问题？</h1>
+</div><div class="cl-preview-section"><p>大家都遇到过哪些生产问题呢？</p>
+</div><div class="cl-preview-section"><p>磁盘满了？</p>
+</div><div class="cl-preview-section"><p>CPU 飙高？</p>
+</div><div class="cl-preview-section"><p>内存溢出？</p>
+</div><div class="cl-preview-section"><p>内存溢出又分好几种：堆内存溢出、元空间溢出、线程栈溢出、直接内存溢出。</p>
+</div><div class="cl-preview-section"><p>在 Netty 中，最常见的当属直接内存溢出了，而内存溢出，往往又是内存泄漏导致的，所以，我们一般是排查内存泄漏。</p>
+</div><div class="cl-preview-section"><p>那么，对于直接内存泄漏，我们该如何快速排查呢？</p>
+</div><div class="cl-preview-section"><p>这里，我总结了几个步骤以供参考：</p>
+</div><div class="cl-preview-section"><ol>
+<li>查看监控，直接内存使用情况是否稳定；</li>
+<li>查看日志，是否有直接内存相关的报错；</li>
+<li>本地调试，关闭池化内存、添加内存泄漏检测、模拟大量请求、步步为营、耐心寻找泄漏点；</li>
+</ol>
+</div><div class="cl-preview-section"><p>OK，我们以实战项目为例来描述一下各种步骤。</p>
+</div><div class="cl-preview-section"><h1 id="实战项目内存泄漏排查过程">实战项目内存泄漏排查过程</h1>
+</div><div class="cl-preview-section"><h2 id="伪造内存泄漏">伪造内存泄漏</h2>
+</div><div class="cl-preview-section"><p>要想复现内存泄漏，我们需要伪造一个内存泄漏的项目，我们还是以实战项目为例，添加一行代码即可：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">BinaryWebSocketFrameEncoder</span> <span class="token keyword">extends</span> <span class="token class-name">MessageToMessageEncoder</span><span class="token operator">&lt;</span>ByteBuf<span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">encode</span><span class="token punctuation">(</span>ChannelHandlerContext ctx<span class="token punctuation">,</span> ByteBuf msg<span class="token punctuation">,</span> List<span class="token operator">&lt;</span>Object<span class="token operator">&gt;</span> out<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+        <span class="token comment">// 给msg多加一次引用</span>
+        ReferenceCountUtil<span class="token punctuation">.</span><span class="token function">retain</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        ReferenceCountUtil<span class="token punctuation">.</span><span class="token function">retain</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        BinaryWebSocketFrame binaryWebSocketFrame <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BinaryWebSocketFrame</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        out<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>binaryWebSocketFrame<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在前面的章节中，我们也分析过，retain () 这个方法是给 ByteBuf 加引用次数的，同时，对应的 release () 方法是给 ByteBuf 减引用次数的，每调用一次 Handler（Encoder/Decoder 本质也是 Handler），这个 ByteBuf 的引用次数都会自动减 1，这个自动减 1 的操作是在父类中自动完成的，当然，也不是所有的父类都会帮你完成这个动作，比如，ChannelInboundHandlerAdapter 就不会帮你把引用次数自动减 1。</p>
+</div><div class="cl-preview-section"><p>所以，我们这里多次使用的时候需要显式地给 msg 加一次引用次数，但是，一不小心，我手抖了一下，多加了一次引用次数就发到生产上了，会出现什么样的情况呢？</p>
+</div><div class="cl-preview-section"><p>首先，程序是肯定可以正常运行的。</p>
+</div><div class="cl-preview-section"><p>其次，内存溢出是一个非常缓慢的过程，可能十天半个月才会出现一次。</p>
+</div><div class="cl-preview-section"><p>最后，导致的结果就是难以排查，无奈之下，只能重启，甚至，有的公司会写个定时任务，每天晚上系统没人用的时候偷偷地自动重启一次。</p>
+</div><div class="cl-preview-section"><p>针对这种情况，我们来看看怎么排查。</p>
+</div><div class="cl-preview-section"><h2 id="查看监控">查看监控</h2>
+</div><div class="cl-preview-section"><p>查看监控，会发现，直接内存的使用情况，呈现一条缓慢上升的曲线，类似于这样：<br>
+<img src="https://img.mukewang.com/5f3f32490001c16310260292.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>这个时间的长度可能是几个小时、一天、几天、十几天，都有可能，取决于系统的流量，随着时间的推移，最终达到了监控告警值，半夜被喊起来排查问题。</p>
+</div><div class="cl-preview-section"><h2 id="查看日志">查看日志</h2>
+</div><div class="cl-preview-section"><p>遇到这种问题先不要慌，先去日志中查看是否有直接内存相关的报错，如果运气好是有相关日志的，拿出来分析一波，最坏的情况是完全没有，在完全没有日志可以参考的情况下，只能启用本地调试大法了。</p>
+</div><div class="cl-preview-section"><h2 id="本地调试">本地调试</h2>
+</div><div class="cl-preview-section"><p>本地调试不是说拿到代码胡乱调试一通，也要讲究一些策略。</p>
+</div><div class="cl-preview-section"><p><strong>第一步，关闭池化内存，为什么要关闭池化内存？</strong></p>
+</div><div class="cl-preview-section"><p>因为，使用池化内存的时候，创建第一个 ByteBuf 的时候会分配 16M 的内存块，等这 16M 的内存块不够使用的时候才会创建下一个 16M 的内存块，而且，这 16M 使用完了之后并不会立即释放，而是交给 Netty 的内存来进行管理，方便后续复用，有内存池的干扰，很难看出内存泄漏导致的直接内存缓慢增长的过程。</p>
+</div><div class="cl-preview-section"><p>下面是没有关闭池化内存的情况：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token operator">--</span> Gauges <span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span>
+maxDirectMemory
+             value <span class="token operator">=</span> <span class="token number">1883242496</span>
+usedDirectMemory
+             value <span class="token operator">=</span> <span class="token number">16777223</span>
+    
+<span class="token operator">--</span> Gauges <span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span>
+maxDirectMemory
+             value <span class="token operator">=</span> <span class="token number">1883242496</span>
+usedDirectMemory
+             value <span class="token operator">=</span> <span class="token number">16777223</span>
+    
+<span class="token operator">--</span> Gauges <span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span>
+maxDirectMemory
+             value <span class="token operator">=</span> <span class="token number">1883242496</span>
+usedDirectMemory
+             value <span class="token operator">=</span> <span class="token number">16777223</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>长期维持在 16M，也看不出有没有内存泄漏。</p>
+</div><div class="cl-preview-section"><p>下面是关闭池化内存的情况：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token operator">--</span> Gauges <span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span>
+maxDirectMemory
+             value <span class="token operator">=</span> <span class="token number">1883242496</span>
+usedDirectMemory
+             value <span class="token operator">=</span> <span class="token number">0</span>
+
+<span class="token operator">--</span> Gauges <span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span>
+maxDirectMemory
+             value <span class="token operator">=</span> <span class="token number">1883242496</span>
+usedDirectMemory
+             value <span class="token operator">=</span> <span class="token number">1799</span>
+
+<span class="token operator">--</span> Gauges <span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span>
+maxDirectMemory
+             value <span class="token operator">=</span> <span class="token number">1883242496</span>
+usedDirectMemory
+             value <span class="token operator">=</span> <span class="token number">4359</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以看到，关闭了池化内存之后，是有一个缓慢增长的过程的。</p>
+</div><div class="cl-preview-section"><p>那么，要怎么关闭池化内存呢？</p>
+</div><div class="cl-preview-section"><p>这就要使用到前面章节讲过的一个参数了：<code>-Dio.netty.allocator.type=unpooled</code>，将这个参数的值设置为 unpooled 即可。</p>
+</div><div class="cl-preview-section"><p><strong>第二步，添加内存泄漏检测，如何添加内存泄漏检测？</strong></p>
+</div><div class="cl-preview-section"><p>这就要使用一个我们没讲过的参数了：<code>-Dio.netty.leakDetection.level=PARANOID</code>，这个参数有四个值：</p>
+</div><div class="cl-preview-section"><ul>
+<li>DISABLED，表示不检测内存泄漏；</li>
+<li>SIMPLE，表示会追踪小部分对象的内存使用情况，同时会消耗少量的资源；</li>
+<li>ADVANCED，表示会追踪大部分对象的内存使用情况，同时会消息大量的资源；</li>
+<li>PARANOID，表示会追踪所有对象的内存使用情况。</li>
+</ul>
+</div><div class="cl-preview-section"><p>其中，默认值是 SIMPLE，四个值的强度为依次增加。</p>
+</div><div class="cl-preview-section"><p>上面在查看日志的时候说的运气好，就是指这里使用 SIMPLE 的情况下有可能会有相关的日志。</p>
+</div><div class="cl-preview-section"><p>在本地调试，直接开启最高级别 ——PARANOID。</p>
+</div><div class="cl-preview-section"><p><strong>第三步，模拟大量请求，为什么要模拟大量请求呢？</strong></p>
+</div><div class="cl-preview-section"><p>因为，上面的内存泄漏检测，只有在 gc 的时候才会打印相关的日志，平时，这些信息会保存在 Set 中，有兴趣的同学可以看看 <code>ResourceLeakDetector</code> 这个类，怎么才能快速 gc 呢？模拟大量的请求不失为一种好方法。</p>
+</div><div class="cl-preview-section"><p>那么，怎么模拟大量的请求呢？</p>
+</div><div class="cl-preview-section"><p>其实，也很简单，只需要在 MockClient 中加一个循环即可：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MockClient</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">start</span><span class="token punctuation">(</span>Channel channel<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 发送hello消息</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">1000</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            HelloRequest helloRequest <span class="token operator">=</span> HelloRequest<span class="token punctuation">.</span><span class="token function">newBuilder</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                    <span class="token punctuation">.</span><span class="token function">setName</span><span class="token punctuation">(</span><span class="token string">"彤哥"</span><span class="token punctuation">)</span>
+                    <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            MessageUtils<span class="token punctuation">.</span><span class="token function">sendRequest</span><span class="token punctuation">(</span>helloRequest<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                TimeUnit<span class="token punctuation">.</span>MILLISECONDS<span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">InterruptedException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>OK，此时，分别启动服务端和客户端，观察服务端的日志，正常来说，就会出现错误信息了，我这里摘取一条：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token number">07</span><span class="token operator">:</span><span class="token number">40</span><span class="token operator">:</span><span class="token number">04</span> <span class="token punctuation">[</span>nioEventLoopGroup<span class="token operator">-</span><span class="token number">3</span><span class="token operator">-</span><span class="token number">2</span><span class="token punctuation">]</span> ResourceLeakDetector<span class="token operator">:</span> LEAK<span class="token operator">:</span> ByteBuf<span class="token punctuation">.</span><span class="token function">release</span><span class="token punctuation">(</span><span class="token punctuation">)</span> was not called before it's garbage<span class="token operator">-</span>collected<span class="token punctuation">.</span> See https<span class="token operator">:</span><span class="token operator">/</span><span class="token operator">/</span>netty<span class="token punctuation">.</span>io<span class="token operator">/</span>wiki<span class="token operator">/</span>reference<span class="token operator">-</span>counted<span class="token operator">-</span>objects<span class="token punctuation">.</span>html <span class="token keyword">for</span> more information<span class="token punctuation">.</span>
+Recent access records<span class="token operator">:</span> 
+#<span class="token number">1</span><span class="token operator">:</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>buffer<span class="token punctuation">.</span>DefaultByteBufHolder<span class="token punctuation">.</span><span class="token function">release</span><span class="token punctuation">(</span>DefaultByteBufHolder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">115</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>ReferenceCountUtil<span class="token punctuation">.</span><span class="token function">release</span><span class="token punctuation">(</span>ReferenceCountUtil<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">88</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>handler<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MessageToMessageEncoder<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>MessageToMessageEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">91</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite0</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">715</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">707</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">790</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">700</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>ChannelOutboundHandlerAdapter<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>ChannelOutboundHandlerAdapter<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">113</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>handler<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>http<span class="token punctuation">.</span>websocketx<span class="token punctuation">.</span>WebSocketCloseFrameHandler<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>WebSocketCloseFrameHandler<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">73</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite0</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">715</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">707</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">790</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">700</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>handler<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MessageToMessageEncoder<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>MessageToMessageEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">112</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite0</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">715</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">707</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">790</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">700</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>handler<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MessageToMessageEncoder<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>MessageToMessageEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">112</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite0</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">715</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWriteAndFlush</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">762</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext$WriteTask<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">1089</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>AbstractEventExecutor<span class="token punctuation">.</span>safeExecute$$$<span class="token function">capture</span><span class="token punctuation">(</span>AbstractEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">164</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>AbstractEventExecutor<span class="token punctuation">.</span><span class="token function">safeExecute</span><span class="token punctuation">(</span>AbstractEventExecutor<span class="token punctuation">.</span>java<span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>SingleThreadEventExecutor<span class="token punctuation">.</span><span class="token function">runAllTasks</span><span class="token punctuation">(</span>SingleThreadEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">472</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>nio<span class="token punctuation">.</span>NioEventLoop<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>NioEventLoop<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">497</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>SingleThreadEventExecutor$<span class="token number">4</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>SingleThreadEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">989</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>internal<span class="token punctuation">.</span>ThreadExecutorMap$<span class="token number">2</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>ThreadExecutorMap<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">74</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>FastThreadLocalRunnable<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>FastThreadLocalRunnable<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">30</span><span class="token punctuation">)</span>
+	java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>Thread<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>Thread<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">748</span><span class="token punctuation">)</span>
+#<span class="token number">2</span><span class="token operator">:</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>ReferenceCountUtil<span class="token punctuation">.</span><span class="token function">release</span><span class="token punctuation">(</span>ReferenceCountUtil<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">88</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>handler<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MessageToMessageEncoder<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>MessageToMessageEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">91</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite0</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">715</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">707</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">790</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">700</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>handler<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MessageToMessageEncoder<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>MessageToMessageEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">112</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite0</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">715</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWriteAndFlush</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">762</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext$WriteTask<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">1089</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>AbstractEventExecutor<span class="token punctuation">.</span>safeExecute$$$<span class="token function">capture</span><span class="token punctuation">(</span>AbstractEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">164</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>AbstractEventExecutor<span class="token punctuation">.</span><span class="token function">safeExecute</span><span class="token punctuation">(</span>AbstractEventExecutor<span class="token punctuation">.</span>java<span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>SingleThreadEventExecutor<span class="token punctuation">.</span><span class="token function">runAllTasks</span><span class="token punctuation">(</span>SingleThreadEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">472</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>nio<span class="token punctuation">.</span>NioEventLoop<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>NioEventLoop<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">497</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>SingleThreadEventExecutor$<span class="token number">4</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>SingleThreadEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">989</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>internal<span class="token punctuation">.</span>ThreadExecutorMap$<span class="token number">2</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>ThreadExecutorMap<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">74</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>FastThreadLocalRunnable<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>FastThreadLocalRunnable<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">30</span><span class="token punctuation">)</span>
+	java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>Thread<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>Thread<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">748</span><span class="token punctuation">)</span>
+#<span class="token number">3</span><span class="token operator">:</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>buffer<span class="token punctuation">.</span>AdvancedLeakAwareByteBuf<span class="token punctuation">.</span><span class="token function">retain</span><span class="token punctuation">(</span>AdvancedLeakAwareByteBuf<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">36</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>ReferenceCountUtil<span class="token punctuation">.</span><span class="token function">retain</span><span class="token punctuation">(</span>ReferenceCountUtil<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">40</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>BinaryWebSocketFrameEncoder<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>BinaryWebSocketFrameEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">17</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>BinaryWebSocketFrameEncoder<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>BinaryWebSocketFrameEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">12</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>handler<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MessageToMessageEncoder<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>MessageToMessageEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">89</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite0</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">715</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">707</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">790</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">700</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>handler<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MessageToMessageEncoder<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>MessageToMessageEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">112</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite0</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">715</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWriteAndFlush</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">762</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext$WriteTask<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">1089</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>AbstractEventExecutor<span class="token punctuation">.</span>safeExecute$$$<span class="token function">capture</span><span class="token punctuation">(</span>AbstractEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">164</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>AbstractEventExecutor<span class="token punctuation">.</span><span class="token function">safeExecute</span><span class="token punctuation">(</span>AbstractEventExecutor<span class="token punctuation">.</span>java<span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>SingleThreadEventExecutor<span class="token punctuation">.</span><span class="token function">runAllTasks</span><span class="token punctuation">(</span>SingleThreadEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">472</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>nio<span class="token punctuation">.</span>NioEventLoop<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>NioEventLoop<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">497</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>SingleThreadEventExecutor$<span class="token number">4</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>SingleThreadEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">989</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>internal<span class="token punctuation">.</span>ThreadExecutorMap$<span class="token number">2</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>ThreadExecutorMap<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">74</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>FastThreadLocalRunnable<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>FastThreadLocalRunnable<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">30</span><span class="token punctuation">)</span>
+	java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>Thread<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>Thread<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">748</span><span class="token punctuation">)</span>
+#<span class="token number">4</span><span class="token operator">:</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>buffer<span class="token punctuation">.</span>AdvancedLeakAwareByteBuf<span class="token punctuation">.</span><span class="token function">retain</span><span class="token punctuation">(</span>AdvancedLeakAwareByteBuf<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">36</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>ReferenceCountUtil<span class="token punctuation">.</span><span class="token function">retain</span><span class="token punctuation">(</span>ReferenceCountUtil<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">40</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>BinaryWebSocketFrameEncoder<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>BinaryWebSocketFrameEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">16</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>BinaryWebSocketFrameEncoder<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>BinaryWebSocketFrameEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">12</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>handler<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MessageToMessageEncoder<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>MessageToMessageEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">89</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite0</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">715</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">707</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">790</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">700</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>handler<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MessageToMessageEncoder<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>MessageToMessageEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">112</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite0</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">715</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWriteAndFlush</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">762</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext$WriteTask<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">1089</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>AbstractEventExecutor<span class="token punctuation">.</span>safeExecute$$$<span class="token function">capture</span><span class="token punctuation">(</span>AbstractEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">164</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>AbstractEventExecutor<span class="token punctuation">.</span><span class="token function">safeExecute</span><span class="token punctuation">(</span>AbstractEventExecutor<span class="token punctuation">.</span>java<span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>SingleThreadEventExecutor<span class="token punctuation">.</span><span class="token function">runAllTasks</span><span class="token punctuation">(</span>SingleThreadEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">472</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>nio<span class="token punctuation">.</span>NioEventLoop<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>NioEventLoop<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">497</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>SingleThreadEventExecutor$<span class="token number">4</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>SingleThreadEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">989</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>internal<span class="token punctuation">.</span>ThreadExecutorMap$<span class="token number">2</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>ThreadExecutorMap<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">74</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>FastThreadLocalRunnable<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>FastThreadLocalRunnable<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">30</span><span class="token punctuation">)</span>
+	java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>Thread<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>Thread<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">748</span><span class="token punctuation">)</span>
+#<span class="token number">5</span><span class="token operator">:</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>buffer<span class="token punctuation">.</span>AdvancedLeakAwareByteBuf<span class="token punctuation">.</span><span class="token function">writeInt</span><span class="token punctuation">(</span>AdvancedLeakAwareByteBuf<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">562</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>protocol<span class="token punctuation">.</span>MahjongProtocolHeader<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>MahjongProtocolHeader<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">30</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>protocol<span class="token punctuation">.</span>MahjongProtocol<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>MahjongProtocol<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">52</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MahjongProtocolEncoder<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>MahjongProtocolEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">17</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MahjongProtocolEncoder<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>MahjongProtocolEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">11</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>handler<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MessageToMessageEncoder<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>MessageToMessageEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">89</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite0</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">715</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWriteAndFlush</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">762</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext$WriteTask<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">1089</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>AbstractEventExecutor<span class="token punctuation">.</span>safeExecute$$$<span class="token function">capture</span><span class="token punctuation">(</span>AbstractEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">164</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>AbstractEventExecutor<span class="token punctuation">.</span><span class="token function">safeExecute</span><span class="token punctuation">(</span>AbstractEventExecutor<span class="token punctuation">.</span>java<span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>SingleThreadEventExecutor<span class="token punctuation">.</span><span class="token function">runAllTasks</span><span class="token punctuation">(</span>SingleThreadEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">472</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>nio<span class="token punctuation">.</span>NioEventLoop<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>NioEventLoop<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">497</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>SingleThreadEventExecutor$<span class="token number">4</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>SingleThreadEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">989</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>internal<span class="token punctuation">.</span>ThreadExecutorMap$<span class="token number">2</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>ThreadExecutorMap<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">74</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>FastThreadLocalRunnable<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>FastThreadLocalRunnable<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">30</span><span class="token punctuation">)</span>
+	java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>Thread<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>Thread<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">748</span><span class="token punctuation">)</span>
+#<span class="token number">6</span><span class="token operator">:</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>buffer<span class="token punctuation">.</span>AdvancedLeakAwareByteBuf<span class="token punctuation">.</span><span class="token function">writeInt</span><span class="token punctuation">(</span>AdvancedLeakAwareByteBuf<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">562</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>protocol<span class="token punctuation">.</span>MahjongProtocolHeader<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>MahjongProtocolHeader<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">29</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>protocol<span class="token punctuation">.</span>MahjongProtocol<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>MahjongProtocol<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">52</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MahjongProtocolEncoder<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>MahjongProtocolEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">17</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MahjongProtocolEncoder<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>MahjongProtocolEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">11</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>handler<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MessageToMessageEncoder<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>MessageToMessageEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">89</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite0</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">715</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWriteAndFlush</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">762</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext$WriteTask<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">1089</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>AbstractEventExecutor<span class="token punctuation">.</span>safeExecute$$$<span class="token function">capture</span><span class="token punctuation">(</span>AbstractEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">164</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>AbstractEventExecutor<span class="token punctuation">.</span><span class="token function">safeExecute</span><span class="token punctuation">(</span>AbstractEventExecutor<span class="token punctuation">.</span>java<span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>SingleThreadEventExecutor<span class="token punctuation">.</span><span class="token function">runAllTasks</span><span class="token punctuation">(</span>SingleThreadEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">472</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>nio<span class="token punctuation">.</span>NioEventLoop<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>NioEventLoop<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">497</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>SingleThreadEventExecutor$<span class="token number">4</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>SingleThreadEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">989</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>internal<span class="token punctuation">.</span>ThreadExecutorMap$<span class="token number">2</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>ThreadExecutorMap<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">74</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>FastThreadLocalRunnable<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>FastThreadLocalRunnable<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">30</span><span class="token punctuation">)</span>
+	java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>Thread<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>Thread<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">748</span><span class="token punctuation">)</span>
+#<span class="token number">7</span><span class="token operator">:</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>buffer<span class="token punctuation">.</span>AdvancedLeakAwareByteBuf<span class="token punctuation">.</span><span class="token function">writeInt</span><span class="token punctuation">(</span>AdvancedLeakAwareByteBuf<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">562</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>protocol<span class="token punctuation">.</span>MahjongProtocolHeader<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>MahjongProtocolHeader<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">28</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>protocol<span class="token punctuation">.</span>MahjongProtocol<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>MahjongProtocol<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">52</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MahjongProtocolEncoder<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>MahjongProtocolEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">17</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MahjongProtocolEncoder<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>MahjongProtocolEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">11</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>handler<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MessageToMessageEncoder<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>MessageToMessageEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">89</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite0</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">715</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWriteAndFlush</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">762</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext$WriteTask<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">1089</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>AbstractEventExecutor<span class="token punctuation">.</span>safeExecute$$$<span class="token function">capture</span><span class="token punctuation">(</span>AbstractEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">164</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>AbstractEventExecutor<span class="token punctuation">.</span><span class="token function">safeExecute</span><span class="token punctuation">(</span>AbstractEventExecutor<span class="token punctuation">.</span>java<span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>SingleThreadEventExecutor<span class="token punctuation">.</span><span class="token function">runAllTasks</span><span class="token punctuation">(</span>SingleThreadEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">472</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>nio<span class="token punctuation">.</span>NioEventLoop<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>NioEventLoop<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">497</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>SingleThreadEventExecutor$<span class="token number">4</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>SingleThreadEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">989</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>internal<span class="token punctuation">.</span>ThreadExecutorMap$<span class="token number">2</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>ThreadExecutorMap<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">74</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>FastThreadLocalRunnable<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>FastThreadLocalRunnable<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">30</span><span class="token punctuation">)</span>
+	java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>Thread<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>Thread<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">748</span><span class="token punctuation">)</span>
+Created at<span class="token operator">:</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>buffer<span class="token punctuation">.</span>UnpooledByteBufAllocator<span class="token punctuation">.</span><span class="token function">newDirectBuffer</span><span class="token punctuation">(</span>UnpooledByteBufAllocator<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">96</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>buffer<span class="token punctuation">.</span>AbstractByteBufAllocator<span class="token punctuation">.</span><span class="token function">directBuffer</span><span class="token punctuation">(</span>AbstractByteBufAllocator<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">187</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>buffer<span class="token punctuation">.</span>AbstractByteBufAllocator<span class="token punctuation">.</span><span class="token function">directBuffer</span><span class="token punctuation">(</span>AbstractByteBufAllocator<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">173</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>buffer<span class="token punctuation">.</span>AbstractByteBufAllocator<span class="token punctuation">.</span><span class="token function">buffer</span><span class="token punctuation">(</span>AbstractByteBufAllocator<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">107</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MahjongProtocolEncoder<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>MahjongProtocolEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">16</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MahjongProtocolEncoder<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>MahjongProtocolEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">11</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>handler<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MessageToMessageEncoder<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>MessageToMessageEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">89</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWrite0</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">715</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext<span class="token punctuation">.</span><span class="token function">invokeWriteAndFlush</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">762</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>AbstractChannelHandlerContext$WriteTask<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>AbstractChannelHandlerContext<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">1089</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>AbstractEventExecutor<span class="token punctuation">.</span>safeExecute$$$<span class="token function">capture</span><span class="token punctuation">(</span>AbstractEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">164</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>AbstractEventExecutor<span class="token punctuation">.</span><span class="token function">safeExecute</span><span class="token punctuation">(</span>AbstractEventExecutor<span class="token punctuation">.</span>java<span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>SingleThreadEventExecutor<span class="token punctuation">.</span><span class="token function">runAllTasks</span><span class="token punctuation">(</span>SingleThreadEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">472</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>channel<span class="token punctuation">.</span>nio<span class="token punctuation">.</span>NioEventLoop<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>NioEventLoop<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">497</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>SingleThreadEventExecutor$<span class="token number">4</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>SingleThreadEventExecutor<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">989</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>internal<span class="token punctuation">.</span>ThreadExecutorMap$<span class="token number">2</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>ThreadExecutorMap<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">74</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>FastThreadLocalRunnable<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>FastThreadLocalRunnable<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">30</span><span class="token punctuation">)</span>
+	java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>Thread<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>Thread<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">748</span><span class="token punctuation">)</span>
+<span class="token operator">:</span> <span class="token number">8</span> leak records were discarded because the leak record count is targeted to <span class="token number">4</span><span class="token punctuation">.</span> Use system property io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>leakDetection<span class="token punctuation">.</span>targetRecords to increase the limit<span class="token punctuation">.</span>
+
+</code></pre>
+</div><div class="cl-preview-section"><p>这是一条日志就有这么长，它记录了发生内存泄漏的那个 ByteBuf 所经过的路径，像这样的日志还有很多条躺在 Console 中，等待你去分析 ^^</p>
+</div><div class="cl-preview-section"><p><strong>第四步，步步为营，耐心寻找泄漏点</strong>。</p>
+</div><div class="cl-preview-section"><p>这一步没有什么取巧的办法，只能慢慢分析上面的日志，或者，使用调试大法跟踪 ByteBuf 走过的路径，再慢慢缩小范围一步一步排查。</p>
+</div><div class="cl-preview-section"><p>在上面日志的最后，已经明确告诉了你这个 ByteBuf 是在哪里创建的了，所以，使用调试大法的时候直接把断点打在那里一步一步往后面跟就可以了。</p>
+</div><div class="cl-preview-section"><p>调试大法，前面我们已经用过太多次了，这里就不细说了，主要还是看日志，找到上面日志的 “#”3 处：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java">#<span class="token number">3</span><span class="token operator">:</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>buffer<span class="token punctuation">.</span>AdvancedLeakAwareByteBuf<span class="token punctuation">.</span><span class="token function">retain</span><span class="token punctuation">(</span>AdvancedLeakAwareByteBuf<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">36</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>ReferenceCountUtil<span class="token punctuation">.</span><span class="token function">retain</span><span class="token punctuation">(</span>ReferenceCountUtil<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">40</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>BinaryWebSocketFrameEncoder<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>BinaryWebSocketFrameEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">17</span><span class="token punctuation">)</span>
+	com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>mahjong<span class="token punctuation">.</span>common<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>BinaryWebSocketFrameEncoder<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>BinaryWebSocketFrameEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">12</span><span class="token punctuation">)</span>
+	io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>handler<span class="token punctuation">.</span>codec<span class="token punctuation">.</span>MessageToMessageEncoder<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>MessageToMessageEncoder<span class="token punctuation">.</span>java<span class="token operator">:</span><span class="token number">89</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这里有个类叫作 “BinaryWebSocketFrameEncoder”，比较可疑，在 IDEA 中点击类名即可跳到对应的类：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">BinaryWebSocketFrameEncoder</span> <span class="token keyword">extends</span> <span class="token class-name">MessageToMessageEncoder</span><span class="token operator">&lt;</span>ByteBuf<span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">encode</span><span class="token punctuation">(</span>ChannelHandlerContext ctx<span class="token punctuation">,</span> ByteBuf msg<span class="token punctuation">,</span> List<span class="token operator">&lt;</span>Object<span class="token operator">&gt;</span> out<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+        ReferenceCountUtil<span class="token punctuation">.</span><span class="token function">retain</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        ReferenceCountUtil<span class="token punctuation">.</span><span class="token function">retain</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        BinaryWebSocketFrame binaryWebSocketFrame <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BinaryWebSocketFrame</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        out<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>binaryWebSocketFrame<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>好吧，原来是这里多加了一次引用计数，导致这个 msg 回收不掉，最终导致内存泄漏。</p>
+</div><div class="cl-preview-section"><p>把 retain () 去掉一行，重启服务端和客户端，观察服务端日志：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token operator">--</span> Gauges <span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span>
+maxDirectMemory
+             value <span class="token operator">=</span> <span class="token number">1883242496</span>
+usedDirectMemory
+             value <span class="token operator">=</span> <span class="token number">7</span>
+
+<span class="token operator">--</span> Gauges <span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span>
+maxDirectMemory
+             value <span class="token operator">=</span> <span class="token number">1883242496</span>
+usedDirectMemory
+             value <span class="token operator">=</span> <span class="token number">78</span>
+
+<span class="token operator">--</span> Gauges <span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span>
+maxDirectMemory
+             value <span class="token operator">=</span> <span class="token number">1883242496</span>
+usedDirectMemory
+             value <span class="token operator">=</span> <span class="token number">14</span>
+
+<span class="token operator">--</span> Gauges <span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span><span class="token operator">--</span>
+maxDirectMemory
+             value <span class="token operator">=</span> <span class="token number">1883242496</span>
+usedDirectMemory
+             value <span class="token operator">=</span> <span class="token number">7</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>一切都正常了，直接内存即使偶而有升高，也会很快降下来。</p>
+</div><div class="cl-preview-section"><p>好了，整个排查过程就介绍完了，那么，我们在平时的开发中有没有什么好的方法可以规避这种问题呢？</p>
+</div><div class="cl-preview-section"><h2 id="预防">预防</h2>
+</div><div class="cl-preview-section"><p>要想预防这种直接内存泄漏的问题，方法还是有的，最简单有效的方法就是在测试环境设置这两个参数：</p>
+</div><div class="cl-preview-section"><ul>
+<li>-Dio.netty.allocator.type=unpooled</li>
+<li>-Dio.netty.leakDetection.level=PARANOID</li>
+</ul>
+</div><div class="cl-preview-section"><p>在测试同学压测的时候，观察一下监控的情况，如果监控出现了直接内存缓慢增长的情况，那说明就有内存泄漏了，提前排查问题提前规避，当然，排查的过程还是一样要分析日志，或者耐心调试，这是少不了的步骤。</p>
+</div><div class="cl-preview-section"><p>最后，在生产环境，记得把这两个参数去掉，或者恢复到默认值。</p>
+</div><div class="cl-preview-section"><h1 id="后记">后记</h1>
+</div><div class="cl-preview-section"><p>本节，我们一起研究了如何快速排查生产问题中的直接内存泄漏问题，通过模拟实战项目的直接内存泄漏，可以给我们快速积累经验，即使生产环境真的出现了，我们也可以淡然面对，快速找出真凶。</p>
+</div><div class="cl-preview-section"><p>在本节的附录部分，我准备了一个小案例，看看你能不能找出其中内存泄漏的真正原因。</p>
+</div><div class="cl-preview-section"><p>到此，整个专栏就趋近于尾声了，下一节，我将对整个课程做一个总结与回顾，敬请期待。</p>
+</div><div class="cl-preview-section"><h1 id="思维导图">思维导图</h1>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f3f32a40001ceb614170807.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h1 id="附录——直接内存泄漏的小案例">附录 —— 直接内存泄漏的小案例</h1>
+</div><div class="cl-preview-section"><p>点击链接直达：<a href="https://github.com/alan-tang-tt/springcloud-gateway-oom">https://github.com/alan-tang-tt/springcloud-gateway-oom</a></p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img1.mukewang.com/5f0541d500011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=82">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '39 如何快速排查生产问题',
+					'CID': '2198',
+					'Teacher': '彤哥读源码'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "39 如何快速排查生产问题",
+                    desc: "全面掌握迈向高级工程师的必备技能",
+                    imgUrl: 'https:https://img3.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/82',
+                    link: 'https://m.imooc.com/read/82'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

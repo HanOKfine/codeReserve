@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>04 从Spring Boot的工程结构体会其设计哲学</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="够吃管饱的SpringBoot大餐">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "3";
+	var chapter_id = "1800";
+	var chapter_title = "04 从Spring Boot的工程结构体会其设计哲学";
+	var aid = "75";
+	var a_name = "SpringBoot 趣味私房课";
+	var a_price = "58.00";
+	var a_pic = "https://img.mukewang.com/5e9cfd1f0001ece605400720.jpg";
+	var userId = 0;
+
+	var column_id = '75';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-26&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			04 从Spring Boot的工程结构体会其设计哲学
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img4.mukewang.com/5e9cfefe0001e10106400359.jpg')"></div>
+	
+	
+		<a href="/read/75">
+			<div class="course-entry">
+				<img src="https://img3.mukewang.com/5e776f3c000149fd10801080-40-40.jpg" alt="刘水镜">
+				<h3>SpringBoot 趣味私房课</h3>
+				<p>刘水镜 · 知名 A.I. 公司 Java 工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">生活的理想，就是为了理想的生活。<p class="author">——张闻天</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>书接上回，上一个小节我们做了一个基于 Spring Boot 的 Hello World 程序。最后还留了一个小作业给你，现在要检查作业了，有没有完成呢？哈哈，仿佛又回到了小学时代，每天被老师追着检查作业。</p>
+</div><div class="cl-preview-section"><p>回到今天的主题，今天我们一起来学习一下 Spring Boot 工程的宏观设计结构 —— Spring Boot 工程的标准结构。</p>
+</div><div class="cl-preview-section"><h2 id="结构概览">1. 结构概览</h2>
+</div><div class="cl-preview-section"><p>上一个小节我们创建的工程结构如下图所示：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9abb2a0001b4a706380760.png" alt="图片描述"><br>
+如果你之前接触过 Maven ，那么你对这个结构应该会很熟悉，没错，这就是一个标准的 Maven 工程。Maven 和 Spring Boot 的出发点是一致的，都是为了简化项目的开发。只不过它们所解决的具体问题不同而已，Maven 主要帮我们解决了 Jar 包的依赖管理和项目的构建打包。</p>
+</div><div class="cl-preview-section"><h2 id="结构详解">2. 结构详解</h2>
+</div><div class="cl-preview-section"><p>下面我们看一看每个文件 / 文件夹（目录）都是用来做什么的：</p>
+</div><div class="cl-preview-section"><pre><code>springboot //应用根目录
+|--target //应用编译打包输出目录
+|--gitignore //Git 版本控制忽略清单文件
+|--pom.xml  //Maven的依赖管理文件，通常称pom文件
+`--src
+   |--main //项目主目录
+   |  |-–java //java源代码文件目录
+   |  |  `--com
+   |  |     `--imooc
+   |  |        `--springboot
+   |  |           |--dao
+   |  |           |--service
+   |  |           |--controller
+   |  |           |--config
+   |  |           |--....
+   |  |           `--SpringbootApplication.java //Spring Boot主类
+   |  |
+   |  `-–resources //资源文件目录
+   |     |-–static //静态资源文件：JS、CSS等
+   |     |-–templates //页面模板文件：Thymeleaf、FreeMarker等
+   |     `--application.properties //配置文件
+   |
+   `–-test //单元测试目录
+      |–-java //单元测试 java 源代码文件目录
+      |  |--com
+      |     `--imooc
+      |        `--springboot
+      |           |--dao
+      |           |--service
+      |           |--controller
+      |           |--config
+      |           |--....      
+      |           `--SpringbootApplicationTests.java //测试主类
+      |
+      `-–resources //单元测试资源文件目录
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>纯手工绘制，感受到我对你们的爱了吗？</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>从上面的结构中，我们可以看出，工程根目录下一共由四部分组成 —— <code>target</code>（目录）、<code>gitignore</code>（文件）、<code>pom.xml</code>（文件）和 <code>src</code>（目录）。</p>
+</div><div class="cl-preview-section"><p>我们知道 <code>target</code> 是目标的意思，使用 Maven 打包后会将编译后的 .class 文件，和依赖的 jar 包以及一些资源文件放到这个目录下；</p>
+</div><div class="cl-preview-section"><p><code>gitignore</code> 文件用来配置那些不需要 Git 帮我们做版本控制的文件或目录，例如 IDEA 产生的配置文件或者本地开发用的 application-local.yml 文件等；</p>
+</div><div class="cl-preview-section"><p><code>pom.xml</code> 文件用来配置我们所依赖的 Jar 包，帮我们做 Jar 包管理的，我们会经常跟它打交道；</p>
+</div><div class="cl-preview-section"><p>最后的 <code>src</code> 目录存放着所有我们编写的 Java 源代码、程序配置、资源等文件，是我们开发用到的主目录。</p>
+</div><div class="cl-preview-section"><p>OK，到此我们对于 Maven 或者说 Spring Boot 的工程结构已经有了一个非常清晰的认识了。但对于我们这种好学之人（不许笑），到这里是远远不够的。我们还想要了解为什么要设计成这个样子。既要知其然，还要知其所以然。</p>
+</div><div class="cl-preview-section"><h3 id="结构分类">2.1 结构分类</h3>
+</div><div class="cl-preview-section"><p>首先，像 <code>target</code> 、 <code>.gitignore</code> 和 <code>pom.xml</code> 都是偏工具属性的，它们主要是给 Maven 、Git 用的，与我们开发人员关系没有那么紧密。真正跟我们息息相关的是 <code>src</code> 目录下的内容。平时我们操作最多的内容也是该目录下的内容。</p>
+</div><div class="cl-preview-section"><h4 id="业务目录">业务目录</h4>
+</div><div class="cl-preview-section"><p>我们可以清晰的看到，src 目录有两个分支 —— <code>main</code> 和 <code>test</code> 。这两个目录的用途很好理解，main 用来放我们的业务逻辑主代码，而 test 则用来放我们的测试代码。而且我们很容易发现它们两个内部的结构及其相似。因为 test 就是为 main 服务的，理论上 main 中的每一个 Java 类在 test 都要有一个测试类，可以理解成 main 中的每个类都有一个贴身侍卫，保其周全。</p>
+</div><div class="cl-preview-section"><p>再往下看，又分为： <code>dao</code> 、 <code>service</code> 、 <code>controller</code> 等目录，这是我们软件开发中最基本的分层思想，相信你再熟悉不过了就不过多占用笔墨了。</p>
+</div><div class="cl-preview-section"><h2 id="设计哲学">3. 设计哲学</h2>
+</div><div class="cl-preview-section"><p>不管是 Spring Boot 还是 Maven 亦或是其他的框架，虽然她们功能各异特点不同，但是却都有一个共同的设计哲学 —— 约定优于配置。怎么理解呢？举个例子说明吧。</p>
+</div><div class="cl-preview-section"><p>还记得上一小节中主类 <code>SpringbootApplication</code> 上的那个注解吗？没错，就是 <code>@SpringBootApplication</code> 注解，不记得了？没关系，代码重现一次：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@SpringBootApplication</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SpringbootApplication</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        SpringApplication<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>SpringbootApplication<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>那么这个注解是干嘛用的呢？关于这个注解本节不过多讲解，后面会详细讲，在这里只介绍它的众多功能中的一个 —— 开启注解扫描。但我们发现并没有配置要扫描的路径鸭！这是咋回事呢？这正是「约定优于配置」设计思路了，只要加上这个注解（在不添加任何额外配置的情况下），就约定俗成的去扫描当前目录及其子目录了。这就是约定优于配置的设计哲学。</p>
+</div><div class="cl-preview-section"><p>假如我们不这样去设计，那么我们上面的代码则需要写成如下的样子，才能完成上一节的 Hello World 实例了：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@SpringBootApplication</span><span class="token punctuation">(</span>scanBasePackages <span class="token operator">=</span> <span class="token string">"com.imooc.springboot"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SpringbootApplication</span> <span class="token punctuation">{</span>
+	<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>我们需要手动指定需要扫描的路径，这么做除了烦人以外别无用处。做个类比就更能说明问题了，假设你跟一个人面对面聊天时，要求你们在说话之前都叫一遍对方的名字，然后才能说你们想要说的话，你什么感觉？（恰好你聊天的对象有俄罗斯血统呢？哈哈）。</p>
+</div><div class="cl-preview-section"><p>除了这一点以外，还有很多地方都体现了这一思想。例如，我们并没有指定 Web 容器，但是却可以 “直接” 运行，很显然是 Spring Boot 帮我们集成了 Tomcat ；我们并没有配置日志框架，但依然可以看到有良好的日志格式输出。</p>
+</div><div class="cl-preview-section"><p>这种约定优于配置的思想，类似于我们现实生活中的风俗习惯。比如，我们中国人春节都会吃饺子、帖春联、放鞭炮（当然不要在禁放区内燃放）。西方国家感恩节吃火鸡、平安夜互送苹果。这些都是一定范围内形成的默契，大家不需要提前商量，到特定的日子就都默契的去做相同的事情。</p>
+</div><div class="cl-preview-section"><p>我们学习 Spring Boot 的习俗，其实就相当于入乡随俗了。这很重要。有多重要呢？举个例子，假如一个人来到了傣族人民生活的地方，又恰逢泼水节，然而他对于这个节日一无所知，那么当人们向他泼水，来表示对他的欢迎与喜爱的话，你猜他会有什么样的反应？毫无疑问，他不但感觉不到人们的热情，反而会错愕、慌张、甚至愤怒，总之不会开心就对了。又假如他知道，泼水节要互相泼水以表达感情，但是他觉得感情的强烈程度应该跟水的温度成正比，那么后果不堪设想… 所以我们不但要学习这种习俗，还要把它学好。</p>
+</div><div class="cl-preview-section"><h2 id="总结">4. 总结</h2>
+</div><div class="cl-preview-section"><p>OK，沉迷于学习的时间总是过得这么快！不知不觉又到了小节的尾声，是不是有点意犹未尽？没关系，我们一起学习探讨的日子还长着呢。先回顾一下本小节的主要内容吧。</p>
+</div><div class="cl-preview-section"><p>在这一个小节我们通过 Spring Boot 的工程结构聊到了它的设计哲学 —— 约定优于配置。后面又通过一个例子进一步说明了什么是约定优于配置，以及学习这些约定的意义所在。</p>
+</div><div class="cl-preview-section"><p>相信通过这小节你已经对于 <code>规范</code> 的意义有了更深的认识。后面的章节我还会跟你一起继续更深入的探讨这个主题，到时候不止让你对于这个哲学有更深入的理解，还会让你对于如何学习又更进一步的认识，让我们一起沉迷于学习无法自拔！</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5e9964eb00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/5335">
+						<img src="https://img3.mukewang.com/5de68d080001e85401400140-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕仔7214391</h4>
+						<div class="comment-text">老师启动springboot项目要配置阿里的镜像吗？我不配置，启动不了！</div>
+						<div>
+							
+								<div class="reply">讲师回复：配上以后能启动吗？
+把你报错的详细信息贴一下。
+
+这里有源码，你也可以参考一下。
+https://github.com/liushuijinger/springboot</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-07</span>
+						<a href="/read/commentdetail/5335">
+							<span class="icon r"><i class="imwap-comment"></i><em>3</em></span>
+						</a>
+						<span data-cid="5335" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5178">
+						<img src="https://img.mukewang.com/5a1526d10001990501000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_庞庞_0</h4>
+						<div class="comment-text">无法自拔了，感觉像看小说！！</div>
+						<div>
+							
+								<div class="reply">讲师回复：感谢支持，羞愧难当...</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-04-25</span>
+						<a href="/read/commentdetail/5178">
+							<span class="icon r"><i class="imwap-comment"></i><em>2</em></span>
+						</a>
+						<span data-cid="5178" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>2</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5167">
+						<img src="https://img1.mukewang.com/54584dd900014f6c02200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕用4018787</h4>
+						<div class="comment-text">哈哈，尼古拉斯赵四和卡布奇诺列宁斯基的对话。</div>
+						<div>
+							
+								<div class="reply">讲师回复：感谢支持！脑洞不是一般的大呀！</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-04-25</span>
+						<a href="/read/commentdetail/5167">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5167" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=75">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '04 从Spring Boot的工程结构体会其设计哲学',
+					'CID': '1800',
+					'Teacher': '刘水镜'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "04 从Spring Boot的工程结构体会其设计哲学",
+                    desc: "够吃管饱的SpringBoot大餐",
+                    imgUrl: 'https:https://img.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/75',
+                    link: 'https://m.imooc.com/read/75'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>24 Netty的队列有何不一样</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="全面掌握迈向高级工程师的必备技能">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2183";
+	var chapter_title = "24 Netty的队列有何不一样";
+	var aid = "82";
+	var a_name = "网络编程之Netty一站式精讲";
+	var a_price = "68.00";
+	var a_pic = "https://img3.mukewang.com/5f052aa90001f15b05400720.jpg";
+	var userId = 0;
+
+	var column_id = '82';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-12&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			24 Netty的队列有何不一样
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img.mukewang.com/5f0596550001361906400359.jpg')"></div>
+	
+	
+		<a href="/read/82">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/5d9c91f40001dcac05000500-40-40.jpg" alt="彤哥读源码">
+				<h3>网络编程之Netty一站式精讲</h3>
+				<p>彤哥读源码 · 互联网大厂项目经理</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">人的差异在于业余时间。<p class="author">——爱因斯坦</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">前言</h1>
+</div><div class="cl-preview-section"><p>你好，我是彤哥。</p>
+</div><div class="cl-preview-section"><p>上一节，我们一起学习了 Netty 中的快男 ——FastThreadLocal，通过源码剖析，我们知道，如果使用不当，FastThreadLocal 也可能会变成慢男，不过，这都不是事儿，因为我们只要记住跟着 FastThreadLocalThread 一起使用就可以了，这个原则很简单。</p>
+</div><div class="cl-preview-section"><p>其实呢，追踪一下常用的 Spring 等框架，会发现正常运转的情况下，一个线程最多也就三四十个 ThreadLocal 变量，那么，Netty 为何还要大费周章搞一个 FastThreadLocal 呢？这是由于 Netty 的使用场景导致的，不管是对象池还是内存池，亦或者是前面讲到的请求处理的过程，都大量使用了线程本地变量，且操作频繁，而 Java 原生的 ThreadLocal 使用的是线性探测法实现的哈希表，使得哈希冲突的概率太大且解决冲突的方式也不友好，且解决冲突之后更容易引起哈希冲突，所以，Netty 必须定义一个全新的 ThreadLocal 用来存储本地变量，简单点说，就是 Java 原生的 ThreadLocal 太慢了，无法应对 Netty 这种多缓存高频率的场景。</p>
+</div><div class="cl-preview-section"><p>上面我们提到了 “场景” 两个字，其实，在 Netty 中，很多地方都针对特定的场景使用了特定的技术，比如，我们今天要说的一揽子队列 ——MpscArrayQueue、MpscChunkedArrayQueue、MpscUnboundedArrayQueue、MpscAtomicArrayQueue、MpscGrowableAtomicArrayQueue、MpscUnboundedAtomicArrayQueue 等。</p>
+</div><div class="cl-preview-section"><p>可以发现，这些队列都有统一的前缀 <code>Mpsc-</code>，它是什么意思呢？这些队列又是使用在什么样的场景呢？相比于 Java 原生的队列，这些队列又有哪些好处呢？它们又是怎么实现的呢？</p>
+</div><div class="cl-preview-section"><p>让我们带着这些问题进入今天的学习吧。</p>
+</div><div class="cl-preview-section"><h1 id="java原生队列回顾">Java 原生队列回顾</h1>
+</div><div class="cl-preview-section"><p>首先，我们来回顾下 Java 原生的队列，也就是下面这张图，它覆盖了 Java 中所有的原生队列：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f31f8a3000134ad20210650.png" alt="图片描述"><br>
+对于这些 Java 原生的队列，我把它们分成这么几大类：</p>
+</div><div class="cl-preview-section"><ol>
+<li>非并发安全的队列
+<ul>
+<li>LinkedList，没错，你没看错，LInkedList 确实实现了 Queue 接口，可以把它当作一个队列来使用；</li>
+<li>PriorityQueue，优先级队列，使用 “堆” 这种数据结构实现的队列，主要用于堆排序、中位数、99% 位数等场景；</li>
+</ul>
+</li>
+<li>阻塞队列
+<ul>
+<li>ArrayBlockingQueue，最简单的阻塞队列，使用数组实现，有界，使用一个 ReentrantLock 及两个 Condition 控制并发安全，效率低下；</li>
+<li>LinkedBlockingQueue，使用链表实现，有界或无界，使用两个 ReentrantLock 分别控制入队和出队，效率相对 ArrayBlockingQueue 要高一些；</li>
+<li>SynchronizedQueue，俗称无缓冲队列，里面不存储任何元素，所有入队的元素都移交给另一个线程来处理，如果放入元素时没有线程来消费，那么，调用者线程会阻塞；同样地，如果取元素时没有生产者放入元素，那么消费线程也会阻塞；</li>
+<li>PriorityBlockingQueue，优先级队列的阻塞模式，可在多线程环境中用于堆排序、中位数、99% 位数等场景；</li>
+<li>LinkedTransferQueue，这是个强大的阻塞队列，它使用了一种叫作 “双重队列” 的数据结构，而且它相当于是 LinkedBlockingQueue、SynchronousQueue（公平模式）、ConcurrentLinkedQueue 三者的集合体，且比它们更高效；</li>
+<li>DelayQueue，延时队列，它在优先级队列的基础上加入了 “延时” 的概念，出队时，如果堆顶的元素还没有到期，是不会出队的，主要运用在定时任务的场景中，比如，Java 的定时任务线程池 ScheduledThreadPoolExecutor，不过它是自己又实现了一遍延时队列，叫作 DelayedWorkQueue，而没有使用现成的 DelayQueue。</li>
+</ul>
+</li>
+<li>并发安全的队列
+<ul>
+<li>ConcurrentLinkedQueue，它是并发安全的队列却不是阻塞队列，内部使用 自旋 + CAS 实现，是一种无锁队列，但是它无法使用在线程池中。</li>
+</ul>
+</li>
+</ol>
+</div><div class="cl-preview-section"><blockquote>
+<p>阻塞队列一定是并发安全的队列，关于以上所有队列的源码分析，可以参考文末链接解锁。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>大部分情况下，使用 Java 原生的队列就能够达到我们的要求了，但是，对于一些特殊的场景，使用 Java 原生的队列性能就略显低下，所以，又衍生了一些第三方的框架专门实现特定的队列，来提高特定场景下的性能问题。</p>
+</div><div class="cl-preview-section"><p>这些第三方框架中比较著名的有两个：Disruptor 和 jctools。</p>
+</div><div class="cl-preview-section"><p>Disruptor，基于环形数组和 LMAX 架构实现，性能杠杠滴。</p>
+</div><div class="cl-preview-section"><p>jctools，它把队列分成四种使用场景：</p>
+</div><div class="cl-preview-section"><ul>
+<li>SPSC，单生产者单消费者</li>
+<li> MPSC，多生产者单消费者</li>
+<li> SPMC，单生产者多消费者</li>
+<li> MPMC，多生产者多消费者</li>
+</ul>
+</div><div class="cl-preview-section"><p>针对这四种场景 jctools 又实现了各种口味不同的队列，比如，我们今天的主角 ——MPSC 队列，没错，Netty 中使用的就是 jctools 中的 MPSC 队列，而且 Netty 只使用了 MPSC 这一种队列，更过分地，在 Netty 打包的时候使用了一个叫作 "shade" 的 maven 插件，直接把使用到的 jctools 中代码打包到了 Netty 的 <code>io.netty.util.internal.shaded.org.jctools.queues</code> 包下面，而没有使用到的其它的代码并没有打包过来，所以，在 <code>io.netty.util.internal.shaded.org.jctools.queues</code> 包下面只能看到跟 MPSC 队列相关的代码。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>shade 插件的全称为 maven-shade-plugin，参数 minimizeJar 用于控制只打包用到的类文件，详情见 netty-common 工程的 pom.xml 文件的插件部分。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>今天，我们就从这些 MPSC 队列中挑一个来讲解，看看它的实现原理以及源码，挑来挑去挑谁呢，就 MpscArrayQueue 吧，因为它相对来说比较简单，看懂了它，其它的都不在话下，好了，开始喽 ^^</p>
+</div><div class="cl-preview-section"><h1 id="mpscarrayqueue">MpscArrayQueue</h1>
+</div><div class="cl-preview-section"><p>按照我们以往的套路，对于这样的单个类，最适合使用从宏观到微观的分析方法，所以，我们先来看看 MpscArrayQueue 的继承体系。</p>
+</div><div class="cl-preview-section"><h2 id="继承体系">继承体系</h2>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f31f8f80001caf109871387.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>纳尼！What！什么！点解咁复杂！没错，就是这么复杂，让我们把这些类分个类：</p>
+</div><div class="cl-preview-section"><ul>
+<li>-Pad 结尾的类，它们里面全都是一堆的 long 型变量，是用来避免伪共享的；</li>
+<li>-Field 结尾的类，它们里面存储着主要的字段，这些字段通过 - Pad 结尾的类通过 long 型变量隔开，以达到避免伪共享的目的；</li>
+<li>ConcurrentCircularArrayQueue，数据存储的地方，从名字可以看出，它也是通过环形数组实现的；</li>
+<li>MpscArrayQueue，对外暴露的可使用的类，里面不包含任何字段；</li>
+<li>其它，最上层的就是一些接口了，可以看到，最终，MpscArrayQueue 是实现了 Java 原生的 Queue 接口的；</li>
+</ul>
+</div><div class="cl-preview-section"><p>既然，是通过继承这种手段来避免伪共享的，那么，我们把这些字段压缩到一个类中看看长什么样子呢？</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">FakeMpscArrayQueue</span><span class="token operator">&lt;</span>E<span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">long</span> p01<span class="token punctuation">,</span> p02<span class="token punctuation">,</span> p03<span class="token punctuation">,</span> p04<span class="token punctuation">,</span> p05<span class="token punctuation">,</span> p06<span class="token punctuation">,</span> p07<span class="token punctuation">;</span>
+    <span class="token keyword">long</span> p10<span class="token punctuation">,</span> p11<span class="token punctuation">,</span> p12<span class="token punctuation">,</span> p13<span class="token punctuation">,</span> p14<span class="token punctuation">,</span> p15<span class="token punctuation">,</span> p16<span class="token punctuation">,</span> p17<span class="token punctuation">;</span>
+    <span class="token comment">// 掩码，用来计算数组下标，加1就成了容量</span>
+    <span class="token keyword">protected</span> <span class="token keyword">final</span> <span class="token keyword">long</span> mask<span class="token punctuation">;</span>
+    <span class="token comment">// 存储数据的环形数组</span>
+    <span class="token keyword">protected</span> <span class="token keyword">final</span> E<span class="token punctuation">[</span><span class="token punctuation">]</span> buffer<span class="token punctuation">;</span>
+    <span class="token keyword">long</span> p00<span class="token punctuation">,</span> p01<span class="token punctuation">,</span> p02<span class="token punctuation">,</span> p03<span class="token punctuation">,</span> p04<span class="token punctuation">,</span> p05<span class="token punctuation">,</span> p06<span class="token punctuation">,</span> p07<span class="token punctuation">;</span>
+    <span class="token keyword">long</span> p10<span class="token punctuation">,</span> p11<span class="token punctuation">,</span> p12<span class="token punctuation">,</span> p13<span class="token punctuation">,</span> p14<span class="token punctuation">,</span> p15<span class="token punctuation">,</span> p16<span class="token punctuation">;</span>
+    <span class="token comment">// 生产者索引，有volatile</span>
+    <span class="token keyword">private</span> <span class="token keyword">volatile</span> <span class="token keyword">long</span> producerIndex<span class="token punctuation">;</span>
+    <span class="token keyword">long</span> p01<span class="token punctuation">,</span> p02<span class="token punctuation">,</span> p03<span class="token punctuation">,</span> p04<span class="token punctuation">,</span> p05<span class="token punctuation">,</span> p06<span class="token punctuation">,</span> p07<span class="token punctuation">;</span>
+    <span class="token keyword">long</span> p10<span class="token punctuation">,</span> p11<span class="token punctuation">,</span> p12<span class="token punctuation">,</span> p13<span class="token punctuation">,</span> p14<span class="token punctuation">,</span> p15<span class="token punctuation">,</span> p16<span class="token punctuation">,</span> p17<span class="token punctuation">;</span>
+    <span class="token comment">// 生产者索引的最大值，有volatile</span>
+    <span class="token keyword">private</span> <span class="token keyword">volatile</span> <span class="token keyword">long</span> producerLimit<span class="token punctuation">;</span>
+    <span class="token keyword">long</span> p00<span class="token punctuation">,</span> p01<span class="token punctuation">,</span> p02<span class="token punctuation">,</span> p03<span class="token punctuation">,</span> p04<span class="token punctuation">,</span> p05<span class="token punctuation">,</span> p06<span class="token punctuation">,</span> p07<span class="token punctuation">;</span>
+    <span class="token keyword">long</span> p10<span class="token punctuation">,</span> p11<span class="token punctuation">,</span> p12<span class="token punctuation">,</span> p13<span class="token punctuation">,</span> p14<span class="token punctuation">,</span> p15<span class="token punctuation">,</span> p16<span class="token punctuation">;</span>
+    <span class="token comment">// 消费者索引，无volatile</span>
+    <span class="token keyword">protected</span> <span class="token keyword">long</span> consumerIndex<span class="token punctuation">;</span>
+    <span class="token keyword">long</span> p01<span class="token punctuation">,</span> p02<span class="token punctuation">,</span> p03<span class="token punctuation">,</span> p04<span class="token punctuation">,</span> p05<span class="token punctuation">,</span> p06<span class="token punctuation">,</span> p07<span class="token punctuation">;</span>
+    <span class="token keyword">long</span> p10<span class="token punctuation">,</span> p11<span class="token punctuation">,</span> p12<span class="token punctuation">,</span> p13<span class="token punctuation">,</span> p14<span class="token punctuation">,</span> p15<span class="token punctuation">,</span> p16<span class="token punctuation">,</span> p17<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>既然，这里又提到了伪共享，那我们就简单介绍下伪共享到底是何方神圣。</p>
+</div><div class="cl-preview-section"><h2 id="题外话——伪共享">题外话 —— 伪共享</h2>
+</div><div class="cl-preview-section"><p>在现在的 CPU 架构下，一般地，一台计算机都有多个 CPU 核心，叫作多核 CPU，这些 CPU 都要从一块叫作内存的地方读取数据，经过加工处理，再写回到内存中，如果每次读写数据都跟内存进行交互，太慢了，你可以想像成内存跟硬盘的关系，所以，为了加快 CPU 的处理速度，人们就给 CPU 安上了缓存，一般地，现代处理器都具有三级缓存，这三缓存也有个关系，越接近 CPU 的缓存越快越贵容量越小，越远离 CPU 的缓存越慢越便宜容量越大。</p>
+</div><div class="cl-preview-section"><p>比如，对于一台 4 核 CPU 的计算机，它的缓存布局可能是这样的：<br>
+<img src="https://img.mukewang.com/5f31fa48000118cc10320442.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>这样，在处理数据的时候，CPU 就加载内存中的一小块数据到 CPU 缓存中，处理完毕并不用立马写回内存，等下次再读取或修改同一片内存区域的数据时，直接走缓存就好了，这样就极大地提高了数据处理的速度。刚才有提到每次加载一小块数据，那么，这个 “一小块” 是多大呢？通常地，现代 CPU 架构为 64 个字节。<br>
+<img src="https://img.mukewang.com/5f3346430001831a10290157.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>似乎很完美，试想这样一个问题，在内存中有两个相临的变量 x 和 y，一个线程一直在对 x 进行 ++ 操作，一个线程一直在对 y 进行 ++ 操作，会出现怎样地后果呢？<br>
+<img src="https://img.mukewang.com/5f33466500018d6910310271.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>假设两个变量初始值为 0，各自增 100 次，因为是两个不同的线程处理，所以这两个线程可能处于不同的 CPU 核中，根据上面的理论，CPU 每次加载 64 字节的数据到缓存中，所以，x 和 y 始终一起被加载到不同的缓存中，那么，各自修改完了如何写回主内存呢？发现没法写回了是不是？因为写回也是整个缓存行一起写回的，不管先写回哪个，都会被后写回的覆盖。</p>
+</div><div class="cl-preview-section"><p>为了解决这种问题，有两种策略：</p>
+</div><div class="cl-preview-section"><ol>
+<li>给这个缓存行对应的内存块加锁，每次读写数据的时候都从主内存重新读取，写完之后立马写回主内存，多个线程处理同一块内存区域数据的时候排队进行，这样数据肯定就准确了；</li>
+<li>把 x 和 y 分隔开，不要让它们相临，让它们始终不会同时被加载到同一个缓存行中，只需要在它们之间补足 64 字节，它们自然就被隔开了，永远不会加载到同一个缓存行中；</li>
+</ol>
+</div><div class="cl-preview-section"><p>两种方案都是可行的。</p>
+</div><div class="cl-preview-section"><p>对于第一种方案，相当于缓存行永远失效，形同虚设了，这种锁又有另外一个名字 —— 内存屏障（Memory Barrier）或者内存栅栏 （Memory Fence），在现代 CPU 架构下，内存屏障主要分为读屏障（Load Memory Barrier）和写屏障（Store Memory Barrier）：</p>
+</div><div class="cl-preview-section"><ul>
+<li>读屏障，每次都从主内存读取最新的数据；</li>
+<li>写屏障，将缓存写入到主内存；</li>
+</ul>
+</div><div class="cl-preview-section"><p>内存屏障还有个重要的功能，防止重排序，即不会把内存屏障前后的指令进行重排序。</p>
+</div><div class="cl-preview-section"><p>使用内存屏障这种技术，又引来了新的问题，每次对 x 的操作，同时对 y 产生了影响，反之亦然，相当于 x 和 y 变成了一种共生的状态，但是实际上他们却没有任何关系，这种不同线程对同一块内存区域（缓存行）的不同变量的操作产生了互相影响的现象，就叫作<strong>伪共享</strong>（False Sharing）。为了解决伪共享带来的问题，就引出了第二种方案。</p>
+</div><div class="cl-preview-section"><p>对于第二种方案，这样的玩法叫作加 Padding，在两个变量之间加一系列无用的变量，使得两个变量永远不会被加载到同一个缓存行，但是，它也有个问题，试想如果两个线程同时修改 x，它就无法处理了，此时，就只能使用第一种方案了。</p>
+</div><div class="cl-preview-section"><p>在 Java 中，这种加 Padding 的玩法主要有三种实现方式：</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>变量前后添加 N 个 long 类型，N 的取值有两种说法，一种是 7，一种是 15，因为内存布局是按 8 字节对齐的，所以加上 7 个 long 正好等于 64 字节，也就是一个缓存行的大小，可以保证这个变量与其它变量分隔开，15 的说法是为了避免相邻扇区预取导致的伪共享冲突，在 Disruptor 框架中使用的是 7，在 jctools 中使用的是 15；</p>
+</li>
+<li>
+<p>使用继承且在父子类中加上 padding，这样是为了防止内存布局重排序，比如，下面这个类，会把 byte 类型的 b 存储在 long 类型的前面，因为对象头占用 12 字节（压缩后），byte 类型占用 1 字节，这样只需要被 3 个字节就可以了，如果不做这种重排序，对象头需要补齐 4 个字节，而 byte 类型需要补齐 7 个字节，造成空间浪费；</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"> <span class="token keyword">class</span> <span class="token class-name">MemoryLayout</span><span class="token punctuation">{</span>
+     <span class="token keyword">private</span> <span class="token keyword">long</span> a<span class="token punctuation">;</span>
+     <span class="token keyword">private</span> <span class="token keyword">byte</span> b<span class="token punctuation">;</span>
+ <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>使用 @sun.misc.Contended 注解，不过这是 Java8 新增的注解，所以，无法兼容之前的版本，现在大部分开源框架还没有使用这个注解；</li>
+</ul>
+</div><div class="cl-preview-section"><p>好了，针对伪共享的问题，我们就简单介绍这么多内容，还是回到正题。</p>
+</div><div class="cl-preview-section"><h2 id="回归正题">回归正题</h2>
+</div><div class="cl-preview-section"><p>如果把避免伪共享添加的这些字段去掉，那么，MpscArrayQueue 就只剩下这么几个字段了：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">FakeMpscArrayQueue</span><span class="token operator">&lt;</span>E<span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 掩码，用来计算数组下标，加1就成了容量</span>
+    <span class="token keyword">protected</span> <span class="token keyword">final</span> <span class="token keyword">long</span> mask<span class="token punctuation">;</span>
+    <span class="token comment">// 存储数据的环形数组</span>
+    <span class="token keyword">protected</span> <span class="token keyword">final</span> E<span class="token punctuation">[</span><span class="token punctuation">]</span> buffer<span class="token punctuation">;</span>
+    <span class="token comment">// 生产者索引，有volatile</span>
+    <span class="token keyword">private</span> <span class="token keyword">volatile</span> <span class="token keyword">long</span> producerIndex<span class="token punctuation">;</span>
+    <span class="token comment">// 生产者索引的最大值，有volatile</span>
+    <span class="token keyword">private</span> <span class="token keyword">volatile</span> <span class="token keyword">long</span> producerLimit<span class="token punctuation">;</span>
+    <span class="token comment">// 消费者索引，无volatile</span>
+    <span class="token keyword">protected</span> <span class="token keyword">long</span> consumerIndex<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以发现，producerIndex 和 producerLimit 加了 volatile，而 consumerIndex 却没有，这是为什么呢？请记住我们的场景是 MPSC，多生产者单消费者，所以，生产者的索引修改必须立马对其它线程可见，而只有一个消费者，它并不需要对别的线程立马可见，当然，生产者在特定情况下也是需要 consumerIndex 的最新值的，比如，环形数组的头性相接了，它是怎么实现的呢？让我们跟着源码来一起学习吧。</p>
+</div><div class="cl-preview-section"><h2 id="源码剖析">源码剖析</h2>
+</div><div class="cl-preview-section"><h3 id="调试用例">调试用例</h3>
+</div><div class="cl-preview-section"><p>这一节的用例就比较好写了，因为 MpscArrayQueue 实现了 Queue 接口，所以，我们只要按其它的队列一样来写用例就可以了：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MpscArrayQueueTest</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> MpscArrayQueue<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span> QUEUE <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">MpscArrayQueue</span><span class="token operator">&lt;</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 入队，如果队列满了则会抛出异常</span>
+        QUEUE<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"1"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 入队，返回是否成功</span>
+        QUEUE<span class="token punctuation">.</span><span class="token function">offer</span><span class="token punctuation">(</span><span class="token string">"2"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        QUEUE<span class="token punctuation">.</span><span class="token function">offer</span><span class="token punctuation">(</span><span class="token string">"3"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        QUEUE<span class="token punctuation">.</span><span class="token function">offer</span><span class="token punctuation">(</span><span class="token string">"4"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 存储了多少元素</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"队列大小："</span> <span class="token operator">+</span> QUEUE<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 容量，可以存储多少元素，会按2次方对齐，所以这里为8</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"队列容量"</span> <span class="token operator">+</span> QUEUE<span class="token punctuation">.</span><span class="token function">capacity</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 出队，如果队列为空则会抛出异常</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"出队："</span> <span class="token operator">+</span> QUEUE<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 出队，如果队列为空返回null</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"出队："</span> <span class="token operator">+</span> QUEUE<span class="token punctuation">.</span><span class="token function">poll</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 查看队列头元素，如果队列为空则会抛出异常</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"查看队列头元素："</span> <span class="token operator">+</span> QUEUE<span class="token punctuation">.</span><span class="token function">element</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 查看队列头元素，如果队列为空则返回null</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"查看队列头元素："</span> <span class="token operator">+</span> QUEUE<span class="token punctuation">.</span><span class="token function">peek</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>接口 Queue 中对于入队、出队、查看队首元素各定义了两种方法，一类是抛出异常，一类是返回特定值：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th></th>
+<th>抛出异常</th>
+<th>返回特定值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>入队</td>
+<td> add(e)</td>
+<td>offer(e)</td>
+</tr>
+<tr>
+<td> 出队</td>
+<td> remove()</td>
+<td>poll()</td>
+</tr>
+<tr>
+<td> 查看队首元素</td>
+<td> element()</td>
+<td>peek()</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>其中，抛出异常的方法最终也还是调用的返回特定值的方法，而查看队首元素跟出队方法是比较类似的，所以，这里我们主要看 offer (e)、poll () 这两个方法的源码实现。</p>
+</div><div class="cl-preview-section"><h3 id="入队offere">入队 offer (e)</h3>
+</div><div class="cl-preview-section"><p>好了，让我们先来看看入队方法 offer (e) 的实现，在 <code>QUEUE.offer("2");</code> 处打一个断点，此时，已经入队一个元素了，跟踪进去：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// 入队</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">offer</span><span class="token punctuation">(</span><span class="token keyword">final</span> E e<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token comment">// 空值检查</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>null <span class="token operator">==</span> e<span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">NullPointerException</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// 掩码</span>
+    <span class="token keyword">final</span> <span class="token keyword">long</span> mask <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>mask<span class="token punctuation">;</span>
+    <span class="token comment">// 生产者的最大的索引值，初始时为传入的容量，即5</span>
+    <span class="token keyword">long</span> producerLimit <span class="token operator">=</span> <span class="token function">lvProducerLimit</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// LoadLoad</span>
+    <span class="token keyword">long</span> pIndex<span class="token punctuation">;</span>
+    <span class="token keyword">do</span>
+    <span class="token punctuation">{</span>
+        <span class="token comment">// 生产者索引</span>
+        pIndex <span class="token operator">=</span> <span class="token function">lvProducerIndex</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// LoadLoad</span>
+        <span class="token comment">// 如果生产者索引达到了最大值，防止追尾</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>pIndex <span class="token operator">&gt;=</span> producerLimit<span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            <span class="token comment">// 消费者索引，以volatile的形式获取，保证获取的是最新的值</span>
+            <span class="token keyword">final</span> <span class="token keyword">long</span> cIndex <span class="token operator">=</span> <span class="token function">lvConsumerIndex</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// LoadLoad</span>
+            <span class="token comment">// 修改为当前消费者的索引加上数组的大小</span>
+            producerLimit <span class="token operator">=</span> cIndex <span class="token operator">+</span> mask <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span>
+
+            <span class="token comment">// 如果依然达到了最大值，则返回false，表示队列满了，再放元素就追尾了</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>pIndex <span class="token operator">&gt;=</span> producerLimit<span class="token punctuation">)</span>
+            <span class="token punctuation">{</span>
+                <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span> <span class="token comment">// FULL :(</span>
+            <span class="token punctuation">}</span>
+            <span class="token keyword">else</span>
+            <span class="token punctuation">{</span>
+                <span class="token comment">// 否则更新最大索引为新值</span>
+                <span class="token function">soProducerLimit</span><span class="token punctuation">(</span>producerLimit<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// CAS更新生产者索引，更新成功了���跳出循环，说明数组中这个下标被当前这个生产者占有了</span>
+    <span class="token comment">// 此时即使更新索引成功了，数组中依然还没有放入元素</span>
+    <span class="token comment">// 如果更新失败，说明其它生产者（线程）先占用了这个位置，重新来过</span>
+    <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">casProducerIndex</span><span class="token punctuation">(</span>pIndex<span class="token punctuation">,</span> pIndex <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 计算这个索引在数组中的下标偏移量</span>
+    <span class="token keyword">final</span> <span class="token keyword">long</span> offset <span class="token operator">=</span> <span class="token function">calcElementOffset</span><span class="token punctuation">(</span>pIndex<span class="token punctuation">,</span> mask<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 将元素放到这个位置</span>
+    <span class="token function">soElement</span><span class="token punctuation">(</span>buffer<span class="token punctuation">,</span> offset<span class="token punctuation">,</span> e<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// StoreStore</span>
+    <span class="token comment">// 入队成功</span>
+    <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span> <span class="token comment">// AWESOME :)</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// lv=load valatile</span>
+<span class="token comment">// 读取producerLimit</span>
+<span class="token keyword">protected</span> <span class="token keyword">final</span> <span class="token keyword">long</span> <span class="token function">lvProducerLimit</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">{</span>   <span class="token comment">// producerLimit本身就是volatile修饰的</span>
+    <span class="token comment">// 所以不用像下面的consumerIndex一样通过UNSAFE.getLongVolatile()一样来读取</span>
+    <span class="token keyword">return</span> producerLimit<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 读取producerIndex</span>
+<span class="token keyword">public</span> <span class="token keyword">final</span> <span class="token keyword">long</span> <span class="token function">lvProducerIndex</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token comment">// producerIndex本身就用volatile修饰了</span>
+    <span class="token keyword">return</span> producerIndex<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 读取consumerIndex</span>
+<span class="token keyword">public</span> <span class="token keyword">final</span> <span class="token keyword">long</span> <span class="token function">lvConsumerIndex</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">{</span>   <span class="token comment">// 以volatile的形式加载consumerIndex</span>
+    <span class="token comment">// 此时，可以把consumerIndex想像成前面加了volatile</span>
+    <span class="token comment">// 会从内存读取最新的值</span>
+    <span class="token keyword">return</span> UNSAFE<span class="token punctuation">.</span><span class="token function">getLongVolatile</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> C_INDEX_OFFSET<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// so=save ordered</span>
+<span class="token comment">// 保存producerLimit</span>
+<span class="token keyword">protected</span> <span class="token keyword">final</span> <span class="token keyword">void</span> <span class="token function">soProducerLimit</span><span class="token punctuation">(</span><span class="token keyword">long</span> newValue<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token comment">// 这个方法会加StoreStore屏障</span>
+    <span class="token comment">// 会把最新值直接更新到主内存中，但其它线程不会立即可见</span>
+    <span class="token comment">// 其它线程需要使用volatile语义才能读取到最新值</span>
+    <span class="token comment">// 这相当于是一种延时更新的方法，比volatile语义的性能要高一些</span>
+    UNSAFE<span class="token punctuation">.</span><span class="token function">putOrderedLong</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> P_LIMIT_OFFSET<span class="token punctuation">,</span> newValue<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 修改数组对应偏移量的值</span>
+<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token operator">&lt;</span>E<span class="token operator">&gt;</span> <span class="token keyword">void</span> <span class="token function">soElement</span><span class="token punctuation">(</span>E<span class="token punctuation">[</span><span class="token punctuation">]</span> buffer<span class="token punctuation">,</span> <span class="token keyword">long</span> offset<span class="token punctuation">,</span> E e<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token comment">// 与上面同样的方法，比使用下标更新数组元素有两个优势</span>
+    <span class="token comment">// 1. 使用Unsafe操作内存更新更快</span>
+    <span class="token comment">// 2. 使用putOrderedObject会直接更新到主内存，而使用下标不会立马更新到主内存</span>
+    UNSAFE<span class="token punctuation">.</span><span class="token function">putOrderedObject</span><span class="token punctuation">(</span>buffer<span class="token punctuation">,</span> offset<span class="token punctuation">,</span> e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// CAS更新producerIndex</span>
+<span class="token keyword">protected</span> <span class="token keyword">final</span> <span class="token keyword">boolean</span> <span class="token function">casProducerIndex</span><span class="token punctuation">(</span><span class="token keyword">long</span> expect<span class="token punctuation">,</span> <span class="token keyword">long</span> newValue<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token comment">// CAS更新</span>
+    <span class="token keyword">return</span> UNSAFE<span class="token punctuation">.</span><span class="token function">compareAndSwapLong</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> P_INDEX_OFFSET<span class="token punctuation">,</span> expect<span class="token punctuation">,</span> newValue<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这段入队的方法看似简单，实则蕴含大量的底层知识和优化技巧，让我们来看几个问题：</p>
+</div><div class="cl-preview-section"><ul>
+<li>为什么需要 producerLimit，拿 producerIndex 与 consumerIndex 直接比较行不行？</li>
+<li>很多方法后面写了 LoadLoad、StoreStore，它们是什么意思？</li>
+<li>Unsafe 的新方法 putOrderedObject () 和 getLongVolatile ()？</li>
+</ul>
+</div><div class="cl-preview-section"><p>我们先来看第一个问题：<strong>为什么要使用 producerLimit 呢？</strong></p>
+</div><div class="cl-preview-section"><p>其实不使用 producerLimit 也是可以的，只不过这样的话，就需要每次都使用 volatile 语义获取 consumerIndex 的值，再用这个值加上数组的大小，就是 producerIndex 能达到的最大值，这跟把 consumerIndex 声明为 volatile 就没有什么分别了，也就无法达到提高性能的目的了。使用 producerLimit 的好处是明显的，差不多一轮才需要获取一次 consumerIndex 的值，相当于减少了消费端的竞争。</p>
+</div><div class="cl-preview-section"><p>接着看看第二个问题：<strong>LoadLoad、StoreStore 是什么意思？</strong></p>
+</div><div class="cl-preview-section"><p>可以把 LoadLoad 看成是读屏障，表示每次都从主内存读取最新值，StoreStore 看成是写屏障，每次都把最新值写入到主内存。如果一个线程使用 StoreStore 屏障把最新值写入主内存，另一个线程只需要使用 LoadLoad 屏障就可以读取到最新值了，它们俩往往结合着来使用。</p>
+</div><div class="cl-preview-section"><p>最后一个问题：<strong>Unsafe 的新方法 putOrderedObject () 和 getLongVolatile ()？</strong></p>
+</div><div class="cl-preview-section"><p>其实，在 Unsafe 中有五组相似的方法：</p>
+</div><div class="cl-preview-section"><ul>
+<li>putOrderedXxx ()，使用 StoreStore 屏障，会把最新值更新到主内存，但不会立即失效其它缓存行中的数据，是一种延时更新机制；</li>
+<li>putXxxVolatile ()，使用 StoreLoad 屏障，会把最新值更新到主内存，同时会把其它缓存行的数据失效，或者说会刷新其它缓存行的数据；</li>
+<li>putXxx (obj, offset)，不使用任何屏障，更新对象对应偏移量的值；</li>
+<li>getXxxVolatile ()，使用 LoadLoad 屏障，会从主内存获取最新值；</li>
+<li>getXxx，不使用任何屏障，读取对象对应偏移量的值；</li>
+</ul>
+</div><div class="cl-preview-section"><p>从性能方面来说的话，putOrderedXxx () 用得好的话，性能会比 putXxxVolatile () 高一些，但是，如果用的不好的话，可能会出现并发安全的问题，所以，个人请谨慎使用，即使使用了，也要做好并发安全的测试。</p>
+</div><div class="cl-preview-section"><p>OK，基础知识也补齐了，如果还看不懂，不要紧，先跳过去，我们再来看看出队方法，等看完出队方法了，我们使用脑补法来模拟一下入队出队的实现。</p>
+</div><div class="cl-preview-section"><h3 id="出队poll">出队 poll ()</h3>
+</div><div class="cl-preview-section"><p>同样地，在 <code>System.out.println("出队：" + QUEUE.poll());</code> 这行打一个断点，并跟踪进去：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// 出队</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> E <span class="token function">poll</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token comment">// 读取consumerIndex的值，注意这里是lp不是lv</span>
+    <span class="token keyword">final</span> <span class="token keyword">long</span> cIndex <span class="token operator">=</span> <span class="token function">lpConsumerIndex</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 计算在数组中的偏移量</span>
+    <span class="token keyword">final</span> <span class="token keyword">long</span> offset <span class="token operator">=</span> <span class="token function">calcElementOffset</span><span class="token punctuation">(</span>cIndex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 存储元素的数组</span>
+    <span class="token keyword">final</span> E<span class="token punctuation">[</span><span class="token punctuation">]</span> buffer <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>buffer<span class="token punctuation">;</span>
+
+    <span class="token comment">// 取元素，前面通过StoreStore写入的，这里通过LoadLoad取出来的就是最新值</span>
+    E e <span class="token operator">=</span> <span class="token function">lvElement</span><span class="token punctuation">(</span>buffer<span class="token punctuation">,</span> offset<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// LoadLoad</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>null <span class="token operator">==</span> e<span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token comment">// 有一种例外，还记得上面入队的时候吗？</span>
+        <span class="token comment">// 是先更新了producerIndex的值，再把更新元素到数组中的。</span>
+        <span class="token comment">// 如果在两者之间，进行了消费，则此处是无法获取到元素的</span>
+        <span class="token comment">// 所以需要进入下面的判断</span>
+        <span class="token comment">// 判断consumerIndex是否等于producerIndex</span>
+        <span class="token comment">// 只要两则不相等，就可以再消费元素</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>cIndex <span class="token operator">!=</span> <span class="token function">lvProducerIndex</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">{</span>
+            <span class="token comment">// 使用死循环来取元素，直到取到为止</span>
+            <span class="token keyword">do</span>
+            <span class="token punctuation">{</span>
+                e <span class="token operator">=</span> <span class="token function">lvElement</span><span class="token punctuation">(</span>buffer<span class="token punctuation">,</span> offset<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+            <span class="token keyword">while</span> <span class="token punctuation">(</span>e <span class="token operator">==</span> null<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">else</span>
+        <span class="token punctuation">{</span>
+            <span class="token comment">// 如果两个索引相等了，说明没有元素了，返回null</span>
+            <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// 更新取出的位置元素为null，注意是sp，不是so</span>
+    <span class="token function">spElement</span><span class="token punctuation">(</span>buffer<span class="token punctuation">,</span> offset<span class="token punctuation">,</span> null<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 修改consumerIndex的索引为新值，使用StoreStore屏障，直接更新到主内存</span>
+    <span class="token function">soConsumerIndex</span><span class="token punctuation">(</span>cIndex <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// StoreStore</span>
+    <span class="token comment">// 返回出队的元素</span>
+    <span class="token keyword">return</span> e<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// lp=load plain，简单读取</span>
+<span class="token keyword">protected</span> <span class="token keyword">final</span> <span class="token keyword">long</span> <span class="token function">lpConsumerIndex</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token keyword">return</span> consumerIndex<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// sp=store plain，简单存储</span>
+<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token operator">&lt;</span>E<span class="token operator">&gt;</span> <span class="token keyword">void</span> <span class="token function">spElement</span><span class="token punctuation">(</span>E<span class="token punctuation">[</span><span class="token punctuation">]</span> buffer<span class="token punctuation">,</span> <span class="token keyword">long</span> offset<span class="token punctuation">,</span> E e<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    UNSAFE<span class="token punctuation">.</span><span class="token function">putObject</span><span class="token punctuation">(</span>buffer<span class="token punctuation">,</span> offset<span class="token punctuation">,</span> e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>时刻要记住消费者只有一个，所以，消费端完全不需要使用任何锁或者 CAS 操作，但是，生产者端是有可能读取 consumerIndex 的值的，所以，使用 StoreStore 屏障修改它的值即可。</p>
+</div><div class="cl-preview-section"><p>还有一种例外，是生产者端先更新 producerIndex，再更新数组元素，这里使用死循环不断读取直到读取到为止。</p>
+</div><div class="cl-preview-section"><p>入队出队的代码都分析完毕了，可以看到，整体的逻辑非常少，我算了下，入队出队两者加一起的主体逻辑都不到 100 行，但是，里面蕴含了大量的底层知识，为了更好地理解这种队列，我决定使用脑补法来模拟一下入队出队的过程。</p>
+</div><div class="cl-preview-section"><h3 id="脑补入队出队过程">脑补入队出队过程</h3>
+</div><div class="cl-preview-section"><p>为了简单点，我们假设队列的长度为 4，一共入队 5 个元素，并出队 2 个元素，2 个生产者：<br>
+<img src="https://img.mukewang.com/5f3346aa0001761a10290353.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>假设入队的过程为 1、4 同时请求入队，3 入队，2、5 同时请求入队，连续出队 4 次，6 入队，让我们分析下整个过程：</p>
+</div><div class="cl-preview-section"><ol>
+<li>初始时，pIndex=0，cIndex=0，pLimit=4；（p=producer，c=consumer，下同)</li>
+<li>1、4 同时请求入队，两者拿到 pIndex 都是 0，pLimit 都是 4，所以，都判断为小于 pLimit，可以入队，但是在 CAS 更新 pIndex 的时候必然会一个成功一个失败，假设生产者 1 成功了，1 成功入队，4 入队失败，进入循环，重新读取 pIndex 为 1（因为 pIndex 为 volatile，所以 CAS 更新为 1 后立即对生产者 2 可见），判断依然小于 pLimit，可以入队，CAS 更新 pIndex 为 2；</li>
+<li>3 请求入队，没人跟它竞争，直接入队成功，pIndex 被更新为 3；</li>
+<li>2、5 同时请求入队，两者拿到的 pIndex 都是 3，pLimit 都是 4，所以，都判断为小于 pLimit，可以入队，但是在 CAS 更新 pIndex 的时候必然会有一个成功一个失败，假设生产者 2 成功了，5 成功入队，2 入队失败，进入循环，重新读取 pIndex 为 4，等于 pLimit 了（重新计算 pLimit 还是 4），所以直接返回 false，2 入队失败了；</li>
+<li>出队，此时，读取到 cIndex 为 0，读取数组下标为 0 位置的元素，也就是 1，更新下标 0 处元素为 null，并更新 cIndex 为 1，因为使用的是 StoreStore 屏障，所以，主内存中的 cIndex 也为 1；</li>
+<li>出队，出队，出队，同样地，最后，主内存中的 cIndex 为 4；</li>
+<li>6 请求入队，此时，读取到的 pIndex 为 4，pLimit 也为 4，pIndex 大于等于了 pLimit，重新读取 cIndex 的值为 4，并重新计算 pLimit 为 8，再判断 pIndex 小于 pLimit 了，更新主内存中的 pLimit 为新值 8，CAS 更新 pIndex 的值为 5 成功，6 入队成功，且在数组下标为 0 的位置。</li>
+</ol>
+</div><div class="cl-preview-section"><p>整个过程就是这样，咦，6 是怎么跑到下标为 0 的位置的？</p>
+</div><div class="cl-preview-section"><p>这个其实是通过计算偏移量算出来的，即下面这段代码：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">long</span> <span class="token function">calcElementOffset</span><span class="token punctuation">(</span><span class="token keyword">long</span> index<span class="token punctuation">,</span> <span class="token keyword">long</span> mask<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token comment">// REF_ARRAY_BASE，基础地址，数组在内存中的地址</span>
+    <span class="token comment">// REF_ELEMENT_SHIFT，可以简单地看作一个元素占用多少字节</span>
+    <span class="token comment">// 64位系统中一个引用对象占用64位，也就是8字节，但是压缩模式下占用4字节</span>
+    <span class="token comment">// index &amp; mask 计算数组下标</span>
+    <span class="token comment">// 比如数组大小为4，mask就为3，pIndex为4时，4&amp;3=100&amp;11=0</span>
+    <span class="token keyword">return</span> REF_ARRAY_BASE <span class="token operator">+</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>index <span class="token operator">&amp;</span> mask<span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> REF_ELEMENT_SHIFT<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>好了，到这里，关于 MpscArrayQueue 的剖析就结束了，开篇我们说了，它还有很多兄弟类 ——MpscChunkedArrayQueue、MpscUnboundedArrayQueue、MpscAtomicArrayQueue、MpscGrowableAtomicArrayQueue、MpscUnboundedAtomicArrayQueue，相信有了本节的基础，分析这些类对你来说不是什么难事了。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>带 Atomic 的类，是表示在 Netty 无法使用 Unsafe 的情况下使用 Atomic 原子类来做替代方案。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h1 id="后记">后记</h1>
+</div><div class="cl-preview-section"><p>本节，我们一起回顾了 Java 原生队列，并从源码级别剖析了一个 MPSC 队列 ——MpscArrayQueue，从中学到了很多 Java 底层的知识，相信有了本节的学习，下次再看到跟 Unsafe、伪共享相关的代码，你一定能够自己剖析地很好。</p>
+</div><div class="cl-preview-section"><p>其实，Netty 中不仅使用了非常高效的 jctools 提供的队列，它还对 Java 原生的很多功能做了增强，比如前面学过的 ByteBuf、即将学到的 Future、线程池等等。</p>
+</div><div class="cl-preview-section"><p>下一节，我们就来一起学习 Netty 增强的 Future，提前告诉你，Netty 虽然增强了 Future，但是它一不小心就搞出了个 Bug 呢，敬请期待。</p>
+</div><div class="cl-preview-section"><h1 id="思维导图">思维导图</h1>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f3202950001511f19161671.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h1 id="特别说明">特别说明</h1>
+</div><div class="cl-preview-section"><p>在上一节中，InternalThreadLocalMap 中也使用了 padding 来消除伪共享，但是，那个用法实在不知道它是为了保护哪个变量被伪共享，而且，经过测试，也没发现加这段 padding 有明显的性能提升。</p>
+</div><div class="cl-preview-section"><p>所以，正确的用法是本节介绍的这种用法，大家后面自己使用的时候也可以参考本节的用法，或者使用 Java8 的新注解 @sun.misc.Contended 来实现。</p>
+</div><div class="cl-preview-section"><h1 id="参考链接">参考链接</h1>
+</div><div class="cl-preview-section"><p><a href="https://mp.weixin.qq.com/s/Vy83PNpXvKCM9YG6CiTwBQ">死磕 java 集合之 LinkedList 源码分析</a></p>
+</div><div class="cl-preview-section"><p><a href="https://mp.weixin.qq.com/s/kGKS7WXWbf-ME1_Hr3Fpgw">死磕 java 集合之 PriorityQueue 源码分析</a></p>
+</div><div class="cl-preview-section"><p><a href="https://mp.weixin.qq.com/s/EN7qY1w4e8C0ZXiP7i82TA">死磕 java 集合之 ArrayBlockingQueue 源码分析</a></p>
+</div><div class="cl-preview-section"><p><a href="https://mp.weixin.qq.com/s/y6PoK3UbVLwdZoauLX8nsQ">死磕 java 集合之 LinkedBlockingQueue 源码分析</a></p>
+</div><div class="cl-preview-section"><p><a href="https://mp.weixin.qq.com/s/dv_jT0-FuB-e2lDOXuqAwg">死磕 java 集合之 SynchronousQueue 源码分析</a></p>
+</div><div class="cl-preview-section"><p><a href="https://mp.weixin.qq.com/s/AfSwIRbI-YjhMegv9qHazw">死磕 java 集合之 PriorityBlockingQueue 源码分析</a></p>
+</div><div class="cl-preview-section"><p><a href="https://mp.weixin.qq.com/s/OZ8tbFqvD9lWEgdvtJ5wog">死磕 java 集合之 LinkedTransferQueue 源码分析</a></p>
+</div><div class="cl-preview-section"><p><a href="https://mp.weixin.qq.com/s/IOTwwgaOdMpZl-6QM0HlVQ">死磕 java 集合之 DelayQueue 源码分析</a></p>
+</div><div class="cl-preview-section"><p><a href="https://mp.weixin.qq.com/s/DcirxmnxtS54fNbRYoimYA">死磕 java 集合之 ConcurrentLinkedQueue 源码分析</a></p>
+</div><div class="cl-preview-section"><p><a href="https://mp.weixin.qq.com/s/rd13SOSxhLA6TT13N9ni8Q">杂谈 什么是伪共享？</a></p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5f05433600011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=82">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '24 Netty的队列有何不一样',
+					'CID': '2183',
+					'Teacher': '彤哥读源码'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "24 Netty的队列有何不一样",
+                    desc: "全面掌握迈向高级工程师的必备技能",
+                    imgUrl: 'https:https://img3.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/82',
+                    link: 'https://m.imooc.com/read/82'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

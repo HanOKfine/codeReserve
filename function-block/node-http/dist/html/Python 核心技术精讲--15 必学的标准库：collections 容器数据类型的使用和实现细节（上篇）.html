@@ -1,0 +1,908 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>15 必学的标准库：collections 容器数据类型的使用和实现细节（上篇）</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="揭开被“简单易学”掩盖的Python真相">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "1";
+	var chapter_id = "2256";
+	var chapter_title = "15 必学的标准库：collections 容器数据类型的使用和实现细节（上篇）";
+	var aid = "79";
+	var a_name = "Python 核心技术精讲";
+	var a_price = "78.00";
+	var a_pic = "https://img1.mukewang.com/5ee98cca00018e2a05400720.jpg";
+	var userId = 0;
+
+	var column_id = '79';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-07-29&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			15 必学的标准库：collections 容器数据类型的使用和实现细节（上篇）
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img4.mukewang.com/5f20d3c600013e2006400480.jpg')"></div>
+	
+	
+		<a href="/read/79">
+			<div class="course-entry">
+				<img src="https://img3.mukewang.com/5edcf963000148bc05200501-40-40.jpg" alt="郭元锴">
+				<h3>Python 核心技术精讲</h3>
+				<p>郭元锴 · BAT高级研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">人生的价值，并不是用时间，而是用深度去衡量的。<p class="author">——列夫·托尔斯泰</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="引言">引言</h2>
+</div><div class="cl-preview-section"><p>在之前的小节中，我们对包括 <code>list</code>、<code>tuple</code>、<code>dict</code>、<code>set</code> 等在内的 Python 内置核心数据类型进行了较为深入的了解。这一节中，我们将会对 Python 标准库 <code>collections</code> 模块提供的一系列容器数据类型进行学习，它们提供了更加丰富多样的功能，可以作为内置类型的替代选择。这些数据类型包括 <code>ChainMap</code>、<code>Counter</code>、<code>deque</code>、<code>defaultdict</code>、<code>namedtuple()</code>、<code>OrderedDict</code> 等，熟练掌握它们的使用方法，会为我们在代码编写过程中提供更多的实现思路和选择。同时，我们还会对其中一些数据结构的源码进行一定的讲解，通过阅读源码以及理解源码的实现方式，逐步提高我们的编码能力。</p>
+</div><div class="cl-preview-section"><h2 id="chainmap：组合多个映射对象"><code>ChainMap</code>：组合多个映射对象</h2>
+</div><div class="cl-preview-section"><h3 id="chainmap-的基本特性与源码简析"><code>ChainMap</code> 的基本特性与源码简析</h3>
+</div><div class="cl-preview-section"><h4 id="chainmap-的基本特性"><code>ChainMap</code> 的基本特性</h4>
+</div><div class="cl-preview-section"><p>简单的说，<code>ChainMap</code> 是一种可以组合多个字典（或其他映射类型的对象）的容器类型，<code>ChainMap</code> 对象的表现和字典的行为类似，支持常见的字典方法。如下示例中 <code>c</code> 是一个 <code>ChainMap</code> 对象，作为对比，我们也列举了字典的 <code>update()</code> 方法。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">from</span> collections <span class="token keyword">import</span> ChainMap
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> d_1 <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token string">'name'</span><span class="token punctuation">:</span> <span class="token string">'bob'</span><span class="token punctuation">,</span> <span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">27</span><span class="token punctuation">}</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> d_2 <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">25</span><span class="token punctuation">,</span> <span class="token string">'skill'</span><span class="token punctuation">:</span> <span class="token string">'coding'</span><span class="token punctuation">,</span> <span class="token string">'height'</span><span class="token punctuation">:</span> <span class="token number">175</span><span class="token punctuation">,</span> <span class="token string">'weight'</span><span class="token punctuation">:</span> <span class="token number">120</span><span class="token punctuation">}</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c <span class="token operator">=</span> ChainMap<span class="token punctuation">(</span>d_1<span class="token punctuation">,</span> d_2<span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c
+ChainMap<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'name'</span><span class="token punctuation">:</span> <span class="token string">'bob'</span><span class="token punctuation">,</span> <span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">27</span><span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">25</span><span class="token punctuation">,</span> <span class="token string">'skill'</span><span class="token punctuation">:</span> <span class="token string">'coding'</span><span class="token punctuation">,</span> <span class="token string">'height'</span><span class="token punctuation">:</span> <span class="token number">175</span><span class="token punctuation">,</span> <span class="token string">'weight'</span><span class="token punctuation">:</span> <span class="token number">120</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token comment"># 调用多次 update() 方法来进行字典合并更新</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> d <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> d<span class="token punctuation">.</span>update<span class="token punctuation">(</span>d_1<span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> d<span class="token punctuation">.</span>update<span class="token punctuation">(</span>d_2<span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> d
+<span class="token punctuation">{</span><span class="token string">'name'</span><span class="token punctuation">:</span> <span class="token string">'bob'</span><span class="token punctuation">,</span> <span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">25</span><span class="token punctuation">,</span> <span class="token string">'address'</span><span class="token punctuation">:</span> <span class="token string">'XiErQi'</span><span class="token punctuation">,</span> <span class="token string">'skill'</span><span class="token punctuation">:</span> <span class="token string">'coding'</span><span class="token punctuation">,</span> <span class="token string">'height'</span><span class="token punctuation">:</span> <span class="token number">175</span><span class="token punctuation">,</span> <span class="token string">'weight'</span><span class="token punctuation">:</span> <span class="token number">120</span><span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>下面是 <code>ChainMap</code> 类的<a href="https://github.com/python/cpython/blob/3.8/Lib/collections/__init__.py#L861">构造函数</a> ，可以看到原始的映射对象被存放在一个列表中构成一个字典序列<code>self.maps</code> 。可以看到的是，相比于通过创建新字典并调用多次 <code>update()</code> 方法来进行字典合并，使用 <code>ChainMap</code> 的创建效率会高一些，但通常其查找效率相对 <code>dict</code> 会较低一些。同时，<code>ChainMap</code> 的结构是层次化的，相比于调用多次 <code>update()</code> 得到的 <code>dict</code>，它包含的信息更丰富。当在 <code>ChainMap</code> 的构造函数中未指定 <code>maps</code> 时， <code>maps</code>  属性默认为一个包含空字典的列表。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> <span class="token operator">*</span>maps<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">'''Initialize a ChainMap by setting *maps* to the given mappings.
+    If no mappings are provided, a single empty dictionary is used.
+    '''</span>
+    self<span class="token punctuation">.</span>maps <span class="token operator">=</span> <span class="token builtin">list</span><span class="token punctuation">(</span>maps<span class="token punctuation">)</span> <span class="token operator">or</span> <span class="token punctuation">[</span><span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">]</span>          <span class="token comment"># always at least one map</span>
+</code></pre>
+</div><div class="cl-preview-section"><h4 id="maps-属性"><code>maps</code> 属性</h4>
+</div><div class="cl-preview-section"><p>这个存放映射对象的列表可以通过 <code>ChainMap</code> 对象的 <code>maps</code> 属性进行访问和修改。同时也不难看出，<code>maps</code> 中组合的是映射对象的引用，所以 <code>ChainMap</code> 对象和我们之前提到的视图对象类似，可以反应原始映射的修改，使用 <code>update()</code> 方法则不会有这样的效果。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c<span class="token punctuation">.</span>maps
+<span class="token punctuation">[</span><span class="token punctuation">{</span><span class="token string">'name'</span><span class="token punctuation">:</span> <span class="token string">'bob'</span><span class="token punctuation">,</span> <span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">27</span><span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">25</span><span class="token punctuation">,</span> <span class="token string">'skill'</span><span class="token punctuation">:</span> <span class="token string">'coding'</span><span class="token punctuation">,</span> <span class="token string">'height'</span><span class="token punctuation">:</span> <span class="token number">175</span><span class="token punctuation">,</span> <span class="token string">'weight'</span><span class="token punctuation">:</span> <span class="token number">120</span><span class="token punctuation">}</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> d_1<span class="token punctuation">[</span><span class="token string">'name'</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token string">'jeff'</span>  <span class="token comment"># 对子映射 d_1 进行修改</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c
+ChainMap<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'name'</span><span class="token punctuation">:</span> <span class="token string">'jeff'</span><span class="token punctuation">,</span> <span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">27</span><span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">25</span><span class="token punctuation">,</span> <span class="token string">'skill'</span><span class="token punctuation">:</span> <span class="token string">'coding'</span><span class="token punctuation">,</span> <span class="token string">'height'</span><span class="token punctuation">:</span> <span class="token number">175</span><span class="token punctuation">,</span> <span class="token string">'weight'</span><span class="token punctuation">:</span> <span class="token number">120</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>上面 <code>list(maps) or [{}]</code> 这段代码非常简洁，基于布尔运算 <code>or</code> 实现。<code>or</code> 是一个短路运算符，在第一个操作数为假时才会检验第二个操作数（对于 <code>and</code> 来说，在第一个操作数为真时才会检验第二个操作数），其返回值是被检验的最后一个操作数，比如 <code>0 or 1</code> 返回 <code>1</code>，<code>1 or 2</code> 返回 <code>1</code>，<code>0 and 1</code> 返回 <code>0</code>，<code>1 and 2</code> 返回 <code>2</code>（注意，在 Python 中，布尔运算 <code>and</code> 和 <code>or</code> 返回的是一个操作数，而不是 <code>True</code> 或者 <code>False</code> ）。所以，当我们未指定 <code>maps</code> 时，<code>list(maps) or [{}]</code> 等同于 <code>[] or [{}]</code> ，返回 <code>[{}]</code>。</p>
+</div><div class="cl-preview-section"><p>在 <code>ChainMap</code> 中查询某个键时，会对原始的映射对象依次查询，直至找到这个键，若未找到，则默认引发 <code>KeyError</code> 异常。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c<span class="token punctuation">[</span><span class="token string">'age'</span><span class="token punctuation">]</span>  <span class="token comment"># 注意这里的输出是 27，而不是 25</span>
+<span class="token number">27</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c<span class="token punctuation">[</span><span class="token string">'address'</span><span class="token punctuation">]</span>
+KeyError<span class="token punctuation">:</span> <span class="token string">'address'</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>对照上面的示例代码以及下方的源码，我们可以清晰的看到在 <code>ChainMap</code> 中对于某个键的搜索逻辑。我们目前还没有接触运算符重载，这里简要地说明 <code>__getitem__</code> 的作用，如果一个类定义了 <code>__getitem__</code> 方法，则当该类的实例对象 <code>c</code> 在进行索引操作时会调用 <code>__getitem__</code> 方法，即 <code>c[key]</code> 会调用 <code>c.__getitem__(key)</code>（我们这里对 <code>__getitem__</code> 的介绍相对简单一些，在后面面向对象以及运算符重载的小节中，我们会更深入的了解相关内容）。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token keyword">def</span> <span class="token function">__missing__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> key<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">raise</span> KeyError<span class="token punctuation">(</span>key<span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">__getitem__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> key<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">for</span> mapping <span class="token keyword">in</span> self<span class="token punctuation">.</span>maps<span class="token punctuation">:</span>
+        <span class="token keyword">try</span><span class="token punctuation">:</span>
+            <span class="token keyword">return</span> mapping<span class="token punctuation">[</span>key<span class="token punctuation">]</span>
+        <span class="token keyword">except</span> KeyError<span class="token punctuation">:</span>
+            <span class="token keyword">pass</span>
+    <span class="token keyword">return</span> self<span class="token punctuation">.</span>__missing__<span class="token punctuation">(</span>key<span class="token punctuation">)</span>            <span class="token comment"># support subclasses that define __missing__</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>和使用 <code>update()</code> 方法合并得到的字典有所不同的是，在 <code>ChainMap</code> 中进行插入、更新、删除时，只会对原始映射中的第一个映射进行操作。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c<span class="token punctuation">[</span><span class="token string">'address'</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token string">'XiErQi'</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c<span class="token punctuation">[</span><span class="token string">'age'</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">30</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c
+ChainMap<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'name'</span><span class="token punctuation">:</span> <span class="token string">'jeff'</span><span class="token punctuation">,</span> <span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">30</span><span class="token punctuation">,</span> <span class="token string">'address'</span><span class="token punctuation">:</span> <span class="token string">'XiErQi'</span><span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">25</span><span class="token punctuation">,</span> <span class="token string">'skill'</span><span class="token punctuation">:</span> <span class="token string">'coding'</span><span class="token punctuation">,</span> <span class="token string">'height'</span><span class="token punctuation">:</span> <span class="token number">175</span><span class="token punctuation">,</span> <span class="token string">'weight'</span><span class="token punctuation">:</span> <span class="token number">120</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token string">'skill'</span><span class="token punctuation">)</span>
+KeyError<span class="token punctuation">:</span> <span class="token string">"Key not found in the first mapping: 'skill'"</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>下面是上述示例代码的操作对应的 <code>ChainMap</code> 源码。在基本理解了上面对于 <code>__getitem__</code> 的描述后，理解 <code>__setitem__</code> 和 <code>__delitem__</code> 便不会太难，比如 <code>c['age'] = 30</code> 这样的索引赋值会调用类中定义的 <code>__setitem__</code> 方法，即 <code>c.__setitem__('age', 30)</code>；对应的 <code>__delitem__</code> 会在删除某个键时调用，比如 <code>del c['skill']</code> 。对照下面源码中 <code>self.maps[0]</code> 以及相关代码便可以看到，进行插入、更新、删除操作时，只会对原始映射中的第一个映射进行操作。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token keyword">def</span> <span class="token function">__setitem__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> key<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    self<span class="token punctuation">.</span>maps<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">[</span>key<span class="token punctuation">]</span> <span class="token operator">=</span> value
+
+<span class="token keyword">def</span> <span class="token function">__delitem__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> key<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">try</span><span class="token punctuation">:</span>
+        <span class="token keyword">del</span> self<span class="token punctuation">.</span>maps<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">[</span>key<span class="token punctuation">]</span>
+    <span class="token keyword">except</span> KeyError<span class="token punctuation">:</span>
+        <span class="token keyword">raise</span> KeyError<span class="token punctuation">(</span><span class="token string">'Key not found in the first mapping: {!r}'</span><span class="token punctuation">.</span><span class="token builtin">format</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">pop</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> key<span class="token punctuation">,</span> <span class="token operator">*</span>args<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token string">'Remove *key* from maps[0] and return its value. Raise KeyError if *key* not in maps[0].'</span>
+    <span class="token keyword">try</span><span class="token punctuation">:</span>
+        <span class="token keyword">return</span> self<span class="token punctuation">.</span>maps<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">.</span>pop<span class="token punctuation">(</span>key<span class="token punctuation">,</span> <span class="token operator">*</span>args<span class="token punctuation">)</span>
+    <span class="token keyword">except</span> KeyError<span class="token punctuation">:</span>
+        <span class="token keyword">raise</span> KeyError<span class="token punctuation">(</span><span class="token string">'Key not found in the first mapping: {!r}'</span><span class="token punctuation">.</span><span class="token builtin">format</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><h5 id="parents-属性"><code>parents</code> 属性</h5>
+</div><div class="cl-preview-section"><p><code>ChainMap</code> 对象除了 <code>maps</code> 属性外，还具有一个 <code>parents</code> 属性和 <code>new_child(m=None)</code> 方法。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c<span class="token punctuation">.</span>parents
+ChainMap<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">25</span><span class="token punctuation">,</span> <span class="token string">'skill'</span><span class="token punctuation">:</span> <span class="token string">'coding'</span><span class="token punctuation">,</span> <span class="token string">'height'</span><span class="token punctuation">:</span> <span class="token number">175</span><span class="token punctuation">,</span> <span class="token string">'weight'</span><span class="token punctuation">:</span> <span class="token number">120</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以看到 <code>parents</code> 属性返回了一个不包含原始映射中的第一个映射的 <code>ChainMap</code> 对象，对应源码中 <code>self.__class__(*self.maps[1:])</code> ，其效果和 <code>ChainMap(*d.maps[1:])</code> 相同（<code>obj.__class__</code> 返回实例所属的类，这一点我们在之前的小节提到过）。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python">@<span class="token builtin">property</span> 
+<span class="token keyword">def</span> <span class="token function">parents</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token string">'New ChainMap from maps[1:].'</span>
+    <span class="token keyword">return</span> self<span class="token punctuation">.</span>__class__<span class="token punctuation">(</span><span class="token operator">*</span>self<span class="token punctuation">.</span>maps<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这里简要的说明 <code>@property</code> 的作用：<code>property</code> 可以将某个属性的访问路由到特定的函数或者方法。具体的说，使用装饰器语法 <code>@property</code> 对 <code>parents</code> 方法进行装饰后，我们便可以通过 <code>obj.parents</code> 来进行属性访问，对 <code>parents</code> 属性的访问会交由被装饰的 <code>parents</code> 方法进行处理（这里包含着两个知识点，一是装饰器语法，二是 <code>property</code> 的作用和用法，我们在后面的小节会更为详细的说明）。</p>
+</div><div class="cl-preview-section"><p>显而易见的是，这个由 <code>parents</code> 返回的 <code>ChainMap</code> 对象的作用便是在搜索某个索引时略过第一个映射。在官方文档中，针对 <code>parents</code> 属性，提到了“使用的场景类似在 nested scopes 嵌套作用域中使用 <code>nonlocal</code> ，用例也可以类比内建函数 <code>super()</code> ”，这里我们先对这两点有个大概的印象即可，后面的小节会深入的去了解它们。</p>
+</div><div class="cl-preview-section"><h4 id="new_childmnone-方法"><code>new_child(m=None)</code> 方法</h4>
+</div><div class="cl-preview-section"><p><code>new_child(m=None)</code> 方法返回一个包含指定映射 <code>m</code>（未指定时，为空字典）及其他原有映射的 <code>ChainMap</code> 对象，其中指定映射位于底层 <code>maps</code> 列表首位，在其他原有映射之前。<code>new_child</code> 方法可用于创建子上下文（ subcontexts ）。上下文（context）可以表示一种程序的运行环境，简单的说，它可以指一个程序运行所依赖的数据等资源，就好比我们不能脱离整体背景和相关语境去理解一篇文章中的某些片段一样，通常程序的正常运行也不能脱离一定的上下文环境。</p>
+</div><div class="cl-preview-section"><p>下面的代码可以清楚的看到调用 <code>new_child(m=None)</code> 方法的结果，<code>d.new_child()</code> 的效果和 <code>ChainMap({}, *d.maps)</code> 相同。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c<span class="token punctuation">.</span>new_child<span class="token punctuation">(</span><span class="token punctuation">)</span>
+ChainMap<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token string">'name'</span><span class="token punctuation">:</span> <span class="token string">'jeff'</span><span class="token punctuation">,</span> <span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">30</span><span class="token punctuation">,</span> <span class="token string">'address'</span><span class="token punctuation">:</span> <span class="token string">'XiErQi'</span><span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">25</span><span class="token punctuation">,</span> <span class="token string">'skill'</span><span class="token punctuation">:</span> <span class="token string">'coding'</span><span class="token punctuation">,</span> <span class="token string">'height'</span><span class="token punctuation">:</span> <span class="token number">175</span><span class="token punctuation">,</span> <span class="token string">'weight'</span><span class="token punctuation">:</span> <span class="token number">120</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c<span class="token punctuation">.</span>new_child<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'gender'</span><span class="token punctuation">:</span> <span class="token string">'male'</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+ChainMap<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'gender'</span><span class="token punctuation">:</span> <span class="token string">'male'</span><span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token string">'name'</span><span class="token punctuation">:</span> <span class="token string">'jeff'</span><span class="token punctuation">,</span> <span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">30</span><span class="token punctuation">,</span> <span class="token string">'address'</span><span class="token punctuation">:</span> <span class="token string">'XiErQi'</span><span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">25</span><span class="token punctuation">,</span> <span class="token string">'skill'</span><span class="token punctuation">:</span> <span class="token string">'coding'</span><span class="token punctuation">,</span> <span class="token string">'height'</span><span class="token punctuation">:</span> <span class="token number">175</span><span class="token punctuation">,</span> <span class="token string">'weight'</span><span class="token punctuation">:</span> <span class="token number">120</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>对应下面的源码，不难理解 <code>new_child</code> 方法的处理逻辑。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token keyword">def</span> <span class="token function">new_child</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> m<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">'''New ChainMap with a new map followed by all previous maps.
+    If no map is provided, an empty dict is used.
+    '''</span>
+    <span class="token keyword">if</span> m <span class="token keyword">is</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+        m <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+    <span class="token keyword">return</span> self<span class="token punctuation">.</span>__class__<span class="token punctuation">(</span>m<span class="token punctuation">,</span> <span class="token operator">*</span>self<span class="token punctuation">.</span>maps<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="chainmap-的应用场景"><code>ChainMap</code> 的应用场景</h3>
+</div><div class="cl-preview-section"><p><code>ChainMap</code> 可以用于创建多个映射组成的查找链（在多个映射中搜索）、模拟嵌套上下文等，下面我们使用示例来进行说明。</p>
+</div><div class="cl-preview-section"><h4 id="将用户指定的命令行参数优先于环境变量和默认值">将用户指定的命令行参数优先于环境变量和默认值</h4>
+</div><div class="cl-preview-section"><p>这是来自官方文档中的一个示例，我们在这里对其进行了简单的修改，加入了一些注释和调试信息来帮助理解，并保存为 <code>test.py</code> 。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token keyword">import</span> argparse
+<span class="token keyword">import</span> os
+<span class="token keyword">from</span> collections <span class="token keyword">import</span> ChainMap
+
+
+<span class="token comment"># 命令行解析</span>
+parser <span class="token operator">=</span> argparse<span class="token punctuation">.</span>ArgumentParser<span class="token punctuation">(</span><span class="token punctuation">)</span>
+parser<span class="token punctuation">.</span>add_argument<span class="token punctuation">(</span><span class="token string">'-u'</span><span class="token punctuation">,</span> <span class="token string">'--user'</span><span class="token punctuation">)</span>
+parser<span class="token punctuation">.</span>add_argument<span class="token punctuation">(</span><span class="token string">'-c'</span><span class="token punctuation">,</span> <span class="token string">'--color'</span><span class="token punctuation">)</span>
+namespace <span class="token operator">=</span> parser<span class="token punctuation">.</span>parse_args<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token comment"># 打印一些辅助信息</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'namespace -&gt; {}\nnamespace.__dict__ -&gt; {}\nvars(namespace) -&gt; {}'</span><span class="token punctuation">.</span><span class="token builtin">format</span><span class="token punctuation">(</span>
+    namespace<span class="token punctuation">,</span> namespace<span class="token punctuation">.</span>__dict__<span class="token punctuation">,</span> <span class="token builtin">vars</span><span class="token punctuation">(</span>namespace<span class="token punctuation">)</span>
+	<span class="token punctuation">)</span>
+<span class="token punctuation">)</span>
+<span class="token comment"># 创建一个仅包含用户在命令行中指定参数的字典</span>
+command_line_args <span class="token operator">=</span> <span class="token punctuation">{</span>k<span class="token punctuation">:</span> v <span class="token keyword">for</span> k<span class="token punctuation">,</span> v <span class="token keyword">in</span> <span class="token builtin">vars</span><span class="token punctuation">(</span>namespace<span class="token punctuation">)</span><span class="token punctuation">.</span>items<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">if</span> v <span class="token keyword">is</span> <span class="token operator">not</span> <span class="token boolean">None</span><span class="token punctuation">}</span>
+<span class="token comment"># 手动编写一个默认值并创建一个 ChainMap 对象</span>
+defaults <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token string">'color'</span><span class="token punctuation">:</span> <span class="token string">'red'</span><span class="token punctuation">,</span> <span class="token string">'user'</span><span class="token punctuation">:</span> <span class="token string">'guest'</span><span class="token punctuation">}</span>
+<span class="token comment"># 在 ChainMap 中进行查询时，会优先对用户指定的参数进行查询</span>
+combined <span class="token operator">=</span> ChainMap<span class="token punctuation">(</span>command_line_args<span class="token punctuation">,</span> os<span class="token punctuation">.</span>environ<span class="token punctuation">,</span> defaults<span class="token punctuation">)</span>
+
+<span class="token keyword">print</span><span class="token punctuation">(</span>combined<span class="token punctuation">[</span><span class="token string">'color'</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>combined<span class="token punctuation">[</span><span class="token string">'user'</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/wiki/5ee51b7c090f04e911580152.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><code>argparse</code> 是一个用于命令行解析的基础库，关于 <code>argparse</code> 的使用可以参考<a href="https://docs.python.org/zh-cn/3/library/argparse.html?highlight=argparse#module-argparse">官方文档</a>和 <a href="https://docs.python.org/zh-cn/3/howto/argparse.html#argparse-tutorial">Argparse教程</a>。这里我们只需要知道它在下面这段代码中基本的作用即可，它用于解析类似 <code>-u bob -c blue</code> 这种结构的命令行参数 ，将其解析为 Python 中对应的数据类型。其中 <code>add_argument()</code> 指定 <code>ArgumentParser</code> 对象获取命令行参数及对其进行转换的方式，<code>parse_args()</code> 对参数进行解析并构建 <code>Namespace</code> 对象。另外，代码中的 <code>vars()</code> 用于返回构建得到的 <code>Namespace</code> 对象的 <code>__dict__</code> 属性（<code>obj.__dict__</code> 是存放对象 <code>obj</code> 属性的字典）。</p>
+</div><div class="cl-preview-section"><pre class=" language-bash"><code class="prism  language-bash"><span class="token comment"># 进入虚拟环境该文件目录下执行 python test.py </span>
+<span class="token comment"># 未指定参数</span>
+namespace -<span class="token operator">&gt;</span> Namespace<span class="token punctuation">(</span>color<span class="token operator">=</span>None, user<span class="token operator">=</span>None<span class="token punctuation">)</span>
+namespace.__dict__ -<span class="token operator">&gt;</span> <span class="token punctuation">{</span><span class="token string">'user'</span><span class="token keyword">:</span> None, <span class="token string">'color'</span><span class="token keyword">:</span> None<span class="token punctuation">}</span>
+vars<span class="token punctuation">(</span>namespace<span class="token punctuation">)</span> -<span class="token operator">&gt;</span> <span class="token punctuation">{</span><span class="token string">'user'</span><span class="token keyword">:</span> None, <span class="token string">'color'</span><span class="token keyword">:</span> None<span class="token punctuation">}</span>
+color -<span class="token operator">&gt;</span> red
+user -<span class="token operator">&gt;</span> guest
+
+<span class="token comment"># python test.py -u bob -c blue </span>
+<span class="token comment"># 优先输出用户指定的参数</span>
+namespace -<span class="token operator">&gt;</span> Namespace<span class="token punctuation">(</span>color<span class="token operator">=</span><span class="token string">'blue'</span>, user<span class="token operator">=</span><span class="token string">'bob'</span><span class="token punctuation">)</span>
+namespace.__dict__ -<span class="token operator">&gt;</span> <span class="token punctuation">{</span><span class="token string">'user'</span><span class="token keyword">:</span> <span class="token string">'bob'</span>, <span class="token string">'color'</span><span class="token keyword">:</span> <span class="token string">'blue'</span><span class="token punctuation">}</span>
+vars<span class="token punctuation">(</span>namespace<span class="token punctuation">)</span> -<span class="token operator">&gt;</span> <span class="token punctuation">{</span><span class="token string">'user'</span><span class="token keyword">:</span> <span class="token string">'bob'</span>, <span class="token string">'color'</span><span class="token keyword">:</span> <span class="token string">'blue'</span><span class="token punctuation">}</span>
+color -<span class="token operator">&gt;</span> blue
+user -<span class="token operator">&gt;</span> bob
+</code></pre>
+</div><div class="cl-preview-section"><h4 id="使用-chainmap-对象作为嵌套上下文">使用 <code>ChainMap</code> 对象作为嵌套上下文</h4>
+</div><div class="cl-preview-section"><p>我们在上面提到了 <code>new_child(m=None)</code> 可用于创建子上下文，这个是一个非常便捷的方法，可以使用一个空字典或其他指定的映射来创建一个新的 <code>ChainMap</code> 对象。针对这个新对象的修改不会对原有的 <code>ChainMap</code> 对象（可以将其理解为底层的数据结构或者基础上下文）产生影响。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> d_1 <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token string">'name'</span><span class="token punctuation">:</span> <span class="token string">'bob'</span><span class="token punctuation">,</span> <span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">25</span><span class="token punctuation">}</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> d_2 <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token string">'height'</span><span class="token punctuation">:</span> <span class="token string">'175'</span><span class="token punctuation">,</span> <span class="token string">'weight'</span><span class="token punctuation">:</span> <span class="token number">120</span><span class="token punctuation">}</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c <span class="token operator">=</span> ChainMap<span class="token punctuation">(</span>d_1<span class="token punctuation">,</span> d_2<span class="token punctuation">)</span>  <span class="token comment"># 创建一个基础上下文</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c_nc <span class="token operator">=</span> c<span class="token punctuation">.</span>new_child<span class="token punctuation">(</span><span class="token punctuation">)</span>  <span class="token comment"># 创建一个嵌套的子上下文</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c_nc<span class="token punctuation">[</span><span class="token string">'skill'</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token string">'Python'</span>  <span class="token comment"># 在子上下文环境中进行赋值</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c
+ChainMap<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'name'</span><span class="token punctuation">:</span> <span class="token string">'bob'</span><span class="token punctuation">,</span> <span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">25</span><span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token string">'height'</span><span class="token punctuation">:</span> <span class="token string">'175'</span><span class="token punctuation">,</span> <span class="token string">'weight'</span><span class="token punctuation">:</span> <span class="token number">120</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c_nc
+ChainMap<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'skill'</span><span class="token punctuation">:</span> <span class="token string">'Python'</span><span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token string">'name'</span><span class="token punctuation">:</span> <span class="token string">'bob'</span><span class="token punctuation">,</span> <span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">25</span><span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token string">'height'</span><span class="token punctuation">:</span> <span class="token string">'175'</span><span class="token punctuation">,</span> <span class="token string">'weight'</span><span class="token punctuation">:</span> <span class="token number">120</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">list</span><span class="token punctuation">(</span>c_nc<span class="token punctuation">)</span>
+<span class="token punctuation">[</span><span class="token string">'height'</span><span class="token punctuation">,</span> <span class="token string">'weight'</span><span class="token punctuation">,</span> <span class="token string">'name'</span><span class="token punctuation">,</span> <span class="token string">'age'</span><span class="token punctuation">,</span> <span class="token string">'skill'</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">dict</span><span class="token punctuation">(</span>c_nc<span class="token punctuation">)</span>
+<span class="token punctuation">{</span><span class="token string">'height'</span><span class="token punctuation">:</span> <span class="token string">'175'</span><span class="token punctuation">,</span> <span class="token string">'weight'</span><span class="token punctuation">:</span> <span class="token number">120</span><span class="token punctuation">,</span> <span class="token string">'name'</span><span class="token punctuation">:</span> <span class="token string">'bob'</span><span class="token punctuation">,</span> <span class="token string">'age'</span><span class="token punctuation">:</span> <span class="token number">25</span><span class="token punctuation">,</span> <span class="token string">'skill'</span><span class="token punctuation">:</span> <span class="token string">'Python'</span><span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="counter：计数器"><code>Counter</code>：计数器</h2>
+</div><div class="cl-preview-section"><p><code>Counter</code> 类是 <code>dict</code> 的子类，可以简便、快速的进行可散列对象的计数。在一个 <code>Counter</code> 对象中，通常元素存储为字典的键，其计数值存储为字典的值，计数值是可以包括 0 和负值在内的整数值。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> Counter<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+Counter<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token number">2</span><span class="token punctuation">:</span> <span class="token number">5</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">:</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="构造-counter-对象">构造 <code>Counter</code> 对象</h3>
+</div><div class="cl-preview-section"><p>我们可以通过多种方式来构造一个 <code>Counter</code> 对象，可以通过一个元素序列（可迭代对象）或者字典（映射对象）来构造，也可以使用和字典初始化中相似的关键字参数的方式来构造。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> Counter<span class="token punctuation">(</span><span class="token string">'bacbbc'</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> Counter<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">:</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token string">'c'</span><span class="token punctuation">:</span> <span class="token number">2</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> Counter<span class="token punctuation">(</span>a<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> b<span class="token operator">=</span><span class="token number">3</span><span class="token punctuation">,</span> c<span class="token operator">=</span><span class="token number">2</span><span class="token punctuation">)</span>
+
+</code></pre>
+</div><div class="cl-preview-section"><p>我们来看看 <code>Counter</code> 构造函数的源码（下面的源码中我们省略了大量的注释，感兴趣的同学可以参考<a href="https://github.com/python/cpython/blob/3.8/Lib/collections/__init__.py#L489">这里</a>）。源码中涉及到一些仅限位置参数、抽象基类、<code>super()</code> 等相关内容，我们在后面的小节中再讲，这里我们从大的方向上了解它的实现思路即可。<code>Counter</code> 类继承自内置类型 <code>dict</code>，并在构造函数中调用了其实现的 <code>update</code> 的方法，在 <code>update</code> 方法中针对 <code>iterable</code> 的类型分别有两个分支，一个用于处理映射，一个用于处理非映射。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token keyword">class</span> <span class="token class-name">Counter</span><span class="token punctuation">(</span><span class="token builtin">dict</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> iterable<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">,</span> <span class="token operator">/</span><span class="token punctuation">,</span> <span class="token operator">**</span>kwds<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token builtin">super</span><span class="token punctuation">(</span>Counter<span class="token punctuation">,</span> self<span class="token punctuation">)</span><span class="token punctuation">.</span>__init__<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>update<span class="token punctuation">(</span>iterable<span class="token punctuation">,</span> <span class="token operator">**</span>kwds<span class="token punctuation">)</span>
+    <span class="token keyword">def</span> <span class="token function">update</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> iterable<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">,</span> <span class="token operator">/</span><span class="token punctuation">,</span> <span class="token operator">**</span>kwds<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span> iterable <span class="token keyword">is</span> <span class="token operator">not</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+            <span class="token keyword">if</span> <span class="token builtin">isinstance</span><span class="token punctuation">(</span>iterable<span class="token punctuation">,</span> _collections_abc<span class="token punctuation">.</span>Mapping<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                <span class="token keyword">if</span> self<span class="token punctuation">:</span>
+                    self_get <span class="token operator">=</span> self<span class="token punctuation">.</span>get
+                    <span class="token keyword">for</span> elem<span class="token punctuation">,</span> count <span class="token keyword">in</span> iterable<span class="token punctuation">.</span>items<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+                        self<span class="token punctuation">[</span>elem<span class="token punctuation">]</span> <span class="token operator">=</span> count <span class="token operator">+</span> self_get<span class="token punctuation">(</span>elem<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+                <span class="token keyword">else</span><span class="token punctuation">:</span>
+                    <span class="token builtin">super</span><span class="token punctuation">(</span>Counter<span class="token punctuation">,</span> self<span class="token punctuation">)</span><span class="token punctuation">.</span>update<span class="token punctuation">(</span>iterable<span class="token punctuation">)</span>
+            <span class="token keyword">else</span><span class="token punctuation">:</span>
+                _count_elements<span class="token punctuation">(</span>self<span class="token punctuation">,</span> iterable<span class="token punctuation">)</span>
+        <span class="token keyword">if</span> kwds<span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>update<span class="token punctuation">(</span>kwds<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>结合上面的源码以及下面的示例看出，<code>Counter</code> 的 <code>update</code> 方法和 <code>dict.update()</code> 方法在效果上最明显的区别就是，前者是增加计数而后者是进行更新。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c <span class="token operator">=</span> Counter<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c <span class="token operator">=</span> Counter<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">:</span><span class="token number">2</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c<span class="token punctuation">.</span>update<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c
+Counter<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">:</span> <span class="token number">3</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c<span class="token punctuation">.</span>update<span class="token punctuation">(</span><span class="token string">'aabb'</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c
+Counter<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span> <span class="token number">5</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">:</span> <span class="token number">5</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">:</span><span class="token number">2</span><span class="token punctuation">}</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c<span class="token punctuation">.</span>update<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c
+<span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="获取元素计数">获取元素计数</h3>
+</div><div class="cl-preview-section"><p>使用和字典相同的索引方法可以获取 <code>Counter</code> 对象中某个元素的计数。不同的是，对于在 <code>Counter</code> 对象中不存在的键，不会产生 <code>KeyError</code> ，而是会返回 0 作为其计数值。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c <span class="token operator">=</span> Counter<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">:</span><span class="token number">2</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c<span class="token punctuation">[</span><span class="token string">'a'</span><span class="token punctuation">]</span>
+<span class="token number">1</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c<span class="token punctuation">[</span><span class="token string">'c'</span><span class="token punctuation">]</span>
+<span class="token number">0</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="支持多种数学运算">支持多种数学运算</h3>
+</div><div class="cl-preview-section"><p><code>Counter</code> 对象支持多种数学运算，比如加、减、交集、并集、一元加、一元减。<code>Counter</code> 对象之间加减时，相同元素计数值便进行加减；<code>Counter</code> 对象之间求交集时，相同元素计数值取最小值；<code>Counter</code> 对象之间求并集时，相同的元素计数值取最大值。这个过程中需要注意两点：第一，这些算术操作中只输出计数值大于 0 的元素及其计数值；第二，对于在 <code>Counter</code> 对象中不存在的键，对应的计数值为 0。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c_1 <span class="token operator">=</span> Counter<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">:</span> <span class="token number">2</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c_2 <span class="token operator">=</span> Counter<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span> <span class="token number">4</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">'c'</span><span class="token punctuation">:</span> <span class="token number">2</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c_3 <span class="token operator">=</span> Counter<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">:</span> <span class="token operator">-</span><span class="token number">5</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c_1 <span class="token operator">+</span> c_2
+Counter<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span> <span class="token number">7</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">:</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token string">'c'</span><span class="token punctuation">:</span> <span class="token number">2</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c_1 <span class="token operator">-</span> c_2
+Counter<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'b'</span><span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c_1 <span class="token operator">&amp;</span> c_2
+Counter<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c_1 <span class="token operator">|</span> c_2
+Counter<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span> <span class="token number">4</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">:</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token string">'c'</span><span class="token punctuation">:</span> <span class="token number">2</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token operator">+</span>c_3
+Counter<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token operator">-</span>c_3
+Counter<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'b'</span><span class="token punctuation">:</span> <span class="token number">5</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="most_commonn-方法"><code>most_common([n])</code> 方法</h3>
+</div><div class="cl-preview-section"><p><code>most_common([n])</code> 方法可以用于查询按照计数值由高到低排序的前 n 个元素及其计数值（ n 个最常见的元素和它们对应的计数值），计数值相同的元素按照首次出现的顺序进行排列：</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> Counter<span class="token punctuation">(</span><span class="token string">'casablanca'</span><span class="token punctuation">)</span><span class="token punctuation">.</span>most_common<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span>
+<span class="token punctuation">[</span><span class="token punctuation">(</span><span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> Counter<span class="token punctuation">(</span><span class="token string">'casablanca'</span><span class="token punctuation">)</span><span class="token punctuation">.</span>most_common<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">[</span><span class="token punctuation">(</span><span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token string">'s'</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token string">'b'</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token string">'l'</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token string">'n'</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>另外，要获取 n 个最不常见的元素可以使用下面的方式：</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token comment"># Counter('casablanca').most_common()[:-n-1:-1]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> Counter<span class="token punctuation">(</span><span class="token string">'casablanca'</span><span class="token punctuation">)</span><span class="token punctuation">.</span>most_common<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token operator">-</span><span class="token number">3</span><span class="token punctuation">:</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span>
+<span class="token punctuation">[</span><span class="token punctuation">(</span><span class="token string">'n'</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token string">'l'</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>我们来看看 <code>most_common</code> 方法的源码实现（我们省略了注释部分并加入了一些另外的注释）。当 <code>n</code> 为 <code>None</code> 时，按照计数值进行排序后返回元素及其计数值；当 <code>n</code> 不为 <code>None</code> 时，这里使用了 <code>heapq.nlargest(n, iterable, key=None)</code> 来返回前 <code>n</code> 个计数值最大的元素及其计数值，<code>heapq</code> 提供了堆队列算法（优先级队列算法）的相关实现，相比于 <code>sorted(iterable, key=key, reverse=True)[:n]</code>，<code>heapq.nlargest()</code> 在 <code>n</code> 较小时具有更好的性能（更多关于 <code>heapq</code> 的知识可以参考<a href="https://docs.python.org/zh-cn/3/library/heapq.html">这里</a>）。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token keyword">def</span> <span class="token function">most_common</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> n<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">if</span> n <span class="token keyword">is</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+        <span class="token comment"># from operator import itemgetter as _itemgetter</span>
+        <span class="token keyword">return</span> <span class="token builtin">sorted</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>items<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> key<span class="token operator">=</span>_itemgetter<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> reverse<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+    <span class="token comment"># import heapq as _heapq</span>
+    <span class="token keyword">return</span> _heapq<span class="token punctuation">.</span>nlargest<span class="token punctuation">(</span>n<span class="token punctuation">,</span> self<span class="token punctuation">.</span>items<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> key<span class="token operator">=</span>_itemgetter<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="elements-方法"><code>elements()</code> 方法</h3>
+</div><div class="cl-preview-section"><p><code>elements()</code> 方法返回一个迭代器，结合下面的示例输出可以看到，元素按照首次出现的顺序进行排列，每个元素出现的次数和它的计数值相同，计数值为 0 或者负数的元素不会出现。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> Counter<span class="token punctuation">(</span><span class="token string">'casablanca'</span><span class="token punctuation">)</span><span class="token punctuation">.</span>elements<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token operator">&lt;</span>itertools<span class="token punctuation">.</span>chain <span class="token builtin">object</span> at <span class="token number">0x7f63fc65b940</span><span class="token operator">&gt;</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">list</span><span class="token punctuation">(</span>Counter<span class="token punctuation">(</span><span class="token string">'casablanca'</span><span class="token punctuation">)</span><span class="token punctuation">.</span>elements<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">[</span><span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'s'</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">,</span> <span class="token string">'l'</span><span class="token punctuation">,</span> <span class="token string">'n'</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">list</span><span class="token punctuation">(</span>Counter<span class="token punctuation">(</span>a<span class="token operator">=</span><span class="token number">2</span><span class="token punctuation">,</span> b<span class="token operator">=</span><span class="token number">3</span><span class="token punctuation">,</span> c<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">,</span> d<span class="token operator">=</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">.</span>elements<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">[</span><span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">]</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><code>elements()</code> 方法对应的源码非常的简洁（同样，我们省略了注释部分并加入了额外的注释），其中三个相关的函数或方法均来自 <code>itertools</code> 标准库。<code>itertools</code> 标准库受函数式编程语言（ 如 Clojure 、 Haskell 等）启发，它提供了一系列创建迭代器来进行快速处理、并高效利用内存的函数。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token keyword">def</span> <span class="token function">elements</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+	<span class="token comment"># from itertools import repeat as _repeat, chain as _chain, starmap as _starmap</span>
+    <span class="token keyword">return</span> _chain<span class="token punctuation">.</span>from_iterable<span class="token punctuation">(</span>_starmap<span class="token punctuation">(</span>_repeat<span class="token punctuation">,</span> self<span class="token punctuation">.</span>items<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这里我们直接通过示例来看看 <code>chain.from_iterable()</code>、<code>starmap()</code>、<code>repeat()</code> 的作用。<code>itertools.repeat(object[, times])</code> 会创建一个重复输出 <code>object</code> 的迭代器，<code>times</code> 为输出次数，若未指定则无限重复。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">from</span> itertools <span class="token keyword">import</span> repeat<span class="token punctuation">,</span> chain<span class="token punctuation">,</span> starmap
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c <span class="token operator">=</span> Counter<span class="token punctuation">(</span><span class="token string">'casablanca'</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">list</span><span class="token punctuation">(</span>c<span class="token punctuation">.</span>items<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">[</span><span class="token punctuation">(</span><span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token string">'s'</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token string">'b'</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token string">'l'</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token string">'n'</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">list</span><span class="token punctuation">(</span>repeat<span class="token punctuation">(</span><span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">[</span><span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token string">'c'</span><span class="token punctuation">]</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><code>itertools.starmap(function, iterable)</code> 会创建一个将 <code>iterable</code> 中得到的元素结合 <code>function</code> 进行处理和计算的迭代器。可以从下面的示例中看到 <code>starmap</code> 和 <code>map</code> 在使用上主要的区别在于：数据是否 “已预组对或已是参数元组（ pre-zipped ）” 。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> func <span class="token operator">=</span> <span class="token keyword">lambda</span> x<span class="token punctuation">,</span> y<span class="token punctuation">:</span> x <span class="token operator">+</span> y
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">list</span><span class="token punctuation">(</span><span class="token builtin">map</span><span class="token punctuation">(</span>func<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">4</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">,</span> <span class="token number">6</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span>  <span class="token comment"># func(1, 4)</span>
+<span class="token punctuation">[</span><span class="token number">5</span><span class="token punctuation">,</span> <span class="token number">7</span><span class="token punctuation">,</span> <span class="token number">9</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">list</span><span class="token punctuation">(</span>starmap<span class="token punctuation">(</span>func<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">6</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span>  <span class="token comment"># func(*(1, 4))</span>
+<span class="token punctuation">[</span><span class="token number">5</span><span class="token punctuation">,</span> <span class="token number">7</span><span class="token punctuation">,</span> <span class="token number">9</span><span class="token punctuation">]</span>
+</code></pre>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">list</span><span class="token punctuation">(</span><span class="token builtin">map</span><span class="token punctuation">(</span>repeat<span class="token punctuation">,</span> <span class="token string">'c'</span><span class="token punctuation">,</span> repeat<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">[</span>repeat<span class="token punctuation">(</span><span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">list</span><span class="token punctuation">(</span>starmap<span class="token punctuation">(</span>repeat<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token punctuation">(</span><span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">[</span>repeat<span class="token punctuation">(</span><span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><code>itertools</code> 中 <code>chain.from_iterable(iterable)</code> 和 <code>chain(*iterables)</code> 的作用是类似的，可以将链式数据中多个可迭代对象处理为单个对象，两者的不同点在于参数形式的不同。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">list</span><span class="token punctuation">(</span>chain<span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token string">'c'</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">[</span><span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">list</span><span class="token punctuation">(</span>chain<span class="token punctuation">.</span>from_iterable<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">(</span><span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token string">'c'</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">[</span><span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">]</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>对应到源码中，我们可以看到 <code>starmap</code> 将 <code>repeat</code> 应用到 <code>c.items()</code> 中每一项，<code>chain.from_iterable</code> 将这个过程中产生的可迭代对象进行处理，从而达到 <code>Counter</code> 对象中每个元素出现的次数等同于其计数值。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">list</span><span class="token punctuation">(</span>starmap<span class="token punctuation">(</span>repeat<span class="token punctuation">,</span> c<span class="token punctuation">.</span>items<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">[</span>repeat<span class="token punctuation">(</span><span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">,</span> repeat<span class="token punctuation">(</span><span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">,</span> repeat<span class="token punctuation">(</span><span class="token string">'s'</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> repeat<span class="token punctuation">(</span><span class="token string">'b'</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> repeat<span class="token punctuation">(</span><span class="token string">'l'</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> repeat<span class="token punctuation">(</span><span class="token string">'n'</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">list</span><span class="token punctuation">(</span>chain<span class="token punctuation">.</span>from_iterable<span class="token punctuation">(</span>starmap<span class="token punctuation">(</span>repeat<span class="token punctuation">,</span> c<span class="token punctuation">.</span>items<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">[</span><span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token string">'c'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'s'</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">,</span> <span class="token string">'l'</span><span class="token punctuation">,</span> <span class="token string">'n'</span><span class="token punctuation">]</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="subtractiterable-or-mapping-方法"><code>subtract([iterable-or-mapping])</code> 方法</h3>
+</div><div class="cl-preview-section"><p>同时 <code>Counter</code> 也实现了 <code>subtract([iterable-or-mapping])</code> 方法，它支持和一个可迭代对象或映射对象进行相减。不同的是，它可以输出 0 或者负值。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c_1 <span class="token operator">=</span> Counter<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span><span class="token number">5</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">:</span><span class="token number">3</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c_1<span class="token punctuation">.</span>subtract<span class="token punctuation">(</span><span class="token string">'aabbbbcc'</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> c_1
+Counter<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">:</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">'c'</span><span class="token punctuation">:</span> <span class="token operator">-</span><span class="token number">2</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>除上面提到的内容之外，还有一些需要留意的知识点，我们在下面简单列举一下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p><code>Counter</code> 类为 <code>dict</code> 子类，同样会保持插入顺序（正式的来说，Python 3.7 及以后）。</p>
+</li>
+<li>
+<p><code>fromkeys()</code> 方法在 <code>Counter</code> 中没有被实现，因为和 <code>Counter(iterable)</code> 相比， <code>fromkeys()</code> 在 <code>Counter</code> 中的含义是让人感到困惑的，比如 <code>Counter.fromkeys('aabbcc', v=3)</code> 。</p>
+<pre class=" language-python"><code class="prism  language-python">@<span class="token builtin">classmethod</span>
+<span class="token keyword">def</span> <span class="token function">fromkeys</span><span class="token punctuation">(</span>cls<span class="token punctuation">,</span> iterable<span class="token punctuation">,</span> v<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">raise</span> NotImplementedError<span class="token punctuation">(</span><span class="token string">'Counter.fromkeys() is undefined.  Use Counter(iterable) instead.'</span><span class="token punctuation">)</span>
+</code></pre>
+</li>
+<li>
+<p><code>Counter</code> 类并没有限制值的类型，所以也会有下面情况的出现。这样的值并不支持加减等运算，所以在进行相关的操作时会抛出异常。</p>
+<pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> Counter<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span> <span class="token string">'A'</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+Counter<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">'a'</span><span class="token punctuation">:</span> <span class="token string">'A'</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> a<span class="token punctuation">[</span><span class="token string">'a'</span><span class="token punctuation">]</span> <span class="token operator">+=</span> <span class="token number">1</span>
+TypeError<span class="token punctuation">:</span> can only concatenate <span class="token builtin">str</span> <span class="token punctuation">(</span><span class="token operator">not</span> <span class="token string">"int"</span><span class="token punctuation">)</span> to <span class="token builtin">str</span>
+</code></pre>
+</li>
+</ul>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img2.mukewang.com/5f20d3d100011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6718">
+						<img src="https://img3.mukewang.com/545868f30001886f02200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕桂英2466209</h4>
+						<div class="comment-text">老师,能如期更新完吗?买了才发现您还没更新完.等着看完面试呢</div>
+						<div>
+							
+								<div class="reply">讲师回复：你好，感谢阅读，课程的安排和编写有一定的计划，对于后面的内容，如果有特殊的面试需求，在相关内容还未上线前，可以在慕课网的读者群中向我提问，我会第一时间回复。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-03</span>
+						<a href="/read/commentdetail/6718">
+							<span class="icon r"><i class="imwap-comment"></i><em>3</em></span>
+						</a>
+						<span data-cid="6718" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥78.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=79">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '15 必学的标准库：collections 容器数据类型的使用和实现细节（上篇）',
+					'CID': '2256',
+					'Teacher': '郭元锴'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "15 必学的标准库：collections 容器数据类型的使用和实现细节（上篇）",
+                    desc: "揭开被“简单易学”掩盖的Python真相",
+                    imgUrl: 'https:https://img1.mukewang.com/5ee98cca00018e2a05400720.jpg',
+                    otherImgUrl: 'https://img1.mukewang.com/5ee98cca00018e2a05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/79',
+                    link: 'https://m.imooc.com/read/79'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

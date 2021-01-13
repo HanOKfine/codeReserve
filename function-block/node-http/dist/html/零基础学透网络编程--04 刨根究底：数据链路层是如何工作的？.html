@@ -1,0 +1,845 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>04 刨根究底：数据链路层是如何工作的？</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="学好通用知识，提升技术竞争力">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2093";
+	var chapter_title = "04 刨根究底：数据链路层是如何工作的？";
+	var aid = "80";
+	var a_name = "零基础学透网络编程";
+	var a_price = "58.00";
+	var a_pic = "https://img2.mukewang.com/5ed8c1c600015fc805400720.jpg";
+	var userId = 0;
+
+	var column_id = '80';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-06-09&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			04 刨根究底：数据链路层是如何工作的？
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img4.mukewang.com/5ed9fbfb0001dc0206400359.jpg')"></div>
+	
+	
+		<a href="/read/80">
+			<div class="course-entry">
+				<img src="https://img3.mukewang.com/5458620000018a2602200220-40-40.jpg" alt="陈子兴">
+				<h3>零基础学透网络编程</h3>
+				<p>陈子兴 · 资深软件架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">一个不注意小事情的人，永远不会成功大事业。<p class="author">——戴尔·卡耐基</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="前言">前言</h2>
+</div><div class="cl-preview-section"><p>我们知道 ISO/OSI 七层模型的最下面两层是<strong>链路层</strong>和<strong>物理层</strong>。在 TCP/IP 协议族中，我们把<strong>链路层</strong>和<strong>物理层</strong>都抽象在<strong>链路层</strong>中。因为在 Socket 编程中，很少有人去讨论网络传输的电气特性，除非是那些从事网络接口卡研究的技术人员。回忆《素昧平生：初识网络协议大家族》一文的 TCP/IP 协议族大图，链路层包含：以太网驱动程序、ARP、RARP 等。那到底如何来理解链路层呢？本文从如下几方面展开介绍：</p>
+</div><div class="cl-preview-section"><ul>
+<li>什么是链路层？</li>
+<li>链路层有哪些职责？</li>
+<li>链路层在哪里实现？</li>
+<li>有关以太网的发展史</li>
+<li>认识以太网帧格式</li>
+<li>学习以太网 MAC 地址格式</li>
+<li>以太网数据帧的转发原理</li>
+<li>ARP 协议的工作原理</li>
+<li>ARP 实验</li>
+</ul>
+</div><div class="cl-preview-section"><p>那就让我们一起开启链路层学习之旅吧。</p>
+</div><div class="cl-preview-section"><h2 id="什么是链路层？">什么是链路层？</h2>
+</div><div class="cl-preview-section"><p>我们先做个复习，不知道你是否记还得在《追本溯源：探寻协议栈的发展历程》一文中，我们讲述了有关 Alice 的家庭网络、公司网络的拓扑结构。为了便于你回忆，我把此拓扑图再次展示于你。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed8a4d000016e9011110759.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>我们曾经提到 Alice 的 MacBook Pro 和他公司的服务器要想进行报文交换，得经历如下过程：</p>
+</div><div class="cl-preview-section"><pre><code>MacBook Pro -&gt; 家庭无线路由器 -&gt; Modem -&gt; 本地互联网入口 -&gt; 互联网 -&gt; Alice 企业入口路由器-&gt; Alice 企业机房连接服务器的路由器-&gt; Alice 的企业服务器。
+</code></pre>
+</div><div class="cl-preview-section"><p>我们把 Alice 的 MacBook Pro 到 Alice 的企业服务器之间的所有通信设备叫做<strong>节点</strong>(Node)。你可以看到，Alice 的这条通信路径上包含的节点包含：笔记本、无线路由器、Modem、路由器、服务器等，中间互联网上还有很多我们不知道的节点存在。我们也把通信路径上两个相邻节点之间的信道叫做<strong>链路</strong>（Link）。你要想将数据包从源端传输到目的端，首先要将数据包从链路上的一个节点传输到相邻的另外一个节点。</p>
+</div><div class="cl-preview-section"><p>所以我们说<strong>链路层</strong>就是完成节点之间数据传输的协议层。那么链路层具体有哪些���责呢？</p>
+</div><div class="cl-preview-section"><h2 id="链路层有哪些职责？">链路层有哪些职责？</h2>
+</div><div class="cl-preview-section"><p>总结起来，链路层包含如下几项工作：</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p><strong>帧的封装和解封装</strong>。在向相邻节点发送数据的时候，链路层收到网络层的分组，需要加上链路层的帧头。比如以太网的帧头是14个字节（包含 802.1Q 是 18 字节）。在接收到相邻节点发送的数据的时候，链路层在将数据传送给网络层之前，要去掉链路层帧头；</p>
+</li>
+<li>
+<p><strong>媒体访问控制（MAC，Medium Access Control）</strong>。比如，在公司办公网内有很多电脑连接在同一台以太网交换机上，大家共享相同的信道，这些电脑随时都会发送数据，怎么保证发送信号不冲突呢？以太网是通过 CSMA/CD 技术来解决，当然出现了以太网交换机以后，就再没有冲突发生了。再比如，在无线通信中，一个基站下面有很多手机接入，怎么保证互相不会干扰呢？利用了信道划分技术，大家经常提的TDM、FDM、CDMA；</p>
+</li>
+<li>
+<p><strong>寻址</strong>。我们说链路层传输是将数据从本节点传输到下一个相邻节点，如果和本节点相邻的节点有多个，该发送到哪个接口呢？这就是要解决从哪个接口发送的问题；</p>
+</li>
+<li>
+<p><strong>差错检测和纠正</strong>。无线通信是靠电磁信号传输，有线也是通过通信媒介传输脉冲信号。信号衰减、信号噪声干扰等多种因素都会导致传输出现错误。比如发送方发送了一个比特 1，接收方收到的时候变成了比特 0。差错检测的方法有：</p>
+<ul>
+<li>奇偶校验</li>
+<li>CRC 校验</li>
+</ul>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>我们已经了解链路层的基本概念，也了解了链路层的基本职责。那么链路层到底是在哪里实现的呢？</p>
+</div><div class="cl-preview-section"><h2 id="链路层在哪里实现？">链路层在哪里实现？</h2>
+</div><div class="cl-preview-section"><p>我想你已经掌握了让你的笔记本接入网络的技术了吧。通常做法是，你要么把网线插入笔记本的网口（比较新的笔记本需要通过 USB 接口上网），要么打开笔记本的 WIFI 连接。不管是通过网线还是 WIFI 接入，都离不开一个叫做<strong>网卡</strong>（NIC，Network Interface Card）的设备。早期 PC 的网卡还是单独的设备，是通过将其插入主板来工作的。现在 PC 的网卡基本都集成在 PC 的主板上了。</p>
+</div><div class="cl-preview-section"><p>我想你学过操作系统课程吧，计算机的硬件设备都是由操作系统管理的。操作系统中有一种管理硬件设备的程序叫做<strong>驱动程序</strong>。</p>
+</div><div class="cl-preview-section"><p>现在我们可以说链路层是工作在<strong>网卡</strong>和<strong>驱动程序</strong>上的，是由软件和硬件两部分组成。</p>
+</div><div class="cl-preview-section"><p>下面就以 linux 为例，学习一下链路层的工作原理。先看一张图。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed8a4e700018e9907290591.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>仔细观察这张图，从模块角度来看分了三部分：<strong>应用程序、linux 网络协议栈、网卡（NIC）</strong>。</p>
+</div><div class="cl-preview-section"><p>应用程序就是用户编写的业务层程序。对应了 TCP/IP 模型中的<strong>应用层</strong>。</p>
+</div><div class="cl-preview-section"><p>linux 内核网络协议栈是非常复杂的，我们仅仅展示了其中一部分：</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>TCP/UDP 是传输层协议实现。对应了 TCP/IP 模型中的<strong>传输层</strong>；</p>
+</li>
+<li>
+<p>IP 是网络层相关协议实现。对应了 TCP/IP 模型中的<strong>网络层</strong>；</p>
+</li>
+<li>
+<p>softirq、Ingress Queue、Egress Queue 属于系统软中断层面的逻辑，和具体实现相关的逻辑；</p>
+</li>
+<li>
+<p>NIC Driver 是网卡驱动，响应网卡硬件中断，进行数据读写。对应了 TCP/IP 模型中的<strong>链路层</strong>，属于软件实现部分。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>网卡（NIC）基本组成结构如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>MAC 芯片</strong>：进行帧（Frame）的封装和解封装。设置目的 MAC 地址和源 MAC 地址等。设置 FCS 检验字段；</li>
+<li><strong>FIFO</strong>：网卡内部针对数据收发有一个先进先出的队列；</li>
+<li><strong>PHY 芯片</strong>：和帧无关，只是把数据流 bit 转换成光电信号；</li>
+<li><strong>RJ45 接口</strong>：就是普通网线接口。</li>
+</ul>
+</div><div class="cl-preview-section"><p>通常我们把<strong>网卡</strong>作为链路层的一部分来讨论，因为我们更关心的是帧的封装和解封装这一层面。有时也把 PHY 芯片的逻辑作为物理层，这里关心的是信号、媒介的电气特性。</p>
+</div><div class="cl-preview-section"><p>图中的绿色箭头指明了数据流的收发路径，我们不再一一详述了。</p>
+</div><div class="cl-preview-section"><p>在网络的发展过程中，发明了很多链路层协议，包括：<strong>以太网</strong>（Ethernet），<strong>令牌环网</strong>（Token Ring），<strong>光纤分布式接口</strong>（FDDI）等。</p>
+</div><div class="cl-preview-section"><p>其中以太网是目前应用最广泛、占有市场主导地位的链路层协议。本文接下来只讨论以太网相关技术。</p>
+</div><div class="cl-preview-section"><h2 id="有关以太网的发展史">有关以太网的发展史</h2>
+</div><div class="cl-preview-section"><p><strong>以太网</strong>（Ethernet）由 Xerox 公司于 20 世纪 70 年代发明的。在 20 世纪 80 年代初期，市场上除了以太网，还有令牌环、FDDI 等产品。到 20 世纪 80 年代后期，局域网市场基本是由以太网产品主导了。</p>
+</div><div class="cl-preview-section"><p>以太网之所以发展这么迅速，一方面是由于以太网技术简单，产品成本较低，技术人员尽量采用费用低廉的传输介质。比如双绞线要比同轴电缆费用低很多。另一方面来自于技术人员地不懈努力、不断的技术更新，以太网产品在传输效率、部署成本等各方面在不断地提升。</p>
+</div><div class="cl-preview-section"><p>以太网在发明早期是采用总线结构，信道是广播共享的。如果多个主机同时发送信号势必会发生碰撞，以太网采用 CSMA/CD 技术解决信道共享的问题。</p>
+</div><div class="cl-preview-section"><p>到 20 世纪 90 年代，很多机构通过<strong>集线器</strong>（hub）将多台主机连接在一起，hub 是一个物理层设备，没有交换机存储转发的功能。所以，多台主机之间也是存在冲突的问题。</p>
+</div><div class="cl-preview-section"><p>到了 21 世纪，以太网发生了革命性的变化，它将 hub 换成了<strong>交换机</strong>（switch），<strong>交换机</strong>是一种存储转发设备，将多台主机连接在一起，完全避免了碰撞。</p>
+</div><div class="cl-preview-section"><p>以太网发明的时候，传输速率是 2.94 Mbit/s。在 1980 年，由 DEC、Intel、Xerox 三家公司联合发布了以太网标准第一版，传输速率是 10Mbit/s。在 1982 年发布了第二版，叫做 Ethernet II。</p>
+</div><div class="cl-preview-section"><p>IEEE（电子电气工程师协会） 802 委员会于 1983 年发布了 802.3 以太网标准，格式类似 Ethernet II 标准，只是 EtherType 字段改成了 length 字段。</p>
+</div><div class="cl-preview-section"><p>说道这里，我就瞧一瞧以太网帧格式吧。</p>
+</div><div class="cl-preview-section"><h2 id="认识以太网帧格式">认识以太网帧格式</h2>
+</div><div class="cl-preview-section"><p>IEEE 802.3 和 Ethernet II 以太网帧格式如下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed8a4fa0001153209180280.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>我们知道网卡内部 MAC 芯片和 PHY 芯片的职责是不同的。MAC 是负责帧的封装和解封装。PHY 是负责 bit 数据转换成光电信号。在上图中， Link layer frame 对应的是 MAC 封装的帧头和 FCS 尾部；而 Physical layer bit 对应的 PHY 封装的头。</p>
+</div><div class="cl-preview-section"><p>MAC 封装帧头和 FCS 尾部解释如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>目的 MAC 地址。 占用 6 个字节长度，用于链路层寻址；</p>
+</li>
+<li>
+<p>源 MAC 地址。占用 6 个字节长度，用于链路层寻址；</p>
+</li>
+<li>
+<p>802.1Q tag。占用 4 个字节长度，用于 VLAN 协议，是可选的；</p>
+</li>
+<li>
+<p>EtherType or Length。占用 2 个字节长度。EtherType Or Length 如果取值小于或者等于 1500，表示是 payload 的长度；如果取值大于或者等于 1536，表示 payload 中封装的协议类型，类型取值如下：</p>
+<ul>
+<li>0x0800 表示 IPV4 帧</li>
+<li>0x0806 表示 ARP 帧</li>
+<li>0x86DD 表示 IPv6 帧</li>
+<li>0x8100 表示包含了 802.1Q tag</li>
+</ul>
+<p>当 EtherType or Length 字段用于 EtherType，帧的长度通过 gap 和 FCS 来区分。</p>
+</li>
+<li>
+<p><strong>payload</strong>：表示上层协议数据。如果帧头中包含 802.1Q tag 字段，payload 最小取值是 42 字节，否则是 46 字节；payload 的最大取值是 1500 字节；</p>
+</li>
+<li>
+<p><strong>FCS（Frame check sequence）</strong>：占用 4 个字节长度。是一个 CRC 校验码，用于检测帧传输错误。CRC 在计算的时候，会把帧头和 Payload 都包含在内。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>PHY 封装的头部：</p>
+</div><div class="cl-preview-section"><p>PHY 在发送以太网帧之前，在每一个帧的前面增加了 7 字节的 Preamble 字段和 1 字节的 SFD（start frame delimiter），一共是 8 个字节。前 7 字节取值是 <code>10101010 10101010 10101010 10101010 10101010 10101010 10101010</code>，最后一个字节取值是 <code>10101011</code>。Preamble 字段用于接收端时钟同步，SFD 用于标识一帧的开始。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：看到这里讲述的以太网帧格式，也许和你所理解的不一致。你可能会想通过 tcpdump 或者 wireshark 抓包一看究竟。不幸的是你可能无功而返。</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>给每一帧增加 Preamble 和 SFD 字段是网卡 PHY 芯片在发送的时候完成的，当然在接收端网卡 PHY 芯片也不会把这两个字段传给 MAC 芯片。自然你的抓包工具也看不到 Preamble 和 SFD 字段；</li>
+<li>另外, FCS 由网卡 MAC 芯片在发送的时候增加的用于错误检测，同理接收端网卡的 MAC 芯片也不会把 FCS 字段传给用户；</li>
+<li><a href="https://www.wireshark.org/faq.html#q7.10" title="capture_fcs">wireshark</a> 解释了不能通过抓包查看 Preamble、SFD、FCS 的原因，有兴趣可以了解一下。</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="mtu">MTU</h2>
+</div><div class="cl-preview-section"><p>最大传输单元（MTU ，maximum transmission unit）是指链路层帧 payload 的最大长度。比如以太网的 MTU 是 1500 字节。在后续网络层和传输层协议的学习中还会提到 MTU 的概念。</p>
+</div><div class="cl-preview-section"><h3 id="学习以太网-mac-地址格式">学习以太网 MAC 地址格式</h3>
+</div><div class="cl-preview-section"><p>以太网帧格式包含了<strong>源 MAC 地址</strong>和<strong>目的 MAC 地址</strong>，MAC 地址长度是 6 个字节， 48 个 bit。MAC 地址是网卡（NIC）的一个属性，NIC 在出场的时候会绑定一个 MAC 地址。每个网卡的 MAC 地址必须唯一，不能重复。</p>
+</div><div class="cl-preview-section"><p>你可以把 MAC 地址理解为产品编号，出厂的时候已经分配好了，以后不能再更改。</p>
+</div><div class="cl-preview-section"><p>你也可以想象一下，每个中国公民都有身份证编号，刚出生的小孩在上户口的时候就编好了身份证号码。身份证号码是和人终生绑定的，一生都不能改变，并且每个人的身份证编号都不一样。</p>
+</div><div class="cl-preview-section"><p>MAC 地址格式如下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed8a5100001a52007700453.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>以太网地址分为两部分，前 24 个 bit 是由 IEEE 组织固定的，用于标识厂商的(OUI, organizationally unique identifier)，后 24 个 bit 是留给厂商自定义的，用于唯一标识自己生产的网卡（NIC）。</p>
+</div><div class="cl-preview-section"><p>OUI 第一个字节的 bit0，如果取值 0 表示单播 MAC 地址；如果取值 1 表示多播 MAC 地址。</p>
+</div><div class="cl-preview-section"><p>OUI 第一个字节的 bit1，如果取值 0 表示厂商固定的 MAC 地址；如果取值 1 表示本地修改过的 MAC 地址，由用户自己管理的。</p>
+</div><div class="cl-preview-section"><p>为了方便学习和交流，我们通常把 48 bit MAC 地址表示成十六进制形式。单个字节用十六进制形式表示，字节之间用连字符’-'连接在一起。比如，5C-66-AB-90-74-C2 就是人们最习惯的 MAC 地址表示形式。</p>
+</div><div class="cl-preview-section"><p>我们已经理解了网卡工作原理、以太网帧格式、MAC 地址格式。现在思考一下链路层数据帧是如何传输的？</p>
+</div><div class="cl-preview-section"><h2 id="以太网数据帧的转发原理">以太网数据帧的转发原理</h2>
+</div><div class="cl-preview-section"><p>我们假设 Alice 大佬今天在公司上班，他和 Bob、Job 都在同一个局域网内办公(关于子网的概念，我们在后面专栏详细介绍)，他们的电脑都连接在同一台交换机上。如果 Alice 现在通过 QQ 给 Bob 发送一个 “hello” 消息，链路层的转发过程是啥样的呢？请先看下图。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed8a526000136b915190707.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>从图中可以看出，Alice 他们三人办公的局域网在 192.168.0.1/24 网段下面，他们三人的每一台主机都有 IP 地址和 MAC 地址。具体信息如下：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>姓名</th>
+<th>IP 地址</th>
+<th>MAC 地址</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Alice</td>
+<td>192.168.0.102</td>
+<td>5C-66-AB-90-75-C1</td>
+</tr>
+<tr>
+<td>Bob</td>
+<td>192.168.0.100</td>
+<td>5C-66-AB-90-74-C2</td>
+</tr>
+<tr>
+<td>Job</td>
+<td>192.168.0.101</td>
+<td>5C-66-AB-90-75-C9</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>其实每一个人的电脑都有一个叫做 <strong>ARP 表</strong>的东东，我们只是画了 Alice 的 ARP 表，内容如下：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>IP 地址</th>
+<th>MAC 地址</th>
+<th>TTL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>192.168.0.100</td>
+<td>5C-66-AB-90-74-C2</td>
+<td>08:42:00</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><blockquote>
+<p>提示：图中没有画出 Bob 和 Job ARP 表，但也是存在的啊。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>在 ARP 表中记录了 IP 地址和 MAC 地址的对应关系，TTL（time to live）表示是这个映射关系保存时长，一般是 20 分钟。这个映射关系表示<strong>目标 IP</strong> 和<strong>目标 MAC 地址</strong>的映射关系。比如，我要发送报文给 IP 是 192.168.0.100 的主机，那么目标 MAC 地址是 5C-66-AB-90-74-C2。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>注意！！！因为数据包在链路层之间是节点之间的转发，所以目标 IP 对应的 MAC 地址不一定是目标主机的 MAC 地址。在通信子网转发的过程中，这个目标 MAC 地址可能是某个路由器接口的 MAC 地址。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>我们结合 linux 内核协议栈实现，分析一下数据包的转发过程。</p>
+</div><div class="cl-preview-section"><p>应用层到链路层的数据收发的细节我们不展开讲解，这里先一笔带过把。Alice 在 QQ 窗口输入 “hello”，然后压下“回车键”，此时 QQ 就会通过 Socket 的 send 接口将数据发送给协议栈的<strong>传输层</strong>，传输层再讲数据发送给网络层，网络层再把数据发送给链路层。<br>
+链路层的转发分如下几步：</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>链路层会查看网络层的<strong>目的 IP 地址</strong>（网络层格式后面专栏介绍），根据<strong>目的 IP 地址</strong>在本地的 <strong>ARP 表</strong>找出<strong>目标 MAC 地址</strong>；</p>
+</li>
+<li>
+<p>由网卡 MAC 芯片封装帧头和检验和字段；</p>
+</li>
+<li>
+<p>由网卡 PHY 芯片封装 Preamble 和 SFD，通过网口发送给交换机；</p>
+</li>
+<li>
+<p>交换机根据本地转发表将数据包转发给 Bob 的电脑；</p>
+</li>
+<li>
+<p>Bob 电脑的网卡首先收到数据，由网卡向应用层传递数据的方向刚好和发送相反；</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>最终，在 Bob 的 QQ 窗口会看到 Alice 发送的 “hello”消息。</p>
+</div><div class="cl-preview-section"><p>刚我们说 Alice 发送的消息到链路层以后，需要在 ARP 表中查询目标 MAC 地址，那么这个表的内容是怎么来的呢？那我们就有必要了解一下 ARP 协议的工作原理。</p>
+</div><div class="cl-preview-section"><h2 id="arp-协议的工作原理">ARP 协议的工作原理</h2>
+</div><div class="cl-preview-section"><p>地址解析协议（ARP，Address Resolution Protocol）是一个动态解析协议，用于生成 IP 地址和 MAC 地址的映射关系，也就是我们上一节讲的 ARP 表内容，就是这么来的。ARP 消息内容是包含在以太网帧的 payload 中发送的。当以太网帧类型取值是 0x0806 表示是 ARP 消息。ARP 消息格式如下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed8a5430001995007080384.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>ARP 消息格式相对来说比较简单，消息总长是 28 字节。ARP 消息不仅可以用在以太网，还可以用在其他链路层协议。为了简单，我们只讨论以太网。</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>Hardware Type 是 2 字节长度，一般取值 1 表示以太网；</p>
+</li>
+<li>
+<p>Protocol Type 是 2 字节长度，一般取值 0x800 表示 IPv4；</p>
+</li>
+<li>
+<p>Hardware Address Length 是 1 字节长度，一般取值 6 表示以太网 MAC 地址长度；</p>
+</li>
+<li>
+<p>Protocol Address Length 是 1 字节长度，一般取值 4 表示 IPv4 地址长度；</p>
+</li>
+<li>
+<p>Opcode 是 2 字节长度，表示 ARP 协议的子协议，取值如下：</p>
+<ul>
+<li>ARP 请求</li>
+<li>ARP 响应</li>
+<li>RARP 请求</li>
+<li>RARP 响应</li>
+</ul>
+</li>
+<li>
+<p>Sender MAC Address 是 6 字节长度，取值是发送 ARP 消息的设备的 MAC 地址；</p>
+</li>
+<li>
+<p>Sender IP Address 是 4 字节长度，取值是发送 ARP 消息的设备的 IP 地址；</p>
+</li>
+<li>
+<p>Target MAC Address 是 6 字节长度，取值是接收 ARP 消息的设备的 MAC 地址。对于 ARP 广播请求，此值是 00-00-00-00-00-00。以太网帧头中的目的 MAC 地址要填 ff-ff-ff-ff-ff-ff；</p>
+</li>
+<li>
+<p>Target IP Address 是 4 字节长度，取值是接收 ARP 消息的设备的 IP 地址。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示： ARP 消息需要封装成以太网帧格式。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>下来我们通过一个简单实验，看一下 ARP 请求和响应格式。</p>
+</div><div class="cl-preview-section"><h2 id="arp-实验">ARP 实验</h2>
+</div><div class="cl-preview-section"><p>实验环境很简单：</p>
+</div><div class="cl-preview-section"><ol>
+<li>需要一台电脑；</li>
+<li>电脑上要安装 wireshark 抓包软件。</li>
+</ol>
+</div><div class="cl-preview-section"><blockquote>
+<p>操作注意事项：</p>
+<ul>
+<li>启动 wireshark 抓包，一定要选择好工作网口。比如笔记本一般至少包含有线和无线两个网口；</li>
+<li>如果 arp 请求刷新慢，可以通过“管理员身份”打开 cmd 客户端，输入 arp -d 清空 ARP 表，这是做一个上网的操作，就可以看到 arp 请求了。</li>
+</ul>
+</blockquote>
+</div><div class="cl-preview-section"><p>由于操作很简单，不再做过多说明。我就贴一下我的实验结果吧。</p>
+</div><div class="cl-preview-section"><p><strong>ARP request：</strong></p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed8a5680001f78509610653.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><strong>ARP responset：</strong></p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed8a5870001035609610689.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>希望你也能亲自动手做一下实验啊。</p>
+</div><div class="cl-preview-section"><h2 id="总结">总结</h2>
+</div><div class="cl-preview-section"><p>本文我们通过一个例子展开了链路层的分析，介绍了链路层的基本概念、链路层的定位、以及链路层的基本职责。</p>
+</div><div class="cl-preview-section"><p>我们结合 linux 协议栈的实现机制和网卡基本工作原理，明白了链路层是由系统驱动和网卡硬件两部分实现的。</p>
+</div><div class="cl-preview-section"><p>我们以应用最广泛的以太网为例，介绍了以太网的发展史。重点讲解了以太网帧格式、以太网 MAC 地址格式、以太网数据包转发过程、ARP 协议工作原理。</p>
+</div><div class="cl-preview-section"><p>最后通过 ARP 请求和响应的一个实验完成了本章。通过本章的学习，我相信你对以太网的工作原理有了深刻的认识了吧。</p>
+</div><div class="cl-preview-section"><h2 id="思考时间">思考时间</h2>
+</div><div class="cl-preview-section"><ol>
+<li>
+<p>我们说 ARP 请求一般是广播请求，以太网帧头目的 MAC 是 ff-ff-ff-ff-ff-ff。那么存在 ARP 单播请求吗？也就是说以太网帧头的目的 MAC 是指定主机的 MAC 地址。</p>
+</li>
+<li>
+<p>请说明在哪些情况下需要自己管理 MAC 地址？（提示，设置 MAC 地址 locally bit 位)</p>
+</li>
+<li>
+<p>请介绍以太网交换机的包转发原理。</p>
+</li>
+<li>
+<p>为什么需要 RARP 协议？请解释 RARP 工作原理。</p>
+</li>
+</ol>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5ed9fc00000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=80">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '04 刨根究底：数据链路层是如何工作的？',
+					'CID': '2093',
+					'Teacher': '陈子兴'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "04 刨根究底：数据链路层是如何工作的？",
+                    desc: "学好通用知识，提升技术竞争力",
+                    imgUrl: 'https:https://img2.mukewang.com/5ed8c1c600015fc805400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5ed8c1c600015fc805400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/80',
+                    link: 'https://m.imooc.com/read/80'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

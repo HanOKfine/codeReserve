@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>10 面向资源编程-RESTful风格</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="够吃管饱的SpringBoot大餐">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "4";
+	var chapter_id = "1806";
+	var chapter_title = "10 面向资源编程-RESTful风格";
+	var aid = "75";
+	var a_name = "SpringBoot 趣味私房课";
+	var a_price = "58.00";
+	var a_pic = "https://img4.mukewang.com/5e9cfd1f0001ece605400720.jpg";
+	var userId = 0;
+
+	var column_id = '75';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-26&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			10 面向资源编程-RESTful风格
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img1.mukewang.com/5e9cffce00013f8a06400359.jpg')"></div>
+	
+	
+		<a href="/read/75">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5e776f3c000149fd10801080-40-40.jpg" alt="刘水镜">
+				<h3>SpringBoot 趣味私房课</h3>
+				<p>刘水镜 · 知名 A.I. 公司 Java 工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">虚心使人进步，骄傲使人落后。<p class="author">——毛泽东</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9ac08c0001f28505790349.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h1 id="初探">1. 初探</h1>
+</div><div class="cl-preview-section"><p>经过上一小节的学习，对于 Spring MVC 我们掌握的已经差不多了，是时候来用它做点什么了。通过标题你应该已经知道了，我们接下来要学习一下使用 Spring MVC 来构建 RESTful 接口。</p>
+</div><div class="cl-preview-section"><h2 id="why？">1.1 WHY？</h2>
+</div><div class="cl-preview-section"><p>在学一个东西之前，我们通常需要搞清楚我们为什么要学习它，因为这有助于我们把它学好。闲言碎语不要讲，只谈干货和理想。我们就看看学习 RESTful 的意义何在。不管你之前是前端、后端还是客户端，亦或是还没有过编程方面的工作经验。凡是跟着本课程一起学到现在的同学，肯定都想具备开发服务端接口的能力。那么基于这个大前提我们就可以更清晰的去讨论 RESTful 对于我们的意义了。</p>
+</div><div class="cl-preview-section"><p>很久以前（暴露年龄的时候又来了）后端人员不仅 Java 功底要扎实，还需要熟练掌握 HTML、CSS、JS、JSTL、EL 表达式等前端技术。当年像什么 EasyUI、JQuery、dwz 用的也是相当的顺手呢。后来随着 Angular、React、Vue 等前端框架的崛起，还有移动互联网的迅猛发展，前后端分离的开发模式逐渐占据了主流。说了这么多，这些跟 RESTful 有啥关系呢？前后端分离，移动互联网的爆发，导致了后端服务不仅要为 Web 端提供支持，还要支持移动端（ Android、IOS 等），那么对于 API 的规范就需要有一定的要求了。这个时候 RESTful 的优势就体现出来了，它更简洁，更有层次，更易于实现缓存。</p>
+</div><div class="cl-preview-section"><h2 id="简介">1.2 简介</h2>
+</div><div class="cl-preview-section"><blockquote>
+<p>表现层状态转换（英语：Representational State Transfer ，缩写：REST ）是 Roy Thomas Fielding 博士于 2000 年在他的博士论文中提出来的一种万维网软件架构风格，目的是便于不同软件/程序在网络（例如互联网）中互相传递信息。表现层状态转换是根基于超文本传输协议 ( HTTP ) 之上而确定的一组约束和属性，是一种设计提供万维网络服务的软件构建风格。<br>
+——维基百科</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>以上是维基百科中对于 REST 的解释，如果你通过以上的描述理解了 REST 是个什么东西，那你该干嘛干嘛去吧，我不喜欢跟天才做朋友。假如你没理解，那咱们继续愉快的玩耍吧。</p>
+</div><div class="cl-preview-section"><h2 id="资源">1.3 资源</h2>
+</div><div class="cl-preview-section"><p>其实 <code>表现层状态转换</code> 说的比较抽象，而且省略了 <code>表��层</code> 的所属对象。这里的 <code>表现层</code> 可以理解为 <code>资源</code> 的表现层。那什么是资源呢？其实 <code>资源</code> 的范围比较宽泛，一个文件（图片、文档、音乐等）、一条数据（用户信息、订单等）都可以看做是资源（每个资源都有一个对应的 URI ）。我们在学习面向对象的时候有一句五字真言——万物皆对象。可以拿过来套用一下——万物皆资源。</p>
+</div><div class="cl-preview-section"><h2 id="表现层">1.4 表现层</h2>
+</div><div class="cl-preview-section"><p>Representational ，国内翻译成 <code>表现层</code>，其实我觉得叫 <code>表现形式</code> 会更容易理解。其实说白了就是资源以什么样的形式去展现自己——文本可以是 JSON 或 XML ，图片也可以是各种格式。所以我们现在将 REST 的中文翻译成 <code>资源表现形式的状态转换</code>，那么接下来我们再来理解一下这个状态转换。</p>
+</div><div class="cl-preview-section"><h2 id="状态转换">1.5 状态转换</h2>
+</div><div class="cl-preview-section"><p>状态转换？好像又不是很好理解呢。上面我们对于 REST 的翻译进化到了 <code>资源表现形式的状态转换</code>，比起 <code>表现层状态转换</code> 好像清晰了一些，但总觉得哪里不太对。因为我们有一个地方没有明确，就是一个资源的表现形式通常情况下是确定的。</p>
+</div><div class="cl-preview-section"><p>对 REST 的翻译我们可以再进化一步，现在变成了 <code>资源以某种表现形式进行状态转换</code>。这样一来又变得明朗了一些，转换其实就是发生了变化，就是改变的意思。而资源的状态发生了改变，其实就是说资源被修改了！握草？原来我随随便便在慕课网修改一下自己的用户信息就完成了一次 <code>表现层状态转换</code>？博士你不厚道呀，听到 REST 的时候膝盖都给你了，结果你就给我展示了一下数据操作的另一种叫法。其实不是的，REST 的核心不仅仅是对数据的操作，还有如何去操作，以什么样的规范去操作。</p>
+</div><div class="cl-preview-section"><h2 id="小结">1.6 小结</h2>
+</div><div class="cl-preview-section"><p>OK，第一部分主要针对 REST 的概念进行了讨论，从 <code>表现层状态转换</code> 一路进化到了 <code>资源以某种表现形式进行状态转换</code>。其实说得再直白一些就是 <code>按照一定的规范去操作某种特定格式的数据</code>。那么到底是什么样的规范，又是如何操作的呢？我们第二部分见分晓。</p>
+</div><div class="cl-preview-section"><h1 id="实战">2. 实战</h1>
+</div><div class="cl-preview-section"><p>相信通过上一趴的学习，你已经对 REST 的概念有了比较清楚的理解。那么接下来我们通过实践，来巩固一下。学完了内功心法，一定要配合武功招式才能发挥武功的真正威力。</p>
+</div><div class="cl-preview-section"><h2 id="书接上回">2.1 书接上回</h2>
+</div><div class="cl-preview-section"><p>上一趴留下了两个疑问：</p>
+</div><div class="cl-preview-section"><ol>
+<li>REST规范是什么</li>
+<li>通过什么手段进行状态的转换</li>
+</ol>
+</div><div class="cl-preview-section"><p>这一节就从这两个遗留问题展开，一点点来讨论。</p>
+</div><div class="cl-preview-section"><h2 id="规范与手段">2.2 规范与手段</h2>
+</div><div class="cl-preview-section"><p>下面是 RESTful 风格的规范：</p>
+</div><div class="cl-preview-section"><ul>
+<li>用 URI 定位资源（为啥不是URL？）</li>
+<li>URI 由名词组成</li>
+<li>使用 HTTP 方法对应数据的操作</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="举个栗子">2.3 举个栗子</h2>
+</div><div class="cl-preview-section"><p>假如我们要获取一个 ID 为 1 的用户信息，使用 REST 风格是什么样子呢？看下面这个例子：</p>
+</div><div class="cl-preview-section"><pre><code>GET "http://localhost:8080/rest/user/1"
+</code></pre>
+</div><div class="cl-preview-section"><p>其中，<code>http://localhost:8080/rest/user/1</code>  就是用来定位 ID 为 1 的用户（资源）；<code>GET</code> 是 HTTP 的一个方法，用来表示获取、查询；并且请求 URI <code>/user/1</code> 也都是由名词组成。</p>
+</div><div class="cl-preview-section"><p>后台代码实现大致如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@RestController</span>
+<span class="token annotation punctuation">@RequestMapping</span><span class="token punctuation">(</span><span class="token string">"/rest"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">RestFulController</span> <span class="token punctuation">{</span>
+  
+  <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/user/{id}"</span><span class="token punctuation">)</span>
+  <span class="token keyword">public</span> User <span class="token function">get</span><span class="token punctuation">(</span><span class="token annotation punctuation">@PathVariable</span> <span class="token keyword">int</span> id<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+  <span class="token punctuation">}</span>
+    
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>吃完上面这个小栗子，我们对于 REST 风格的接口有了更加形象的认识。上面演示了一个查询数据的操作，我们知道对于数据的基本操作有四种——中文是：增删改查；英文是：CRUD 。HTTP 中刚好也有四个方法（ GET - 查询、POST - 新增、PUT - 更新、DELETE - 删除）对应这四种操作：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>HTTP方法</th>
+<th>安全性</th>
+<th>幂等性</th>
+<th>接口说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td>安全</td>
+<td>幂等</td>
+<td>获取资源（Read）</td>
+</tr>
+<tr>
+<td>POST</td>
+<td>不安全</td>
+<td>非幂等</td>
+<td>创建资源（Create）</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td>不安全</td>
+<td>幂等</td>
+<td>更新资源（Update）</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td>不安全</td>
+<td>幂等</td>
+<td>删除资源（Delete）</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><blockquote>
+<p>安全性和幂等性我们在下一节做详细说明。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>创建用户：</p>
+</div><div class="cl-preview-section"><pre><code>POST "http://localhost:8080/rest/user"
+Content-Type: application/json
+</code></pre>
+</div><div class="cl-preview-section"><p>上面的 <code>Content-Type</code> 就是我们上一节里提到的 <code>表现形式</code>。</p>
+</div><div class="cl-preview-section"><p>POST 方法参数通常会放到请求体（ RequestBody ）中，以 <code>Content-Type</code> 中的格式（ JSON ）提交到服务端：</p>
+</div><div class="cl-preview-section"><pre class="  language-json"><code class="prism  language-json"><span class="token punctuation">{</span>
+  <span class="token string">"age"</span><span class="token punctuation">:</span> <span class="token number">10</span><span class="token punctuation">,</span>
+  <span class="token string">"birthDay"</span><span class="token punctuation">:</span> <span class="token string">"2019-07-07"</span><span class="token punctuation">,</span>
+  <span class="token string">"email"</span><span class="token punctuation">:</span> <span class="token string">"imooc@imooc.com"</span><span class="token punctuation">,</span>
+  <span class="token string">"name"</span><span class="token punctuation">:</span> <span class="token string">"imooc"</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>使用 <code>@RequestBody</code> 注解接收前度传来的参数：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@PostMapping</span><span class="token punctuation">(</span><span class="token string">"/user"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">create</span><span class="token punctuation">(</span><span class="token annotation punctuation">@RequestBody</span> User user<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>PUT 与 POST 类似，DELETE 与 GET 类似，这里就不占用篇幅了，但你一定要自己去实践一下哦。</p>
+</div><div class="cl-preview-section"><h2 id="urluri">2.4 URL&amp;URI</h2>
+</div><div class="cl-preview-section"><p>不知道你有没有注意到，上面描述 REST 规范的时候用的是 <code>URI</code> ，而不是我们更为熟悉的 <code>URL</code> 。它们两个有什么区别和联系呢？想要弄清楚它们之间的关系，需要引入第三者—— URN ，这里我们不过多介绍，只是为了说明 URI 和 URL 的关系。</p>
+</div><div class="cl-preview-section"><h2 id="名词解释">2.5 名词解释</h2>
+</div><div class="cl-preview-section"><ul>
+<li><strong>URI</strong>：Universal Resource Identifier 统一资源标志符</li>
+<li><strong>URL</strong>：Universal Resource Locator 统一资源定位符</li>
+<li><strong>URN</strong>：Universal Resource Name 统一资源名称</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="关系">2.5.1 关系</h3>
+</div><div class="cl-preview-section"><p>通过名字看不出它们三个有什么不同，我们先不管它们具体是什么，先来看看它们三个之间的关系：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9ac07300010e9108000482.png" alt="图片描述"><br>
+一图胜千言，通过上图我们很轻易就可以知道，URL 和 URN 都是 URI 的子集。也就是说如果一个东西是 URL 或者 URN ，那么它一定也是URI。<a href="https://tools.ietf.org/html/rfc3986#section-1.1.3">RFC3986</a>中有一句话：A URI can be further classified as a locator, a name, or both. 这句话更明确的说明了它们的关系—— URI = URL + URN。</p>
+</div><div class="cl-preview-section"><h3 id="区别">2.5.2 区别</h3>
+</div><div class="cl-preview-section"><p>URL 和 URI 的关系明确了，我们再来看如何分辨什么样的 URI 可以称为 URL 。其实它们两个的不同之处就在于 URN 。我们现在知道了 URI 有时候可以是 URL ，但当一个 URI 只符合 URN 规范的时候它就不能叫做 URL 了。看下面的例子：</p>
+</div><div class="cl-preview-section"><pre><code>1. https://www.imooc.com
+2. mailto:imooc@imooc.com
+</code></pre>
+</div><div class="cl-preview-section"><p>1 是 URL ，它符合 URL 的定义（定位符），因为它可以定位到一个具体的位置（慕课网）；2 则不是 URL ，它是 URN ，它不能定位的任何数据。</p>
+</div><div class="cl-preview-section"><h2 id="小结-1">2.6 小结</h2>
+</div><div class="cl-preview-section"><p>OK，在第二部分中做了几个 RESTful 接口，算是小试牛刀，一定要亲自实践一下。实践不仅能够加深印象，在实践的过程中可能会遇到各种情况，应对各种情况，解决各种问题则是你成长最快的方式之一。</p>
+</div><div class="cl-preview-section"><p>后面我们又一起学习了 URI 和 URL 的关系与区别，很多人对于这两个家伙分的不是很清楚，我之前也是傻傻分不清楚。所以特意在这里把它们拿出来，一起学习一下。相信现在你已经可以轻松的理解 URI 和 URL 了，可喜可贺！</p>
+</div><div class="cl-preview-section"><h1 id="总结">3. 总结</h1>
+</div><div class="cl-preview-section"><p>通过本节两部分内容的学习，我们对于 RESTful 风格已经有了较为全面的认识了。理论上已经非常完备了，实战方面也做了一个小例子。后面想要掌握的更加牢固与熟练，还需要进一步的去实战。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img.mukewang.com/5e996bd600011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6234">
+						<img src="https://img3.mukewang.com/5b8ce3e50001559a02000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕盖茨7308758</h4>
+						<div class="comment-text">老师，达达技术写过一篇SpringMVC RESTful性能优化的，结论是：如果访问量多的话使用rest方式会影响性能的，https://www.cnblogs.com/ucos/articles/5542012.html</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-21</span>
+						<a href="/read/commentdetail/6234">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6234" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6085">
+						<img src="https://img4.mukewang.com/564ffc1c0001e55100400040-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">YUnHolding丶sand</h4>
+						<div class="comment-text">老师可以讲解一下使用REST风格的api，有什么好处吗？</div>
+						<div>
+							
+								<div class="reply">讲师回复：REST 的好处就像 1.1 中所说的那样，在为多前端（WEB、移动端）提供服务的时候更加的简单明了，通用性更强一些。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-09</span>
+						<a href="/read/commentdetail/6085">
+							<span class="icon r"><i class="imwap-comment"></i><em>2</em></span>
+						</a>
+						<span data-cid="6085" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5565">
+						<img src="https://img1.mukewang.com/5b8cee6b0001bc1402000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">fisherss</h4>
+						<div class="comment-text">老师，3-4 URL&amp;URI标题目录这个地方笔误了，应该是2-4</div>
+						<div>
+							
+								<div class="reply">讲师回复：好哒，感谢细心的 fisherss 提醒呦。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-22</span>
+						<a href="/read/commentdetail/5565">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5565" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5227">
+						<img src="https://img2.mukewang.com/5a1526d10001990501000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_庞庞_0</h4>
+						<div class="comment-text">最近正在写接口，犹豫要不要用这种风格，貌似9各种风格就必须用路径传参数，也就是@pathvariable注解，但是这个注解会导致路由在应用启动是变得不确定，然后又准备在网关去做资源权限控制，这样的话用户输入的参数会动态变化，没办法去匹配这个路��，目前也没有好的解决的方法，希望老师能给一点建议</div>
+						<div>
+							
+								<div class="reply">讲师回复：不冲突的，你可以了解一下 Spring Security。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-04-28</span>
+						<a href="/read/commentdetail/5227">
+							<span class="icon r"><i class="imwap-comment"></i><em>3</em></span>
+						</a>
+						<span data-cid="5227" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=75">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '10 面向资源编程-RESTful风格',
+					'CID': '1806',
+					'Teacher': '刘水镜'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "10 面向资源编程-RESTful风格",
+                    desc: "够吃管饱的SpringBoot大餐",
+                    imgUrl: 'https:https://img4.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/75',
+                    link: 'https://m.imooc.com/read/75'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

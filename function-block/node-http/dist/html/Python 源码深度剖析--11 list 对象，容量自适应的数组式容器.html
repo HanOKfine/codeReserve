@@ -1,0 +1,983 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>11 list 对象，容量自适应的数组式容器</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="突破技术瓶颈，迈向更高岗位">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "11";
+	var chapter_id = "1907";
+	var chapter_title = "11 list 对象，容量自适应的数组式容器";
+	var aid = "76";
+	var a_name = "Python 源码深度剖析";
+	var a_price = "68.00";
+	var a_pic = "https://img2.mukewang.com/5eb68ab400017cda05400720.jpg";
+	var userId = 0;
+
+	var column_id = '76';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-06-19&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			11 list 对象，容量自适应的数组式容器
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img4.mukewang.com/5ecdcd6e0001d49506400359.jpg')"></div>
+	
+	
+		<a href="/read/76">
+			<div class="course-entry">
+				<img src="https://img2.mukewang.com/5e4a3ec90001ef8d04000400-40-40.jpg" alt="fasionchan">
+				<h3>Python 源码深度剖析</h3>
+				<p>fasionchan · 资深 Python 研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">没有智慧的头脑，就象没有腊烛的灯笼。<p class="author">——列夫·托尔斯泰</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>笔者经常在面试中与候选人探讨 <em>Python</em> 内置容器对象， <em>list</em> 作为最常用容器中的一员，肯定少不了它：</p>
+</div><div class="cl-preview-section"><ul>
+<li>你用过 <em>list</em> 对象吗？</li>
+<li><em>list</em> 对象都支持哪些操作？时间复杂度、空间复杂度分别是多少？</li>
+<li>试分析 <em>append</em> 和 <em>insert</em> 这两个方法的时间复杂度？</li>
+<li>头部追加性能较差，如何解决？</li>
+</ul>
+</div><div class="cl-preview-section"><p><em>list</em> 对象的基本用法和技术原理，每个 <em>Python</em> 开发工程师都必须掌握，但不少候选人对此却只是一知半解。本节，我们一起查缺补漏，力求彻底掌握 <em>list</em> 对象，完美解答面试官针对 <em>list</em> 对象的灵魂之问。</p>
+</div><div class="cl-preview-section"><h2 id="基本用法">基本用法</h2>
+</div><div class="cl-preview-section"><p>我们先来回顾一下 <em>list</em> 对象的基本操作：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token comment"># 新建一个列表</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l
+<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">]</span>
+
+<span class="token comment"># 向尾部追加元素，列表对象视情况自动扩容</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l
+<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">]</span>
+
+<span class="token comment"># 从尾部弹出元素，列表对象视情况自动缩容</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token number">4</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l
+<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">]</span>
+
+<span class="token comment"># 向头部插入元素，该操作需要挪动后面的元素，谨慎使用！</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l<span class="token punctuation">.</span>insert<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l
+<span class="token punctuation">[</span><span class="token number">4</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">]</span>
+
+<span class="token comment"># 从头部弹出元素，该操作需要挪动后面的元素，谨慎使用！</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>
+<span class="token number">4</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l
+<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">]</span>
+
+<span class="token comment"># 查找元素第一次出现位置的下标</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l<span class="token punctuation">.</span>index<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span>
+<span class="token number">1</span>
+
+<span class="token comment"># 用一个可迭代对象扩展列表——元素逐一追加到尾部</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l<span class="token punctuation">.</span>extend<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l
+<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">]</span>
+
+<span class="token comment"># 计算元素出现的个数</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l<span class="token punctuation">.</span>count<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+<span class="token number">2</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l<span class="token punctuation">.</span>count<span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span>
+<span class="token number">1</span>
+
+<span class="token comment"># 将列表反转</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l<span class="token punctuation">.</span>reverse<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l
+<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">]</span>
+
+<span class="token comment"># 将列表清空</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l<span class="token punctuation">.</span>clear<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l
+<span class="token punctuation">[</span><span class="token punctuation">]</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>一个合格的 <em>Python</em> 开发工程师，除了必须熟练掌握 <em>list</em> 对象的基本操作，还需要对每个操作的 <strong>实现原理</strong> 及对应的 <strong>时间复杂度</strong> 、 <strong>空间复杂度</strong> 有准确的认识。列表操作总体比较简单，但有个操作特别容易被误用：</p>
+</div><div class="cl-preview-section"><ul>
+<li><em>insert</em> 方法向头部追加元素时需要挪动整个列表，时间复杂度是 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">O(n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathit">n</span><span class="mclose">)</span></span></span></span></span> ，性能极差，需谨慎使用；</li>
+<li><em>append</em> 方法向尾部追加元素时，无需挪动任何元素，时间复杂度 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">O(1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathrm">1</span><span class="mclose">)</span></span></span></span></span> ；</li>
+<li><em>pop</em> 方法从头部弹出元素时也需要挪动整个列表，时间复杂度是 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">O(n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathit">n</span><span class="mclose">)</span></span></span></span></span> ，同样需谨慎使用；</li>
+<li><em>pop</em> 方法从尾部弹出元素时，无需挪动任何元素，时间复杂度是 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">O(1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathrm">1</span><span class="mclose">)</span></span></span></span></span></li>
+</ul>
+</div><div class="cl-preview-section"><p>由此可见，对列表头部和尾部进行操作，性能有天壤之别。后续我们将一起探索 <em>list</em> 对象内部结构，从中寻找造成这种现象的原因。此外， <em>list</em> 对象还可根据元素个数 <strong>自动扩缩容</strong> ，其中秘密也将一一揭晓。</p>
+</div><div class="cl-preview-section"><h2 id="内部结构">内部结构</h2>
+</div><div class="cl-preview-section"><p><em>list</em> 对象在 <em>Python</em> 内部，由 <em>PyListObject</em> 结构体表示，定义于头文件 <em>Include/listobject.h</em> 中：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token keyword">typedef</span> <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+    PyObject_VAR_HEAD
+    <span class="token comment">/* Vector of pointers to list elements.  list[0] is ob_item[0], etc. */</span>
+    PyObject <span class="token operator">*</span><span class="token operator">*</span>ob_item<span class="token punctuation">;</span>
+
+    <span class="token comment">/* ob_item contains space for 'allocated' elements.  The number
+     * currently in use is ob_size.
+     * Invariants:
+     *     0 &lt;= ob_size &lt;= allocated
+     *     len(list) == ob_size
+     *     ob_item == NULL implies ob_size == allocated == 0
+     * list.sort() temporarily sets allocated to -1 to detect mutations.
+     *
+     * Items must normally not be NULL, except during construction when
+     * the list is not yet visible outside the function that builds it.
+     */</span>
+    Py_ssize_t allocated<span class="token punctuation">;</span>
+<span class="token punctuation">}</span> PyListObject<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>毫无疑问， <em>list</em> 对象是一种 <strong>变长对象</strong> ，因此包含变长对象公共头部。除了公共头部， <em>list</em> 内部维护了一个动态数组，而数组则依次保存元素对象的指针：</p>
+</div><div class="cl-preview-section"><ul>
+<li><em><strong>ob_item</strong></em> ，指向动态数组的指针，动态数组保存元素对象的指针；</li>
+<li><em><strong>allocated</strong></em> ，动态数组长度，即列表 <strong>容量</strong> ；</li>
+<li><em><strong>ob_size</strong></em> ，动态数组当前保存元素个数，即列表 <strong>长度</strong> 。</li>
+</ul>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ecdcfd000011d0e09320478.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="尾部操作">尾部操作</h2>
+</div><div class="cl-preview-section"><p>在列表对象尾部增删元素，可快速完成，无须挪动其他元素。</p>
+</div><div class="cl-preview-section"><p>假设列表元素 <em>l</em> 内部数组长度为 <em>5</em> ，以及保存 <em>3</em> 个元素，分别是： <em>1</em> 、 <em>2</em> 、 <em>3</em> 。当我们调用 <em>append</em> 方法向尾部追加元素时，由于内部数组还有未用满，只需将新元素保存于数组下一可用位置并更新 <em>ob_size</em> 字段：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ecdcfdc00017ea714210358.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>因此，大多数情况下， <em>append</em> 方法性能都足够好，时间复杂度是 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">O(1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathrm">1</span><span class="mclose">)</span></span></span></span></span>。</p>
+</div><div class="cl-preview-section"><h2 id="动态扩容">动态扩容</h2>
+</div><div class="cl-preview-section"><p>如果 <em>list</em> 对象内部数组已用满，再添加元素时则需要进行扩容。 <em>append</em> 等方法在操作时都会对内部数组进行检查，如需扩容则调用 <em>list_resize</em> 函数。在 <em>list_resize</em> 函数， <em>Python</em> 重新分配一个长度更大的数组并替换旧数组。为避免频繁扩容， <em>Python</em> 每次都会为内部数组预留一定的裕量。</p>
+</div><div class="cl-preview-section"><p>假设列表元素 <em>l</em> 保存 <em>3</em> 个元素，内部数组长度为 <em>3</em> ，已满。当我们调用 <em>append</em> 方法向列表尾部追加元素时，需要对内部数组进行扩容。扩容步骤如下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ecdcfe50001bd9614310392.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ol>
+<li>分配一个更大的数组，假设长度为 <em>6</em> ，预留一定裕量避免频繁扩容；</li>
+<li>将列表元素从旧数组逐一转移到新数组；</li>
+<li>以新数组替换旧数组，并更新 <em>allocated</em> 字段；</li>
+<li>回收旧数组。</li>
+</ol>
+</div><div class="cl-preview-section"><p>由于内部数组扩容时，需要将列表元素从旧数组拷贝到新数组，时间复杂度为 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">O(n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathit">n</span><span class="mclose">)</span></span></span></span></span> ，开销较大，需要尽量避免。为此， <em>Python</em> 在为内部数组扩容时，会预留一定裕量，一般是 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mn>1</mn><mi mathvariant="normal">/</mi><mn>8</mn></mrow><annotation encoding="application/x-tex">1/8</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathrm">1</span><span class="mord mathrm">/</span><span class="mord mathrm">8</span></span></span></span></span> 左右。假设为长度为 <em>1000</em> 的列表对象扩容， <em>Python</em> 会预留大约 <em>125</em> 个空闲位置，分配一个长度 <em>1125</em> 的新数组。</p>
+</div><div class="cl-preview-section"><p>由于扩容操作的存在， <em>append</em> 方法最坏情况下时间复杂度为 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">O(n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathit">n</span><span class="mclose">)</span></span></span></span></span> 。由于扩容操作不会频繁发生，将扩容操作时的元素拷贝开销平摊到多个 <em>append</em> 操作中，平均时间复杂度还是 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">O(1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathrm">1</span><span class="mclose">)</span></span></span></span></span> 。</p>
+</div><div class="cl-preview-section"><h2 id="头部操作">头部操作</h2>
+</div><div class="cl-preview-section"><p>与尾部相比，由于在列表头部增删元素需要挪动其他列表元素，性能有天地之别。</p>
+</div><div class="cl-preview-section"><p>假设列表元素 <em>l</em> 内部数组长度为 <em>5</em> ，以及保存 <em>3</em> 个元素，分别是： <em>1</em> 、 <em>2</em> 、 <em>3</em> 。当我们调用 <em>insert</em> 方法向头部插入元素时，需要先将当前所有元素往后挪一位，以便为新元素腾出一个空闲位置：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ecdcfed0001086d15880355.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>然后， <em>insert</em> 方法将新元素存入挪出来的空闲位置，更新新 <em>ob_size</em> 字段，便完成了插入操作：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ecdcff50001c37e16000458.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>因此， <em>insert</em> 在头部插入元素的时间复杂度是 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">O(n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathit">n</span><span class="mclose">)</span></span></span></span></span> ，必须谨慎使用，尽量避免。调用 <em>pop</em> 方法从头部弹出元素，性能也是很差，时间复杂度同样是  <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">O(n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathit">n</span><span class="mclose">)</span></span></span></span></span>。笔者见过有人将 <em>list</em> 对象当成一个 <strong>队列</strong> 来用，真想把他抓起来打一顿：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python">q <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+
+<span class="token comment"># enqueue</span>
+q<span class="token punctuation">.</span>append<span class="token punctuation">(</span>job<span class="token punctuation">)</span>
+
+<span class="token comment"># dequeue</span>
+job <span class="token operator">=</span> q<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这个队列实现，出队操作需要将整个队列挪动一遍，性能很差。如果队列规模很大，这将成为拖垮程序的关键因素。如果队列规模很小，这种写法虽说问题不大，但也不建议——你最好不要在代码中埋一颗不知什么时候会爆炸的雷。</p>
+</div><div class="cl-preview-section"><p>如果你需要频繁操作列表头部，可以考虑使用标准库里的 <em>deque</em> ，这是一种 <strong>双端队列</strong> 结构。 <em>deque</em> 头部和尾部操作性能都很优秀，时间复杂度都是 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">O(1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathrm">1</span><span class="mclose">)</span></span></span></span></span> 。如果你需要一个 <strong>先进先出</strong> ( <em>FIFO</em> )队列，可以这么写：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">from</span> collections <span class="token keyword">import</span> deque
+
+q <span class="token operator">=</span> deque<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment"># enqueue</span>
+q<span class="token punctuation">.</span>append<span class="token punctuation">(</span>job<span class="token punctuation">)</span>
+
+<span class="token comment"># dequeue</span>
+q<span class="token punctuation">.</span>popleft<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="浅拷贝">浅拷贝</h2>
+</div><div class="cl-preview-section"><p>调用 <em>list</em> 对象 <em>copy</em> 方法，可将列表拷贝一份，生成一个全新的列表：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token comment"># 创建一个列表</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">'three'</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l
+<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">'three'</span><span class="token punctuation">]</span>
+
+<span class="token comment"># 拷贝形成一个新列表</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l2 <span class="token operator">=</span> l<span class="token punctuation">.</span>copy<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l2
+<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">'three'</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">id</span><span class="token punctuation">(</span>l<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token builtin">id</span><span class="token punctuation">(</span>l2<span class="token punctuation">)</span>
+<span class="token punctuation">(</span><span class="token number">4417331976</span><span class="token punctuation">,</span> <span class="token number">4420505736</span><span class="token punctuation">)</span>
+
+<span class="token comment"># 修改新列表不影响旧列表</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l2<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token string">'one'</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l2
+<span class="token punctuation">[</span><span class="token string">'one'</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">'three'</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l
+<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">'three'</span><span class="token punctuation">]</span>
+
+<span class="token comment"># 但是修改新列表中的可变元素，旧列表也跟着变！</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l2<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token string">'two'</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l2
+<span class="token punctuation">[</span><span class="token string">'one'</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token string">'two'</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">'three'</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l
+<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token string">'two'</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">'three'</span><span class="token punctuation">]</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>由于 <em>copy</em> 方法只是对列表对象进行 <strong>浅拷贝</strong> ，对新列表可变元素的修改对旧列表可见！</p>
+</div><div class="cl-preview-section"><p>如何理解浅拷贝呢？我们知道，列表对象内部数组保存元素对象的 <strong>指针</strong> ； <em>copy</em> 方法复制内部数组时，拷贝的也是元素对象的指针，而不是将元素对象拷贝一遍。因此，新列表对象与旧列表保存的都是同一组对象：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ecdd0120001c0e011740361.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>由此可见，<em>l</em> 和 <em>l2</em> 内嵌的列表对象其实是同一个，一旦对其进行修改，对 <em>l</em> 和 <em>l2</em> 都可见。</p>
+</div><div class="cl-preview-section"><p><em>copy</em> 方法实现的浅拷贝行为，可能不是你想要的。这时，可以通过 <em>copy</em> 模块里的 <em>deepcopy</em> 函数进行 <strong>深拷贝</strong> ：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token comment"># 创建一个列表</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">'three'</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l
+<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">'three'</span><span class="token punctuation">]</span>
+
+<span class="token comment"># 对列表进行深拷贝</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">from</span> copy <span class="token keyword">import</span> deepcopy
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l2 <span class="token operator">=</span> deepcopy<span class="token punctuation">(</span>l<span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l2
+<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">'three'</span><span class="token punctuation">]</span>
+
+<span class="token comment"># 修改新列表不会影响旧列表</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l2<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token string">'two'</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l2
+<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token string">'two'</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">'three'</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l
+<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">'three'</span><span class="token punctuation">]</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><em>deepcopy</em> 函数将递归复制所有容器对象，确保新旧列表不会包含同一个容器对象。这样一来，代码第 <em>13</em> 行处的修改，便对原列表不可见了。深拷贝的行为跟浅拷贝恰好相反。</p>
+</div><div class="cl-preview-section"><p><strong>浅拷贝</strong> 和 <strong>深拷贝</strong> 是 <em>Python</em> 面试中频繁考察的概念，必须完全掌握。</p>
+</div><div class="cl-preview-section"><h2 id="小结">小结</h2>
+</div><div class="cl-preview-section"><p>本节我们一起回顾了 <em>list</em> 对象的典型用法并在此基础上研究其内部结构。 <em>list</em> 对象是一种 <strong>变长对象</strong> ，内部结构除了变长对象 <strong>公共头部</strong> 外，维护着一个 <strong>动态数组</strong> ，用于保存元素对象指针。其中，关键字段包括：</p>
+</div><div class="cl-preview-section"><ul>
+<li><em>ob_item</em> ， <strong>动态数组</strong> 指针，数组保存元素对象指针；</li>
+<li><em>allocated</em> ，动态数组长度，即列表 <strong>容量</strong> ；</li>
+<li><em>ob_size</em> ，动态数组已保存元素个数，即列表 <strong>长度</strong> 。</li>
+</ul>
+</div><div class="cl-preview-section"><p><em>Python</em> 内部负责管理 <em>list</em> 对象的容量，在必要时 <strong>自动扩缩容</strong> ，极大降低开发人员的负担。</p>
+</div><div class="cl-preview-section"><p>列表头部操作与尾部操作的性能差距非常大，而 <em>collections.deque</em> 作为替代品可解决列表头部操作的性能问题。列表 <em>copy</em> 方法只实现了 <strong>浅拷贝</strong> ，想要 <strong>深拷贝</strong> 只能借助 <em>copy.deepcopy</em> 函数。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5ecdcd7400011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6909">
+						<img src="https://img2.mukewang.com/5f743907000113f601320132-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">高小壮</h4>
+						<div class="comment-text">老师您好，请问空列表的内存大小为什么是56个字节？</div>
+						<div>
+							
+								<div class="reply">讲师回复：在64位系统上，空列表对象大小是72字节（版本3.7.4)：&gt;&gt;&gt; sys.getsizeof([])
+72
+
+为什么是72��？首先，按照本节介绍的底层结构，list对象有5个字段，每个都是8字节，总共40字节；此外，为实现垃圾回收机制，需要GC跟踪的对象需要额外分配一个PyGC_Head结构体，这个结构体是32字节；PyGC_Head结构体在本专栏后半部有介绍。因此，空列表对象大小合起来是72字节。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-10-04</span>
+						<a href="/read/commentdetail/6909">
+							<span class="icon r"><i class="imwap-comment"></i><em>2</em></span>
+						</a>
+						<span data-cid="6909" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6897">
+						<img src="https://img4.mukewang.com/5b8cd5000001a08502000197-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_慕尼黑1236838</h4>
+						<div class="comment-text">等号赋值，一个列表赋值给另一个列表list1=list2这种是浅拷贝吗？还有参数传参也是浅拷贝吗？</div>
+						<div>
+							
+								<div class="reply">讲师回复：这两种情况连浅拷贝都谈不上，它们都没有发生任何数据拷贝，只是传递了引用关系，背后的列表对象都是同一个。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-10-01</span>
+						<a href="/read/commentdetail/6897">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6897" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6774">
+						<img src="https://img2.mukewang.com/533e4c3300019caf02000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">蒙古力_康康康</h4>
+						<div class="comment-text">老师，，列表里面存放不同类型的参数的时候，，索引的偏移量是如何计算的，，，，</div>
+						<div>
+							
+								<div class="reply">讲师回复：索引偏移量跟元素类型无关</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-13</span>
+						<a href="/read/commentdetail/6774">
+							<span class="icon r"><i class="imwap-comment"></i><em>2</em></span>
+						</a>
+						<span data-cid="6774" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6752">
+						<img src="https://img1.mukewang.com/5d0e5fab000109b809780978-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕运维8121226</h4>
+						<div class="comment-text">原来是数组，我一直以为是双向链表，怪不得面试挂了</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-10</span>
+						<a href="/read/commentdetail/6752">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6752" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6564">
+						<img src="https://img2.mukewang.com/5ced408a0001dca306400640-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">星星在线</h4>
+						<div class="comment-text">一直认为list是列表，因为可以存储不同类型的元素，没想到这浓眉大眼的竟然是数组。那么动态数组中存储的是每个元素的指针吗？</div>
+						<div>
+							
+								<div class="reply">讲师回复：是的</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-17</span>
+						<a href="/read/commentdetail/6564">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6564" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6559">
+						<img src="https://img4.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕九州5232177</h4>
+						<div class="comment-text">老师你好，有个问题很疑惑，
+a = [1, 2, 3]
+使用a[10:]为什么会返回一个空列表[]?</div>
+						<div>
+							
+								<div class="reply">讲师回复：源码处理逻辑大概是这样的，low=10，比3大，将其设置为3；high未提供，将其设为3；由此a[10:]等价于a[3:3]；这个是切片边界处理过程。接着计算子列表长度，high-low=3-3=0，因此分配了一个空列表。最后，拷贝元素，由于low和high都是3，因此循环没有执行。具体请参考 Objects/listobject.c 源文件，关键函数是list_subscript PySlice_AdjustIndices 和 list_slice 。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-17</span>
+						<a href="/read/commentdetail/6559">
+							<span class="icon r"><i class="imwap-comment"></i><em>4</em></span>
+						</a>
+						<span data-cid="6559" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6271">
+						<img src="https://img2.mukewang.com/545845d30001ee8a02200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕仙6553837</h4>
+						<div class="comment-text">老师你好，我想问一下：
+python中声明一个列表：li=[] ,但没有规定这个列表的初始长度，那么此时python底层是如何处理的呢（是不是会有一个默认的初始长度/还是说初始列表长度默认为0，之后有.append()、.insert()后再对实现列表所对应的动态数组进行扩容）</div>
+						<div>
+							
+								<div class="reply">讲师回复：正如你所说的，有两种不同的实现策略：①预先分配动态数组，这时列表有一定的容量，但是长度为0，后续append操作不需要立刻扩容；②不分配动态数组，这时列表容量和长度均为零，后续需要添加元素时再通过扩容操作实际分配动态数组。一般采用策略②，Python 3也是。因为你分配了空列表后，有可能永远都不会添加数据，或者过了很久才添加数据。这时，将动态数组分配推迟到真正需要的时刻，可以提高内存使用效率。程序设计中的懒加载，操作系统fork进程后采用的copy on write策略，指导思想都是类似的。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-23</span>
+						<a href="/read/commentdetail/6271">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6271" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5980">
+						<img src="https://img.mukewang.com/54584e390001972002200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕莱坞2377110</h4>
+						<div class="comment-text">浅拷贝为什么修改可变对象才会变，修改不可变对象两个列表指向同一个对象却可以不一样？</div>
+						<div>
+							
+								<div class="reply">讲师回复：因为不可变对象只能通过重新赋值进行修改，一旦重新赋值，背后的对象就变了：
+lst[i] = x
+而可变对象可以通过操作对象方法进行修改，背后的对象还是那一个：
+lst[i].append(x)
+只要理解这两种修改方式之间的区别，疑问也就消除了~</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-30</span>
+						<a href="/read/commentdetail/5980">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5980" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5876">
+						<img src="https://img3.mukewang.com/533e4d660001312002000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">我不是药神</h4>
+						<div class="comment-text">一处拼写错误
+为避免频繁扩容， Python 每次都会为内部数组预留一定的裕量。
+裕量 --&gt; 余量</div>
+						<div>
+							
+								<div class="reply">讲师回复：这两个词是同义词，裕量比较书面，余量则更加口语化。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-19</span>
+						<a href="/read/commentdetail/5876">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5876" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5702">
+						<img src="https://img2.mukewang.com/5333a0350001692e02200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕码人3179062</h4>
+						<div class="comment-text">怎么能把人抓起来打一顿呢，太暴力了(手动狗头</div>
+						<div>
+							
+								<div class="reply">讲师回复：开个玩笑哈哈~</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-02</span>
+						<a href="/read/commentdetail/5702">
+							<span class="icon r"><i class="imwap-comment"></i><em>2</em></span>
+						</a>
+						<span data-cid="5702" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5668">
+						<img src="https://img2.mukewang.com/5b8cdc9f00016fac02000204-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕用9071272</h4>
+						<div class="comment-text">pop 方法从尾部弹出元素时，无需挪动任何元素，时间复杂度是 O(n)
+============
+应该是博主笔误了，这里是O(1)</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-29</span>
+						<a href="/read/commentdetail/5668">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5668" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=76">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '11 list 对象，容量自适应的数组式容器',
+					'CID': '1907',
+					'Teacher': 'fasionchan'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "11 list 对象，容量自适应的数组式容器",
+                    desc: "突破技术瓶颈，迈向更高岗位",
+                    imgUrl: 'https:https://img2.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/76',
+                    link: 'https://m.imooc.com/read/76'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

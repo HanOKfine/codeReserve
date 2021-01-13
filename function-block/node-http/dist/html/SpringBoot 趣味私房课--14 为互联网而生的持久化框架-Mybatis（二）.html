@@ -1,0 +1,947 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>14 为互联网而生的持久化框架-Mybatis（二）</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="够吃管饱的SpringBoot大餐">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "9";
+	var chapter_id = "1810";
+	var chapter_title = "14 为互联网而生的持久化框架-Mybatis（二）";
+	var aid = "75";
+	var a_name = "SpringBoot 趣味私房课";
+	var a_price = "58.00";
+	var a_pic = "https://img2.mukewang.com/5e9cfd1f0001ece605400720.jpg";
+	var userId = 0;
+
+	var column_id = '75';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-06-28&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			14 为互联网而生的持久化框架-Mybatis（二）
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img.mukewang.com/5e9d00640001af9a06400359.jpg')"></div>
+	
+	
+		<a href="/read/75">
+			<div class="course-entry">
+				<img src="https://img2.mukewang.com/5e776f3c000149fd10801080-40-40.jpg" alt="刘水镜">
+				<h3>SpringBoot 趣味私房课</h3>
+				<p>刘水镜 · 知名 A.I. 公司 Java 工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">知识犹如人体的血液一样宝贵。<p class="author">——高士其</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>经过上一节对于 MyBatis 宏观层面的学习，我们对于 MyBatis 已经有了相当全面的认识。想必已经迫不及待的想要动手实践了。那咱们就闲话少说，直接开干！</p>
+</div><div class="cl-preview-section"><h1 id="动手">1. 动手</h1>
+</div><div class="cl-preview-section"><h2 id="整合-mybatis">1.1 整合 MyBatis</h2>
+</div><div class="cl-preview-section"><p>我们想要使用 MyBatis 首先需要添加对 MyBatis 的依赖。Spring Boot 向来以简单快速的特点行走江湖，在整合 MyBatis 的时候也依然遵循着这一原则，只需引入 MyBatis 相关的 starter 即可，具体如下：</p>
+</div><div class="cl-preview-section"><h3 id="添加依赖">添加依赖</h3>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>org.mybatis.spring.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>mybatis-spring-boot-starter<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>mysql<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>mysql-connector-java<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">&gt;</span></span>5.1.48<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>当然，我们本套课程使用的数据库为 MySQL ，我们也需要引入 MySQL 的相关依赖（在 JPA 那一小节就已经接触过了）。</p>
+</div><div class="cl-preview-section"><h3 id="数据库配置">数据库配置</h3>
+</div><div class="cl-preview-section"><p>接下来，我们需要配置一下数据库的相关信息。在 application.yml 文件中添加如下配置：</p>
+</div><div class="cl-preview-section"><pre class="  language-yaml"><code class="prism  language-yaml"><span class="token comment">#数据源配置</span>
+<span class="token key atrule">spring</span><span class="token punctuation">:</span>
+  <span class="token key atrule">datasource</span><span class="token punctuation">:</span>
+    <span class="token key atrule">url</span><span class="token punctuation">:</span> jdbc<span class="token punctuation">:</span>mysql<span class="token punctuation">:</span>//127.0.0.1<span class="token punctuation">:</span>3306/springboot<span class="token punctuation">?</span>characterEncoding=utf8<span class="token important">&amp;useSSL</span>=false<span class="token important">&amp;serverTimezone</span>=Asia/Shanghai
+    <span class="token key atrule">driver-class-name</span><span class="token punctuation">:</span> com.mysql.jdbc.Driver
+    <span class="token key atrule">username</span><span class="token punctuation">:</span> root
+    <span class="token key atrule">password</span><span class="token punctuation">:</span> <span class="token number">123456</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>配置项：</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>url</strong>：连接数据库的地址</li>
+<li><strong> driver-class-name</strong>：连接数据库的驱动</li>
+<li><strong> username</strong>：数据库的用户名</li>
+<li><strong> password</strong>：数据库的密码</li>
+</ul>
+</div><div class="cl-preview-section"><p>简单介绍一下 url 中的几个参数：</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>characterEncoding</strong>：字符集，指的是程序与 MySQL 交互时所使用的字符集，我们使用 utf8</li>
+<li><strong>useSSL</strong>：用来指定是否启用 SSL ，我们这里设置为不启用</li>
+<li><strong> serverTimezone</strong>：时区，如果不指定，在使用 6.x 以后版本的驱动时会出现一些问题，我们设置为 Asia/Shanghai</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="交给国家（spring）">交给国家（Spring）</h3>
+</div><div class="cl-preview-section"><p>我们知道，MyBatis 是用 Mapper 接口将我们的程序与一系列持久化操作串联起来的。对 Spring 有了解的同学都知道，如果想要把工作交给 Spring 来进行统一管理，那么就需要让 Spring 知道它的存在，也就是让 Spring 扫描到它。因此，我们需要在我们的项目的主类中加上一个注解 —— @MapperScan ，用来扫描 MyBatis 的 Mapper。括号中填入 Mapper 所在的包路径，具体如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+    
+<span class="token annotation punctuation">@MapperScan</span><span class="token punctuation">(</span><span class="token string">"com.imooc.springboot.mybatis.mapper"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SpringbootApplication</span> <span class="token punctuation">{</span>
+
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>PS：如果我们不使用 @MapperScan 这个注解，那么就需要在每个 Mapper 接口上加上  @Mapper，这样显然比较麻烦。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="使用-mybatis">1.2 使用 MyBatis</h2>
+</div><div class="cl-preview-section"><p>在学习 JPA 的那一节中我们了解到 JPA 是以 Java Entity 为原点，通过实体类来映射表之间的关系（可以通过 Java 实体类来生成对应的表结构和表关系）；而 MyBatis 则是以数据库（表）为原点，它跟 JPA 是一种互逆的关系，这样看来 MyBatis 应该具备通过数据库（表）生成实体类的能力。没错，MyBatis 为我们提供了一个很好用的工具 —— MyBatis Generator，简称 MBG（总觉得这个缩写怪怪的）。</p>
+</div><div class="cl-preview-section"><h3 id="创建表结构">创建表结构</h3>
+</div><div class="cl-preview-section"><p>我们可以通过下面的建表语句来创建我们的 User 表，当然你也可以直接将 JPA 那一节根据实体类生成的 User 表直接拿来用。</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token punctuation">`</span><span class="token keyword">user</span><span class="token punctuation">`</span> <span class="token punctuation">(</span>
+  <span class="token punctuation">`</span>id<span class="token punctuation">`</span> <span class="token keyword">int</span><span class="token punctuation">(</span><span class="token number">11</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">AUTO_INCREMENT</span> <span class="token keyword">COMMENT</span> <span class="token string">'id'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>name<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">255</span><span class="token punctuation">)</span> <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span> <span class="token keyword">COMMENT</span> <span class="token string">'姓名'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>age<span class="token punctuation">`</span> <span class="token keyword">int</span><span class="token punctuation">(</span><span class="token number">11</span><span class="token punctuation">)</span> <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span> <span class="token keyword">COMMENT</span> <span class="token string">'年龄'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>birth_day<span class="token punctuation">`</span> <span class="token keyword">timestamp</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span> <span class="token keyword">COMMENT</span> <span class="token string">'生日'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>email<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">255</span><span class="token punctuation">)</span> <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span> <span class="token keyword">COMMENT</span> <span class="token string">'邮件'</span><span class="token punctuation">,</span>
+  <span class="token keyword">PRIMARY</span> <span class="token keyword">KEY</span> <span class="token punctuation">(</span><span class="token punctuation">`</span>id<span class="token punctuation">`</span><span class="token punctuation">)</span>
+<span class="token punctuation">)</span> <span class="token keyword">ENGINE</span><span class="token operator">=</span><span class="token keyword">InnoDB</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CHARSET</span><span class="token operator">=</span>utf8mb4 <span class="token keyword">COMMENT</span><span class="token operator">=</span><span class="token string">'用户信息'</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="配置-mbg">配置 MBG</h3>
+</div><div class="cl-preview-section"><p>有了表，我们还需要对 MBG 进行一下简单的配置。MBG 有多种使用方式 —— 命令行、Ant、Java、Eclipse plugin 和 Maven plugin。我们选择 Maven plugin 的方式，因为简单且直观。</p>
+</div><div class="cl-preview-section"><p>首先我们在 pom.xml 文件中添加对于 MBG 的依赖，将如下代码放到  标签下即可。</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugin</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>org.mybatis.generator<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>mybatis-generator-maven-plugin<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">&gt;</span></span>1.3.7<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">&gt;</span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configurationFile</span><span class="token punctuation">&gt;</span></span>
+            ${basedir}/src/main/resources/generatorConfig.xml
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configurationFile</span><span class="token punctuation">&gt;</span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>overwrite</span><span class="token punctuation">&gt;</span></span>true<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>overwrite</span><span class="token punctuation">&gt;</span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>verbose</span><span class="token punctuation">&gt;</span></span>true<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>verbose</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependencies</span><span class="token punctuation">&gt;</span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>mysql<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>mysql-connector-java<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">&gt;</span></span>5.1.48<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">&gt;</span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependencies</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugin</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>然后，我们在 <code>src/main/resources</code> 目录下创建一个名为 <code>generatorConfig.xml</code> 的配置文件，在该文件中填写相应的配置即可（代码就不帖出来了，可以到源码中去看，里面有详细的注释）。</p>
+</div><div class="cl-preview-section"><p>到此，MBG 就配置完成了，接下来我们就可以根据我们刚刚创建的 User 表来生成我们的实体以及 dao 层的方法了。</p>
+</div><div class="cl-preview-section"><p>在 IDEA 的右侧有一个 <code>Maven Projects</code> 的选项卡（如果没有，可以在菜单中的 view ==》Tool Windows 中找到），点击会弹出如下视图：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eb36eda0001971507640945.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>找到 mybatis-generator 展开后，双击 mybatis-generator:generate 运行即可。看到类似如下信息，则代表成功生成了我们的实体以及 dao 。</p>
+</div><div class="cl-preview-section"><pre><code>[INFO] --- mybatis-generator-maven-plugin:1.3.7:generate (default-cli) @ mybatis ---
+[INFO] Connecting to the Database
+[INFO] Introspecting table user
+[INFO] Generating Example class for table user
+[INFO] Generating Record class for table user
+[INFO] Generating Mapper Interface for table user
+[INFO] Generating SQL Map for table user
+[INFO] Saving file UserMapper.xml
+[INFO] Saving file UserExample.java
+[INFO] Saving file User.java
+[INFO] Saving file UserMapper.java
+</code></pre>
+</div><div class="cl-preview-section"><p>运行完成以后，可以在 Project 视图下看到生成的文件 ——UserMapper、User、UserExample 和 UserMapper.xml<br>
+<img src="https://img.mukewang.com/5eb36f7100010e7f07090455.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>打开 UserMapper 接口，可以看到 MBG 帮我们生成了我们常用的增删改查以及统计接口：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eb36f8500016b9711110637.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>接口对应的实现在 UserMapper.xml 中，代码就不贴了，可以去源码中查看。</p>
+</div><div class="cl-preview-section"><p>下面我们就可以试一试 MBG 帮我们生成的这些代码好不好用了，我们直接在 Controller 层调用 Mapper 接口（实际开发时需要借助 Service），实现一下基本的 CRUD 方法：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@RestController</span>
+<span class="token annotation punctuation">@RequestMapping</span><span class="token punctuation">(</span><span class="token string">"/users"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">UserController</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@Autowired</span>
+    <span class="token keyword">private</span> UserMapper userMapper<span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/{id}"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> User <span class="token function">get</span><span class="token punctuation">(</span><span class="token annotation punctuation">@PathVariable</span> <span class="token keyword">int</span> id<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> userMapper<span class="token punctuation">.</span><span class="token function">selectByPrimaryKey</span><span class="token punctuation">(</span>id<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@PostMapping</span>
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">create</span><span class="token punctuation">(</span><span class="token annotation punctuation">@RequestBody</span> User user<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> userMapper<span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span>user<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@PutMapping</span>
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">update</span><span class="token punctuation">(</span><span class="token annotation punctuation">@RequestBody</span> User user<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> userMapper<span class="token punctuation">.</span><span class="token function">updateByPrimaryKey</span><span class="token punctuation">(</span>user<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@DeleteMapping</span><span class="token punctuation">(</span><span class="token string">"/{id}"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">delete</span><span class="token punctuation">(</span><span class="token annotation punctuation">@PathVariable</span> Integer id<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        userMapper<span class="token punctuation">.</span><span class="token function">deleteByPrimaryKey</span><span class="token punctuation">(</span>id<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>写完代码，我们启动工程，然后可以去 Swagger 上面测试一下。</p>
+</div><div class="cl-preview-section"><h1 id="动态-sql">2. 动态 SQL</h1>
+</div><div class="cl-preview-section"><p>有时候，静态的 SQL 语句并不能满足应用程序的需求。我们可以根据一些条件，来动态地构建 SQL 语句。例如，在 Web 应用程序中， 比如有一些查询功能，需要根据一个或多个条件查询数据，然后根据具体传来的查询参数动态生成查询的 SQL 去数据库取数据。在实现这种类型的查询功能时，静态 SQL 就无法满足了。我们需要根据参数来构建动态的 SQL 语句，将用户提供的参数添加到 SQL 语句的 WHERE 子句中。</p>
+</div><div class="cl-preview-section"><p>动态 SQL 是 MyBatis 的强大特性之一。如果你使用过 JDBC ，那么你很可能已经体会过拼接 SQL 所带来的痛苦了。经常会遇到少了空格，或者多了逗号之类的语法错误。MyBatis 的动态 SQL 将为我们彻底解决这类问题。</p>
+</div><div class="cl-preview-section"><p>MyBatis  采用功能强大的基于 OGNL 的表达式来实现动态 SQL。下面介绍几个我们日常开发中经常会用到的标签：</p>
+</div><div class="cl-preview-section"><ul>
+<li>if</li>
+<li>choose (when, otherwise)</li>
+<li>where (trim, set)</li>
+<li>foreach</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="if">2.1 if</h2>
+</div><div class="cl-preview-section"><p>if 标签很简单，用法跟 Java 中的 if 一样，条件为 true 则执行，为 false 则跳过，看一个小例子：</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>select</span> <span class="token attr-name">id</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>findUser<span class="token punctuation">"</span></span> <span class="token attr-name">resultType</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>User<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+  SELECT * FROM USER
+  WHERE 1=1
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>if</span> <span class="token attr-name">test</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>name != null<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+    AND name like #{name}
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>if</span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>if</span> <span class="token attr-name">test</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>email != null<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+    AND email = #{email}
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>if</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>select</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="choose">2.2 choose</h2>
+</div><div class="cl-preview-section"><p>choose 标签类似 Java 中的 switch…case…default 语法，if 是二选一，而 choose 则是多选一，如果条件都不符合则选择最后 otherwise。具体见下面的代码：</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>select</span> <span class="token attr-name">id</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>findUserByIdOrName<span class="token punctuation">"</span></span> <span class="token attr-name">resultType</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>User<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+  SELECT * FROM USER WHERE 1=1
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>choose</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>when</span> <span class="token attr-name">test</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>id != null<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+      AND id = #{id}
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>when</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>when</span> <span class="token attr-name">test</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>name != null<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+      AND name like #{name}
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>when</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>otherwise</span><span class="token punctuation">&gt;</span></span>
+      AND 0 = 1
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>otherwise</span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>choose</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>select</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="where">2.3 where</h2>
+</div><div class="cl-preview-section"><p>细心的你可能已经发现了，在上面的例子中，where 后面都有一个 1=1 的条件，这种写法在以前我们手动拼接 SQL 的时候经常用（其实是一种无奈之举），MyBatis 中的 where 标签替我们消除了这一问题。只有当 where 中至少有一个条件符合时，MyBatis 才会为我们拼接 where 子句，并且会帮我们妥善的处理开头和结尾，如下面的例子，如果第一个条件不成立，拼接后的结果为：SELECT * FROM USER WHERE email= ?。</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>select</span> <span class="token attr-name">id</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>findUser<span class="token punctuation">"</span></span> <span class="token attr-name">resultType</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>User<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+  SELECT * FROM USER
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>where</span><span class="token punctuation">&gt;</span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>if</span> <span class="token attr-name">test</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>name != null<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+        name like #{name}
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>if</span><span class="token punctuation">&gt;</span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>if</span> <span class="token attr-name">test</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>email != null<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+        AND email = #{email}
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>if</span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>where</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>select</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="foreach">2.4 foreach</h2>
+</div><div class="cl-preview-section"><p>看到 foreach 这个标签，我想聪明的你不用我说也想到了，它就相当于 Java 中的 for。一点没错！下面通过一个根据 id 集合查询的��子吧：</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>select</span> <span class="token attr-name">id</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>findUser<span class="token punctuation">"</span></span> <span class="token attr-name">resultType</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>User<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+  SELECT * FROM USER
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>where</span><span class="token punctuation">&gt;</span></span>
+      id in
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>foreach</span> <span class="token attr-name">open</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>(<span class="token punctuation">"</span></span> <span class="token attr-name">separator</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>,<span class="token punctuation">"</span></span> <span class="token attr-name">close</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>)<span class="token punctuation">"</span></span> <span class="token attr-name">collection</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>list<span class="token punctuation">"</span></span> <span class="token attr-name">item</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>id<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+    	#{id}
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>foreach</span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>where</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>select</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><h1 id="小结">3. 小结</h1>
+</div><div class="cl-preview-section"><p>OK，本小节我们一起学习了 MyBatis 的使用。包括与 Spring Boot 整合，代码生成插件 MBG 的配置及使用，还通过几个实例学习了 MyBatis 的一个强大功能 —— 动态 SQL。MyBatis 动态 SQL 的使用是非常重要的，日常开发中，我们经常会用到。</p>
+</div><div class="cl-preview-section"><h1 id="总结">4. 总结</h1>
+</div><div class="cl-preview-section"><p>我们用三个小节学习了 Spring Data JPA 和 Mybatis。MyBatis 从 SQL 角度切入来解释对关系型数据库的使用， 重点解决 Java 数据访问与关系型数据库的 SQL 不一致的问题。JPA 更偏向实体与关系， 旨在解决 Java 面向对象与关系型数据库实体关系理念一致但访问接口不一致的问题。二者不同中蕴含着相同，相同中又各自带有各自的特点。结合起来学习，非常有意思。</p>
+</div><div class="cl-preview-section"><p>不管是 MyBatis 与 JPA ，还是动态 SQL 和 Java 的语法（部分），通过对比学习，我们发现了不同事物之间的相同或相似之处。其实这种相似性在我们的生活、学习、工作中无处不在，洞察事物底层的相似、相同性的能力就是一个人的学习能力。而这种能力主要与两方面有关：1，你的知识量；2，你的刻意训练。知识量越多越容易发现知识之间的规律，越刻意的训练自己的联想能力，联想能力就会越强，强到变成一种本能。那些可以把知识融会贯通的人，无非是不断的积累和刻意的训练罢了。简单的道理常常会被忽视，但如果长期践行，在未来你将获得难以置信的回报。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img.mukewang.com/5e996fcf00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6918">
+						<img src="https://img2.mukewang.com/5f4b3f440001429804480447-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">逍遥自在星空剑仙</h4>
+						<div class="comment-text">好烦！ 不给用mybatis-spring-boot-starter</div>
+						<div>
+							
+								<div class="reply">讲师回复：嗯？</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-10-07</span>
+						<a href="/read/commentdetail/6918">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6918" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6075">
+						<img src="https://img1.mukewang.com/545865e60001de0902200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕UI5387184</h4>
+						<div class="comment-text">感觉MBG有点复杂，一大堆配置，用得多吗?</div>
+						<div>
+							
+								<div class="reply">讲师回复：可以使用 MyBatis Plus。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-08</span>
+						<a href="/read/commentdetail/6075">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6075" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6069">
+						<img src="https://img1.mukewang.com/545865e60001de0902200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕UI5387184</h4>
+						<div class="comment-text">org.mybatis.spring.bootmybatis-spring-boot-starter
+没有版本号会报错</div>
+						<div>
+							
+								<div class="reply">讲师回复：可以用 2.1.0</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-07</span>
+						<a href="/read/commentdetail/6069">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6069" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5946">
+						<img src="https://img3.mukewang.com/5a2cef030001da1301000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_Sophia_20</h4>
+						<div class="comment-text">“where”标签会知道如果它包含的标签中有返回值的话，它就插入一个‘where’。
+    此外，如果标签返回的内容是以AND 或OR 开头的，则它会剔除掉。</div>
+						<div>
+							
+								<div class="reply">讲师回复：高手。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-27</span>
+						<a href="/read/commentdetail/5946">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5946" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5945">
+						<img src="https://img2.mukewang.com/5a2cef030001da1301000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_Sophia_20</h4>
+						<div class="comment-text">如果我们不使用 @MapperScan 这个注解，那么就需要在每个 Mapper 接口上加上 @Repository，这样显然比较麻烦。
+
+
+不需要加 @Repository 吧，在dao 层的接口层添加@Mapper 注解</div>
+						<div>
+							
+								<div class="reply">讲师回复：是的。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-27</span>
+						<a href="/read/commentdetail/5945">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5945" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5771">
+						<img src="https://img1.mukewang.com/545866a300016c6802200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">hwl_01</h4>
+						<div class="comment-text">源码在哪儿啊？谢谢！</div>
+						<div>
+							
+								<div class="reply">讲师回复：源码在此：https://github.com/liushuijinger/springboot</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-09</span>
+						<a href="/read/commentdetail/5771">
+							<span class="icon r"><i class="imwap-comment"></i><em>2</em></span>
+						</a>
+						<span data-cid="5771" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5766">
+						<img src="https://img4.mukewang.com/533e4d00000171e602000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕田峪4063386</h4>
+						<div class="comment-text">如果数据库的中字段变化很多的话，那么代码生成器就会显得非常麻烦了，此时通用mapper出现</div>
+						<div>
+							
+								<div class="reply">讲师回复：可以使用 MyBatis Plus。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-08</span>
+						<a href="/read/commentdetail/5766">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5766" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5757">
+						<img src="https://img2.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">st2020</h4>
+						<div class="comment-text">听说老外都喜欢 jpa 不用 mybtis？</div>
+						<div>
+							
+								<div class="reply">讲师回复：国外确实 JPA 用得多一些。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-08</span>
+						<a href="/read/commentdetail/5757">
+							<span class="icon r"><i class="imwap-comment"></i><em>2</em></span>
+						</a>
+						<span data-cid="5757" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5593">
+						<img src="https://img1.mukewang.com/58a2aea300017b2c04190419-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">东明先森</h4>
+						<div class="comment-text">老师讲的很直白很好理解</div>
+						<div>
+							
+								<div class="reply">讲师回复：感谢支持！</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-25</span>
+						<a href="/read/commentdetail/5593">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5593" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=75">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '14 为互联网而生的持久化框架-Mybatis（二）',
+					'CID': '1810',
+					'Teacher': '刘水镜'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "14 为互联网而生的持久化框架-Mybatis（二）",
+                    desc: "够吃管饱的SpringBoot大餐",
+                    imgUrl: 'https:https://img2.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/75',
+                    link: 'https://m.imooc.com/read/75'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

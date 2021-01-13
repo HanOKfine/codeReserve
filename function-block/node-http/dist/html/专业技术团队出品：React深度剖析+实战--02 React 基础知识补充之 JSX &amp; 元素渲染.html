@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>02 React 基础知识补充之 JSX &amp; 元素渲染</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="基础+源码+实战三管齐下的 React 全解读">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "3";
+	var chapter_id = "2201";
+	var chapter_title = "02 React 基础知识补充之 JSX &amp; 元素渲染";
+	var aid = "83";
+	var a_name = "专业技术团队出品：React深度剖析+实战";
+	var a_price = "58.00";
+	var a_pic = "https://img.mukewang.com/5f0d82e10001220c05400720.jpg";
+	var userId = 0;
+
+	var column_id = '83';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-07-21&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			02 React 基础知识补充之 JSX &amp; 元素渲染
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img4.mukewang.com/5f0e649900013f7506400359.jpg')"></div>
+	
+	
+		<a href="/read/83">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5f16532e00018d6b10061006-40-40.jpg" alt="BetterFE">
+				<h3>专业技术团队出品：React深度剖析+实战</h3>
+				<p>BetterFE · 业务中台前端组</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">才能一旦让懒惰支配，它就一无可为。<p class="author">——克雷洛夫</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="引导语">引导语</h2>
+</div><div class="cl-preview-section"><p>上一个小节讲解了如何快速创建一个 React 应用，本小节我们开始巩固下 React 的基础知识。相信大家对 React JSX 都有一定的了解，但 JSX 的优点不仅仅是简化了写代码的过程，还需要思考为什么要使用 JSX 以及如何将 JSX 渲染到页面里。即使不了解也不用担心，接下来我们带大家一起深入学习 JSX 和 React 中是如何进行元素渲染的。</p>
+</div><div class="cl-preview-section"><h2 id="jsx-出现的原因">JSX 出现的原因</h2>
+</div><div class="cl-preview-section"><p>React 的一大亮点就是虚拟 DOM：可以在内存中创建虚拟 DOM 元素，由虚拟 DOM 来确保只对界面上真正变化的部分进行实际的 DOM 操作。和真实 DOM 一样，虚拟 DOM 也可以通过 JavaScript 来创建：</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token keyword">const</span> ele <span class="token operator">=</span> React<span class="token punctuation">.</span><span class="token function">createElement</span><span class="token punctuation">(</span><span class="token string">'div'</span><span class="token punctuation">,</span> <span class="token keyword">null</span><span class="token punctuation">,</span> <span class="token string">'hello, world'</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>虽然通过以上的方式，就可以构建成 DOM 树，但这种代码可读性比较差，于是就有了 JSX 。JSX 是 JavaScript 的语法扩展，使用 JSX ，就可以采用我们熟悉的 HTML 标签形式来创建虚拟 DOM，也可以说 JSX 是 <code>React.createElement</code> 的一个语法糖。</p>
+</div><div class="cl-preview-section"><h2 id="jsx-语法">JSX 语法</h2>
+</div><div class="cl-preview-section"><h3 id="jsx-标签类型">JSX 标签类型</h3>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token comment">// HTML 类型标签</span>
+<span class="token keyword">const</span> ele <span class="token operator">=</span> <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>div</span><span class="token punctuation">&gt;</span></span>hello<span class="token punctuation">,</span> world<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>div</span><span class="token punctuation">&gt;</span></span>
+
+<span class="token comment">// react 组件类型标签</span>
+<span class="token keyword">const</span> component <span class="token operator">=</span> <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>HelloWrold</span> <span class="token punctuation">/&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在 JSX 语法中，有两种标签类型：</p>
+</div><div class="cl-preview-section"><ul>
+<li>HTML 类型的标签：这种标签名需小写字母开头；</li>
+<li>组件类型的标签（在之后的小节会详细介绍组件）：这种标签必须以大写字母开头。</li>
+</ul>
+</div><div class="cl-preview-section"><p>React 通过标签首字母的大小写来区分渲染的是标签类型。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>React 中的所有标签，都必须有闭合标签 <code>/&gt;</code></p>
+</blockquote>
+</div><div class="cl-preview-section"><h3 id="jsx-中使用-javascript-表达式">JSX 中使用 JavaScript 表达式</h3>
+</div><div class="cl-preview-section"><p>在 JSX 中，也可以使用 JavaScript 表达式，只需要使用 <code>{}</code> 将表达式包裹起来就行。通常给标签属性传值或通过表达式定义子组件时会用到。例如下面代码：</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token comment">// 属性传值</span>
+<span class="token keyword">const</span> addUser <span class="token operator">=</span> <span class="token punctuation">{</span>id<span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">,</span> name<span class="token punctuation">:</span> <span class="token string">'添加好友'</span><span class="token punctuation">}</span>
+
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>PanelItem</span> <span class="token attr-name">item</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>addUser<span class="token punctuation">}</span></span> <span class="token punctuation">/&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token comment">// 通过表达式定义子组件</span>
+<span class="token keyword">const</span> teams <span class="token operator">=</span> <span class="token punctuation">[</span>
+  <span class="token punctuation">{</span>id<span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">,</span> name<span class="token punctuation">:</span> <span class="token string">'创建高级群'</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token punctuation">{</span>id<span class="token punctuation">:</span> <span class="token number">2</span><span class="token punctuation">,</span> name<span class="token punctuation">:</span> <span class="token string">'搜索高级群'</span><span class="token punctuation">}</span>
+<span class="token punctuation">]</span>
+
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>ul</span><span class="token punctuation">&gt;</span></span>
+  <span class="token punctuation">{</span>teams<span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span>item <span class="token operator">=&gt;</span> 
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>PanelItem</span>
+        <span class="token attr-name">item</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>item<span class="token punctuation">}</span></span>
+        <span class="token attr-name">key</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>item<span class="token punctuation">.</span>id<span class="token punctuation">}</span></span><span class="token punctuation">/&gt;</span></span>
+  <span class="token punctuation">)</span><span class="token punctuation">}</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>ul</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>JSX 中使用 JavaScript 表达式时，不能使用多行 JavaScript 语句。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h3 id="jsx-编译之-babel">JSX 编译之 Babel</h3>
+</div><div class="cl-preview-section"><p>JSX 并不是标准的 JavaScript，它需要编译器 Babel 将 JSX 代码编译成标准的 JavaScript 语言。</p>
+</div><div class="cl-preview-section"><!-- &#65292;&#36825;&#20010;&#32534;&#35793;&#22120;&#23601;&#26159; Babel&#12290; -->
+</div><div class="cl-preview-section"><p>Babel 会把 JSX 转译成一个名为 <code>React.createElement()</code> 的函数调用，可以理解为 JSX 是使用一些规则来编写 <code>React.createElement(type, config, children)</code> 的快捷方式，可以将 JSX 视为编写 <code>React.createElement()</code> 声明的更简短且更自然的方法。</p>
+</div><div class="cl-preview-section"><p>上文中JSX语法小节的 <code>HellowWorld</code> 组件，会被 Babel 编译成如下代码：</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism =  language-javascript"><span class="token comment">// HTML 类型标签</span>
+<span class="token keyword">var</span> ele <span class="token operator">=</span> React<span class="token punctuation">.</span><span class="token function">createElement</span><span class="token punctuation">(</span><span class="token string">"div"</span><span class="token punctuation">,</span> <span class="token keyword">null</span><span class="token punctuation">,</span> <span class="token string">"hello, world"</span><span class="token punctuation">)</span>
+
+<span class="token comment">// react 组件类型标签</span>
+<span class="token keyword">var</span> component <span class="token operator">=</span> React<span class="token punctuation">.</span><span class="token function">createElement</span><span class="token punctuation">(</span>HelloWrold<span class="token punctuation">,</span> <span class="token keyword">null</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以使用 Babel 官网提供的链接 <a href="https://www.babeljs.cn/repl">https://www.babeljs.cn/repl</a> 在线转译 JSX 代码。</p>
+</div><div class="cl-preview-section"><h3 id="jsx-有何优点">JSX 有何优点</h3>
+</div><div class="cl-preview-section"><ol>
+<li>使用熟悉的语法定义 HTML 元素，提供更加语义化的标签，使用 JSX 编写模板更简单快速；</li>
+<li>更加直观：JSX 让小组件更加简单、明了、直观；</li>
+<li>抽象了 React 元素的创建过程，使得编写组件变得更加简单；</li>
+<li>JSX 执行更快，因为它在编译为 JavaScript 代码后进行了优化；</li>
+<li>JSX 是类型安全的，在编译过程中就能发现错误；</li>
+<li>防注入攻击，所有的内容在渲染之前都被转换成了字符串，可以有效地防止 <code>XSS（跨站脚本）</code> 攻击。</li>
+</ol>
+</div><div class="cl-preview-section"><h2 id="元素渲染">元素渲染</h2>
+</div><div class="cl-preview-section"><p>在上文介绍的 JSX 中我们了解到如何创建 React 元素，但创建的 React 元素与浏览器的 DOM 元素不同，它是一个虚拟的 DOM 元素，在浏览器中我们需要把虚拟 DOM 转换成真实可用的浏览器 DOM，此过程就是元素渲染的过程。接下来，我们先来讨论下如何创建元素。</p>
+</div><div class="cl-preview-section"><h3 id="元素创建">元素创建</h3>
+</div><div class="cl-preview-section"><p>React 元素是 React 应用中最小的可渲染单位，用于描述屏幕上输出的内容。我们可以使用 JSX 语法创建元素。</p>
+</div><div class="cl-preview-section"><p>本篇主要讲解以下 3 种创建 React 元素的方式：</p>
+</div><div class="cl-preview-section"><p><strong>1. JSX 语法方式创建</strong></p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism =  language-javascript"><span class="token keyword">const</span> element <span class="token operator">=</span> <span class="token operator">&lt;</span>h1<span class="token operator">&gt;</span>Hello<span class="token punctuation">,</span> world<span class="token operator">&lt;</span><span class="token operator">/</span>h1<span class="token operator">&gt;</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>使用 JSX 语法时我们必须引入 React 库。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>JSX 的执行更快，而且编译时能及时发现错误，推荐大家使用此方式创建 React 元素。</p>
+</div><div class="cl-preview-section"><p><strong>2. React.createElement() 方式创建元素</strong></p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token comment">// [] 中括号里的是选填项</span>
+React<span class="token punctuation">.</span><span class="token function">createElement</span><span class="token punctuation">(</span>
+    type<span class="token punctuation">,</span>         <span class="token comment">// 元素类型，可以是标签名字符串，也可以是 React 组件或者 React fragment， 比如：'div' 'span' 'React.Fragment'</span>
+    <span class="token punctuation">[</span>props<span class="token punctuation">]</span><span class="token punctuation">,</span>      <span class="token comment">// 属性，对象形式，比如：{className: 'title'}</span>
+    <span class="token punctuation">[</span><span class="token operator">...</span>children<span class="token punctuation">]</span> <span class="token comment">// 子节点，比如：react元素、dom元素或文本</span>
+<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这种方法其实在实际 React 开发中几乎不会使用，因为可以直接使用 JSX 方法（JSX 章节已详细讲解了 JSX 的优点，大家可以回顾下）。</p>
+</div><div class="cl-preview-section"><p><strong>3. React.cloneElement() 方式创建元素</strong></p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token comment">// [] 中括号里的是选填项</span>
+React<span class="token punctuation">.</span><span class="token function">cloneElement</span><span class="token punctuation">(</span>
+    element<span class="token punctuation">,</span>      <span class="token comment">// 元素类型，必须是 React 元素</span>
+    <span class="token punctuation">[</span>props<span class="token punctuation">]</span><span class="token punctuation">,</span>      <span class="token comment">// 属性，对象形式，比如：{className: 'title'}</span>
+    <span class="token punctuation">[</span><span class="token operator">...</span>children<span class="token punctuation">]</span> <span class="token comment">// 子节点，比如：react元素、dom元素或文本</span>
+<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>注意：createElement 的第一个参数必须是字符串或 React 组件，而在 cloneElement 里第一个参数应该是 ReactElement。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h3 id="渲染方式">渲染方式</h3>
+</div><div class="cl-preview-section"><p>为了将 React 元素呈现到浏览器 DOM 中，我们需要有一个容器或者说根 DOM 元素来承载。一般在模板文件 index.html 使用一个 id 为 root 的 DOM 元素作为根元素。</p>
+</div><div class="cl-preview-section"><pre class="  language-html"><code class="prism  language-html">//index.html
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>div</span> <span class="token attr-name">id</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>root<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>div</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如何向根元素渲染一个简单的 React 元素呢？我们使用 <code>ReactDOM.render()</code> 方法渲染元素:</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx">ReactDOM<span class="token punctuation">.</span><span class="token function">render</span><span class="token punctuation">(</span>
+    element<span class="token punctuation">,</span>    <span class="token comment">// 要渲染的元素</span>
+    container<span class="token punctuation">,</span>  <span class="token comment">// 元素要渲染的容器</span>
+    <span class="token punctuation">[</span>callback<span class="token punctuation">]</span>  <span class="token comment">// 回调函数，可选的</span>
+<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><code>ReactDOM.render()</code> 方法有 3 个参数，它的第三个参数是一个回调函数，可以用来做渲染后的回调。<br>
+<code>ReactDOM.render()</code> 方法的返回值，其实是根元素的 React 实例。</p>
+</div><div class="cl-preview-section"><p>我们需要在 index.js 文件中添加以下内容：</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism =  language-javascript"><span class="token keyword">import</span> React <span class="token keyword">from</span> <span class="token string">'react'</span>
+<span class="token keyword">import</span> ReactDOM <span class="token keyword">from</span> <span class="token string">'react-dom'</span>
+
+<span class="token keyword">const</span> myElement <span class="token operator">=</span> <span class="token operator">&lt;</span>div<span class="token operator">&gt;</span>hello<span class="token punctuation">,</span> world<span class="token operator">!</span><span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>
+
+ReactDOM<span class="token punctuation">.</span><span class="token function">render</span><span class="token punctuation">(</span>myElement<span class="token punctuation">,</span> document<span class="token punctuation">.</span><span class="token function">getElementById</span><span class="token punctuation">(</span><span class="token string">"root"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>React 16 之前的版本 DOM 不识别除了 HTML 和 SVG 支持的以外属性，而在 React 16 版本中将会把全部的属性传递给 DOM 元素。这个新特性可以让我们摆脱可用的 React DOM 属性白名单。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h3 id="更新元素">更新元素</h3>
+</div><div class="cl-preview-section"><p>React 元素是不可变的，一旦创建了元素，就无法更新其子代或者属性。我们已经创建并渲染了第一个 React 元素，但 React 并不是为了静态页面而存在的，为此，我们需要更新元素。因此，我们必须多次使用 <code>render</code> 方法来更新元素。对于大多数 React 应用而言，<code>ReactDOM.render()</code> 通常只会调用一次。React DOM 会将元素和它的子元素与它们之前的状态进行比较，并只会更新需要更新的部分。</p>
+</div><div class="cl-preview-section"><p>读到此处，你是否好奇为什么 <code>render</code> 通常只调用一次？</p>
+</div><div class="cl-preview-section"><p>在 React 中，<code>render</code> 执行得到的并不是真正的 DOM 节点，得到的仅仅是轻量级的 JavaScript 对象，我们称之为虚拟 DOM。</p>
+</div><div class="cl-preview-section"><p>虚拟 DOM 具有批处理特性以及高效的 diff 算法（��拟 DOM 和 diff 算法后续章节会有详细讲解），使得我们可以随时更新整个页面而无需担心性能问题。</p>
+</div><div class="cl-preview-section"><p>虚拟 DOM 确保只对界面上真正变化的部分进行实际的 DOM 操作。</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token keyword">import</span> React <span class="token keyword">from</span> <span class="token string">'react'</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token string">'./App.scss'</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name">App</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span> <span class="token punctuation">{</span>
+  state <span class="token operator">=</span> <span class="token punctuation">{</span>
+    standingTime<span class="token punctuation">:</span> <span class="token number">0</span>
+  <span class="token punctuation">}</span>
+  <span class="token function">timeChange</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">setInterval</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+      <span class="token keyword">const</span> current <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>standingTime <span class="token operator">+</span> <span class="token number">1</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">setState</span><span class="token punctuation">(</span><span class="token punctuation">{</span> standingTime<span class="token punctuation">:</span> current <span class="token punctuation">}</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token number">1000</span><span class="token punctuation">)</span>
+  <span class="token punctuation">}</span>
+  <span class="token function">convertTheTime</span> <span class="token punctuation">(</span>time<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>time <span class="token operator">&lt;</span> <span class="token number">60</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">return</span> <span class="token template-string"><span class="token string">`</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>time<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">秒`</span></span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>time <span class="token operator">&lt;</span> <span class="token number">60</span> <span class="token operator">*</span> <span class="token number">60</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">return</span> <span class="token template-string"><span class="token string">`</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>Math<span class="token punctuation">.</span><span class="token function">floor</span><span class="token punctuation">(</span>time<span class="token operator">/</span><span class="token number">60</span><span class="token punctuation">)</span><span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">分</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>time<span class="token operator">%</span><span class="token number">60</span><span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">秒`</span></span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+      <span class="token keyword">return</span> <span class="token template-string"><span class="token string">`你停留时间超过一小时，请刷新重新计时`</span></span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+  <span class="token function">componentDidMount</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">timeChange</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+  <span class="token punctuation">}</span>
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>div</span> <span class="token attr-name">className</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>App<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>div</span> <span class="token attr-name">className</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>App-content<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+          <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>p</span><span class="token punctuation">&gt;</span></span>
+            你在本页面停留时间：
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>b</span><span class="token punctuation">&gt;</span></span>
+              <span class="token punctuation">{</span> <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">convertTheTime</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>standingTime<span class="token punctuation">)</span> <span class="token punctuation">}</span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>b</span><span class="token punctuation">&gt;</span></span>
+          <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>p</span><span class="token punctuation">&gt;</span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>div</span><span class="token punctuation">&gt;</span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>div</span><span class="token punctuation">&gt;</span></span>
+    <span class="token punctuation">)</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">export</span> <span class="token keyword">default</span> App<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f0c2dac00010cca08020500.gif" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><strong>提示：</strong><br>
+和 DOM 元素不同的是，React 元素是纯对象，创建的代价低。<br>
+<code>ReactDOM.render()</code> 渲染传入容器节点的元素，首次调用时，将替换其中所有的 DOM 元素，以后的调用使用 React 的 虚拟 DOM diff 算法（虚拟 DOM diff 算法后续章节会有详细解读）进行有效的更新。<code>ReactDOM.render()</code> 不会修改容器节点（仅修改容器内的子节点）。<br>
+此外，元素和组件的概念是不一样的，组件是由元素组成的。</p>
+</div><div class="cl-preview-section"><h2 id="小结">小结</h2>
+</div><div class="cl-preview-section"><p>本节内容主要讲解了 JSX 的语法及编译方式，随后在 JSX 的优点上做了深入的探究，之所以使用 JSX，不仅因为 JSX 速度更快，而且还能够在编译时及时发现错误。本节还阐述了元素渲染的方式及原理，<code>render</code> 时会对更新前后的虚拟 DOM 树做对比，只更新需要更新的部分。后续章节还会带大家探索渲染原理相关更多的奥秘，敬请期待。下一小节我们会继续学习 React 的基础知识点，为后续的章节夯实基础。</p>
+</div><div class="cl-preview-section"><h2 id="demo地址">demo地址</h2>
+</div><div class="cl-preview-section"><p><a href="https://github.com/XJFM/imooc-react/tree/master/01_02.jsx">https://github.com/XJFM/imooc-react/tree/master/01_02.jsx</a></p>
+</div><div class="cl-preview-section"><h2 id="知识扩展阅读">知识扩展阅读</h2>
+</div><div class="cl-preview-section"><p><a href="https://jsx.github.io/">JSX</a><br>
+<a href="https://www.babeljs.cn/docs/">Babel</a></p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5f0e649e000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6433">
+						<img src="https://img1.mukewang.com/5b8ceb400001172302000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">ninia</h4>
+						<div class="comment-text">“在 React 中，render 执行得到的并不是真正的 DOM 节点，得到的仅仅是轻量级的 JavaScript 对象，我们称之为虚拟 DOM。”
+这句话中React.render()执行后得到的不就是Dom元素吗</div>
+						<div>
+							
+								<div class="reply">讲师回复：虚拟DOM就是js模拟的DOM结构，是一个javascript Object。你这里说的DOM元素应该是指真实DOM，他两是不一样的哈。可以理解为虚拟DOM是真实DOM的一层抽象，我们操作虚拟DOM其实就是在操作Js的Object，当虚拟DOM修改完成后，再渲染至真实DOM。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-04</span>
+						<a href="/read/commentdetail/6433">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6433" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6376">
+						<img src="https://img1.mukewang.com/545865b000016a9202200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕桂英343994</h4>
+						<div class="comment-text">请问jsx有没有缺点呢？</div>
+						<div>
+							
+								<div class="reply">讲师回复：个人觉得React可能存在的缺点就是对新手不太友好，从html写法突然到jsx写法，刚开始会不习惯，思维也不会快速的切换过来，导致在使用时没有按照React更好的范式去书写代码。对于其他的缺点，可能是习惯问题，每个人对其理解也不一样。
+知乎上有讨论，你可以看下哈～  
+https://www.zhihu.com/question/48528161</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-31</span>
+						<a href="/read/commentdetail/6376">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6376" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=83">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '02 React 基础知识补充之 JSX &amp; 元素渲染',
+					'CID': '2201',
+					'Teacher': 'BetterFE'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "02 React 基础知识补充之 JSX &amp; 元素渲染",
+                    desc: "基础+源码+实战三管齐下的 React 全解读",
+                    imgUrl: 'https:https://img.mukewang.com/5f0d82e10001220c05400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5f0d82e10001220c05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/83',
+                    link: 'https://m.imooc.com/read/83'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

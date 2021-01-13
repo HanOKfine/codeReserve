@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>39 asyncio 的原理是什么？</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="以问带学摸透面试套路">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "1950";
+	var chapter_title = "39 asyncio 的原理是什么？";
+	var aid = "69";
+	var a_name = "高薪之路--Python 面试题精选集";
+	var a_price = "68.00";
+	var a_pic = "https://img4.mukewang.com/5e4602ff000143af05400720.jpg";
+	var userId = 0;
+
+	var column_id = '69';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-15&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			39 asyncio 的原理是什么？
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5ebd296c000177ba06400426.jpg')"></div>
+	
+	
+		<a href="/read/69">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5e40f87d0001fdeb20001328-40-40.jpg" alt="Jarvinia">
+				<h3>高薪之路--Python 面试题精选集</h3>
+				<p>Jarvinia · 资深Python工程师，全栈工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">人的差异在于业余时间。<p class="author">——爱因斯坦</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="问题：asyncio的原理是什么？">问题：<code>asyncio</code>的原理是什么？</h2>
+</div><div class="cl-preview-section"><h3 id="面试官想从这道题中考察面试人什么？">面试官想从这道题中考察面试人什么？</h3>
+</div><div class="cl-preview-section"><p>asyncio 是一个很高级的库，它可以实现高并发。如果你在项目中碰到了性能问题，可能首先想到的是优化算法。但有的时候连算法都无法实现性能的大跃进，那就可能需要考虑并发了，asyncio模块也许就是你最好的选择。</p>
+</div><div class="cl-preview-section"><h4 id="答案">答案</h4>
+</div><div class="cl-preview-section"><p>asyncio 的编程模型就是一个事件循环（event loop），让你可以“在 A 发生时，执行 B”，以此来实现并发。事件循环的思想是连续监视各种资源的状态（例如，网络连接和数据库查询），并在事件发生时（例如，当资源准备好或计时器到期时）触发回调函数的执行。asyncio 主要有一个事件循环作为任务调度器，然后可以用<code>async def</code>定义异步函数作为任务逻辑，通过<code>create_task</code>接��把任务挂到 event loop 上。event loop 的运行过程应该是个不停循环的过程，不停查看等待类别有没有可以执行的任务，如果有的话执行任务，直到碰到<code>await</code>之类的主动让出 event loop 的函数，如此反复。</p>
+</div><div class="cl-preview-section"><h4 id="拓展">拓展</h4>
+</div><div class="cl-preview-section"><p>为了让大家更好地理解上面那段事件循环的原理，我们用一段伪代码演示事件循环底层是怎么工作的：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">while</span> <span class="token boolean">True</span><span class="token punctuation">:</span>
+    <span class="token comment"># 启动一个事件循环</span>
+    <span class="token keyword">for</span> task <span class="token keyword">in</span> tasks<span class="token punctuation">:</span>
+        <span class="token keyword">if</span> task<span class="token punctuation">.</span>done<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span> <span class="token comment"># 检查资源的状态</span>
+            task<span class="token punctuation">.</span>callback<span class="token punctuation">(</span><span class="token punctuation">)</span>
+            tasks<span class="token punctuation">.</span>remove<span class="token punctuation">(</span>task<span class="token punctuation">)</span>
+    <span class="token keyword">if</span> <span class="token builtin">len</span><span class="token punctuation">(</span>tasks<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">:</span>
+        <span class="token comment"># 如果没有任何任务，终止事件循环</span>
+        <span class="token keyword">break</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>阅读了上面这段伪代码后，我们发现除了事件循环以外，我们还需要考虑如何创建任务，以及任务结束后的回调函数，等等。asyncio 库也提供了相应的 API 供大家使用。我们已经在上一个问题讲到了协程，asyncio 也是和协程有着密切关系的一个官方异步 IO 库。这个库，底层是事件循环（EventLoop），上层是协程和任务。</p>
+</div><div class="cl-preview-section"><p>看看官方文档如何对 asyncio 进行描述的：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>asyncio 是用来编写并发代码的库，使用 async/await 语法。asyncio被用作多个提供高性能 Python 异步框架的基础，包括网络和网站服务，数据库连接库，分布式任务队列等等。asyncio 往往是构建 IO 密集型和高层级结构化网络代码的最佳选择。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p><strong>asyncio的两个主要版本</strong></p>
+</div><div class="cl-preview-section"><p>asyncio 主要有两个版本，一个是 <strong>Python3.4</strong> 刚引入的 asyncio，它的协程还只是基于生成器的，通过 <code>yield from</code>语法实现，也可以通过装饰器<code>@asyncio.coroutine</code>（已过时）装饰一个函数来定义一个协程。<strong>Python3.5</strong> 引入了两个新的关键字<code>await</code>和<code>async</code>用来替换<code>@asyncio.coroutine</code>和<code>yield from</code>，这样的语法更加贴合异步 IO，也容易和普通的生成器区别开来。所以我们主要讨论<code>await</code>和<code>async</code>的语法使用。</p>
+</div><div class="cl-preview-section"><p><strong>asyncio相关概念</strong></p>
+</div><div class="cl-preview-section"><p>asyncio 涉及了两个东西，一个是异步编程，另一个是并发编程。</p>
+</div><div class="cl-preview-section"><ul>
+<li>异步编程简单来说就是代码执行的顺序在程序运行前是未知的；</li>
+<li>并发编程是代码的执行不依赖于其他部分，即便是全都在同一个线程内执行。</li>
+</ul>
+</div><div class="cl-preview-section"><p>简单说明一下关于asyncio的一些关键字：</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>事件循环（event_loop）</strong>：asyncio程序开启一个无限循环，把一些函数注册到事件循环上，当满足事件发生的时候，调用相应的协程函数；</li>
+<li><strong>协程（coroutine）</strong>：协程对象，指一个使用async关键字定义的函数，它的调用不会立即执行函数，而是会返回一个协程对象。协程对象需要注册到事件循环，由事件循环调用；</li>
+<li><strong>期物（future）</strong>: 代表将来执行或没有执行的任务的结果；</li>
+<li><strong>任务（task）</strong>：一个协程对象就是一个原生可以挂起的函数，任务则是对协程进一步封装，其中包含了任务的各种状态。另外，Task是Future的子类；</li>
+<li><strong>async/await关键字</strong>：python3.5用于定义协程的关键字，async定义一个协程，await用于挂起阻塞的异步调用接口。</li>
+</ul>
+</div><div class="cl-preview-section"><p>从一个事例来看看同步编程和异步编程的区别。</p>
+</div><div class="cl-preview-section"><p>异步版实现(asyncio_count.py)：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">import</span> asyncio
+<span class="token keyword">from</span> datetime <span class="token keyword">import</span> datetime
+
+<span class="token keyword">async</span> <span class="token keyword">def</span> <span class="token function">count</span><span class="token punctuation">(</span>number<span class="token punctuation">)</span><span class="token punctuation">:</span> <span class="token comment"># async def定义一个协程函数，返回协程对象</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"One - "</span><span class="token punctuation">,</span> number<span class="token punctuation">,</span> datetime<span class="token punctuation">.</span>now<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>strftime<span class="token punctuation">(</span><span class="token string">"%H:%M:%S"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+     <span class="token comment"># 非阻塞调用，这里可以替换为一些耗时的非阻塞IO操作。这里在等待一个将来的结果，</span>
+     <span class="token comment"># 那么与此同时，可以进行其它的一些运算，而count函数就暂停在这里，直到asyncio.sleep返回结果</span>
+     <span class="token comment"># await为事件循环提供断点，以便在等待资源时，事件循环可以继续进行并同时管理其他协程。</span>
+    <span class="token keyword">await</span> asyncio<span class="token punctuation">.</span>sleep<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"Two - "</span><span class="token punctuation">,</span> number<span class="token punctuation">,</span> datetime<span class="token punctuation">.</span>now<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>strftime<span class="token punctuation">(</span><span class="token string">"%H:%M:%S"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token keyword">async</span> <span class="token keyword">def</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token comment"># await asyncio.gather(count(1), count(2), count(3)) # asyncio.gather并发运行可等待对象</span>
+    task1 <span class="token operator">=</span> asyncio<span class="token punctuation">.</span>create_task<span class="token punctuation">(</span>count<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment"># create_task定义asyncio任务，协程对象会自动排入日程，并发运行多个协程对象</span>
+    task2 <span class="token operator">=</span> asyncio<span class="token punctuation">.</span>create_task<span class="token punctuation">(</span>count<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    task3 <span class="token operator">=</span> asyncio<span class="token punctuation">.</span>create_task<span class="token punctuation">(</span>count<span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">await</span> task1
+    <span class="token keyword">await</span> task2
+    <span class="token keyword">await</span> task3
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">"__main__"</span><span class="token punctuation">:</span>
+    <span class="token keyword">import</span> time
+    s <span class="token operator">=</span> time<span class="token punctuation">.</span>perf_counter<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    asyncio<span class="token punctuation">.</span>run<span class="token punctuation">(</span>main<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment"># asyncio.run函数运行传入的协程，它是asyncio程序的主入口点</span>
+    elapsed <span class="token operator">=</span> time<span class="token punctuation">.</span>perf_counter<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> s
+    <span class="token keyword">print</span><span class="token punctuation">(</span>f<span class="token string">"{__file__} executed in {elapsed:0.2f} seconds."</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>运行asyncio_count.py脚本输出：</p>
+</div><div class="cl-preview-section"><pre><code>One -  1 14:55:17
+One -  2 14:55:17
+One -  3 14:55:17
+Two -  1 14:55:18
+Two -  2 14:55:18
+Two -  3 14:55:18
+asyncio_count.py executed in 1.00 seconds.
+</code></pre>
+</div><div class="cl-preview-section"><p>当每个任务到达等待<code>asyncio.sleep(1)</code>时，<code>count</code>函数都会大喊事件循环并对其进行控制，并说：“我要睡眠1秒钟。让其他有意义的事情同时进行。”</p>
+</div><div class="cl-preview-section"><p>同步版实现（sync_count.py）：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">import</span> time
+<span class="token keyword">from</span> datetime <span class="token keyword">import</span> datetime
+
+<span class="token keyword">def</span> <span class="token function">count</span><span class="token punctuation">(</span>number<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"One - "</span><span class="token punctuation">,</span> number<span class="token punctuation">,</span> datetime<span class="token punctuation">.</span>now<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>strftime<span class="token punctuation">(</span><span class="token string">"%H:%M:%S"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    time<span class="token punctuation">.</span>sleep<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token comment"># 阻塞调用，无法切换做其它事情</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"Two - "</span><span class="token punctuation">,</span> number<span class="token punctuation">,</span> datetime<span class="token punctuation">.</span>now<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>strftime<span class="token punctuation">(</span><span class="token string">"%H:%M:%S"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        count<span class="token punctuation">(</span>i<span class="token punctuation">)</span>
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">"__main__"</span><span class="token punctuation">:</span>
+    s <span class="token operator">=</span> time<span class="token punctuation">.</span>perf_counter<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    main<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    elapsed <span class="token operator">=</span> time<span class="token punctuation">.</span>perf_counter<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> s
+    <span class="token keyword">print</span><span class="token punctuation">(</span>f<span class="token string">"{__file__} executed in {elapsed:0.2f} seconds."</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>运行 sync_count.py 脚本输出：</p>
+</div><div class="cl-preview-section"><pre><code>One -  0 14:57:22
+Two -  0 14:57:23
+One -  1 14:57:23
+Two -  1 14:57:24
+One -  2 14:57:24
+Two -  2 14:57:25
+sync_count.py executed in 3.01 seconds.
+</code></pre>
+</div><div class="cl-preview-section"><p>这次比上一次异步实现慢了 2 秒，我们发现这一次的输出是按顺序执行的，这就是异步编程与同步编程的差异所在。每次都要等待上一次调用返回结果才能开始新的轮询。</p>
+</div><div class="cl-preview-section"><p><strong>asynicio的协程与任务</strong></p>
+</div><div class="cl-preview-section"><p><code>async def</code>定义一个协程函数，它会返回一个协程对象，那么如何去驱动它呢？</p>
+</div><div class="cl-preview-section"><p>asynicio 中运行协程的 3 种机制：</p>
+</div><div class="cl-preview-section"><ol>
+<li>
+<p>使用<code>asyncio.run(coroutine)</code>函数运行传入的协程；</p>
+</li>
+<li>
+<p>使用<code>await coroutine</code>去等待一个协程对象，这个语句只能在<code>async def</code>定义的协程函数里使用；</p>
+<blockquote>
+<p>Tips: 如果一个对象可以在<code>await</code>语句中使用，那么它就是<em>可等待</em>对象。可等待对象有三种主要类型: 协程，任务<code>Task</code>和期物<code>Future</code>.</p>
+</blockquote>
+</li>
+<li>
+<p>使用<code>asyncio.create_task(coroutine)</code>去创建<code>Task</code>对象，用于包装协程，把传入的协程排入日程以便并发执行多个协。</p>
+</li>
+</ol>
+</div><div class="cl-preview-section"><p>所以，asynicio 不会像以前我们讲的协程那样，通过调用<code>next</code>和<code>send</code>去驱动协程。</p>
+</div><div class="cl-preview-section"><p>asynicio这个库包罗的东西非常多，我们不可能在这么一个问题中就讲清楚所有的内存，但是，大家把上面所讲的东西好好消化一下，自己也可以参考官方文档去动手敲代码，这才是最有效的学习方法。</p>
+</div><div class="cl-preview-section"><h2 id="小结">小结</h2>
+</div><div class="cl-preview-section"><p>这一小章中的问题，无论是 GIL 锁，还是进程，线程，协程，都是和并发、并行编程有着密切关系的。关于并发、并行编程，有许多技巧，这里并没有一一列举，这一节主要是借一些常见的面试题来普及一下相关的基本概念。另外要多看几个主要的库（gevent，concurrent，asyncio等）的官方文档。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img1.mukewang.com/5ebd297100011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=69">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '39 asyncio 的原理是什么？',
+					'CID': '1950',
+					'Teacher': 'Jarvinia'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "39 asyncio 的原理是什么？",
+                    desc: "以问带学摸透面试套路",
+                    imgUrl: 'https:https://img4.mukewang.com/5e4602ff000143af05400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5e4602ff000143af05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/69',
+                    link: 'https://m.imooc.com/read/69'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>28 Tomcat性能调优及集群搭建</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="轻量级项目，系统化经验">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "1740";
+	var chapter_title = "28 Tomcat性能调优及集群搭建";
+	var aid = "73";
+	var a_name = "架构思维成长之微服务";
+	var a_price = "68.00";
+	var a_pic = "https://img1.mukewang.com/5e86b0220001a99d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '73';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-13&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			28 Tomcat性能调优及集群搭建
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5e8c3ad20001515e06400359.jpg')"></div>
+	
+	
+		<a href="/read/73">
+			<div class="course-entry">
+				<img src="https://img2.mukewang.com/5e6eebd60001a49207000933-40-40.jpg" alt="曼巴out">
+				<h3>架构思维成长之微服务</h3>
+				<p>曼巴out · 上市公司资深架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">低头要有勇气，抬头要有底气。<p class="author">——韩寒</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="、前言">1、前言</h1>
+</div><div class="cl-preview-section"><p>Tomcat 大家都不陌生，它是基于 Java 开发的容器服务，底层是基于 Netty 进行通讯，这里主要谈谈从几个方面入手优化一下 Tomcat。</p>
+</div><div class="cl-preview-section"><p>主要从以下几点进行优化：</p>
+</div><div class="cl-preview-section"><ul>
+<li>第一：调整 JVM 参数进行优化</li>
+<li>第二：GC 回收器优化</li>
+<li>第三：连接数优化</li>
+<li>第四：配置压缩流</li>
+<li>第五：基于 Nginx 搭建 Tomcat 集群</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="、jvm参数优化">2、JVM 参数优化</h1>
+</div><div class="cl-preview-section"><p>首先，了解 Tomcat 的几个核心 JVM 参数：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>参数作用</th>
+<th>优化建议</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> -server</td>
+<td> 启动 Server，以服务端模式运行</td>
+<td>服务端模式建议开启</td>
+</tr>
+<tr>
+<td> -Xms</td>
+<td> 最小堆内存</td>
+<td>建议与 - Xmx 设置相同</td>
+</tr>
+<tr>
+<td> -Xmx</td>
+<td> 最大堆内存</td>
+<td>建议设置为可用内存的 80%</td>
+</tr>
+<tr>
+<td>-XX:MetaspaceSize</td>
+<td> 元空间初始值</td>
+<td></td>
+</tr>
+<tr>
+<td> -XX:MaxMetaspaceSize</td>
+<td> 元空间最大内存</td>
+<td>默认无限大</td>
+</tr>
+<tr>
+<td> -XX:MaxNewSize</td>
+<td> 新生代最大内存</td>
+<td>默认 16M</td>
+</tr>
+<tr>
+<td>-XX:NewRatio</td>
+<td> 年轻代和老年代大小比值，取值为整数，默认为 2</td>
+<td> 不建议修改</td>
+</tr>
+<tr>
+<td> -XX:SurvivorRatio</td>
+<td>Eden 区与 Survivor 区大小比值，取值为整数，默认为 8</td>
+<td> 不建议修改</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>配置如下所示：</p>
+</div><div class="cl-preview-section"><pre class="  language-shell"><code class="prism  language-shell">#进入目录
+cd /usr/local/tomcat/bin
+
+#编辑文件
+vim catalina.sh
+
+#贴上以下几个参数
+JAVA_OPTS="-server -Xms2048m -Xmx2048m -XX:MetaspaceSize=256m -XX:MaxMetaspaceSize=512m -XX:SurvivorRatio=8"
+</code></pre>
+</div><div class="cl-preview-section"><p>Tomcat 常见的几个 JVM 异常，掌握一下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>第一：OutOfMemoryError:Java heap space，表示堆内存满了</p>
+<pre class="  language-shell"><code class="prism  language-shell">-Xms512m -Xmx2048m
+</code></pre>
+</li>
+<li>
+<p>第二：OutOfMemoryError:PermGen space，表示静态内存区满了</p>
+<pre class="  language-shell"><code class="prism  language-shell">-XX:PermSize=50m -XX:MaxPermSize=50m
+</code></pre>
+</li>
+<li>
+<p>第三：StackOverflowError，表示栈内存溢出</p>
+<ul>
+<li>检查代码是否陷入死循环，导致内存溢出</li>
+</ul>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>推荐两个监控 JVM 的性能工具</p>
+</div><div class="cl-preview-section"><ul>
+<li>jdk 内置的 jconsole</li>
+<li> 阿里开源的 arthas</li>
+<li> 总之，JVM 的优化一定得借助监控工作定位问题的原因，要不然都是抓瞎。</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>普及概念：Java 内存结构的两个核心区域，栈区和堆区</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>栈，存放基本类型的数据和对象的引用，但对象本身不存放在栈中，而是存放在堆中。</li>
+<li>堆，存放 new 出来的对象，注意创建出来的对象只包含各自的成员变量，不包括成员方法。</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>模型一：</strong></p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ebb53a40001354c05560237.png" alt="图片描述"><br>
+简单说明</p>
+</div><div class="cl-preview-section"><ul>
+<li>基本类型（short，int，long 等），给它的变量赋值的时候，直接在堆内存开辟一个空间来存其值</li>
+<li>特点，程序执行完，则立马回收</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>模型二：</strong></p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ebb53980001408f08040237.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>简单说明</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>引用类型（数组，String，自定义对象等），给它的变量赋值的时候，会分成两个部分，栈区存的是地址引用（16 进制的数），堆区存真正的值。</p>
+</li>
+<li>
+<p>特点，程序执行完成，栈区的指针地址被回收，但是堆区则不会立马回收，等待 GC 来回收，因为可能存在多个地址指向同一个值的情况，只要该值有被指向，那么它就无法被回收。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>思考：那么了解 Java 内存结构的栈去和堆区有什么好处呢？</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>第一，了解值传递和引用传递的区别，参数传递的时候，方法内部对参数进行处理，如果是值传递则不会影响原来的值，引用传递就会</li>
+<li>第二，方便阅读源码，比如：String 字符串拼接，它底层是重新 new String，这样会造成栈区新增一个地址引用</li>
+<li>第三，了解它们的回收时机，了解其存放位置，了解其作用，才能写出高质量代码，从而避免内存泄漏情况</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="、gc垃圾回收">3、GC 垃圾回收</h1>
+</div><div class="cl-preview-section"><p>首先，了解 GC 几个收集器：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>垃圾收集器</th>
+<th>含义说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>串行收集器（Serial Collector）</td>
+<td>采用单线程执行所有的垃圾回收工作，适用于单核 CPU 服务器，无法利用多核硬件的优势</td>
+</tr>
+<tr>
+<td>并行收集器（Parallel Collector）</td>
+<td>又称吞吐量收集器，以并行的方式年轻代的垃圾回收，该方式可以显著降低垃圾回收的开销（指多条垃圾收集线程并行工作，但此时用户线程仍然处于等待状态），适用于多处理器或者多线程硬件上运行的数据量较大的应用。</td>
+</tr>
+<tr>
+<td>并发收集器（Concurrent Collector）</td>
+<td>以并发的方式执行大部分垃圾回收工作，以缩短垃圾回收的暂停时间，适用于那些响应时间优先于吞吐量的应用，因为该收集器虽然最小化了暂停时间（指用户线程与垃圾收集线程同时执行，但不一定是并行的，可能会交替执行），但是会降低应用程序的性能</td>
+</tr>
+<tr>
+<td> CMS 收集器（Concurrent Mark Sweep Collector）</td>
+<td>并发标记清除收集器，适用于那些更愿意缩短垃圾回收暂停时间并且负担的起与垃圾回收共享处理器资源的应用</td>
+</tr>
+<tr>
+<td> G1 收集器（Garbage-First Garbage Collector）</td>
+<td>适用于大容量内存的多核服务器，可以在满足垃圾回收暂停时间目标的同时，以最大可能性实现高吞吐量（JDK1.7 后）</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>不同的应用程序对应垃圾回收有不同的需求。JVM 会根据运行的平台、服务器资源配置情况选择合适的垃圾收集器、堆内存大小、运行时编译器。如无法满足需求，参考以下准则：</p>
+</div><div class="cl-preview-section"><ul>
+<li>程序数据量较小，选择串行收集器</li>
+<li>应用运行在单核处理器上且没有暂停时间要求，可交由 JVM 自行选择或选择串行收集器</li>
+<li>如果考虑程序的峰值性能，没有暂停时间要求，可以选择并行收集器</li>
+<li>如果应用程序的响应时间比整体吞吐量更重要，可以选择并发收集器</li>
+</ul>
+</div><div class="cl-preview-section"><p>串行收集器的概念图：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ebb53890001718a07270377.png" alt="图片描述"><br>
+并行收集器的概念图：<br>
+<img src="https://img.mukewang.com/5ebb537d0001885a07780392.png" alt="图片描述"><br>
+并发收集器的概念图：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ebb53720001aa6608330377.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>GC 参数了解：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> -XX:+UseSerialGC</td>
+<td> 启用串行收集器</td>
+</tr>
+<tr>
+<td> -XX:+UseParallelGC</td>
+<td> 启用并行收集器，配置了该选项，那么 - XX:+UseParallelOldGC 默认启用</td>
+</tr>
+<tr>
+<td> -XX:+UseParallelOldGC</td>
+<td>FullGC 采用并行收集器，默认禁用，如果设置 - XX:+UseParallelGC 则启用</td>
+</tr>
+<tr>
+<td> -XX:+UseParNewGC</td>
+<td> 年轻代采用并行收集器，如果设置了 - XX:+UseConcMarkSweepGC，自动启用</td>
+</tr>
+<tr>
+<td> -XX:ParallelGCThreads</td>
+<td> 年轻代及老年代垃圾回收使用的线程数，默认是 JVM 使用的 CPU 个数</td>
+</tr>
+<tr>
+<td> -XX:+UseConcMarkSweepGC</td>
+<td> 对于老年代，启用 CMS 垃圾收集器，当并行收集器无法满足应用的延迟需求时，推荐使用 CMS 或 G1 收集器，启用该选项后，-XX:+UseParNewGC 自动启用</td>
+</tr>
+<tr>
+<td> -XX:+UseG1GC</td>
+<td> 启用 G1 收集器，G1 是服务器类型的收集器，用于多核，大内存的机器，它在保持高吞吐量的情况下，高概率满足 GC 暂停时间的目标</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>GC 的配置</p>
+</div><div class="cl-preview-section"><pre class="  language-shell"><code class="prism  language-shell">#进入目录
+cd /usr/local/tomcat/bin
+
+#编辑
+vim catalina.sh
+
+#加上以下内容
+JAVA_OPTS="-XX:UseConcMarkSweepGC"
+</code></pre>
+</div><div class="cl-preview-section"><h1 id="、连接数优化">4、连接数优化</h1>
+</div><div class="cl-preview-section"><p>首先，了解 Tomcat 的几个核心连接参数：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> maxConnections</td>
+<td> 最大连接数，当到达该值后，服务器接收但不会处理更多的请求，额外的请求将会堵塞直到连接数低于 maxConnections，可通过 ulimit -a 查看服务器限制，对于 cpu 要求更高时，建议不要配置过大，对应 cpu 要求不是特别高时，建议配置在 2000 左右，当然这个需要服务器硬件的支持</td>
+</tr>
+<tr>
+<td> maxThreads</td>
+<td> 最大线程数，需要根据服务器的硬件情况，进行一个合理的设置</td>
+</tr>
+<tr>
+<td> acceptCount</td>
+<td> 最大排队等待数，当服务器接受的请求数量达到 maxConnections，此时 Tomcat 会将后面的请求，存放到任务队列中进行排序，acceptCount 指的就是任务队列中排队等待的请求数。Tomat 的最大请求处理数量 = maxConnections+acceptCount</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>Tomat 配置如下所示：tomcat/conf/server.xml</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Connector</span> <span class="token attr-name">maxConnections</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>2000<span class="token punctuation">"</span></span> <span class="token attr-name">maxThreads</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>6<span class="token punctuation">"</span></span> <span class="token attr-name">acceptCount</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>2000<span class="token punctuation">"</span></span> <span class="token punctuation">&gt;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>Connector</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>SpringBoot 内置 Tomcat 配置如下所示：application.properties</p>
+</div><div class="cl-preview-section"><pre class="  language-properties"><code class="prism  language-properties"><span class="token attr-name">server.tomcat.max-connections</span><span class="token punctuation">=</span><span class="token attr-value">0 # 最大连接数</span>
+<span class="token attr-name">server.tomcat.max-threads</span><span class="token punctuation">=</span><span class="token attr-value">0 # 最大线程数</span>
+<span class="token attr-name">server.tomcat.accept-count</span><span class="token punctuation">=</span><span class="token attr-value">0 #最大等待数</span>
+</code></pre>
+</div><div class="cl-preview-section"><h1 id="、压缩流配置">5、压缩流配置</h1>
+</div><div class="cl-preview-section"><p>tomcat/conf/server.xml</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Connector</span> <span class="token attr-name">compression</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>on<span class="token punctuation">"</span></span>
+<span class="token attr-name">compressableMimeType</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>text/html,text/xml, image/png<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>Connector</span><span class="token punctuation">&gt;</span></span>
+
+<span class="token comment">&lt;!--compression是否打开压缩功能--&gt;</span>
+<span class="token comment">&lt;!--compressableMimeType压缩文件类型--&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：压缩流的方式可以分为两种，第一是 Tomcat 配置；第二是基于 Gzip 来自定义实现响应内容的压缩。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h1 id="、tocmat集群">6、Tocmat 集群</h1>
+</div><div class="cl-preview-section"><p>相信很多同学都知道，为了提高 Tomcat 的吞吐量，通常是基于 Nginx 来对 Tomcat 做负载均衡（内置有不同的负载策略），具体架构图如下：<br>
+<img src="https://img.mukewang.com/5ebb535c0001422804750243.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>修改 nginx.conf 配置，具体如下：</p>
+</div><div class="cl-preview-section"><pre class=" language-shell"><code class="prism  language-shell">#核心配置
+server{
+    listen 80;
+    server_name www.baidu.com;
+    
+    #负载均衡池
+    upstream tomcatPool{
+        server 192.168.1.8:8080 weight=1 max_fails=3 fail_timeout=30s;
+        server 192.168.1.9:8080 weight=2 max_fails=3 fail_timeout=30s;
+        #复杂策略：weigh(权重)、ip_hash(每次请求都转向固定IP)  等等，默认是轮询
+        #max_fails重试多少次失败之后认为该服务挂掉
+        #fail_timeout超时时间
+    }
+    
+    location / {
+    	proxy_pass http://tomcatPool;
+    }
+}
+</code></pre>
+</div><div class="cl-preview-section"><h1 id="、小结">7、小结</h1>
+</div><div class="cl-preview-section"><p>本节主要是讲解如何从 JVM、连接数、压缩流、Tomcat 来进行优化 Tomcat，提供它的吞吐量。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img1.mukewang.com/5e86d85c00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=73">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '28 Tomcat性能调优及集群搭建',
+					'CID': '1740',
+					'Teacher': '曼巴out'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "28 Tomcat性能调优及集群搭建",
+                    desc: "轻量级项目，系统化经验",
+                    imgUrl: 'https:https://img1.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    otherImgUrl: 'https://img1.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/73',
+                    link: 'https://m.imooc.com/read/73'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

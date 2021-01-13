@@ -1,0 +1,1167 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>25 Netty的Future是如何做到简捷易用的</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="全面掌握迈向高级工程师的必备技能">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "2";
+	var chapter_id = "2184";
+	var chapter_title = "25 Netty的Future是如何做到简捷易用的";
+	var aid = "82";
+	var a_name = "网络编程之Netty一站式精讲";
+	var a_price = "68.00";
+	var a_pic = "https://img4.mukewang.com/5f052aa90001f15b05400720.jpg";
+	var userId = 0;
+
+	var column_id = '82';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-17&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			25 Netty的Future是如何做到简捷易用的
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5f059664000169c206400359.jpg')"></div>
+	
+	
+		<a href="/read/82">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/5d9c91f40001dcac05000500-40-40.jpg" alt="彤哥读源码">
+				<h3>网络编程之Netty一站式精讲</h3>
+				<p>彤哥读源码 · 互联网大厂项目经理</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">受苦的人，没有悲观的权利。<p class="author">——尼采</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">前言</h1>
+</div><div class="cl-preview-section"><p>你好，我是彤哥。</p>
+</div><div class="cl-preview-section"><p>上一节，我们一起学习了 Netty 中使用到的队列，它是对 Java 原生队列的增强，其实，Netty 对 Java 原生的增强还有很多，比如，本节将要讨论的 Future。</p>
+</div><div class="cl-preview-section"><p>Java 原生提供了一个 Future 接口，可以用来获取线程池中任务执行的结果，但是，它只提供了简单的功能，不能实现诸如判断任务是否成功执行完毕、任务执行完后来个回调、手动设置任务执行的结果等功能。</p>
+</div><div class="cl-preview-section"><p>为了实现这些功能，Netty 扩展了 Java 原生的 Future 接口，并增加了一些实用的方法，但是，一不小心，Netty 也搞出了一个小 bug，而且，到目前为止，这个 Bug 依然还未修复，你知道这个 bug 是什么吗？</p>
+</div><div class="cl-preview-section"><p>今天，就让我们一起来学习 Netty 增强的 Future。</p>
+</div><div class="cl-preview-section"><h1 id="java原生future">Java 原生 Future</h1>
+</div><div class="cl-preview-section"><p>首先，让我们来回顾下 Java 原生的 Future。<br>
+<img src="https://img.mukewang.com/5f34a7b9000174c011630287.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>所谓 Future，是未来、将来的意思，在 Java 中，它是指在未来做些什么，它跟 Runnable 组合就变成了 RunnableFuture，它跟 Scheduled 组合就变成了 ScheduledFuture，它跟 ForkJoin 组合就变成了 ForkJoinTask，它跟 Completable 组合就变成了 CompletableFuture，在 JUC 包下面主要提供了上图中这几种实现，其实，远远不止这些，还有很多在内部类里面，我没有列出来，本节，我们主要看两个简单的实现：FutureTask 和 CompletableFuture。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>RecursiveAction 表示无返回值任务，RecursiveTask 表示有返回值任务，CountedCompleter 表示有回调的无返回值任务，它们三个都是用在 ForkJoinPool 中的，有兴趣的同学可以自己看下相关的源码。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="future接口">Future 接口</h2>
+</div><div class="cl-preview-section"><p>首先，我们先看看 Future 接口提供了哪些能力：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">package</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">Future</span><span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+    <span class="token comment">/**
+     * &lt;p&gt;After this method returns, subsequent calls to {@link #isDone} will
+     * always return {@code true}.  Subsequent calls to {@link #isCancelled}
+     * will always return {@code true} if this method returned {@code true}.
+     */</span>
+    <span class="token comment">// 取消，请记住上面的话：</span>
+    <span class="token comment">//      在这个方法返回之后，后面的isDone()方法总是返回true。</span>
+    <span class="token comment">//      如果这个方法返回true，后面的isCancelled()方法总是返回true。</span>
+    <span class="token keyword">boolean</span> <span class="token function">cancel</span><span class="token punctuation">(</span><span class="token keyword">boolean</span> mayInterruptIfRunning<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 判断是否已取消</span>
+    <span class="token keyword">boolean</span> <span class="token function">isCancelled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 判断是否已完成，已完成有多层含义：已正常完成、已异常完成、已取消</span>
+    <span class="token keyword">boolean</span> <span class="token function">isDone</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 获取结果，可以设置等待时间</span>
+    V <span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException<span class="token punctuation">,</span> ExecutionException<span class="token punctuation">;</span>
+    V <span class="token function">get</span><span class="token punctuation">(</span><span class="token keyword">long</span> timeout<span class="token punctuation">,</span> TimeUnit unit<span class="token punctuation">)</span>
+        <span class="token keyword">throws</span> InterruptedException<span class="token punctuation">,</span> ExecutionException<span class="token punctuation">,</span> TimeoutException<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>Future 接口除了提供获取任务执行结果的方法外，还提供了取消任务、判断任务是否已取消、是否已完成的方法，不过，这里的 isDone () 方法其实代表了三种状态：已正常完成、已异常完成、已取消，这是有点混乱的地方。</p>
+</div><div class="cl-preview-section"><h2 id="futuretask">FutureTask</h2>
+</div><div class="cl-preview-section"><p>FutureTask，用于在未来获取线程池中任务执行的结果，它的主要方法就是 get ()，调用 get () 时，如果任务未执行完毕会阻塞当前线程直到任务执行完毕并返回，如果任务已执行完毕则会立即返回任务执行的结果。它的实现原理很简单，是很多异步框架实现同步的基本原理，比如，Dubbo 中同步调用的实现方式就是参考 FutureTask 的实现的。</p>
+</div><div class="cl-preview-section"><p>那么，FutureTask 该如何使用呢？请看下面的例子：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">FutureTaskTest</span> <span class="token punctuation">{</span>
+
+    <span class="token comment">// 创建一个线程池</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> ExecutorService THREAD_POOL <span class="token operator">=</span> Executors<span class="token punctuation">.</span><span class="token function">newFixedThreadPool</span><span class="token punctuation">(</span><span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> ExecutionException<span class="token punctuation">,</span> InterruptedException <span class="token punctuation">{</span>
+        <span class="token comment">// 执行第一个任务</span>
+        Future<span class="token operator">&lt;</span>Integer<span class="token operator">&gt;</span> future1 <span class="token operator">=</span> THREAD_POOL<span class="token punctuation">.</span><span class="token function">submit</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 阻塞1秒</span>
+            LockSupport<span class="token punctuation">.</span><span class="token function">parkNanos</span><span class="token punctuation">(</span>TimeUnit<span class="token punctuation">.</span>SECONDS<span class="token punctuation">.</span><span class="token function">toNanos</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">// 返回1</span>
+            <span class="token keyword">return</span> <span class="token number">1</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 执行第二个任务</span>
+        Future<span class="token operator">&lt;</span>Integer<span class="token operator">&gt;</span> future2 <span class="token operator">=</span> THREAD_POOL<span class="token punctuation">.</span><span class="token function">submit</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 阻塞2秒</span>
+            LockSupport<span class="token punctuation">.</span><span class="token function">parkNanos</span><span class="token punctuation">(</span>TimeUnit<span class="token punctuation">.</span>SECONDS<span class="token punctuation">.</span><span class="token function">toNanos</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">// 返回2</span>
+            <span class="token keyword">return</span> <span class="token number">2</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 把两个任务执行的结果相加</span>
+        <span class="token keyword">int</span> result <span class="token operator">=</span> future1<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> future2<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 打印</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"result="</span> <span class="token operator">+</span> result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在这个例子中，我们创建了一个固定大小的线程池，提交了两个任务，一个阻塞 1 秒后返回 1，一个阻塞 2 秒后返回 2，在主线程中，我们调用两个 Future 的 get () 方法获取任务执行的结果，并把它们相加，最后，打印输出结果。</p>
+</div><div class="cl-preview-section"><p>运行这段代码，我们会发现，大概会在 2 秒后打印结果，也就是主线程一共等待了 2 秒钟，具体来说，是在调用两个 Future.get () 的时候其中一个等待了 2 秒钟，这两个 get () 方法有个短板效应（好像不太准备，长板效应是不是好点 ^^），以最晚返回的为准。</p>
+</div><div class="cl-preview-section"><p>在这两例子中，其实是有两次阻塞，第一次是 future1.get () 阻塞了 1 秒，返回之后，调用 future2.get ()，又阻塞了 1 秒，才返回。如果把 future1 和 future2 换下位置会怎样呢？那就只有一次阻塞了，因为调用 future2.get () 的时候阻塞了 2 秒，此时，再调用 future1.get () 的时候，future1 对应的任务早都执行完了，所以会立即返回，不会再次阻塞。</p>
+</div><div class="cl-preview-section"><p>那么，这个 get () 方法的阻塞是如何实现的呢？</p>
+</div><div class="cl-preview-section"><p>让我们先看看 FutureTask 有哪些属性：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">FutureTask</span><span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token keyword">implements</span> <span class="token class-name">RunnableFuture</span><span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 状态</span>
+    <span class="token keyword">private</span> <span class="token keyword">volatile</span> <span class="token keyword">int</span> state<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> NEW          <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> COMPLETING   <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> NORMAL       <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> EXCEPTIONAL  <span class="token operator">=</span> <span class="token number">3</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> CANCELLED    <span class="token operator">=</span> <span class="token number">4</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> INTERRUPTING <span class="token operator">=</span> <span class="token number">5</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> INTERRUPTED  <span class="token operator">=</span> <span class="token number">6</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 任务</span>
+    <span class="token keyword">private</span> Callable<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> callable<span class="token punctuation">;</span>
+    <span class="token comment">// 返回值（正常的返回值或者异常）</span>
+    <span class="token keyword">private</span> Object outcome<span class="token punctuation">;</span>
+    <span class="token comment">// 运行任务的线程（防止多个线程同时运行了这个任务）</span>
+    <span class="token keyword">private</span> <span class="token keyword">volatile</span> Thread runner<span class="token punctuation">;</span>
+    <span class="token comment">// 等待队列，即调用者，多个调用者组成队列</span>
+    <span class="token keyword">private</span> <span class="token keyword">volatile</span> WaitNode waiters<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>FutureTask 主要有五个重要的属性：</p>
+</div><div class="cl-preview-section"><ul>
+<li>state，状态，状态有七种，对于一个正常结束的任务，它的状态会从 NEW 到 COMPLETING，最后变成 NORMAL，表示正常结束；对于一个异常结束的任务，它的状态会从 NEW 到 COMPLETING，再到 EXCEPTIONAL，表示异常结束；</li>
+<li>callable，任务，外部传入的待执行的任务，任务执行完了会把这个字段置空；</li>
+<li>outcome，任务执行的结果，如果任务正常执行完毕则返回值会存储在里面，如果任务异常执行完成则保存的是异常信息，当调用 get () 方法时，如果任务已结束则根据状态变量的值判断是抛出异常还是正常返回值；另外，可以看到这个变量没有使用 volatile 关键字修饰，因为它总是在 state 调用之后被调用，所以，state 的 volatile 相当于对它也起到了保护作用；</li>
+<li>runner，运行任务的线程，当有一个线程运行任务时，设置该值，当有其它线程也想运行该任务时，则会直接返回；</li>
+<li>waiters，等待队列，在任务未结束之前，调用 get () 方法的所有线程都将进入这个队列中等待，当任务完成时，会依次唤醒这些等待的线程。</li>
+</ul>
+</div><div class="cl-preview-section"><p>根据这五个属性，让我们脑补一下 FutureTask 正常执行结束的流程：</p>
+</div><div class="cl-preview-section"><ol>
+<li>初始化时，state 变量的值为 NEW；</li>
+<li>此时，如果调用 get () 方法，检测到此时 state 为 NEW，新建一个 WaitNode 节点并入队，当然了，此时 waiters 只有一个节点，如果另一个线程也调用了 get () 方法，那个线程也会入队；</li>
+<li>轮到任务运行了，运行之前检查状态是不是 NEW，并把运行的线程设置到 runner 变量中，这样下一个线程如果要运行检测到 runner 中有值了，就不会再重复执行任务了；</li>
+<li>当任务运行完毕，将 state 设置为 COMPLETING，并把任务执行的结果设置到 outcome 中；</li>
+<li>因为是正常运行结束，所以，最后，将 state 修改为 NORMAL 状态；</li>
+<li>任务运行完毕，将 waiters 中阻塞的线程全部唤醒；</li>
+<li>get () 方法返回结果，调用着获取到结果做后续业务处理；</li>
+</ol>
+</div><div class="cl-preview-section"><blockquote>
+<p>上面只是我们脑补的过程，实际情况到底是不是这样呢？这不在本节的范围之内，有兴趣的同学可以参考下这篇文章：<a href="https://mp.weixin.qq.com/s/qxBfzP-uFe1gvnV87jkw7g">死磕 java 线程系列之线程池深入解析 —— 未来任务执行流程</a></p>
+</blockquote>
+</div><div class="cl-preview-section"><p>好了，FutureTask 看完了，我们再来看看 CompletableFuture。</p>
+</div><div class="cl-preview-section"><h2 id="completablefuture">CompletableFuture</h2>
+</div><div class="cl-preview-section"><p>CompletableFuture，使用它你可以在任务执行完毕之后执行一系列的回调，不管是正常还是异常结束。</p>
+</div><div class="cl-preview-section"><p>那么，它该怎么使用呢？让我们来看一个例子：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">CompletableFutureTest</span> <span class="token punctuation">{</span>
+
+    <span class="token comment">// 创建一个线程池</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> Executor threadPool <span class="token operator">=</span> Executors<span class="token punctuation">.</span><span class="token function">newFixedThreadPool</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> IOException<span class="token punctuation">,</span> ExecutionException<span class="token punctuation">,</span> InterruptedException <span class="token punctuation">{</span>
+        <span class="token comment">// 执行一个有返回值的任务</span>
+        CompletableFuture<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">&gt;</span> future <span class="token operator">=</span> CompletableFuture<span class="token punctuation">.</span><span class="token function">supplyAsync</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+            LockSupport<span class="token punctuation">.</span><span class="token function">parkNanos</span><span class="token punctuation">(</span>TimeUnit<span class="token punctuation">.</span>SECONDS<span class="token punctuation">.</span><span class="token function">toNanos</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"inner thread: "</span> <span class="token operator">+</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">//            throw new RuntimeException();</span>
+            <span class="token keyword">return</span> <span class="token string">"aaaaa"</span><span class="token punctuation">;</span>
+            <span class="token comment">// 如果执行异常，会进入下面这个回调</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span> threadPool<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">exceptionally</span><span class="token punctuation">(</span>e <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"exception: "</span> <span class="token operator">+</span> e <span class="token operator">+</span> <span class="token string">", thread: "</span> <span class="token operator">+</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> <span class="token string">"bbbbb"</span><span class="token punctuation">;</span>
+            <span class="token comment">// 执行一个有返回值的回调</span>
+        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">thenApplyAsync</span><span class="token punctuation">(</span>s <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"result: "</span> <span class="token operator">+</span> s <span class="token operator">+</span> <span class="token string">", thread: "</span> <span class="token operator">+</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> <span class="token string">"ccccc"</span><span class="token punctuation">;</span>
+            <span class="token comment">// 执行一个无返回值的回调</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span> threadPool<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">thenAcceptAsync</span><span class="token punctuation">(</span>s <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"result2: "</span> <span class="token operator">+</span> s <span class="token operator">+</span> <span class="token string">", thread: "</span> <span class="token operator">+</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">// 再执行一个有返回值的回调</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span> threadPool<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">thenApplyAsync</span><span class="token punctuation">(</span>s <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"result3: "</span> <span class="token operator">+</span> s <span class="token operator">+</span> <span class="token string">", thread: "</span> <span class="token operator">+</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> <span class="token string">"ddddd"</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span> threadPool<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"completableFuture running!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 调用get()方法</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"get: "</span> <span class="token operator">+</span> future<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在这个例子中，我有两个问题：</p>
+</div><div class="cl-preview-section"><ol>
+<li>这个 get () 方法获取的返回值到底是什么？</li>
+<li>如果把任务体中的抛出异常注释打开，并把下面一行注释掉，这个 get () 获取到的返回值又是什么？</li>
+</ol>
+</div><div class="cl-preview-section"><p>运行一下这个程序，你会发现最终 get () 方法获取的返回值都是 <code>ddddd</code>，也就是说原始任务的返回值被吃掉了，这是这个类比较迷的一点。</p>
+</div><div class="cl-preview-section"><p>另外，CompletableFuture 中的很多方法都有同步和异步两种方式，针对异步方式，你还可以设置使用哪个线程池来运行，如果没有指定线程池，默认使用的是 <code>ForkJoinPool.commonPool()</code> 来运行。</p>
+</div><div class="cl-preview-section"><p>这个类里面大量使用了跟 ForkJoinPool 相关的代码，比如对任务或者回调的包装都是继承自 ForkJoinTask，它已经不是一个纯粹的类了，跟 ForkJoinPool 的耦合特别严重，这不是一个良好的编程范式，所以，这个类我不打算深入讲解。</p>
+</div><div class="cl-preview-section"><p>既然，Java 原生提供了 CompletableFuture 这个可以支持回调的 Future，那么，Netty 为什么还要实现自己的 Future 呢？总结起来，原因大概有以下两点：</p>
+</div><div class="cl-preview-section"><ol>
+<li>CompletableFuture 是 Java8 新加入的类， 对于早期的 Netty 无法吃到这个福利；</li>
+<li>CompletableFuture 的实现过于复杂，且强耦合于 ForkJoinPool，这不是良好的设计，所以，Netty 并不打算使用它；</li>
+</ol>
+</div><div class="cl-preview-section"><p>所以，下面就让我们看看 Netty 是如何实现自己的 Future 的。</p>
+</div><div class="cl-preview-section"><h1 id="netty的future">Netty 的 Future</h1>
+</div><div class="cl-preview-section"><p>Netty 的 Future 扩展自 Java 原生的 Future，而且又提供了一种可以修改结果的增强，叫作 Promise。</p>
+</div><div class="cl-preview-section"><p>针对 Future 的学习，我们同样使用从宏观到微观的分析方法。</p>
+</div><div class="cl-preview-section"><h2 id="继承体系">继承体系</h2>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f34a83800013f3c17420600.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>其实，Netty 中的 Future 远远不止这些，这个图中只列举了一部分 Future，还有诸如带进度条的 Future 等不常用的没有列进来。</p>
+</div><div class="cl-preview-section"><p>上面这个图，我们可以分成几个部分来看：</p>
+</div><div class="cl-preview-section"><ul>
+<li>左边，跟 Runnable 相关，表示的是任务，主要实现类有 PromiseTask、ScheduledFutureTask 等；</li>
+<li>中间，主要是 Promise 相关，经典实现 DefaultPromise；</li>
+<li>右边，跟 Complete 相关，表示完成，Netty 将完成分成两种状态，即 Succeeded 和 Failed，非常清晰；</li>
+<li>最后一部分，跟 Channel 相关，它可以跟 Promise 和 Complete 任意组合；</li>
+</ul>
+</div><div class="cl-preview-section"><p>可以看到，Netty 中 Future 的继承体系非常清晰，而且看一眼名字就大概知道是干什么的，除了结构清晰以外，还有另外一点值得说明的是，Netty 中所有 Future 子类的代码也是比较接近的，看懂了一个，其它的基本很容易就能看懂，而 Java 原生的 Future 体系，可以说，每一个 Future 的实现都不一样，这让人感到很痛苦。</p>
+</div><div class="cl-preview-section"><p>好了，既然 Netty 的 Future 是对 Java 原生 Future 的增强，那我们就来看看它到底增强了哪些方法吧。</p>
+</div><div class="cl-preview-section"><h2 id="增强的方法">增强的方法</h2>
+</div><div class="cl-preview-section"><p>Netty 中 Future 的增强主要分成两级，一级是 Future，一级是 Promise。</p>
+</div><div class="cl-preview-section"><p>我们先来看看 Future 这个接口：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">package</span> io<span class="token punctuation">.</span>netty<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">Future</span><span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token keyword">extends</span> <span class="token class-name">java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>Future</span><span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 返回是否成功</span>
+    <span class="token keyword">boolean</span> <span class="token function">isSuccess</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 返回是否可取消</span>
+    <span class="token keyword">boolean</span> <span class="token function">isCancellable</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 返回异常，如果有异常的话</span>
+    Throwable <span class="token function">cause</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 添加或移除回调的监听器</span>
+    Future<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">addListener</span><span class="token punctuation">(</span>GenericFutureListener<span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">extends</span> <span class="token class-name">Future</span><span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">super</span> V<span class="token operator">&gt;&gt;</span> listener<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Future<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">addListeners</span><span class="token punctuation">(</span>GenericFutureListener<span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">extends</span> <span class="token class-name">Future</span><span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">super</span> V<span class="token operator">&gt;&gt;</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> listeners<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Future<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">removeListener</span><span class="token punctuation">(</span>GenericFutureListener<span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">extends</span> <span class="token class-name">Future</span><span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">super</span> V<span class="token operator">&gt;&gt;</span> listener<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Future<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">removeListeners</span><span class="token punctuation">(</span>GenericFutureListener<span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">extends</span> <span class="token class-name">Future</span><span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">super</span> V<span class="token operator">&gt;&gt;</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> listeners<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 阻塞直到完成（内部调用await()方法），如果有异常则会抛出异常</span>
+    Future<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">sync</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException<span class="token punctuation">;</span>
+    Future<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">syncUninterruptibly</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 等待完成</span>
+    Future<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">await</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException<span class="token punctuation">;</span>
+    Future<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">awaitUninterruptibly</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">boolean</span> <span class="token function">await</span><span class="token punctuation">(</span><span class="token keyword">long</span> timeout<span class="token punctuation">,</span> TimeUnit unit<span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException<span class="token punctuation">;</span>
+    <span class="token keyword">boolean</span> <span class="token function">await</span><span class="token punctuation">(</span><span class="token keyword">long</span> timeoutMillis<span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException<span class="token punctuation">;</span>
+    <span class="token keyword">boolean</span> <span class="token function">awaitUninterruptibly</span><span class="token punctuation">(</span><span class="token keyword">long</span> timeout<span class="token punctuation">,</span> TimeUnit unit<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">boolean</span> <span class="token function">awaitUninterruptibly</span><span class="token punctuation">(</span><span class="token keyword">long</span> timeoutMillis<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 立即获取结果，如果还没有完成则返回null，不会阻塞</span>
+    V <span class="token function">getNow</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 取消</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">boolean</span> <span class="token function">cancel</span><span class="token punctuation">(</span><span class="token keyword">boolean</span> mayInterruptIfRunning<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以看到，Netty 的 Future 接口增加了很多语义比较明确的方法，比如判断是否成功完成、是否可取消、返回任务执行异常、明确的阻塞或者等待方法、立即获取结果的方法等，另外，最有用的要数 Listener 回调机制了，这是 Java 原生 Future 所欠缺的，虽然 Java 中的 CompletableFuture 也提供了回调机制，但是，使用 CompletableFuture 的回调连原始任务执行的结果都不知道了，显然是有问题的，而且里面耦合了太多 ForkJoinPool 的代码，也不符合 Netty 的极简原则。</p>
+</div><div class="cl-preview-section"><p>好了，我们再看看另一级增强 ——Promise：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">Promise</span><span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token keyword">extends</span> <span class="token class-name">Future</span><span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 显式地将结果设置为成功，如果设置失败将抛出异常</span>
+    Promise<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">setSuccess</span><span class="token punctuation">(</span>V result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 尝试将结果设置为成功，如果设置失败将返回false</span>
+    <span class="token keyword">boolean</span> <span class="token function">trySuccess</span><span class="token punctuation">(</span>V result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 显式地将结果设置为失败，如果设置失败将抛出异常</span>
+    Promise<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">setFailure</span><span class="token punctuation">(</span>Throwable cause<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 尝试将结果设置为失败，如果设置失败将返回false</span>
+    <span class="token keyword">boolean</span> <span class="token function">tryFailure</span><span class="token punctuation">(</span>Throwable cause<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 设置为不可取消</span>
+    <span class="token keyword">boolean</span> <span class="token function">setUncancellable</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 以下为Future接口方法的重新定义（重写）</span>
+    <span class="token annotation punctuation">@Override</span>
+    Promise<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">addListener</span><span class="token punctuation">(</span>GenericFutureListener<span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">extends</span> <span class="token class-name">Future</span><span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">super</span> V<span class="token operator">&gt;&gt;</span> listener<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token annotation punctuation">@Override</span>
+    Promise<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">addListeners</span><span class="token punctuation">(</span>GenericFutureListener<span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">extends</span> <span class="token class-name">Future</span><span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">super</span> V<span class="token operator">&gt;&gt;</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> listeners<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token annotation punctuation">@Override</span>
+    Promise<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">removeListener</span><span class="token punctuation">(</span>GenericFutureListener<span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">extends</span> <span class="token class-name">Future</span><span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">super</span> V<span class="token operator">&gt;&gt;</span> listener<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token annotation punctuation">@Override</span>
+    Promise<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">removeListeners</span><span class="token punctuation">(</span>GenericFutureListener<span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">extends</span> <span class="token class-name">Future</span><span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">super</span> V<span class="token operator">&gt;&gt;</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> listeners<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token annotation punctuation">@Override</span>
+    Promise<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">await</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException<span class="token punctuation">;</span>
+    <span class="token annotation punctuation">@Override</span>
+    Promise<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">awaitUninterruptibly</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token annotation punctuation">@Override</span>
+    Promise<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">sync</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException<span class="token punctuation">;</span>
+    <span class="token annotation punctuation">@Override</span>
+    Promise<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">syncUninterruptibly</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>Promise 的主要作用就是提供了显式修改结果的方法，它可以把结果修改为成功或者失败，另外，还提供了设置不可取消的方法，我们开篇说的小 bug 就出在这个 <code>setUncancellable()</code> 方法上，为什么这么说呢？让我们看个例子：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">DefaultPromiseIsDoneBugTest</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 创建一个promise</span>
+        Promise<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">&gt;</span> promise <span class="token operator">=</span> GlobalEventExecutor<span class="token punctuation">.</span>INSTANCE<span class="token punctuation">.</span><span class="token function">newPromise</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 设置为不可取消</span>
+        promise<span class="token punctuation">.</span><span class="token function">setUncancellable</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 调用取消的方法</span>
+        <span class="token keyword">boolean</span> cancel <span class="token operator">=</span> promise<span class="token punctuation">.</span><span class="token function">cancel</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 调用是否完成的方法</span>
+        <span class="token keyword">boolean</span> isDone <span class="token operator">=</span> promise<span class="token punctuation">.</span><span class="token function">isDone</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 打印</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>cancel<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>isDone<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>promise<span class="token punctuation">.</span><span class="token function">isCancelled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>相信你也可以预测到这段代码运行的结果，没错，它返回的结果是三个 false，乍看之下，似乎没什么问题。确实没什么大问题 ，让我们再回顾一下 Java 原生的 Future 接口中 cancel () 方法的注释：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">Future</span><span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+    <span class="token comment">/**
+     * &lt;p&gt;After this method returns, subsequent calls to {@link #isDone} will
+     * always return {@code true}.  Subsequent calls to {@link #isCancelled}
+     * will always return {@code true} if this method returned {@code true}.
+     */</span>
+    <span class="token comment">// 取消，请记住上面的话：</span>
+    <span class="token comment">//      在这个方法返回之后，后面的isDone()方法总是返回true。</span>
+    <span class="token comment">//      如果这个方法返回true，后面的isCancelled()方法总是返回true。</span>
+    <span class="token keyword">boolean</span> <span class="token function">cancel</span><span class="token punctuation">(</span><span class="token keyword">boolean</span> mayInterruptIfRunning<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>Netty 的实现虽然没有太大问题，但明显违反了 Java 原来这个方法的语义。针对这个问题，Netty 官方也给出了回应：<br>
+<img src="https://img.mukewang.com/5f34a858000115da09450523.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>根据 Norman 的回复，在下个大版本中，Netty 的 Future 接口将不再继承自 Java 原生的 Future 接口，但是，会提供一些转换的方法。</p>
+</div><div class="cl-preview-section"><p>好了，这只是一个小插曲，下面我们从源码层面分析一个 Future 家族的经典实现 ——DefaultPromise。</p>
+</div><div class="cl-preview-section"><h2 id="defaultpromise">DefaultPromise</h2>
+</div><div class="cl-preview-section"><h3 id="主要属性">主要属性</h3>
+</div><div class="cl-preview-section"><p>关于源码解析，我们首先来看一下 DefaultPromise 的属性：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">DefaultPromise</span><span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token keyword">extends</span> <span class="token class-name">AbstractFuture</span><span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token keyword">implements</span> <span class="token class-name">Promise</span><span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+    <span class="token comment">// ...省略常量</span>
+    <span class="token comment">// 任务执行的结果</span>
+    <span class="token keyword">private</span> <span class="token keyword">volatile</span> Object result<span class="token punctuation">;</span>
+    <span class="token comment">// 执行的线程</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> EventExecutor executor<span class="token punctuation">;</span>
+    <span class="token comment">// 监听器，用于执行回调</span>
+    <span class="token keyword">private</span> Object listeners<span class="token punctuation">;</span>
+    <span class="token comment">// 等待者的数量，即阻塞的线程数量</span>
+    <span class="token keyword">private</span> <span class="token keyword">short</span> waiters<span class="token punctuation">;</span>
+    <span class="token comment">// 用于控制通知监听，因为是在synchronized内部使用，所以不用加volatile关键字</span>
+    <span class="token keyword">private</span> <span class="token keyword">boolean</span> notifyingListeners<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以看到，与 Java 原生 FutureTask 不一样的地方主要有以下几点：</p>
+</div><div class="cl-preview-section"><ol>
+<li>没有 state 变量，只有一个 volatile 修饰的 result 用于存放结果，那么，它是怎么维护这些状态的呢？</li>
+<li>没有了阻塞线程组成的队列，只存储了阻塞线程的数量，那么，它是怎么通知等待线程的呢？</li>
+<li>可以绑定了一系列的监听器，但是，它却是个 Object 类型，是不是有点奇怪？</li>
+<li>绑定了一个 EventExecutor，它是在什么时候使用的呢？</li>
+</ol>
+</div><div class="cl-preview-section"><p>让我们带着这些问题，继续前进。</p>
+</div><div class="cl-preview-section"><h3 id="调试用例">调试用例</h3>
+</div><div class="cl-preview-section"><p>其实，DefaultPromise 的调试用例还是比较难写的，需要有前面服务启动和数据流向的源码剖析的底子，然后，从中找出一些端倪，才能比较容易地写出来，下面是我写的调试用例：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">DefaultPromiseTest</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException<span class="token punctuation">,</span> IOException <span class="token punctuation">{</span>
+        <span class="token comment">// 相当于一个线程池中的一个线程（单线程）</span>
+        EventExecutor eventExecutor <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">DefaultEventExecutor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 使用EventExecutor的newPromise()方法创建</span>
+        Promise<span class="token operator">&lt;</span>Integer<span class="token operator">&gt;</span> promise1 <span class="token operator">=</span> eventExecutor<span class="token punctuation">.</span><span class="token function">newPromise</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 使用构造方法创建，推荐使用上面那种方式创建Promise</span>
+        Promise<span class="token operator">&lt;</span>Integer<span class="token operator">&gt;</span> promise2 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">DefaultPromise</span><span class="token operator">&lt;</span><span class="token operator">&gt;</span><span class="token punctuation">(</span>eventExecutor<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        GenericFutureListener<span class="token operator">&lt;</span>Future<span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">super</span> Integer<span class="token operator">&gt;&gt;</span> listener <span class="token operator">=</span> future <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 成功执行完毕</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>future<span class="token punctuation">.</span><span class="token function">isSuccess</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"done success, result="</span> <span class="token operator">+</span> future<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">+</span><span class="token string">", thread="</span> <span class="token operator">+</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+                <span class="token comment">// 失败了</span>
+                System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"done exception, e="</span> <span class="token operator">+</span> future<span class="token punctuation">.</span><span class="token function">cause</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">+</span><span class="token string">", thread="</span> <span class="token operator">+</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span><span class="token punctuation">;</span>
+        promise1<span class="token punctuation">.</span><span class="token function">addListener</span><span class="token punctuation">(</span>listener<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        promise2<span class="token punctuation">.</span><span class="token function">addListener</span><span class="token punctuation">(</span>listener<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 执行两个任务</span>
+        eventExecutor<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token function">calc</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> promise1<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        eventExecutor<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token function">calc</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> promise2<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// sync，阻塞，如果有异常会抛出异常</span>
+        promise1<span class="token punctuation">.</span><span class="token function">sync</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// await，阻塞，不会抛出异常</span>
+        promise2<span class="token punctuation">.</span><span class="token function">await</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"finish"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        System<span class="token punctuation">.</span>in<span class="token punctuation">.</span><span class="token function">read</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">calc</span><span class="token punctuation">(</span><span class="token keyword">int</span> num<span class="token punctuation">,</span> Promise<span class="token operator">&lt;</span>Integer<span class="token operator">&gt;</span> promise<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 阻塞1秒</span>
+            LockSupport<span class="token punctuation">.</span><span class="token function">parkNanos</span><span class="token punctuation">(</span>TimeUnit<span class="token punctuation">.</span>SECONDS<span class="token punctuation">.</span><span class="token function">toNanos</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">// 注意除数</span>
+            <span class="token keyword">int</span> result <span class="token operator">=</span> <span class="token number">100</span> <span class="token operator">/</span> num<span class="token punctuation">;</span>
+            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"success, thread="</span> <span class="token operator">+</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">// 成功执行完毕</span>
+            promise<span class="token punctuation">.</span><span class="token function">setSuccess</span><span class="token punctuation">(</span>result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"exception caught, e="</span> <span class="token operator">+</span> e <span class="token operator">+</span> <span class="token string">", thread="</span> <span class="token operator">+</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">// 执行异常</span>
+            promise<span class="token punctuation">.</span><span class="token function">setFailure</span><span class="token punctuation">(</span>e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>首先，我们要明确一个概念，不管是 Future 还是 Promise，它们本身什么都代表不了，它们只是用来存储任务运行的结果（正常结果或者异常结果），所以，它们必须和任务一起使用才有意义，至于怎么一起使用，主要有两种形式，一种是同时实现 Future 接口（或 Promise 接口）和 Runnabe 接口，这样的实现类一般都是以 <code>XxxTask</code> 命名，比如 <code>FutureTask</code>、<code>PromiseTask</code>，一种是不实现 Runnable 接口，这样的类一般不具有 run () 方法，必须以参数的形式传递到任务的 run () 方法里面，这样在任务执行完毕才能把结果赋值给它。</p>
+</div><div class="cl-preview-section"><p>可以看到，在我们的调试用例中，DefaultPromise 没有实现 Runnable 接口，所以，它只能以参数的形式传递给任务的 run () 方法，在任务执行完毕把结果再赋值给它。而任务一般在哪里运行呢？任务必须在线程池中运行，更确切地说，是需要有一个线程来执行任务，所以，这里我们需要创建一个线程，而在 Netty 中，线程又是以 EventExecutor 的形式存在的（可以把 EventExecutor 理解为 Java 原生线程池中的 Worker），因此，我们这里使用了一个 EventExecutor 的子类来作为线程使用。另外，查看 DefaultPromise 的构造方法，也可以知道，必须传一个 EventExecutor 类型的参数。</p>
+</div><div class="cl-preview-section"><p>OK，在这个调试用例中，我们先创建了一个 DefaultEventExecutor 来作为任务执行的线程使用，随后使用不同的方式创建了两个 Promise，然后，创建了一个监听器并绑定到两个 Promise 中，接着使用上面创建的 EventExecutor 分别执行两个任务，最后，使用两种不同的方式阻塞等待任务执行完毕。在这个用例中，两个任务完全执行完毕需要多长时间？1 秒吗？2 秒吗？答案是 2 秒，因为这两个任务是放到同一个线程中来执行的，变成了串行，每个任务阻塞 1 秒，所以，一共是 2 秒。</p>
+</div><div class="cl-preview-section"><p>好了，调试用例解释完毕，下面就来深入部署 DefaultPromise 的源码。</p>
+</div><div class="cl-preview-section"><h3 id="源码剖析">源码剖析</h3>
+</div><div class="cl-preview-section"><p>前面创建 DefaultEventExecutor 和 DefaultPromise 的部分直接跳过，到创建监听器这里。</p>
+</div><div class="cl-preview-section"><p>这里使用 lambda 表达式的形式创建了一个 GenericFutureListener 的匿名类，这个类里面我们对任务执行的结果进行监听，这个结果当然就是存储在 Future 里面的，通过 Future 的 isSuccess () 方法判断任务是否执行成功，然后针对成功和失败分别打印不同的语句。</p>
+</div><div class="cl-preview-section"><p>然后，把这个监听器分别添加到两个 Promise 中，跟踪到 addListener () 方法中：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// io.netty.util.concurrent.DefaultPromise#addListener</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> Promise<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">addListener</span><span class="token punctuation">(</span>GenericFutureListener<span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">extends</span> <span class="token class-name">Future</span><span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">super</span> V<span class="token operator">&gt;&gt;</span> listener<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">checkNotNull</span><span class="token punctuation">(</span>listener<span class="token punctuation">,</span> <span class="token string">"listener"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 添加监听器的时候加锁</span>
+    <span class="token keyword">synchronized</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token function">addListener0</span><span class="token punctuation">(</span>listener<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 如果任务已经执行完毕，直接触发监听器</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">isDone</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token function">notifyListeners</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">addListener0</span><span class="token punctuation">(</span>GenericFutureListener<span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">extends</span> <span class="token class-name">Future</span><span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">super</span> V<span class="token operator">&gt;&gt;</span> listener<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// listeners即我们前面说的那个Object对象</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>listeners <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 1. 如果为空，则把listener直接赋值给它</span>
+        listeners <span class="token operator">=</span> listener<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>listeners <span class="token keyword">instanceof</span> <span class="token class-name">DefaultFutureListeners</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 3. 如果是DefaultFutureListeners，则调用其add()方法</span>
+        <span class="token punctuation">(</span><span class="token punctuation">(</span>DefaultFutureListeners<span class="token punctuation">)</span> listeners<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>listener<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 2. 否则创建一个DefaultFutureListeners把两个listener都添加进去</span>
+        listeners <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">DefaultFutureListeners</span><span class="token punctuation">(</span><span class="token punctuation">(</span>GenericFutureListener<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token punctuation">)</span> listeners<span class="token punctuation">,</span> listener<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以看到，对于 <code>private Object listeners;</code>，这个 listeners 可能有两种类型，一种是 GenericFutureListener，一种是 DefaultFutureListeners。试想一下，连续添加多个 listener 时的逻辑：</p>
+</div><div class="cl-preview-section"><ul>
+<li>添加第一个 listener 时，listeners 为空，直接把这个 listener 赋值给 listeners；</li>
+<li>添加第二个 listener 时，listeners 不为空，且不为 DefaultFutureListeners 类型，创建一个 DefaultFutureListeners 对象，并把当前添加这个和上一个添加的 listener 都通过构造方法传递给 DefaultFutureListeners；</li>
+<li>添加第三个 listener 时，listeners 不为空，且为 DefaultFutureListeners 类型，直接调用 DefaultFutureListeners 的 add () 方法把 listener 添加进去。</li>
+</ul>
+</div><div class="cl-preview-section"><p>查看 DefaultFutureListeners 的内容，可以发现，DefaultFutureListeners 里面维护一了个 GenericFutureListener 数组，那么，Netty 为什么要如此不嫌麻烦地这么玩呢？直接把这个数组放到 DefaultPromise 中，它不香么？</p>
+</div><div class="cl-preview-section"><p>我猜测 Netty 这么玩的主要原因是，如果把数组直接放到 DefaultPromise 中，则针对这个数组的添加元素、删除元素、扩容的方法都要写在 DefaultPromise 中，DefaultPromise 类就变得不再单纯了，所以，另外拿一个类维护这些信息会比较好一些。至于添加第一个元素的时候为什么不使用 DefaultFutureListeners，可能是 DefaultFutureListeners 比较重（相当于一个 ArrayList），而且大部场景下可能都只有一个 Listener，所以针对一个 Listener 的时候单独处理一下可能要好一些，就像 HashMap 中针对 Key 为 String 类型时会单独处理一样。</p>
+</div><div class="cl-preview-section"><p>好了，经历过两次 addListener ()，我们创建的 Listener 已经成功添加到两个 Promise 中了，下面就是执行任务 <code>eventExecutor.execute(() -&gt; calc(2, promise1));</code> 了，这里就不用跟踪进去了，直接在 calc () 方法中打一个断点，按 F9，程序自然会走到 calc () 方法中：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">calc</span><span class="token punctuation">(</span><span class="token keyword">int</span> num<span class="token punctuation">,</span> Promise<span class="token operator">&lt;</span>Integer<span class="token operator">&gt;</span> promise<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 阻塞1秒</span>
+        LockSupport<span class="token punctuation">.</span><span class="token function">parkNanos</span><span class="token punctuation">(</span>TimeUnit<span class="token punctuation">.</span>SECONDS<span class="token punctuation">.</span><span class="token function">toNanos</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 注意除数</span>
+        <span class="token keyword">int</span> result <span class="token operator">=</span> <span class="token number">100</span> <span class="token operator">/</span> num<span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"success, thread="</span> <span class="token operator">+</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 成功执行完毕</span>
+        promise<span class="token punctuation">.</span><span class="token function">setSuccess</span><span class="token punctuation">(</span>result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"exception caught, e="</span> <span class="token operator">+</span> e <span class="token operator">+</span> <span class="token string">", thread="</span> <span class="token operator">+</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 执行异常</span>
+        promise<span class="token punctuation">.</span><span class="token function">setFailure</span><span class="token punctuation">(</span>e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在 calc () 方法中，我们主要做了一个除法运算，除数是传进来的参数 num，大家应该知道，如果 num 为 0 的话，这里肯定会抛出异常，所以，这里我使用一个 try…catch… 分别处理成功和失败的结果，对于成功的结果，调用 Promise 的 setSuccess () 方法将结果设置进去，对于失败的结果，那就是异常喽，使用 Promise 的 setFailure () 将异常信息设置进去。</p>
+</div><div class="cl-preview-section"><p>继续跟进到 setSuccess () 方法内部：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> Promise<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">setSuccess</span><span class="token punctuation">(</span>V result<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">setSuccess0</span><span class="token punctuation">(</span>result<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalStateException</span><span class="token punctuation">(</span><span class="token string">"complete already: "</span> <span class="token operator">+</span> <span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">private</span> <span class="token keyword">boolean</span> <span class="token function">setSuccess0</span><span class="token punctuation">(</span>V result<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token function">setValue0</span><span class="token punctuation">(</span>result <span class="token operator">==</span> null <span class="token operator">?</span> SUCCESS <span class="token operator">:</span> result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">private</span> <span class="token keyword">boolean</span> <span class="token function">setValue0</span><span class="token punctuation">(</span>Object objResult<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>RESULT_UPDATER<span class="token punctuation">.</span><span class="token function">compareAndSet</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> null<span class="token punctuation">,</span> objResult<span class="token punctuation">)</span> <span class="token operator">||</span>
+        RESULT_UPDATER<span class="token punctuation">.</span><span class="token function">compareAndSet</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> UNCANCELLABLE<span class="token punctuation">,</span> objResult<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">checkNotifyWaiters</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token function">notifyListeners</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这里就比较简单了，不过知识点还是挺多的。首先，通过 CAS 的方式设置 result 的值，然后检查有没有等待者，有的话就通知它们，最后检查有没有 listeners，有的话就通知它们。</p>
+</div><div class="cl-preview-section"><p>这里的 CAS 使用了一种特殊的技巧，我们可以看下 <code>RESULT_UPDATER</code> 的定义：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> AtomicReferenceFieldUpdater<span class="token operator">&lt;</span>DefaultPromise<span class="token punctuation">,</span> Object<span class="token operator">&gt;</span> RESULT_UPDATER <span class="token operator">=</span>
+            AtomicReferenceFieldUpdater<span class="token punctuation">.</span><span class="token function">newUpdater</span><span class="token punctuation">(</span>DefaultPromise<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> Object<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> <span class="token string">"result"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">private</span> <span class="token keyword">volatile</span> Object result<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>上面这两条语句在运行结果上等于下面这一条语句：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">private</span> AtomicReference<span class="token operator">&lt;</span>Object<span class="token operator">&gt;</span> resultReference <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AtomicReference</span><span class="token operator">&lt;</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>但是上面的写法更优，原因在于上面的语句使用 一个静态变量 + 一个非静态变量 的形式更节约内存，我们举个例子，假如创建 10 个 DefaultPromise，使用上面的语句内存中一共有 一个静态变量 + 10 个 result 变量，而如果使用下面的语句内存中会存储 10 个 resultReference 变量，同时，每个 resultReference 变量内部还维护了一个 Object 变量，所以一共是 20 个变量，下面的语句更耗内存，这种用法在 Netty 中随处可见。</p>
+</div><div class="cl-preview-section"><p>然后，就是通知等待者：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">private</span> <span class="token keyword">synchronized</span> <span class="token keyword">boolean</span> <span class="token function">checkNotifyWaiters</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>waiters <span class="token operator">&gt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token function">notifyAll</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> listeners <span class="token operator">!=</span> null<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这里比较恶心的一点是，明明 waiters 和 listeners 没有半毛线关系，但是，却把它们俩的判断放在同一个方法中，而把监听器的通知放在了这个方法之外，这样写的目的是为了共用同一个 <code>synchronized</code>。这里通知等待者使用的就是 Object 对象的 notifyAll () 方法，它只能使用在 <code>synchronized</code> 关键字内部，没错，Netty 对于等待者的处理就是使用的 Java 原生的 <code>synchronized</code>，并没有使用其它任何的技巧，简单唯美。</p>
+</div><div class="cl-preview-section"><p>最后，就是通知监听器，这里有点小复杂：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">notifyListeners</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    EventExecutor executor <span class="token operator">=</span> <span class="token function">executor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 判断运行任务的线程跟执行监听回调的线程是不是同一个</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>executor<span class="token punctuation">.</span><span class="token function">inEventLoop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 这里也是有点迷的地方，为什么要把stackDepth直接放到FastThreadLocal的InternalThreadLocalMap类中？</span>
+        <span class="token comment">// 这种耦合有点过分了</span>
+        <span class="token keyword">final</span> InternalThreadLocalMap threadLocals <span class="token operator">=</span> InternalThreadLocalMap<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">final</span> <span class="token keyword">int</span> stackDepth <span class="token operator">=</span> threadLocals<span class="token punctuation">.</span><span class="token function">futureListenerStackDepth</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>stackDepth <span class="token operator">&lt;</span> MAX_LISTENER_STACK_DEPTH<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            threadLocals<span class="token punctuation">.</span><span class="token function">setFutureListenerStackDepth</span><span class="token punctuation">(</span>stackDepth <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                <span class="token comment">// 立即通知监听器</span>
+                <span class="token function">notifyListenersNow</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+                threadLocals<span class="token punctuation">.</span><span class="token function">setFutureListenerStackDepth</span><span class="token punctuation">(</span>stackDepth<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+            <span class="token comment">// 注意，这里有个return</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 如果不是同一个线程，走这个逻辑，使用监听器线程执行回调</span>
+    <span class="token function">safeExecute</span><span class="token punctuation">(</span>executor<span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">Runnable</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token annotation punctuation">@Override</span>
+        <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token function">notifyListenersNow</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">notifyListenersNow</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    Object listeners<span class="token punctuation">;</span>
+    <span class="token comment">// 加锁，拿到listeners，赋值给局部变量，并清空之</span>
+    <span class="token keyword">synchronized</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>notifyingListeners <span class="token operator">||</span> <span class="token keyword">this</span><span class="token punctuation">.</span>listeners <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token comment">// 设置标志，说明正在进行回调的执行</span>
+        notifyingListeners <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+        listeners <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>listeners<span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>listeners <span class="token operator">=</span> null<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token punctuation">;</span><span class="token punctuation">;</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 执行回调</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>listeners <span class="token keyword">instanceof</span> <span class="token class-name">DefaultFutureListeners</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token function">notifyListeners0</span><span class="token punctuation">(</span><span class="token punctuation">(</span>DefaultFutureListeners<span class="token punctuation">)</span> listeners<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+            <span class="token function">notifyListener0</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>GenericFutureListener<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token punctuation">)</span> listeners<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token comment">// 加锁，做了两件事：</span>
+        <span class="token comment">// 如果执行回调期间添加了新的监听器，则赋值给局部变量，再次执行回调</span>
+        <span class="token comment">// 如果没有，则退出for循环并重置标志位</span>
+        <span class="token keyword">synchronized</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>listeners <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                notifyingListeners <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+                <span class="token keyword">return</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+            listeners <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>listeners<span class="token punctuation">;</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span>listeners <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这里使用了锁拆分的技术，将锁拆分为两段，并把比较耗时的回调执行的过程剥离出去，能很大程度上提高效率。</p>
+</div><div class="cl-preview-section"><p>真正执行回调这里就比较简单了，直接调用我们上面定义的 lambda 表达式：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// 有多个监听器</span>
+<span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">notifyListeners0</span><span class="token punctuation">(</span>DefaultFutureListeners listeners<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    GenericFutureListener<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token punctuation">[</span><span class="token punctuation">]</span> a <span class="token operator">=</span> listeners<span class="token punctuation">.</span><span class="token function">listeners</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">int</span> size <span class="token operator">=</span> listeners<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> size<span class="token punctuation">;</span> i <span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token function">notifyListener0</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> a<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 单个监听器</span>
+<span class="token annotation punctuation">@SuppressWarnings</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token string">"unchecked"</span><span class="token punctuation">,</span> <span class="token string">"rawtypes"</span> <span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">notifyListener0</span><span class="token punctuation">(</span>Future future<span class="token punctuation">,</span> GenericFutureListener l<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+        l<span class="token punctuation">.</span><span class="token function">operationComplete</span><span class="token punctuation">(</span>future<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Throwable</span> t<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isWarnEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            logger<span class="token punctuation">.</span><span class="token function">warn</span><span class="token punctuation">(</span><span class="token string">"An exception was thrown by "</span> <span class="token operator">+</span> l<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">".operationComplete()"</span><span class="token punctuation">,</span> t<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>好了，最后，还有一个 await () 方法：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> Promise<span class="token operator">&lt;</span>V<span class="token operator">&gt;</span> <span class="token function">await</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException <span class="token punctuation">{</span>
+    <span class="token comment">// 如果已经完成了，直接返回</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">isDone</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 线程中断了，抛出异常</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>Thread<span class="token punctuation">.</span><span class="token function">interrupted</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">InterruptedException</span><span class="token punctuation">(</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 检查死锁，防止等待的方法在EventLoop中执行</span>
+    <span class="token function">checkDeadLock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 加锁</span>
+    <span class="token keyword">synchronized</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">isDone</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 等待者数量加1</span>
+            <span class="token function">incWaiters</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                <span class="token comment">// 等待，调用的是Object的wait()方法</span>
+                <span class="token function">wait</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+                <span class="token comment">// 等待者数量减1</span>
+                <span class="token function">decWaiters</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>await () 方法中使用的是就是 Java 原生关键字 <code>synchronized</code> 锁 + wait () 方法实现的，没有使用其它任何的技巧，简单唯美。</p>
+</div><div class="cl-preview-section"><p>好了，到这里，DefaultPromise 的源码就分析完毕了，相比于 Java 原生的 FutureTask，DefaultPromise 的实现主要使用了大量的 synchronized 关键字锁来实现主要逻辑流的控制，虽然简单，但还是有很多知识点值得我们学习的，比如锁拆分、CAS 的使用，等等。</p>
+</div><div class="cl-preview-section"><h1 id="后记">后记</h1>
+</div><div class="cl-preview-section"><p>本节，我们一起学习了 Netty 中增强的 Future，并对其主要实现类 ——DefaultPromise—— 进行了深入剖析。</p>
+</div><div class="cl-preview-section"><p>看了本节的内容，你可能还是有点懵，这玩意在 Netty 中到底该如何使用呢？别急，下一节我们还会见到它的身影。</p>
+</div><div class="cl-preview-section"><p>下一节，我们将对 Netty 中的线程池做一个深入的剖析，你准备好了吗？</p>
+</div><div class="cl-preview-section"><h1 id="思维导图">思维导图</h1>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f34a8740001138717122976.png" alt="图片描述"></p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5f05432400011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6523">
+						<img src="https://img3.mukewang.com/5b8cebb70001ebb602000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">imooc_段浪</h4>
+						<div class="comment-text">老师请教一下：
+netty如何做分布式通信，假设有3台netty服务器都向Eureka注册，假设A用户和B用户要聊天，在单台服务下通过channel转发消息聊天没问题。那假设他们都连接了不同的netty服务器想，这个时候怎么处理这个跨不同机器channel消息转发？
+这个问题很棘手，面试官经常一问就跪，想请教下老师怎么回答才行，最好有不同的解决方案；</div>
+						<div>
+							
+								<div class="reply">讲师回复：我说一下我们之前游戏服务器是怎么设计的，假如我们游戏服务器有两个节点，我们是在前面加一层网关，客户端创建游戏房间的时候会通过网关绑定到一个节点，后面只要是加入到这个房间的用户全部通过网关转到同一个节点处理，然后再通过自定义的线程池把同一个房间的消息放到同一个线程里面处理，这样可以保证同一个房间的消息不存在竞争，也就不需要考虑加锁等并发问题，当然，���只是一种解决方案，你可以套到你的场景中。还有其他的方案，像你说的，就是连接到了不同的节点怎么处理，目前能想到的，引入消息队列解决，发送消息的时候不是直接发送给客户端，而是发送到消息队列中，这样，所有的节点订阅这个消息，收到消息后看自己能不能处理，能处理再通过channel发送给客户端，不能处理就丢弃。最好还是把同一个聊天室的消息转到同一个节点的同一个线程来处理，实现起来简单一点。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-13</span>
+						<a href="/read/commentdetail/6523">
+							<span class="icon r"><i class="imwap-comment"></i><em>4</em></span>
+						</a>
+						<span data-cid="6523" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=82">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '25 Netty的Future是如何做到简捷易用的',
+					'CID': '2184',
+					'Teacher': '彤哥读源码'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "25 Netty的Future是如何做到简捷易用的",
+                    desc: "全面掌握迈向高级工程师的必备技能",
+                    imgUrl: 'https:https://img4.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/82',
+                    link: 'https://m.imooc.com/read/82'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

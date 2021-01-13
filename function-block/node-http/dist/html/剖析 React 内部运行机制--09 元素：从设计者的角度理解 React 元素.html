@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>09 元素：从设计者的角度理解 React 元素</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="让你具备框架设计者思维与视野">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2274";
+	var chapter_title = "09 元素：从设计者的角度理解 React 元素";
+	var aid = "86";
+	var a_name = "剖析 React 内部运行机制";
+	var a_price = "58.00";
+	var a_pic = "https://img3.mukewang.com/5f2d03ab0001a77605400720.jpg";
+	var userId = 0;
+
+	var column_id = '86';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-20&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			09 元素：从设计者的角度理解 React 元素
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img1.mukewang.com/5f2d0d550001c98b06400359.jpg')"></div>
+	
+	
+		<a href="/read/86">
+			<div class="course-entry">
+				<img src="https://img2.mukewang.com/5f2e6fea000152a305000500-40-40.jpg" alt="上古鹏">
+				<h3>剖析 React 内部运行机制</h3>
+				<p>上古鹏 · 资深前端研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">人生太短，要干的事太多，我要争分夺秒。<p class="author">——爱迪生</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="前言">前言</h2>
+</div><div class="cl-preview-section"><p>React 元素是应用程序运行过程中用于描述页面结构的关键「数据/对象」。React 用元素来描述页面结构也是 React 拥有良好的性能表现的关键因素之一。本节将会介绍 React 元素的设计原理。</p>
+</div><div class="cl-preview-section"><h2 id="什么是-react-元素">什么是 React 元素</h2>
+</div><div class="cl-preview-section"><p>React 官方文档 - <a href="https://reactjs.org/docs/rendering-elements.html">元素渲染</a> 中给出了元素的描述：元素是构成 React 应用的最小砖块，它描述了你在屏幕上想看到的内容。在程序中它可以是代码示例 2.6.1这样的。</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token keyword">const</span> element <span class="token operator">=</span> <span class="token punctuation">(</span>
+  <span class="token operator">&lt;</span>h1 className<span class="token operator">=</span><span class="token string">"greeting"</span><span class="token operator">&gt;</span>
+    Hello<span class="token punctuation">,</span> world<span class="token operator">!</span>
+  <span class="token operator">&lt;</span><span class="token operator">/</span>h1<span class="token operator">&gt;</span>
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><center><font size="2">代码示例 2.6.1 使用 JSX 定义元素</font></center>
+</div><div class="cl-preview-section"><p>上面这个有趣的标签语法既不是字符串也不是 HTML，它被称为 JSX，是一个 JavaScript 的语法扩展，它可以生成 React 元素。React 元素在程序中也可以是代码示例 2.6.2 这样的。</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token keyword">const</span> element <span class="token operator">=</span> React<span class="token punctuation">.</span><span class="token function">createElement</span><span class="token punctuation">(</span>
+  <span class="token string">'h1'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">{</span>className<span class="token punctuation">:</span> <span class="token string">'greeting'</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token string">'Hello, world!'</span>
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p align="center"><font size="2">代码示例 2.6.2 使用 createElement 函数定义元素</font></p>
+</div><div class="cl-preview-section"><p>Babel 会把 JSX 转译成一个名为 <code>React.createElement()</code> 的函数调用。因此上面两种示例代码完全等效。<code>React.createElement( ... )</code> 会预先执行一些检查，以帮助我们编写无错代码，最终它创建的元素结构是代码示例 2.6.3 这样的对象。</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token comment">// 这是简化后的结构</span>
+<span class="token keyword">const</span> element <span class="token operator">=</span> <span class="token punctuation">{</span>
+  type<span class="token punctuation">:</span> <span class="token string">'h1'</span><span class="token punctuation">,</span>
+  props<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+    className<span class="token punctuation">:</span> <span class="token string">'greeting'</span><span class="token punctuation">,</span>
+    children<span class="token punctuation">:</span> <span class="token string">'Hello, world!'</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><center><font size="2">代码示例 2.6.3 简化后的元素结构</font></center>
+</div><div class="cl-preview-section"><p>代码示例 2.6.3 中的对象 <strong>React 元素</strong> 最终的形态，它们 <strong>描述</strong> 了我们希望在屏幕上看到的内容。React 对元素的详细定义见代码示例2.6.4。</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token comment">// 源码位置：packages/shared/ReactElementType.js</span>
+<span class="token keyword">var</span> <span class="token function-variable function">ReactElement</span> <span class="token operator">=</span> <span class="token keyword">function</span> <span class="token punctuation">(</span>type<span class="token punctuation">,</span> key<span class="token punctuation">,</span> ref<span class="token punctuation">,</span> self<span class="token punctuation">,</span> source<span class="token punctuation">,</span> owner<span class="token punctuation">,</span> props<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">var</span> element <span class="token operator">=</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 这个标记将其标识为React元素，且保证唯一性</span>
+    $$<span class="token keyword">typeof</span><span class="token punctuation">:</span> REACT_ELEMENT_TYPE<span class="token punctuation">,</span>
+    <span class="token comment">// 元素类型，如宿主元素（div，span），组件元素（UpdateCounter）</span>
+    type<span class="token punctuation">:</span> type<span class="token punctuation">,</span>
+    key<span class="token punctuation">:</span> key<span class="token punctuation">,</span>
+    <span class="token comment">// 组件实例的引用</span>
+    ref<span class="token punctuation">:</span> ref<span class="token punctuation">,</span>
+    <span class="token comment">// 元素属性</span>
+    props<span class="token punctuation">:</span> props<span class="token punctuation">,</span>
+    _owner<span class="token punctuation">:</span> owner
+  <span class="token punctuation">}</span><span class="token punctuation">;</span>
+  <span class="token comment">// ...</span>
+  <span class="token keyword">return</span> element<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><center><font size="2">代码示例 2.6.4 React 对元素的定义</font></center>
+</div><div class="cl-preview-section"><p>现在来思考一个问题，<strong>为什么 React 要用元素这样的对象结构来描述页面结构？</strong></p>
+</div><div class="cl-preview-section"><p><strong>对象方便处理（添加/修改/删除属性）</strong>。应用程序渲染时，React 首先读取应用程序的元素对象，然后使用它们来构建 DOM 以及保持随时更新。与浏览器的 DOM 元素不同，React 元素是创建开销极小（因为属性少）的普通对象。React 会负责更新元素来保证与 DOM 保持一致。</p>
+</div><div class="cl-preview-section"><h2 id="元素的种类与组成">元素的种类与组成</h2>
+</div><div class="cl-preview-section"><p>React 元素主要可以分为两大类，分别是 React 组件元素和宿主组件（如<code>div</code>，<code>span</code>等）元素。这两类元素可以组合嵌套构成各种元素来描述任何 DOM 结构。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>注：宿主组件元素（HostComponent）在 React 中一般表示的是 DOM 元素。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h3 id="一、react-元素全部由宿主组件元素构成的情况">一、React 元素全部由宿主组件元素构成的情况</h3>
+</div><div class="cl-preview-section"><p>React 元素全部由 DOM 元素组成，JSX 的写法见代码示例 2.6.5。</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token keyword">const</span> element <span class="token operator">=</span> <span class="token punctuation">(</span>
+    <span class="token operator">&lt;</span>button <span class="token keyword">class</span><span class="token operator">=</span><span class="token string">'button button-blue'</span><span class="token operator">&gt;</span>
+      <span class="token operator">&lt;</span>b<span class="token operator">&gt;</span>
+        OK<span class="token operator">!</span>
+      <span class="token operator">&lt;</span><span class="token operator">/</span>b<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span><span class="token operator">/</span>button<span class="token operator">&gt;</span>
+<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><center><font size="2">代码示例 2.6.5 纯 DOM 元素组成的 React 元素</font></center>
+</div><div class="cl-preview-section"><p>上面 JSX 的代码实现的元素被编译后的形态见代码示例 2.6.6。</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript">element <span class="token operator">=</span> <span class="token punctuation">{</span>
+  type<span class="token punctuation">:</span> <span class="token string">'button'</span><span class="token punctuation">,</span>
+  props<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+    className<span class="token punctuation">:</span> <span class="token string">'button button-blue'</span><span class="token punctuation">,</span>
+    children<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+      type<span class="token punctuation">:</span> <span class="token string">'b'</span><span class="token punctuation">,</span>
+      props<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        children<span class="token punctuation">:</span> <span class="token string">'OK!'</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><center><font size="2">代码示例 2.6.6 纯 DOM 元素组成的 React 元素最终形态</font></center>
+</div><div class="cl-preview-section"><p>这里需要注意的是 <strong>元素之间通过<code>children</code>属性进行嵌套</strong>。在创建元素（树）时，可以指定一个或多个子元素作为其包含（父）元素的<code>children</code>属性值。</p>
+</div><div class="cl-preview-section"><h3 id="二、react-元素由组件和-dom-元素组合构成的情况">二、React 元素由组件和 DOM 元素组合构成的情况</h3>
+</div><div class="cl-preview-section"><p>事实上，在组件的两边加上<code>&lt;</code>和<code>/&gt;</code>就变成了元素，它代表的 UI 部分就是组件<code>render</code>函数的返回值。组件元素就像 DOM 元素一样，它们也可以相互嵌套和混合。图 2.6.1一个删除提示组件，程序见代码示例 2.6.7。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f31266e0001529f03360180.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><center><font size="2">图 2.6.1 删除提示组件</font></center>
+</div><div class="cl-preview-section"><pre class=" language-javascript"><code class="prism  language-javascript"><span class="token comment">// DeleteButton组件</span>
+<span class="token keyword">class</span> <span class="token class-name">DeleteButton</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span> <span class="token punctuation">{</span>
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token operator">&lt;</span>button className<span class="token operator">=</span><span class="token string">"redBtn"</span><span class="token operator">&gt;</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>children<span class="token punctuation">}</span><span class="token operator">&lt;</span><span class="token operator">/</span>button<span class="token operator">&gt;</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// Operation组件</span>
+<span class="token keyword">class</span> <span class="token class-name">Operation</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span> <span class="token punctuation">{</span>
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>
+      <span class="token operator">&lt;</span>div<span class="token operator">&gt;</span>
+      	<span class="token operator">&lt;</span>p<span class="token operator">&gt;</span>确定要删除吗<span class="token operator">?</span><span class="token operator">&lt;</span><span class="token operator">/</span>p<span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span>DeleteButton<span class="token operator">&gt;</span>删除<span class="token operator">&lt;</span><span class="token operator">/</span>DeleteButton<span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span>button<span class="token operator">&gt;</span>取消<span class="token operator">&lt;</span><span class="token operator">/</span>button<span class="token operator">&gt;</span>
+      <span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>
+    <span class="token punctuation">)</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">const</span> element <span class="token operator">=</span> <span class="token operator">&lt;</span>Operation <span class="token operator">/</span><span class="token operator">&gt;</span>
+ReactDOM<span class="token punctuation">.</span><span class="token function">render</span><span class="token punctuation">(</span>element<span class="token punctuation">,</span> document<span class="token punctuation">.</span><span class="token function">getElementById</span><span class="token punctuation">(</span><span class="token string">'root'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><center><font size="2">代码示例 2.6.7 删除提示组件代码结构</font></center>
+</div><div class="cl-preview-section"><p>代码示例 2.6.7 中先定义了<code>DeleteButton</code>组件，然后在<code>Operation</code>组件中使用。<code>Operation</code>组件的 UI 部分由<code>DeleteButton</code>组件和 宿主组件元素（<code>p</code>，<code>button</code>）组成，该组件最后会被编译成的元素结构见代码示例 2.6.8。</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token comment">// Operation组件返回的元素</span>
+<span class="token punctuation">{</span>
+  type<span class="token punctuation">:</span> <span class="token string">'div'</span><span class="token punctuation">,</span>
+  props<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+    children<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">{</span>
+      type<span class="token punctuation">:</span> <span class="token string">'p'</span><span class="token punctuation">,</span>
+      props<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        children<span class="token punctuation">:</span> <span class="token string">'确定要删除吗？'</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token punctuation">{</span>
+      type<span class="token punctuation">:</span> DeleteButton<span class="token punctuation">,</span>
+      props<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        children<span class="token punctuation">:</span> <span class="token string">'删除'</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token punctuation">{</span>
+      type<span class="token punctuation">:</span> Button<span class="token punctuation">,</span>
+      props<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        children<span class="token punctuation">:</span> <span class="token string">'取消'</span>
+      <span class="token punctuation">}</span>
+   <span class="token punctuation">}</span><span class="token punctuation">]</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+  
+<span class="token comment">// DeleteButton组件返回的元素</span>
+<span class="token punctuation">{</span>
+  type<span class="token punctuation">:</span> Button<span class="token punctuation">,</span>
+  props<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+    className<span class="token punctuation">:</span> <span class="token string">'redBtn'</span><span class="token punctuation">,</span>
+    children<span class="token punctuation">:</span> <span class="token string">'取消'</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><center><font size="2">代码示例 2.6.8 删除提示组件元素结构</font></center>
+</div><div class="cl-preview-section"><h2 id="小结">小结</h2>
+</div><div class="cl-preview-section"><p>**React 用元素来描述 DOM 结构的优点在于它们很容易遍历，不需要解析，并且它们比实际的 DOM 元素轻量得多！**React 组件是由 UI 部分加逻辑部分组成，其中 UI 部分就是 React 元素，元素在 render 会被转换成 React Fiber 对象（结点）。Fiber 对象的层层嵌套形成了应用程序的 <strong>Fiber树</strong>，所有更新的处理都在这颗「树」中计算。</p>
+</div><div class="cl-preview-section"><p>React 中组件和元素的根本区别就是 <strong>元素普通对象，而组件是类和函数</strong>，元素是组件的一部分���</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img1.mukewang.com/5f2d0de6000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=86">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '09 元素：从设计者的角度理解 React 元素',
+					'CID': '2274',
+					'Teacher': '上古鹏'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "09 元素：从设计者的角度理解 React 元素",
+                    desc: "让你具备框架设计者思维与视野",
+                    imgUrl: 'https:https://img3.mukewang.com/5f2d03ab0001a77605400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5f2d03ab0001a77605400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/86',
+                    link: 'https://m.imooc.com/read/86'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

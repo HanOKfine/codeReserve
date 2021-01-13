@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>06 失之东隅：为什么需要不可靠传输协议 UDP？ </title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="学好通用知识，提升技术竞争力">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2095";
+	var chapter_title = "06 失之东隅：为什么需要不可靠传输协议 UDP？ ";
+	var aid = "80";
+	var a_name = "零基础学透网络编程";
+	var a_price = "58.00";
+	var a_pic = "https://img.mukewang.com/5ed8c1c600015fc805400720.jpg";
+	var userId = 0;
+
+	var column_id = '80';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-06-09&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			06 失之东隅：为什么需要不可靠传输协议 UDP？ 
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5ed9fc2f0001071606400359.jpg')"></div>
+	
+	
+		<a href="/read/80">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/5458620000018a2602200220-40-40.jpg" alt="陈子兴">
+				<h3>零基础学透网络编程</h3>
+				<p>陈子兴 · 资深软件架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">人只有献身于社会，才能找出那短暂而有风险的生命的意义。<p class="author">——爱因斯坦</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="前言">前言</h2>
+</div><div class="cl-preview-section"><p>本文我们要学习 TCP/IP 协议族中一个重要的<strong>传输层</strong>协议，叫做 <strong>UDP</strong>(User Datagram Protocol) ，翻译成中文叫<strong>用户数据报协议</strong>。UDP 是一个无连接的、不可靠的传输层协议，没有丢包重传机制、没有流控机制、没有拥塞控制机制。UDP 不保证数据包的顺序，UDP 传输经常出现乱序，UDP 不对重复包进行过滤。</p>
+</div><div class="cl-preview-section"><p>当你看到关于 UDP 的介绍以后，是不是觉得 UDP 一无是处呢？我们还有学习的必要吗？其实不然，正是因为 UDP 没有提供复杂的各种保障机制，才使得它具有实时、高效的传输特性。那么 UDP 到底有哪些优势呢？</p>
+</div><div class="cl-preview-section"><ul>
+<li>第一，UDP 是面向消息的传输协议，保证数据包的边界，不需要进行消息解析，处理逻辑非常简单；</li>
+<li>第二，UDP 具有实时、高效的传输特性；</li>
+<li>第三，协议栈没有对 UDP 进行过多的干预，这给应用层带来了很多方便之处，应用程序可以根据自己的需要对传输进行控制。比如，自己实现优先级控制、流量控制、可靠性机制等。</li>
+</ul>
+</div><div class="cl-preview-section"><p>当然还有其他一些优势，我就不再一一列举。UDP 在音视频会议、VOIP、音视频实时通信等行业有着广泛的应用。为此，我们是非常有必要学好 UDP 的。由于 UDP 相对简单，学习起来也会轻松很多。本文主要包含 3 个主题：</p>
+</div><div class="cl-preview-section"><ul>
+<li>UDP Header 格式</li>
+<li><strong>端口号</strong>介绍</li>
+<li>UDP 应用</li>
+</ul>
+</div><div class="cl-preview-section"><p>最后通过一个例子，介绍几个非常重要的工具以及 UDP 常用问题分析手段。其中工具包含：iperf、sysctl、netstat。</p>
+</div><div class="cl-preview-section"><p>那就让我们先从 UDP 的报文格式开始吧。</p>
+</div><div class="cl-preview-section"><h2 id="udp-header-格式">UDP Header 格式</h2>
+</div><div class="cl-preview-section"><p>UDP Header 非常简单，总共占用 8 字节长度，我们看一下具体格式：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed863e400011f8307040315.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><strong>Source Port</strong>：是源端口号，占用 2 字节长度。端口号是一个逻辑概念和具体设备没有关系，用于标识某个<strong>应用程序</strong>。源端口号是用于标识发送端<strong>应用程序</strong>；</p>
+</div><div class="cl-preview-section"><p><strong>Destination Port</strong>：目的端口号，占用 2 字节长度。同样是用于标识接收端<strong>应用程序</strong>；</p>
+</div><div class="cl-preview-section"><p><strong>Length</strong>：表示 UDP 数据包的总长度，占用 2 字节长度。Length 的值是 UDP Header 的长度加上 UDP Payload 的长度。 Payload 最大长度是 65536-8 = 65528 字节；</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：<br>
+你是否还记得网络层的 IPv4 Header 也包含了 Length 字段？我想你应该理解 IPv4 Payload 的最大长度是 65536-60 = 65476 字节吧。那有一个问题，如果我们控制 UDP 数据包总长度不超过 65476 字节，UDP Header 其实是不需要 UDP Length 字段的，能理解吗？因为在实际开发中，程序员会保证传给 UDP 的数据长度不超过 MTU 最大限度，所以 UDP Length 字段显得有点儿多余。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p><strong>Checksum</strong>：是检验和，��用 2 字节长度。UDP 检验和是用于差错检测的，检验计算包含 UDP Header 和 UDP Data 两部分。</p>
+</div><div class="cl-preview-section"><p>接下来，我们了解一下端口号的相关概念。</p>
+</div><div class="cl-preview-section"><h2 id="端口号介绍">端口号介绍</h2>
+</div><div class="cl-preview-section"><p>你还记得在<strong>链路层</strong>学习过程中，我们说每一个网络接口卡出厂时都带有一个 <strong>MAC 地址</strong>，我们也知道不仅路由器包含很多网络接口卡，主机也可以包含多个网卡。在<strong>网络层</strong>学习过程中，我们又说要为路由器的每一个网络接口配置 IP 地址，也要为主机的网络接口配置一个 IP 地址，如果主机包含多个网卡，每个网卡都要配置 IP 地址。</p>
+</div><div class="cl-preview-section"><p>说道这里，你是不是感觉有些疑惑，为什么每一个网卡要同时配置 IP 地址和 MAC 地址呢？原因有二：</p>
+</div><div class="cl-preview-section"><ul>
+<li>一方面， MAC 地址和网卡是终生绑定的，不管你把网卡装在北京的某台主机，还是漂洋过海装在旧金山的某台主机，此网卡的 MAC 地址都不会变。MAC 地址是用于节点之间的帧传输的；</li>
+<li>另一方面，IP 地址会随“时空”的变化而发生变化，同一台主机的 IP 地址在不同的区域、不同的时间可能是不一样的。这样不管你主机走在哪里，只要你接入网络，通过 IP 地址都可以找到你。</li>
+</ul>
+</div><div class="cl-preview-section"><p>通过 MAC 地址和 IP 地址，你只知道从哪个网络接口发送数据包或者是从哪个网络接口接收数据包，这是主机层面的一个识别。实际应用中，一台主机会同时运行多个应用程序。比如，你一边和同学微信聊天，一边学习慕课网的课程，那么请问如何区分某个数据包是来自同学的微信呢？还是来自慕课网的主站呢？</p>
+</div><div class="cl-preview-section"><p>你很快会想到：“在应用程序发送数据的时候，给每一数据包增加一个 ID，用来唯一标识此应用程序”。思路很好，不过这个工作 TCP/IP 的传输层替你完成了，这也是我们本节要讨论的<strong>端口号</strong>（Port）。</p>
+</div><div class="cl-preview-section"><p><strong>端口号</strong>是用 16 bit 无符号整数表示的，取值范围是 0-65535，总共可以有 65536 个端口号。端口号也属于稀缺资源，是由 Internet Assigned Numbers Authority （IANA）统一管理和分配的。在区间 0-1023 内的端口号叫做<strong>知名端口号</strong>，已经被系统或者是一些知名的服务所占用。比如，20 和 21 用于 FTP 协议，23 用于 telnet 协议，80 用于著名的 <i class="chrome-extension-mutihighlight chrome-extension-mutihighlight-style-5">HTTP</i> 服务，443 用于 HTTPS 服务。端口号大于 1023 的部分，也有很多被知名的应用占有。比如，经常用 8080 作为 HTTP 服务的另外一个端口号，1935 用于 RTMP 服务，3306 用于 MySQL 服务，1433 用于 SQL Server 服务等等。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：<br>
+请记住端口号的最大值是 65535！！！你在工作的过程中，如果要配置端口号，不能拍脑袋随便配置啊，千万不要超过最大值！我曾经遇到过一个兄弟给端口号配置了 88888，服务不通，搞不懂是咋回事儿。千万不要闹出这样的笑话啊<sup>_</sup>。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>由于 UDP 协议比较简单，没有太多实现原理需要介绍，下来我们就结合具体示例，介绍一些常用工具和 UDP 相关问题的分析方法。</p>
+</div><div class="cl-preview-section"><h2 id="udp-应用例子">UDP 应用例子</h2>
+</div><div class="cl-preview-section"><p>本节我们通过 iperf 做一个简单的 UDP 实验，测试一下网络带宽，体验内核丢弃 UDP 包的情况。</p>
+</div><div class="cl-preview-section"><p>实验环境和工具：</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>客户端是 Windows 10，装有 <a href="http://www.cygwin.com/" title="cygwin">cygwin</a>。cygwin 是在 Windows 上模拟 Linux 环境的，非常好用。当然 Windows 10 也有 Linux 组件，我没有用过啊。你也可以下载 <a href="http://www.iperfwindows.com/" title="iperfwindows">iperf windows</a>版；</p>
+</li>
+<li>
+<p>服务端是 Ubuntu 18.04；</p>
+</li>
+<li>
+<p>netstat 是一个非常有用的网络工具。在<strong>网络层</strong>学习中，我们用它查看路由表。本文用它查看 UDP 服务监听情况，UDP 丢包统计情况；</p>
+</li>
+<li>
+<p>sysctl 是一个 Linux 系统参数配置工具；</p>
+</li>
+<li>
+<p>iperf 是一个 TCP、UDP 的性能测量工具，能够提供网络吞吐量、网络带宽、丢包率、MSS、MTU 等统计信息，能够帮助我们测试网络性能，定位网络瓶颈点。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="iperf-udp-服务端">iperf UDP 服务端</h3>
+</div><div class="cl-preview-section"><p>在 Ubuntu 18.04 上启动一个 iperf UDP 服务：</p>
+</div><div class="cl-preview-section"><pre><code>haska@haska-pc:~$ iperf -s -u -p 9820
+</code></pre>
+</div><div class="cl-preview-section"><p>参数说明：</p>
+</div><div class="cl-preview-section"><ul>
+<li>-s 表示 iperf 运行在服务器模式；</li>
+<li>-u 表示采用 UDP 协议进行传输；</li>
+<li>-p 指定服务监听端口号，作为服务器必须要指定监听端口号，我们选择了 9820。</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>注意：启动 UDP 服务的时候，如果没有指定监听的具体 IP 地址，那么服务监听的是“0.0.0.0”。可以通过 netstat 来查看。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>用 netstat 查看服务器启动情况：</p>
+</div><div class="cl-preview-section"><pre><code>haska@haska-pc:~$ sudo netstat -anp
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+udp        0      0 0.0.0.0:9820            0.0.0.0:*                           3563/iperf
+</code></pre>
+</div><div class="cl-preview-section"><p>执行完命令你应该可以看到很多结果行，包括 TCP、UDP、UNIX 域等套接字信息。这里只是粘贴 iperf 相关信息。</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p><strong>Proto</strong> 列表示协议类型，很好理解。比如，tcp、udp；</p>
+</li>
+<li>
+<p><strong>Recv-Q</strong> 表示协议栈接收队列中包的堆积情况，非常有用，用于分析你的应用程序的接收性能；</p>
+</li>
+<li>
+<p><strong>Send-Q</strong> 表示协议栈发送队列中包的堆积情况，非常有用，用于分析你的应用程序的发送性能。对于 TCP 来说，发送队列有包堆积，可能是网络原因，也可能是对方接收慢，这就需要你查看接收端的 Recv-Q；</p>
+</li>
+<li>
+<p><strong>Local Address</strong> 是本地套接字地址（我们已经说过套接字概念，你能明白吧），形式是 IP:Port。你可以看到 iperf 监听的 IP 是 0.0.0.0，表示可以接收本机任意一个网卡的数据包。端口号是我们指定的 9820；</p>
+</li>
+<li>
+<p><strong>Foreign Address</strong> 是和本端对应的远端套接字地址，形式也是 IP：Port，此时还没有客户端，所以用 0.0.0.0:* 表示；</p>
+</li>
+<li>
+<p><strong>State</strong> 是连接状态。由于 UDP 是无连接的，此列值是空。对于 TCP 会有不同的值，我们后续分析 TCP 的时候再详细说明；</p>
+</li>
+<li>
+<p><strong>PID/Program name</strong> 表示包含此套接字的应用程序的<strong>进程ID</strong>和程序名。此列需要 -p 选项才可以打印，另外在执行 netstat 的时候需要 root 权限，比如我用了 sudo 来执行 netstat 命令。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>参数说明：</p>
+</div><div class="cl-preview-section"><ul>
+<li>-a 表示显示所有结果行</li>
+<li>-n 表示不进行 IP 地址到 Host Name 的转换</li>
+<li>-p 表示显示 PID/Program name 列</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="iperf-udp-客户端">iperf UDP 客户端</h3>
+</div><div class="cl-preview-section"><p>在 Windows 10 的 cygwin 下启动 iperf 的客户端：</p>
+</div><div class="cl-preview-section"><pre><code>iperf.exe -c 192.168.0.104 -p 9820 -u -b 7000M -i 2 -t 60 -P 5
+</code></pre>
+</div><div class="cl-preview-section"><p>参数说明：</p>
+</div><div class="cl-preview-section"><ul>
+<li>-c 表示 iperf 运行在客户端模式。后面要紧跟着目标服务器的 IP 地址；</li>
+<li>-p 指定目标服务器监听的端口号。此选项要紧跟在 IP 地址后面，我们用的是 9820；</li>
+<li>-u 表示采用 UDP 协议；</li>
+<li>-b 指定传输带宽，用于udp测试时，设置测试发送的带宽，单位：bit/秒，不设置时默认为 1 Mbit/秒。我们给了 7000M；</li>
+<li>-i 表示打印输出报告的时间间隔。我们指定每隔 2 秒打印一次；</li>
+<li>-t 表示测试的总时长，单位是秒。我们指定的是 60 秒；</li>
+<li>-P 表示并发执行的线程数。我们指定 5 个线程同时执行。</li>
+</ul>
+</div><div class="cl-preview-section"><p>执行完客户端命令以后，可以看到控制台输出了连接信息、收发的带宽信息等。</p>
+</div><div class="cl-preview-section"><pre><code>$ iperf.exe -c 192.168.0.104 -p 9820 -u -b 7000M -i 2 -t 60 -P 5
+------------------------------------------------------------
+Client connecting to 192.168.0.104, UDP port 9820
+Sending 1470 byte datagrams
+UDP buffer size: 64.0 KByte (default)
+------------------------------------------------------------
+[  7] local 192.168.0.100 port 62119 connected with 192.168.0.104 port 9820
+[  6] local 192.168.0.100 port 62118 connected with 192.168.0.104 port 9820
+[  5] local 192.168.0.100 port 62117 connected with 192.168.0.104 port 9820
+[  4] local 192.168.0.100 port 62116 connected with 192.168.0.104 port 9820
+[  3] local 192.168.0.100 port 62115 connected with 192.168.0.104 port 9820
+[ ID] Interval       Transfer     Bandwidth
+[  5]  0.0- 2.0 sec  1.09 MBytes  4.59 Mbits/sec
+[  7]  0.0- 2.0 sec  1.06 MBytes  4.44 Mbits/sec
+[  6]  0.0- 2.0 sec  1.06 MBytes  4.43 Mbits/sec
+[  4]  0.0- 2.0 sec  1.07 MBytes  4.50 Mbits/sec
+[  3]  0.0- 2.0 sec  1.05 MBytes  4.42 Mbits/sec
+[SUM]  0.0- 2.0 sec  5.34 MBytes  22.4 Mbits/sec
+</code></pre>
+</div><div class="cl-preview-section"><p>此时，我们在 Ubuntu 18.04 服务器执行 netstat -anp 命令，发现 iperf 多出 5 行套接字记录，相应的 Foreign Address 一列明确显示了套接字的 IP：Port 值。如下：</p>
+</div><div class="cl-preview-section"><pre><code>udp        0      0 0.0.0.0:9820            0.0.0.0:*                           3563/iperf
+udp        0      0 192.168.0.104:9820      192.168.0.100:62115     ESTABLISHED 3563/iperf
+udp        0      0 192.168.0.104:9820      192.168.0.100:62116     ESTABLISHED 3563/iperf
+udp        0      0 192.168.0.104:9820      192.168.0.100:62117     ESTABLISHED 3563/iperf
+udp        0      0 192.168.0.104:9820      192.168.0.100:62118     ESTABLISHED 3563/iperf
+udp        0      0 192.168.0.104:9820      192.168.0.100:62119     ESTABLISHED 3563/iperf
+</code></pre>
+</div><div class="cl-preview-section"><p>我们在看一下 UDP 数据包收发统计情况。</p>
+</div><div class="cl-preview-section"><h3 id="udp-数据包统计">UDP 数据包统计</h3>
+</div><div class="cl-preview-section"><p>netstat 命令可以对网络数据包的收发进行统计。UDP 的统计命令如下：</p>
+</div><div class="cl-preview-section"><pre><code>haska@haska-pc:~$ netstat -su
+</code></pre>
+</div><div class="cl-preview-section"><p>参数说明：</p>
+</div><div class="cl-preview-section"><ul>
+<li>-s 表示输出统计信息。</li>
+<li>-u 表示输出 UDP 相关统计信息。如果是输出 TCP 相关统计信息，则是 -t 。</li>
+</ul>
+</div><div class="cl-preview-section"><p>在通过 iperf 进行 UDP 测试之前，我执行了 netstat -su，输出结果如下：</p>
+</div><div class="cl-preview-section"><pre><code>haska@haska-pc:~$ netstat -su
+Udp:
+    100 packets received    // 收到总数据包统计
+    0 packets to unknown port received
+    0 packet receive errors // 接收出错包统计
+    100 packets sent        // 发送数据包统计
+    0 receive buffer errors // 接收 buffer 错误统计
+    0 send buffer errors    // 发送 buffer 错误统计
+    IgnoredMulti: 50
+</code></pre>
+</div><div class="cl-preview-section"><p>关于统计项的含义，我用"//" 做了说明。完成 UDP 测试以后，再次执行 netstat-su ，输出结果如下：</p>
+</div><div class="cl-preview-section"><pre><code>haska@haska-pc:~$ netstat -su
+Udp:
+    136691 packets received
+    1 packets to unknown port received
+    5 packet receive errors
+    112 packets sent
+    5 receive buffer errors
+    0 send buffer errors
+    IgnoredMulti: 97
+</code></pre>
+</div><div class="cl-preview-section"><p>比较测试前后的统计结果，你会发现 <strong>“receive buffer errors”</strong> 统计项从之前的 0 变成了 5，产生了 5 个错误。这种错误通常是由于应用层处理不及时导致内核 buffer 出现了溢出，内核主动将数据包丢弃。</p>
+</div><div class="cl-preview-section"><p>该如何解决此类问题呢？从两方面入手。</p>
+</div><div class="cl-preview-section"><p><strong>1.</strong> 修改内核接收缓冲区的大小。比如在 Linux 系统下，可以通过 sysctl 命令来完成。其中选项参数 -a 表示查询所有系统参数，grep 是用于过滤。</p>
+</div><div class="cl-preview-section"><pre><code>haska@haska-pc:~$ sysctl -a |grep mem
+net.core.rmem_default = 212992
+net.core.rmem_max = 212992
+</code></pre>
+</div><div class="cl-preview-section"><p>在查询结果的显示中，系统参数 net.core.rmem_default 和 net.core.rmem_max 的单位都是<strong>字节</strong>，在 Ubuntu 18.04 下面默认是 200k bytes。一般来讲默认值都有点小，需要根据业务量进行修改。比如，作者曾经的业务配置是 8M bytes。</p>
+</div><div class="cl-preview-section"><p>修改系统参数的方法是给 sysctl 增加一个 -w 选项即可，比如：</p>
+</div><div class="cl-preview-section"><pre><code>sysctl -w net.core.rmem_default = 212992
+sysctl -w net.core.rmem_max = 212992
+</code></pre>
+</div><div class="cl-preview-section"><p><strong>2.</strong> 修改系统参数只是一方面，更重要的是提高服务器的性能。这就涉及到高性能服务器设计相关的技术了。</p>
+</div><div class="cl-preview-section"><p>到此，UDP 丢包问题和分析手段、以及用到的工具就介绍完了，需要通过问题实践加以锻炼，才能掌握。</p>
+</div><div class="cl-preview-section"><h2 id="总结">总结</h2>
+</div><div class="cl-preview-section"><p>本文开篇介绍了 UDP 的基本特点，我们知道 UDP 的最大特点就是实时性、灵活性、可控制性好，在很多领域都有应用。UDP Header 格式非常简单，我们做了一个简单介绍，也很容易掌握。</p>
+</div><div class="cl-preview-section"><p>在本文还介绍了<strong>端口号</strong>的概念，端口号不仅 UDP 协议需要，TCP 协议也需要，但是概念都一样，在后续的 TCP 学习中，不再介绍。</p>
+</div><div class="cl-preview-section"><p>最后我们通过一个例子展示了 iperf 的基本用法，介绍了 UDP 常见问题的分析手段以及相关工具的使用，特别是要掌握 netstat 的应用，这是非常重要的。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>关于 UDP 使用注意事项：</p>
+<ol>
+<li>由于 UDP 是不可靠的，不仅网络会造成丢包，如果你的应用程序处理慢，操作系统内核也会丢包。可以通过 netstat 确定是否内核有丢包。</li>
+<li>多播通信的时候，只能通过 UDP 来实现。</li>
+<li>同一个端口号可以被 UDP 和 TCP 协议同时使用。比如，作者曾经用 80 端口同时监听 UDP 和 TCP。</li>
+<li>在 TCP/IP 协议栈，通过五元组 &lt;协议类型，源 IP 地址，源端口号，目的 IP 地址，目的端口号&gt;来唯一确定一条 tcp/udp 通信通道。</li>
+</ol>
+</blockquote>
+</div><div class="cl-preview-section"><p>关于 UDP 编程方面的细节，我们在后面专栏继续介绍。</p>
+</div><div class="cl-preview-section"><h3 id="思考时间">思考时间</h3>
+</div><div class="cl-preview-section"><ol>
+<li>
+<p>请用 iperf 做一个实验，用 iperf 启动一个 UDP 服务端，监听的端口号是 9820；用 iperf 启动一个 UDP 客户端访问之前启动的 UDP 服务端，但是指定一个服务端没有监听的端口号（非 9820），然后用 wireshark 抓包，分析一下具体的过程。</p>
+</li>
+<li>
+<p>如果某个端口号已经被某个程序占用了，别的程序还能用此端口号吗？如何确定端口号是否已经被占用？</p>
+</li>
+</ol>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5ed9fc31000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=80">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '06 失之东隅：为什么需要不可靠传输协议 UDP？ ',
+					'CID': '2095',
+					'Teacher': '陈子兴'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "06 失之东隅：为什么需要不可靠传输协议 UDP？ ",
+                    desc: "学好通用知识，提升技术竞争力",
+                    imgUrl: 'https:https://img.mukewang.com/5ed8c1c600015fc805400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5ed8c1c600015fc805400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/80',
+                    link: 'https://m.imooc.com/read/80'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

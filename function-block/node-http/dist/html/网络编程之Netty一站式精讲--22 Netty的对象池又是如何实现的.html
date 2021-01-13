@@ -1,0 +1,933 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>22 Netty的对象池又是如何实现的</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="全面掌握迈向高级工程师的必备技能">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2181";
+	var chapter_title = "22 Netty的对象池又是如何实现的";
+	var aid = "82";
+	var a_name = "网络编程之Netty一站式精讲";
+	var a_price = "68.00";
+	var a_pic = "https://img3.mukewang.com/5f052aa90001f15b05400720.jpg";
+	var userId = 0;
+
+	var column_id = '82';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-10&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			22 Netty的对象池又是如何实现的
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img1.mukewang.com/5f05963b000186cd06400359.jpg')"></div>
+	
+	
+		<a href="/read/82">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/5d9c91f40001dcac05000500-40-40.jpg" alt="彤哥读源码">
+				<h3>网络编程之Netty一站式精讲</h3>
+				<p>彤哥读源码 · 互联网大厂项目经理</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">人的差异在于业余时间。<p class="author">——爱因斯坦</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">前言</h1>
+</div><div class="cl-preview-section"><p>你好，我是彤哥。</p>
+</div><div class="cl-preview-section"><p>上一节，我们一起学习了 Netty 内存池的知识，它主要采用 jemalloc 内存分配器来实现，不过，在 Netty 中，还有另外一种池化手段 —— 对象池，相比于内存池，对象池要简单不少，你知道它的实现原理吗？</p>
+</div><div class="cl-preview-section"><p>今天，我们就来学习 Netty 对象池的相关概念及源码阅读。</p>
+</div><div class="cl-preview-section"><p>好了，开始今天的学习吧。</p>
+</div><div class="cl-preview-section"><h1 id="问题">问题</h1>
+</div><div class="cl-preview-section"><p>关于 Netty 对象池，我想问你几个问题：</p>
+</div><div class="cl-preview-section"><ol>
+<li>Netty 对象池与内存池的区别与联系？</li>
+<li>Netty 内存池中是否使用到了对象池？</li>
+<li>Netty 对象池中是否使用到了内存池��</li>
+<li>Netty 对象池实现的基本逻辑？</li>
+</ol>
+</div><div class="cl-preview-section"><h1 id="netty对象池详解">Netty 对象池详解</h1>
+</div><div class="cl-preview-section"><h2 id="调试用例">调试用例</h2>
+</div><div class="cl-preview-section"><p>其实，在上一节，我们就见过了 Netty 对象池，只 是当时我们跳过去了，所以，本节，我们就简单一点，直接使用上一节的调试用例，然后跟踪源码到上一节跳过的地方：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">ByteBufTest</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 1. 创建池化的分配器</span>
+        ByteBufAllocator allocator <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">PooledByteBufAllocator</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 2. 分配一个40B的ByteBuf</span>
+        ByteBuf byteBuf <span class="token operator">=</span> allocator<span class="token punctuation">.</span><span class="token function">heapBuffer</span><span class="token punctuation">(</span><span class="token number">40</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 3. 写入数据</span>
+        byteBuf<span class="token punctuation">.</span><span class="token function">writeInt</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 4. 读取数据</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>byteBuf<span class="token punctuation">.</span><span class="token function">readInt</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 5. 回收内存</span>
+        ReferenceCountUtil<span class="token punctuation">.</span><span class="token function">release</span><span class="token punctuation">(</span>byteBuf<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 6. 分配一个30B的ByteBuf</span>
+        ByteBuf byteBuf2 <span class="token operator">=</span> allocator<span class="token punctuation">.</span><span class="token function">heapBuffer</span><span class="token punctuation">(</span><span class="token number">30</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 7. 再次分配一个40B的ByteBuf</span>
+        ByteBuf byteBuf3 <span class="token operator">=</span> allocator<span class="token punctuation">.</span><span class="token function">heapBuffer</span><span class="token punctuation">(</span><span class="token number">40</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>通过上一节的学习，我们知道，当分配 30B 内存的 ByteBuf 的时候是不会使用到内存池的，那么，它会使用到对象池吗？</p>
+</div><div class="cl-preview-section"><h2 id="源码剖析">源码剖析</h2>
+</div><div class="cl-preview-section"><h3 id="创建40b的bytebuf对象">创建 40B 的 ByteBuf 对象</h3>
+</div><div class="cl-preview-section"><p>我们把断点打在 <code>ByteBuf byteBuf = allocator.heapBuffer(40);</code> 这一行，跟踪进去，看看第一次分配 ByteBuf 的时候发生了什么：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// ...</span>
+<span class="token comment">// PoolArena#allocate(PoolThreadCache, int, int)</span>
+PooledByteBuf<span class="token operator">&lt;</span>T<span class="token operator">&gt;</span> <span class="token function">allocate</span><span class="token punctuation">(</span>PoolThreadCache cache<span class="token punctuation">,</span> <span class="token keyword">int</span> reqCapacity<span class="token punctuation">,</span> <span class="token keyword">int</span> maxCapacity<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// key，创建一个ByteBuf</span>
+    PooledByteBuf<span class="token operator">&lt;</span>T<span class="token operator">&gt;</span> buf <span class="token operator">=</span> <span class="token function">newByteBuf</span><span class="token punctuation">(</span>maxCapacity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 通过内存池给它分配内存，上一节的内容，本节不展开</span>
+    <span class="token function">allocate</span><span class="token punctuation">(</span>cache<span class="token punctuation">,</span> buf<span class="token punctuation">,</span> reqCapacity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> buf<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>本节，我们的重点是学习这个 buf 到底是如何创建出来的，所以，下面那行关于内存池的内容我们就不展开了，继续跟进：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// PoolArena.HeapArena#newByteBuf</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">protected</span> PooledByteBuf<span class="token operator">&lt;</span><span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">&gt;</span> <span class="token function">newByteBuf</span><span class="token punctuation">(</span><span class="token keyword">int</span> maxCapacity<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> HAS_UNSAFE <span class="token operator">?</span> PooledUnsafeHeapByteBuf<span class="token punctuation">.</span><span class="token function">newUnsafeInstance</span><span class="token punctuation">(</span>maxCapacity<span class="token punctuation">)</span>
+        <span class="token operator">:</span> PooledHeapByteBuf<span class="token punctuation">.</span><span class="token function">newInstance</span><span class="token punctuation">(</span>maxCapacity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// PooledUnsafeHeapByteBuf#newUnsafeInstance</span>
+<span class="token keyword">static</span> PooledUnsafeHeapByteBuf <span class="token function">newUnsafeInstance</span><span class="token punctuation">(</span><span class="token keyword">int</span> maxCapacity<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// key，通过RECYCLER得到一个buf，所以秘密在这个RECYCLE中</span>
+    PooledUnsafeHeapByteBuf buf <span class="token operator">=</span> RECYCLER<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 重新使用，重置属性</span>
+    buf<span class="token punctuation">.</span><span class="token function">reuse</span><span class="token punctuation">(</span>maxCapacity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> buf<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">final</span> <span class="token keyword">void</span> <span class="token function">reuse</span><span class="token punctuation">(</span><span class="token keyword">int</span> maxCapacity<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 设置最大容量</span>
+    <span class="token function">maxCapacity</span><span class="token punctuation">(</span>maxCapacity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 重置引用计数</span>
+    <span class="token function">resetRefCnt</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 重置readIndex和writeIndex为0</span>
+    <span class="token function">setIndex0</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 重置mark为0</span>
+    <span class="token function">discardMarks</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这段代码的关键是通过一个叫作 <code>RECYCLER</code> 的东西获得了一个 buf，这玩意是个什么东西呢？或者它是不是东西呢？其实，它是定义在 PooledUnsafeHeapByteBuf 类中的一个常量：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">final</span> <span class="token keyword">class</span> <span class="token class-name">PooledUnsafeHeapByteBuf</span> <span class="token keyword">extends</span> <span class="token class-name">PooledHeapByteBuf</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 第一个核心类——ObjectPool</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> ObjectPool<span class="token operator">&lt;</span>PooledUnsafeHeapByteBuf<span class="token operator">&gt;</span> RECYCLER <span class="token operator">=</span> ObjectPool<span class="token punctuation">.</span><span class="token function">newPool</span><span class="token punctuation">(</span>
+            <span class="token comment">// 第二个核心类——ObjectCreator</span>
+            <span class="token keyword">new</span> <span class="token class-name">ObjectCreator</span><span class="token operator">&lt;</span>PooledUnsafeHeapByteBuf<span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token annotation punctuation">@Override</span>
+        <span class="token keyword">public</span> PooledUnsafeHeapByteBuf <span class="token function">newObject</span><span class="token punctuation">(</span>Handle<span class="token operator">&lt;</span>PooledUnsafeHeapByteBuf<span class="token operator">&gt;</span> handle<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 实际创建buf的地方</span>
+            <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">PooledUnsafeHeapByteBuf</span><span class="token punctuation">(</span>handle<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以看到，RECYCLER 是 ObjectPool 的一个对象，它里面封装了一个 ObjectCreator 对象，用来创建对象，当然，这里创建的就是 PooledUnsafeHeapByteBuf 对象了，且它的容量为 0，同时还有一个 handle 属性，这个 handle 不是我们上一节说的那个 handle 哈，上一节的 handle 是一个 long 类型的，里面存储了节点编号及 bitmapIdx 等相关信息，那么，今天这个 handle 是个什么东西呢？不急，我们慢慢来分析。</p>
+</div><div class="cl-preview-section"><p>我们先不纠结于这个类，接着上面的代码继续跟踪：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">class</span> <span class="token class-name">RecyclerObjectPool</span><span class="token operator">&lt;</span>T<span class="token operator">&gt;</span> <span class="token keyword">extends</span> <span class="token class-name">ObjectPool</span><span class="token operator">&lt;</span>T<span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 第三个核心类——Recycler</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> Recycler<span class="token operator">&lt;</span>T<span class="token operator">&gt;</span> recycler<span class="token punctuation">;</span>
+
+    <span class="token function">RecyclerObjectPool</span><span class="token punctuation">(</span><span class="token keyword">final</span> ObjectCreator<span class="token operator">&lt;</span>T<span class="token operator">&gt;</span> creator<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// Recycler对象，包装creator</span>
+        recycler <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Recycler</span><span class="token operator">&lt;</span>T<span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 第四个核心类——Handle</span>
+            <span class="token comment">// 注意这个方法，下面会用到</span>
+            <span class="token annotation punctuation">@Override</span>
+            <span class="token keyword">protected</span> T <span class="token function">newObject</span><span class="token punctuation">(</span>Handle<span class="token operator">&lt;</span>T<span class="token operator">&gt;</span> handle<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token comment">// 通过creator创建对象</span>
+                <span class="token keyword">return</span> creator<span class="token punctuation">.</span><span class="token function">newObject</span><span class="token punctuation">(</span>handle<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> T <span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 调用recycler的get()方法</span>
+        <span class="token keyword">return</span> recycler<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以看到，这个 get () 方法最后是调用了 Recycler 的 get () 方法，继续跟进：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// Recycler#get</span>
+<span class="token keyword">public</span> <span class="token keyword">final</span> T <span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 每个线程最多可缓存的容量大小，默认为4KB</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>maxCapacityPerThread <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token function">newObject</span><span class="token punctuation">(</span><span class="token punctuation">(</span>Handle<span class="token operator">&lt;</span>T<span class="token operator">&gt;</span><span class="token punctuation">)</span> NOOP_HANDLE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 第五个核心类——Stack</span>
+    <span class="token comment">// 从threadLocal中获取一个对象，这个对象是Stack的对象</span>
+    Stack<span class="token operator">&lt;</span>T<span class="token operator">&gt;</span> stack <span class="token operator">=</span> threadLocal<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 从栈中弹出一个元素，这个元素是DefaultHandle，它实现了Handle接口</span>
+    DefaultHandle<span class="token operator">&lt;</span>T<span class="token operator">&gt;</span> handle <span class="token operator">=</span> stack<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>handle <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// handle为空则创建之</span>
+        handle <span class="token operator">=</span> stack<span class="token punctuation">.</span><span class="token function">newHandle</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 并创建它里面的对象</span>
+        <span class="token comment">// newObject()方法即上面Recycler实现中的方法</span>
+        handle<span class="token punctuation">.</span>value <span class="token operator">=</span> <span class="token function">newObject</span><span class="token punctuation">(</span>handle<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 返回创建的对象</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>T<span class="token punctuation">)</span> handle<span class="token punctuation">.</span>value<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>OK，到这里整个逻辑都比较清晰了，Netty 对象池底层是通过 ThreadLocal + Stack（栈）实现的，把 Stack 存储在线程本地变量中，这个栈里面存储的是 Handle，Handle 里面关联了 PooledByteBuf，当我们获取 PooledByteBuf 时，先尝试从线程本地变量的栈中取出一个 Handle，如果没有缓存，则新建一个 Handle 并初始化它里面的 PooledByteBuf，即 value。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>确切地来说，这个 ThreadLocal 是 FastThreadLocal，它在 Java 原生 ThreadLocal 之上做了一些改进，使其性能更优越，我们后面再单独分析这个类。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>直接在 Stack 里面存储 PooledByteBuf 它不香吗？为什么要存储 Handle，再用 Handle 来关联 PooledByteBuf 呢？</p>
+</div><div class="cl-preview-section"><p>其实，Stack 直接存储 PooledByteBuf 作为元素也是可以的，中间加一层 Handle，是因为 Handle 需要存储一些状态信息，比如，是否被回收等，如果把这些信息放到 PooledByteBuf 中，显然会对 PooledByteBuf 本身造成侵略，而且，如果对象池中放到不是 PooledByteBuf，而是换成另一个类，那个类也要加上诸如是否被回收等状态信息，显然也是不合适的，所以，抽象出来一层 Handle 专门用来存储这些状态信息，再用 Handle 去关联真正缓存的对象，这样设计扩展性更好，代码解耦更彻底。</p>
+</div><div class="cl-preview-section"><p>如果上面这样一大段文字看着比较费劲，那我们就把上面标记的那些核心类连起来看看：<br>
+<img src="https://img.mukewang.com/5f30adaa00010b9009790809.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>这是一个非标准的类图，我把组合、聚合、关联、依赖等几种关系统一弱化成了关联关系，即图中标有数字的那种箭头，而且，我并没有把所有的关联关系全部画出来，看着这张图，我们梳理一下整个流程：</p>
+</div><div class="cl-preview-section"><ol>
+<li>创建 buf 的入口是 PooledUnsafeHeapByteBuf 的 newUnsafeInstance () 方法；</li>
+<li>newUnsafeInstance () 方法中调用了 RECYCLER（ObjectPool 的对象）的 get () 方法，而 RECYCLER 实际上是 RecyclerObjectPool 的对象；</li>
+<li>RecyclerObjectPool 的 get () 方法中调用了 recycler（Recycler 的对象）的 get () 方法，而 recycler 实际上是 Recycler 的匿名实现类的对象，这个匿名实现类中实现了 newObject () 方法，newObject () 方法在下面会用到；</li>
+<li>Recycler 的 get () 方法是真正干活的地方，内部主要做了四件事：
+<ul>
+<li>从 threadLocal 中获取 Stack 对象；</li>
+<li>从 Stack 中弹出 DefaultHandle 对象；</li>
+<li>如果没有弹出任何元素，则创建一个 DefaultHandle，并调用 Recycler 的 newObject () 方法创建实际要缓存的对象；</li>
+<li>返回 DefaultHandle 中实际缓存的对象，即它的 value 值；</li>
+</ul>
+</li>
+<li>在匿名 Recycler 的 newObject () 内部，又调用了了 ObjectCreator 的 newObject () 方法；</li>
+<li>ObjectCreator 的 newObject () 方法的实现实际上是在 PooledUnsafeHeapByteBuf 初始化 RECYCLER 时实现的；</li>
+<li>ObjectCreator 的 newObject () 方法中调用了 PooledUnsafeHeapByteBuf 的构造方法初始化了一个容量为 0 的 buf，且绑定了 DefaultHandle。</li>
+</ol>
+</div><div class="cl-preview-section"><p>OK，到此从对象池中拿 buf 的过程剖析完毕，也就是说，第一次创建 buf 的时候实际上最后还是使用 buf 自己的构造方法创建了一个 0 容量的 buf，跟上一节的内容结合在一起，后面就是给这个 buf 分配内存了，我们就跳过啦，搞不清楚的同学可以把这两节的内容串在一起调试一遍。</p>
+</div><div class="cl-preview-section"><h3 id="回收bytebuf对象">回收 ByteBuf 对象</h3>
+</div><div class="cl-preview-section"><p>对象池的作用无疑是重复利用资源，所以，如果没有回收对象，就体现不出它的价值了，所以，让我们看看回收对象的时候这个对象是怎么加入到对象池中的。</p>
+</div><div class="cl-preview-section"><p>OK，让我们在 <code>ReferenceCountUtil.release(byteBuf);</code> 打一个断点，并跟踪进去（跳过了内存池相关的代码）：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// PooledByteBuf#deallocate</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">protected</span> <span class="token keyword">final</span> <span class="token keyword">void</span> <span class="token function">deallocate</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>handle <span class="token operator">&gt;=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">final</span> <span class="token keyword">long</span> handle <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>handle<span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>handle <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+        memory <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        chunk<span class="token punctuation">.</span>arena<span class="token punctuation">.</span><span class="token function">free</span><span class="token punctuation">(</span>chunk<span class="token punctuation">,</span> tmpNioBuf<span class="token punctuation">,</span> handle<span class="token punctuation">,</span> maxLength<span class="token punctuation">,</span> cache<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        tmpNioBuf <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        chunk <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        <span class="token comment">// 关键之处</span>
+        <span class="token function">recycle</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// PooledByteBuf#recycle</span>
+<span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">recycle</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    recyclerHandle<span class="token punctuation">.</span><span class="token function">recycle</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// Recycler.DefaultHandle#recycle</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">recycle</span><span class="token punctuation">(</span>Object object<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>object <span class="token operator">!=</span> value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalArgumentException</span><span class="token punctuation">(</span><span class="token string">"object does not belong to handle"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    Stack<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">&gt;</span> stack <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>stack<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>lastRecycledId <span class="token operator">!=</span> recycleId <span class="token operator">||</span> stack <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalStateException</span><span class="token punctuation">(</span><span class="token string">"recycled already"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    stack<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>OK，这一块的逻辑比较简单，最后就是把 buf 中绑定的 handle 入到 Stack 中，因为 handle 里面同样保存了 buf，所以，下一次再创建 buf 的时候就可以重复利用这个 buf 了。</p>
+</div><div class="cl-preview-section"><h3 id="创建30b的bytebuf对象">创建 30B 的 ByteBuf 对象</h3>
+</div><div class="cl-preview-section"><p>相信通过上面的源码分析，到这里就很简单了，我们直接脑补一下流程：</p>
+</div><div class="cl-preview-section"><ol>
+<li>通过 PooledUnsafeHeapByteBuf 的 newUnsafeInstance () 方法入口一直调到 Recycler 的 get () 方法；</li>
+<li>从 ThreadLocal 中获取 Stack；</li>
+<li>从 Stack 中弹出 Handle，正好有一个刚放进去的 Handle；</li>
+<li>直接返回 Handle 中的 value，即 buf；</li>
+<li>重置 buf 的属性，为我们重新使用；</li>
+<li>调用内存池相关逻辑为其分配内存；</li>
+</ol>
+</div><div class="cl-preview-section"><p>可以看到，对象池跟分配多少字节的数据完全没有关系，那是内存池的事儿，所以，这里创建 30B 的 ByteBuf 对象一样可以重复利用前面缓存下来的 ByteBuf 对象。</p>
+</div><div class="cl-preview-section"><p>到这里，对象池的源码剖析基本就结束了，既然这个对象池这么好用，我们能不能使用呢？答案当然是可以啦。</p>
+</div><div class="cl-preview-section"><h2 id="对象池的使用">对象池的使用</h2>
+</div><div class="cl-preview-section"><p>其实，使用方法也非常简单，就像你看到的 PooledUnsafeHeapByteBuf 中的用法一样，只需要简单的三步就可以很容易使用 Netty 的对象池了：</p>
+</div><div class="cl-preview-section"><ol>
+<li>需要使用的类要与 handle 绑定；</li>
+<li>这个类的对象回收的时候调用 handler 的 recycle () 方法；</li>
+<li>定义一个 ObjectPool 对象，用它来创建这个类的对象；</li>
+</ol>
+</div><div class="cl-preview-section"><p>比如，在游戏中有这么一个类叫作 <code>Player</code>，也就是玩家，假设玩家这个类的对象的创建过程是非常耗费资源的，那么，我们完全就可以把下线的玩家缓存到对象池中，等下次有上线的玩家，我们直接从对象池中拿一个 “玩家”，并重置它的属性给这次新上线的玩家复用是完全可以的，下面我们就来简单实现这么个逻辑。</p>
+</div><div class="cl-preview-section"><h3 id="定义玩家类">定义玩家类</h3>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Player</span> <span class="token punctuation">{</span>
+
+    <span class="token comment">// 定义对象池</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> ObjectPool<span class="token operator">&lt;</span>Player<span class="token operator">&gt;</span> RECYCLER <span class="token operator">=</span> ObjectPool<span class="token punctuation">.</span><span class="token function">newPool</span><span class="token punctuation">(</span>
+            handle <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token keyword">new</span> <span class="token class-name">Player</span><span class="token punctuation">(</span>handle<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 玩家属性</span>
+    <span class="token keyword">private</span> Long id<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> String name<span class="token punctuation">;</span>
+    <span class="token comment">// ...</span>
+
+    <span class="token comment">// 绑定handle</span>
+    <span class="token keyword">private</span> ObjectPool<span class="token punctuation">.</span>Handle<span class="token operator">&lt;</span>Player<span class="token operator">&gt;</span> handle<span class="token punctuation">;</span>
+
+    <span class="token comment">// 构造方法私有化</span>
+    <span class="token keyword">private</span> <span class="token function">Player</span><span class="token punctuation">(</span>ObjectPool<span class="token punctuation">.</span>Handle<span class="token operator">&lt;</span>Player<span class="token operator">&gt;</span> handle<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>handle <span class="token operator">=</span> handle<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// 创建实例</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> Player <span class="token function">newInstance</span><span class="token punctuation">(</span>Long id<span class="token punctuation">,</span> String name<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        Player player <span class="token operator">=</span> RECYCLER<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        player<span class="token punctuation">.</span>id <span class="token operator">=</span> id<span class="token punctuation">;</span>
+        player<span class="token punctuation">.</span>name <span class="token operator">=</span> name<span class="token punctuation">;</span>
+        <span class="token keyword">return</span> player<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// 玩家下线</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">offline</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        handle<span class="token punctuation">.</span><span class="token function">recycle</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// 打印</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> String <span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> String<span class="token punctuation">.</span><span class="token function">format</span><span class="token punctuation">(</span><span class="token string">"id=%d, name=%s, classId=%s"</span><span class="token punctuation">,</span> id<span class="token punctuation">,</span> name<span class="token punctuation">,</span> <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这个 Player 类比较简单，我们来测试一下。</p>
+</div><div class="cl-preview-section"><h3 id="测试玩家类">测试玩家类</h3>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">PlayerTest</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 创建player1</span>
+        Player player1 <span class="token operator">=</span> Player<span class="token punctuation">.</span><span class="token function">newInstance</span><span class="token punctuation">(</span>1L<span class="token punctuation">,</span> <span class="token string">"alan"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 打印player1</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>player1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// player1下线</span>
+        player1<span class="token punctuation">.</span><span class="token function">offline</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 创建player2</span>
+        Player player2 <span class="token operator">=</span> Player<span class="token punctuation">.</span><span class="token function">newInstance</span><span class="token punctuation">(</span>2L<span class="token punctuation">,</span> <span class="token string">"alex"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 打印player2</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>player2<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 二者是否相等</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>player1 <span class="token operator">==</span> player2<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 假设player1又上线了呢</span>
+        player1 <span class="token operator">=</span> Player<span class="token punctuation">.</span><span class="token function">newInstance</span><span class="token punctuation">(</span>1L<span class="token punctuation">,</span> <span class="token string">"alan"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 打印player1</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>player1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 二者是否相等</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>player1 <span class="token operator">==</span> player2<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>你猜这个结果会如何？我直接给出我的运行结果了：</p>
+</div><div class="cl-preview-section"><pre><code>id=1, name=alan, classId=com.imooc.netty.core.$21.Player@300ffa5d
+id=2, name=alex, classId=com.imooc.netty.core.$21.Player@300ffa5d
+true
+id=1, name=alan, classId=com.imooc.netty.core.$21.Player@37f8bb67
+false
+</code></pre>
+</div><div class="cl-preview-section"><p>是不是很简单？！^^</p>
+</div><div class="cl-preview-section"><h3 id="其它">其它</h3>
+</div><div class="cl-preview-section"><p>其实，Netty 中对象池可不只是用在池化 ByteBuf 这里，在很多地方都有用到，比如，内存池里面的 PoolThreadCache 中用来做缓存的 MemoryRegionCache 中的队列中的元素 Entry：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// io.netty.buffer.PoolThreadCache.MemoryRegionCache.Entry</span>
+<span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">class</span> <span class="token class-name">Entry</span><span class="token operator">&lt;</span>T<span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">final</span> Handle<span class="token operator">&lt;</span>Entry<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">&gt;&gt;</span> recyclerHandle<span class="token punctuation">;</span>
+    PoolChunk<span class="token operator">&lt;</span>T<span class="token operator">&gt;</span> chunk<span class="token punctuation">;</span>
+    ByteBuffer nioBuffer<span class="token punctuation">;</span>
+    <span class="token keyword">long</span> handle <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+
+    <span class="token function">Entry</span><span class="token punctuation">(</span>Handle<span class="token operator">&lt;</span>Entry<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">&gt;&gt;</span> recyclerHandle<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>recyclerHandle <span class="token operator">=</span> recyclerHandle<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">void</span> <span class="token function">recycle</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        chunk <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        nioBuffer <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        handle <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+        recyclerHandle<span class="token punctuation">.</span><span class="token function">recycle</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token annotation punctuation">@SuppressWarnings</span><span class="token punctuation">(</span><span class="token string">"rawtypes"</span><span class="token punctuation">)</span>
+<span class="token keyword">private</span> <span class="token keyword">static</span> Entry <span class="token function">newEntry</span><span class="token punctuation">(</span>PoolChunk<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">&gt;</span> chunk<span class="token punctuation">,</span> ByteBuffer nioBuffer<span class="token punctuation">,</span> <span class="token keyword">long</span> handle<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    Entry entry <span class="token operator">=</span> RECYCLER<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    entry<span class="token punctuation">.</span>chunk <span class="token operator">=</span> chunk<span class="token punctuation">;</span>
+    entry<span class="token punctuation">.</span>nioBuffer <span class="token operator">=</span> nioBuffer<span class="token punctuation">;</span>
+    entry<span class="token punctuation">.</span>handle <span class="token operator">=</span> handle<span class="token punctuation">;</span>
+    <span class="token keyword">return</span> entry<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token annotation punctuation">@SuppressWarnings</span><span class="token punctuation">(</span><span class="token string">"rawtypes"</span><span class="token punctuation">)</span>
+<span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> ObjectPool<span class="token operator">&lt;</span>Entry<span class="token operator">&gt;</span> RECYCLER <span class="token operator">=</span> ObjectPool<span class="token punctuation">.</span><span class="token function">newPool</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">ObjectCreator</span><span class="token operator">&lt;</span>Entry<span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@SuppressWarnings</span><span class="token punctuation">(</span><span class="token string">"unchecked"</span><span class="token punctuation">)</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> Entry <span class="token function">newObject</span><span class="token punctuation">(</span>Handle<span class="token operator">&lt;</span>Entry<span class="token operator">&gt;</span> handle<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Entry</span><span class="token punctuation">(</span>handle<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>另外，还有 <code>io.netty.channel.AbstractChannelHandlerContext.WriteTask</code>，等等，有兴趣的同学可以翻翻源码看看。</p>
+</div><div class="cl-preview-section"><h1 id="后记">后记</h1>
+</div><div class="cl-preview-section"><p>今天，我们一起学习了 Netty 中的对象池，可以发现，对象池的实现相比于内存池的实现不要太简单，是吧？！</p>
+</div><div class="cl-preview-section"><p>但是，它真的如此简单么？我留了两道思考题，你能解答出来吗？见文后。</p>
+</div><div class="cl-preview-section"><p>在今天的内容中，我们提到了对象池底层使用到了一个叫作 <code>FastThreadLocal</code> 的类，它是比 Java 原生的 ThreadLocal 效率更高的实现，它有哪些神奇之处呢？我们下一节一起来剖析之，敬请期待。</p>
+</div><div class="cl-preview-section"><h1 id="思维导图">思维导图</h1>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f30adc30001f76511100507.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h1 id="思考题一">思考题一</h1>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">ByteBufTest</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException <span class="token punctuation">{</span>
+        <span class="token comment">// 参数是preferDirect，即是否偏向于使用直接内存</span>
+        ByteBufAllocator allocator <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">PooledByteBufAllocator</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 分配一个40B的ByteBuf</span>
+        ByteBuf byteBuf <span class="token operator">=</span> allocator<span class="token punctuation">.</span><span class="token function">heapBuffer</span><span class="token punctuation">(</span><span class="token number">40</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 写入数据</span>
+        byteBuf<span class="token punctuation">.</span><span class="token function">writeInt</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 读取数据</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>byteBuf<span class="token punctuation">.</span><span class="token function">readInt</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 回收内存</span>
+        <span class="token keyword">new</span> <span class="token class-name">Thread</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-</span><span class="token operator">&gt;</span>ReferenceCountUtil<span class="token punctuation">.</span><span class="token function">release</span><span class="token punctuation">(</span>byteBuf<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 休息1秒</span>
+        Thread<span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span><span class="token number">1000</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 再次分配一个40B的ByteBuf</span>
+        ByteBuf byteBuf2 <span class="token operator">=</span> allocator<span class="token punctuation">.</span><span class="token function">heapBuffer</span><span class="token punctuation">(</span><span class="token number">30</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如上代码，创建 30B 的 ByteBuf 时是否可以使用到对象池中的缓存？</p>
+</div><div class="cl-preview-section"><h1 id="思考题二">思考题二</h1>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">ByteBufTest</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException <span class="token punctuation">{</span>
+        <span class="token comment">// 参数是preferDirect，即是否偏向于使用直接内存</span>
+        ByteBufAllocator allocator <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">PooledByteBufAllocator</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 分配一个40B的ByteBuf</span>
+        ByteBuf byteBuf <span class="token operator">=</span> allocator<span class="token punctuation">.</span><span class="token function">heapBuffer</span><span class="token punctuation">(</span><span class="token number">40</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 写入数据</span>
+        byteBuf<span class="token punctuation">.</span><span class="token function">writeInt</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 读取数据</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>byteBuf<span class="token punctuation">.</span><span class="token function">readInt</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 回收内存</span>
+        ReferenceCountUtil<span class="token punctuation">.</span><span class="token function">release</span><span class="token punctuation">(</span>byteBuf<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 休息1秒，保证完全释放</span>
+        Thread<span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span><span class="token number">1000</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">new</span> <span class="token class-name">Thread</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 再次分配一个40B的ByteBuf</span>
+            ByteBuf byteBuf2 <span class="token operator">=</span> allocator<span class="token punctuation">.</span><span class="token function">heapBuffer</span><span class="token punctuation">(</span><span class="token number">30</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">// 其它处理</span>
+        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如上代码，创建 30B 的 ByteBuf 时是否可以使用到对象池中的缓存？</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5f05435600011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=82">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '22 Netty的对象池又是如何实现的',
+					'CID': '2181',
+					'Teacher': '彤哥读源码'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "22 Netty的对象池又是如何实现的",
+                    desc: "全面掌握迈向高级工程师的必备技能",
+                    imgUrl: 'https:https://img3.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/82',
+                    link: 'https://m.imooc.com/read/82'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

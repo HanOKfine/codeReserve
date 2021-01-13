@@ -1,0 +1,934 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>22 binlog 实现增量数据收集方案的设计</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="打包 MySQL 常用高级技巧特性">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "2";
+	var chapter_id = "1838";
+	var chapter_title = "22 binlog 实现增量数据收集方案的设计";
+	var aid = "71";
+	var a_name = "实战派 MySQL 高阶应用指南";
+	var a_price = "68.00";
+	var a_pic = "https://img2.mukewang.com/5e65bd6e0001444005400720.jpg";
+	var userId = 0;
+
+	var column_id = '71';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-06-01&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			22 binlog 实现增量数据收集方案的设计
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img1.mukewang.com/5e9edd620001cc7622501500.jpg')"></div>
+	
+	
+		<a href="/read/71">
+			<div class="course-entry">
+				<img src="https://img1.mukewang.com/5c36c432000158e609600960-40-40.jpg" alt="勤一">
+				<h3>实战派 MySQL 高阶应用指南</h3>
+				<p>勤一 · BAT 高级研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">从不浪费时间的人，没有工夫抱怨时间不够。<p class="author">——杰弗逊</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>你在阅读这一节之前，应该对 Binlog（对于字母的大小写直接忽略即可）有基本的了解了，因为我已经不止一次的提到它了。Binlog 真的非常重要，对于 MySQL 运维来说，我们可以使用它来完成数据恢复；对于服务集群来说，我们需要 Binlog 实现主从同步。而这一节里，我将要带你认识：使用 Binlog 来实现增量数据的收集。</p>
+</div><div class="cl-preview-section"><h2 id="业务场景概述">1. 业务场景概述</h2>
+</div><div class="cl-preview-section"><p>很多人看到标题中的 “增量数据” 其实并不知道它代表的是什么，这很正常，如果我之前没有做过或遇到过，大概率我也不知道它是什么。但是，当我说完它的概念之后，也许你会发现，这在业务系统中出现的频率很高，这同时也是我设计这一节的初衷。好的，下面一起来看看吧。</p>
+</div><div class="cl-preview-section"><h3 id="什么是增量数据">1.1 什么是增量数据</h3>
+</div><div class="cl-preview-section"><p>在说明增量数据之前，我们先要知道一个概念：全量数据。全量数据并不是说业务系统中所有的数据，而是说初始数据。下面，我以广告系统业务来说明这两个概念。</p>
+</div><div class="cl-preview-section"><p>广告系统必须要有的数据包括：推广计划、推广单元和创意（你可以发散为其他业务系统中的数据，这并不重要）。在广告系统上线之前，这些数据必须是具备的，否则，线上没有数据就没有意义了。而这些上线之前就已经准备好的数据，就被称作是初始数据，也叫做全量数据。系统在运行过程中，必然会存在新数据插入、老数据更新或删除，而这些引起全量数据变动的数据就被称为增量数据。</p>
+</div><div class="cl-preview-section"><p>为了加速系统的运行性能，我们通常会使用缓存或索引的策略，那么，一旦原始（全量）数据发生变动，缓存或索引数据同样需要变化。此时，就需要一种能够收集增量数据的方案。</p>
+</div><div class="cl-preview-section"><h3 id="初步解决方案及其存在的问题">1.2 初步解决方案及其存在的问题</h3>
+</div><div class="cl-preview-section"><p>我们首先能够想到的解决方案是：在数据发生变化的地方做收集，再使用收集到的数据做其他的更新（缓存或索引）操作。这种方式是最简单且可行的方案，但是，它存在严重的弊端。</p>
+</div><div class="cl-preview-section"><ul>
+<li>数据发生变动的地方包括插入、更新和删除，假设由三个方法维护这三个操作，那么，收集增量数据的过程需要写：（表的个数）* 3，会产生大量的重复代码</li>
+<li>代码的每一次重复都是一次耦合，一旦涉及改动，同样需要改动很多次</li>
+</ul>
+</div><div class="cl-preview-section"><p>正是由于代码耦合，维护困难的问题，才产生了收集日志的思想。但是，这里所说的日志只是业务系统日志，而不是 Binlog 日志。我们可以收集系统日志，确定增量数据，并最终完成缓存或索引的更新操作，这也类似于流式计算。但是，这种实现方式难度较大，也并不容易调试代码逻辑的正确性，实际的企业级开发中很少采用。</p>
+</div><div class="cl-preview-section"><h2 id="binlog-解读">2. Binlog 解读</h2>
+</div><div class="cl-preview-section"><p>之前对 Binlog 的介绍是比较 “浅薄” 的，基本应用（数据同步、数据备份与恢复）肯定是没问题了。但是，对于增量数据的收集来说，就必须要理解 Binlog 的相关数据结构和特性。下面，我们就来详细的对 Binlog 进行解读。</p>
+</div><div class="cl-preview-section"><h3 id="ddl-与-dml">2.1 DDL 与 DML</h3>
+</div><div class="cl-preview-section"><p>DDL 是 SQL 语言的四大功能之一，它的全称是 “Data Definition Language”，即数据定义语言。它用于定义数据库的三级结构，包括外模式、概念模式、内模式，以及定义数据的完整性、安全控制等约束。DDL 最大的特点是，它不需要 COMMIT。DDL 语句包含：CREATE、ALTER、DROP、TRUNCATE 等等。</p>
+</div><div class="cl-preview-section"><p>DML 的全称是 “Data Manipulation Language”，即数据操纵语言。它由 DBMS 提供给用户或工程师使用，实现对数据库中数据的操作，它需要 COMMIT。DML 语句包含：SELECT、INSERT、UPDATE、DELETE、CALL、EXPLAIN PLAN 等等。</p>
+</div><div class="cl-preview-section"><p>MySQL 的 Binlog 会记录所有的 DDL 和 DML（除了不改变数据的语句，例如 SELECT、SHOW 等等）语句。它会以事件的形式记录，包含语句执行所消耗的时间，且是事务安全的。</p>
+</div><div class="cl-preview-section"><h3 id="数据表列的编码">2.2 数据表列的编码</h3>
+</div><div class="cl-preview-section"><p>我们定义数据表时只是指定了数据列的名称，但是对于 MySQL 来说，它又做了一次优化（分析 Binlog 日志时，会看到这种优化的目的）：对数据表列进行编码。我们先来看一看 worker 表的结构：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql">mysql<span class="token operator">&gt;</span> <span class="token keyword">DESC</span> worker<span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">---------+---------------------+------+-----+---------+----------------+</span>
+<span class="token operator">|</span> Field   <span class="token operator">|</span> <span class="token keyword">Type</span>                <span class="token operator">|</span> <span class="token boolean">Null</span> <span class="token operator">|</span> <span class="token keyword">Key</span> <span class="token operator">|</span> <span class="token keyword">Default</span> <span class="token operator">|</span> Extra          <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">---------+---------------------+------+-----+---------+----------------+</span>
+<span class="token operator">|</span> id      <span class="token operator">|</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> unsigned <span class="token operator">|</span> <span class="token keyword">NO</span>   <span class="token operator">|</span> PRI <span class="token operator">|</span> <span class="token boolean">NULL</span>    <span class="token operator">|</span> <span class="token keyword">auto_increment</span> <span class="token operator">|</span>
+<span class="token operator">|</span> <span class="token keyword">type</span>    <span class="token operator">|</span> char<span class="token punctuation">(</span><span class="token number">64</span><span class="token punctuation">)</span>            <span class="token operator">|</span> <span class="token keyword">NO</span>   <span class="token operator">|</span> MUL <span class="token operator">|</span>         <span class="token operator">|</span>                <span class="token operator">|</span>
+<span class="token operator">|</span> name    <span class="token operator">|</span> char<span class="token punctuation">(</span><span class="token number">64</span><span class="token punctuation">)</span>            <span class="token operator">|</span> <span class="token keyword">NO</span>   <span class="token operator">|</span> UNI <span class="token operator">|</span> <span class="token boolean">NULL</span>    <span class="token operator">|</span>                <span class="token operator">|</span>
+<span class="token operator">|</span> salary  <span class="token operator">|</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> unsigned <span class="token operator">|</span> YES  <span class="token operator">|</span>     <span class="token operator">|</span> <span class="token boolean">NULL</span>    <span class="token operator">|</span>                <span class="token operator">|</span>
+<span class="token operator">|</span> version <span class="token operator">|</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span>          <span class="token operator">|</span> <span class="token keyword">NO</span>   <span class="token operator">|</span>     <span class="token operator">|</span> <span class="token number">0</span>       <span class="token operator">|</span>                <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">---------+---------------------+------+-----+---------+----------------+</span>
+<span class="token number">5</span> <span class="token keyword">rows</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.01</span> sec<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>那么，对于 worker 表的每一列，MySQL 都会使用数字进行编码，而这个信息当然是存储在系统表（是数据库的元数据）中。想要获取这个编码，需要查询 information_schema.COLUMNS 表：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql">mysql<span class="token operator">&gt;</span> <span class="token keyword">SELECT</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     table_schema<span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     table_name<span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     column_name<span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     ordinal_position
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token keyword">FROM</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     information_schema<span class="token punctuation">.</span><span class="token keyword">COLUMNS</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token keyword">WHERE</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     table_schema <span class="token operator">=</span> <span class="token string">'imooc_mysql'</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     <span class="token operator">AND</span> table_name <span class="token operator">=</span> <span class="token string">'worker'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">--------------+------------+-------------+------------------+</span>
+<span class="token operator">|</span> table_schema <span class="token operator">|</span> table_name <span class="token operator">|</span> column_name <span class="token operator">|</span> ordinal_position <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">--------------+------------+-------------+------------------+</span>
+<span class="token operator">|</span> imooc_mysql  <span class="token operator">|</span> worker     <span class="token operator">|</span> id          <span class="token operator">|</span>                <span class="token number">1</span> <span class="token operator">|</span>
+<span class="token operator">|</span> imooc_mysql  <span class="token operator">|</span> worker     <span class="token operator">|</span> <span class="token keyword">type</span>        <span class="token operator">|</span>                <span class="token number">2</span> <span class="token operator">|</span>
+<span class="token operator">|</span> imooc_mysql  <span class="token operator">|</span> worker     <span class="token operator">|</span> name        <span class="token operator">|</span>                <span class="token number">3</span> <span class="token operator">|</span>
+<span class="token operator">|</span> imooc_mysql  <span class="token operator">|</span> worker     <span class="token operator">|</span> salary      <span class="token operator">|</span>                <span class="token number">4</span> <span class="token operator">|</span>
+<span class="token operator">|</span> imooc_mysql  <span class="token operator">|</span> worker     <span class="token operator">|</span> version     <span class="token operator">|</span>                <span class="token number">5</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">--------------+------------+-------------+------------------+</span>
+<span class="token number">5</span> <span class="token keyword">rows</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.01</span> sec<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>其中，ordinal_position 列标识的就是数据表列的编码（或者是位于表的位置）。了解这个编码是非常有必要的，因为在将来你会看到 Binlog 记录的并不是数据列名称，而是编码。</p>
+</div><div class="cl-preview-section"><h3 id="binlog-中的事件类型">2.3 Binlog 中的事件类型</h3>
+</div><div class="cl-preview-section"><p>MySQL Binlog 记录的所有操作都会有事件类型与之对应，且不同的 Binlog 格式（ROW、STATEMENT 等）会有不同的事件类型，但是，基本上是类似的。下面，我以最常见的 ROW 格式去对必须要掌握的事件类型做介绍。当然，首先你需要确定你的 Binlog 格式：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql">mysql<span class="token operator">&gt;</span> <span class="token keyword">SHOW</span> VARIABLES <span class="token operator">LIKE</span> <span class="token string">'binlog_format'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">---------------+-------+</span>
+<span class="token operator">|</span> Variable_name <span class="token operator">|</span> <span class="token keyword">Value</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">---------------+-------+</span>
+<span class="token operator">|</span> binlog_format <span class="token operator">|</span> <span class="token keyword">ROW</span>   <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">---------------+-------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.01</span> sec<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>对于 ROW 格式的 Binlog 来说，所有的 DML（由于我们这里讨论的是数据变动，所以，不对 DDL 做深入讲解）操作都会记录在 ROWS_EVENT 中。ROWS_EVENT 包含三种：UPDATE_ROWS_EVENT、WRITE_ROWS_EVENT 以及 DELETE_ROWS_EVENT。它们分别代表：</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>UPDATE_ROWS_EVENT</strong>：对应 UPDATE 操作，Binlog 中不仅包含了修改后的数据，还包含了修改前的数据</li>
+<li><strong>WRITE_ROWS_EVENT</strong>：对应 INSERT 操作，Binlog 中记录了被插入的数据</li>
+<li><strong>DELETE_ROWS_EVENT</strong>：对应 DELETE 操作，Binlog 中记录了被删除的数据</li>
+</ul>
+</div><div class="cl-preview-section"><p>另外，对应每一个 ROWS_EVENT 事件之前都会有一个 TABLE_MAP_EVENT，用于描述操作表的相关信息，例如：表名和所在的库。</p>
+</div><div class="cl-preview-section"><h3 id="查看-binlog-日志">2.4 查看 Binlog 日志</h3>
+</div><div class="cl-preview-section"><p>MySQL 提供了两种方式用于查看 Binlog 日志：第一种是 mysqlbinlog 工具；第二种是 <code>SHOW BINLOG EVENTS</code> 命令。为了方便查看 Binlog 日志，我们先去 “制造” 一些 Binlog。过程如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token comment">-- 切换 worker 表所在的库</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">USE</span> imooc_mysql
+<span class="token keyword">Database</span> changed
+
+<span class="token comment">-- 刷新 Binlog 日志，自此刻开始产生一个新编号的 Binlog 日志文件</span>
+mysql<span class="token operator">&gt;</span> FLUSH LOGS<span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.10</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment">-- 向 worker 表中插入一条数据</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">INSERT</span> <span class="token keyword">INTO</span> <span class="token punctuation">`</span>worker<span class="token punctuation">`</span> <span class="token punctuation">(</span><span class="token punctuation">`</span><span class="token keyword">type</span><span class="token punctuation">`</span><span class="token punctuation">,</span> <span class="token punctuation">`</span>name<span class="token punctuation">`</span><span class="token punctuation">,</span> <span class="token punctuation">`</span>salary<span class="token punctuation">`</span><span class="token punctuation">,</span> <span class="token punctuation">`</span>version<span class="token punctuation">`</span><span class="token punctuation">)</span> <span class="token keyword">VALUES</span> <span class="token punctuation">(</span><span class="token string">'C'</span><span class="token punctuation">,</span> <span class="token string">'app'</span><span class="token punctuation">,</span> <span class="token number">3200</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">1</span> <span class="token keyword">row</span> affected <span class="token punctuation">(</span><span class="token number">0.02</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment">-- 更新刚刚插入的数据</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">UPDATE</span> worker <span class="token keyword">SET</span> version <span class="token operator">=</span> <span class="token number">1</span> <span class="token keyword">WHERE</span> name <span class="token operator">=</span> <span class="token string">'app'</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">1</span> <span class="token keyword">row</span> affected <span class="token punctuation">(</span><span class="token number">0.03</span> sec<span class="token punctuation">)</span>
+<span class="token keyword">Rows</span> <span class="token keyword">matched</span>: <span class="token number">1</span>  Changed: <span class="token number">1</span>  <span class="token keyword">Warnings</span>: <span class="token number">0</span>
+
+<span class="token comment">-- 删除之前插入的数据</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">DELETE</span> <span class="token keyword">FROM</span> worker <span class="token keyword">WHERE</span> name <span class="token operator">=</span> <span class="token string">'app'</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">1</span> <span class="token keyword">row</span> affected <span class="token punctuation">(</span><span class="token number">0.02</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment">-- 查看最新的 Binlog 日志编号名称</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">SHOW</span> MASTER <span class="token keyword">STATUS</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">------------------+----------+--------------+------------------+-------------------+</span>
+<span class="token operator">|</span> <span class="token keyword">File</span>             <span class="token operator">|</span> Position <span class="token operator">|</span> Binlog_Do_DB <span class="token operator">|</span> Binlog_Ignore_DB <span class="token operator">|</span> Executed_Gtid_Set <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">------------------+----------+--------------+------------------+-------------------+</span>
+<span class="token operator">|</span> mysql<span class="token operator">-</span>bin<span class="token number">.000007</span> <span class="token operator">|</span>     <span class="token number">1406</span> <span class="token operator">|</span>              <span class="token operator">|</span>                  <span class="token operator">|</span>                   <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">------------------+----------+--------------+------------------+-------------------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>我们最近的操作过程当然会保存在最新的 Binlog 日志文件中（确保你打开了 Binlog 日志的开关），且由于之前做了 FLUSH 操作，mysql-bin.000007 的日志内容会相对比较干净。</p>
+</div><div class="cl-preview-section"><p>首先，我们使用 mysqlbinlog 工具来查看 Binlog 日志（由于内容过多，忽略了部分信息，且包含详细的注释解读）：</p>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash"><span class="token comment"># 在命令行终端执行 mysqlbinlog 命令，且需要指定 Binlog 的绝对路径（可能需要 root 权限）</span>
+➜  ~ mysqlbinlog /usr/local/mysql-5.7.28-macos10.14-x86_64/data/mysql-bin.000007 -vv --base64-output<span class="token operator">=</span>decode-rows
+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>
+BEGIN
+/*<span class="token operator">!</span>*/<span class="token punctuation">;</span>
+<span class="token comment"># 第一个 TABLE_MAP_EVENT 事件，标识了操作的库是 imooc_mysql，表是 worker</span>
+<span class="token comment">#191217 22:16:56 server id 1  end_log_pos 667 CRC32 0x8202e611 	Table_map: `imooc_mysql`.`worker` mapped to number 125</span>
+<span class="token comment"># WRITE_ROWS_EVENT 事件，标识插入数据</span>
+<span class="token comment">#191217 22:16:56 server id 1  end_log_pos 733 CRC32 0x86b8ede7 	Write_rows: table id 125 flags: STMT_END_F</span>
+<span class="token comment"># 插入数据的 INSERT 语句，注意，其中没有出现数据列的名称，取而代之的是数字编码</span>
+<span class="token comment">### INSERT INTO `imooc_mysql`.`worker`</span>
+<span class="token comment">### SET</span>
+<span class="token comment">###   @1=12 /* LONGINT meta=0 nullable=0 is_null=0 */</span>
+<span class="token comment">###   @2='C' /* STRING(192) meta=65216 nullable=0 is_null=0 */</span>
+<span class="token comment">###   @3='app' /* STRING(192) meta=65216 nullable=0 is_null=0 */</span>
+<span class="token comment">###   @4=3200 /* LONGINT meta=0 nullable=1 is_null=0 */</span>
+<span class="token comment">###   @5=0 /* LONGINT meta=0 nullable=0 is_null=0 */</span>
+<span class="token comment"># at 733</span>
+<span class="token comment">#191217 22:16:56 server id 1  end_log_pos 764 CRC32 0xce7dcbdf 	Xid = 5418</span>
+<span class="token comment"># 提交事务</span>
+COMMIT/*<span class="token operator">!</span>*/<span class="token punctuation">;</span>  
+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>
+BEGIN
+/*<span class="token operator">!</span>*/<span class="token punctuation">;</span>
+<span class="token comment"># 第二个 TABLE_MAP_EVENT 事件，标识了操作的库是 imooc_mysql，表是 worker</span>
+<span class="token comment">#191217 22:17:57 server id 1  end_log_pos 972 CRC32 0x9fa15481 	Table_map: `imooc_mysql`.`worker` mapped to number 125</span>
+<span class="token comment"># UPDATE_ROWS_EVENT 事件，标识更新数据</span>
+<span class="token comment">#191217 22:17:57 server id 1  end_log_pos 1070 CRC32 0x800714cc 	Update_rows: table id 125 flags: STMT_END_F</span>
+<span class="token comment"># 更新数据的 UPDATE 语句，注意，包含了原始数据与更新数据</span>
+<span class="token comment">### UPDATE `imooc_mysql`.`worker`</span>
+<span class="token comment">### WHERE</span>
+<span class="token comment">###   @1=12 /* LONGINT meta=0 nullable=0 is_null=0 */</span>
+<span class="token comment">###   @2='C' /* STRING(192) meta=65216 nullable=0 is_null=0 */</span>
+<span class="token comment">###   @3='app' /* STRING(192) meta=65216 nullable=0 is_null=0 */</span>
+<span class="token comment">###   @4=3200 /* LONGINT meta=0 nullable=1 is_null=0 */</span>
+<span class="token comment">###   @5=0 /* LONGINT meta=0 nullable=0 is_null=0 */</span>
+<span class="token comment">### SET</span>
+<span class="token comment">###   @1=12 /* LONGINT meta=0 nullable=0 is_null=0 */</span>
+<span class="token comment">###   @2='C' /* STRING(192) meta=65216 nullable=0 is_null=0 */</span>
+<span class="token comment">###   @3='app' /* STRING(192) meta=65216 nullable=0 is_null=0 */</span>
+<span class="token comment">###   @4=3200 /* LONGINT meta=0 nullable=1 is_null=0 */</span>
+<span class="token comment">###   @5=1 /* LONGINT meta=0 nullable=0 is_null=0 */</span>
+<span class="token comment"># at 1070</span>
+<span class="token comment">#191217 22:17:57 server id 1  end_log_pos 1101 CRC32 0x202d0acb 	Xid = 5421</span>
+<span class="token comment"># 提交事务</span>
+COMMIT/*<span class="token operator">!</span>*/<span class="token punctuation">;</span>
+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>
+BEGIN
+/*<span class="token operator">!</span>*/<span class="token punctuation">;</span>
+<span class="token comment"># 第三个 TABLE_MAP_EVENT 事件，标识了操作的库是 imooc_mysql，表是 worker</span>
+<span class="token comment">#191217 22:18:20 server id 1  end_log_pos 1309 CRC32 0x5d6dd698 	Table_map: `imooc_mysql`.`worker` mapped to number 125</span>
+<span class="token comment"># DELETE_ROWS_EVENT 事件，标识删除数据</span>
+<span class="token comment">#191217 22:18:20 server id 1  end_log_pos 1375 CRC32 0x11caf39d 	Delete_rows: table id 125 flags: STMT_END_F</span>
+<span class="token comment"># 删除数据的 DELETE 语句</span>
+<span class="token comment">### DELETE FROM `imooc_mysql`.`worker`</span>
+<span class="token comment">### WHERE</span>
+<span class="token comment">###   @1=12 /* LONGINT meta=0 nullable=0 is_null=0 */</span>
+<span class="token comment">###   @2='C' /* STRING(192) meta=65216 nullable=0 is_null=0 */</span>
+<span class="token comment">###   @3='app' /* STRING(192) meta=65216 nullable=0 is_null=0 */</span>
+<span class="token comment">###   @4=3200 /* LONGINT meta=0 nullable=1 is_null=0 */</span>
+<span class="token comment">###   @5=1 /* LONGINT meta=0 nullable=0 is_null=0 */</span>
+<span class="token comment"># at 1375</span>
+<span class="token comment">#191217 22:18:20 server id 1  end_log_pos 1406 CRC32 0xea1085f6 	Xid = 5422</span>
+<span class="token comment"># 提交事务</span>
+COMMIT/*<span class="token operator">!</span>*/<span class="token punctuation">;</span>
+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>从以上对 Binlog 的解读可以看出：虽然 Binlog 记录的信息表现得很 “繁琐”，但是，理解了它的事件记录策略，阅读起来也并没有很大的难度。同时，MySQL 还提供了更加简单的方式去查看 Binlog。如下所示：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token comment">-- 再次刷新一个新的 Binlog 日志文件</span>
+mysql<span class="token operator">&gt;</span> FLUSH LOGS<span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.09</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment">-- 设置 binlog_rows_query_log_events 参数，用于输出原生的 DML 语句（如果不设置，不能显示 SQL 语句）</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">SET</span> binlog_rows_query_log_events <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment">-- 插入一条数据，“制造” Binlog</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">INSERT</span> <span class="token keyword">INTO</span> <span class="token punctuation">`</span>worker<span class="token punctuation">`</span> <span class="token punctuation">(</span><span class="token punctuation">`</span><span class="token keyword">type</span><span class="token punctuation">`</span><span class="token punctuation">,</span> <span class="token punctuation">`</span>name<span class="token punctuation">`</span><span class="token punctuation">,</span> <span class="token punctuation">`</span>salary<span class="token punctuation">`</span><span class="token punctuation">,</span> <span class="token punctuation">`</span>version<span class="token punctuation">`</span><span class="token punctuation">)</span> <span class="token keyword">VALUES</span> <span class="token punctuation">(</span><span class="token string">'C'</span><span class="token punctuation">,</span> <span class="token string">'app'</span><span class="token punctuation">,</span> <span class="token number">3200</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">1</span> <span class="token keyword">row</span> affected <span class="token punctuation">(</span><span class="token number">0.01</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment">-- 查看最新的 Binlog 日志文件编号</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">SHOW</span> MASTER <span class="token keyword">STATUS</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">------------------+----------+--------------+------------------+-------------------+</span>
+<span class="token operator">|</span> <span class="token keyword">File</span>             <span class="token operator">|</span> Position <span class="token operator">|</span> Binlog_Do_DB <span class="token operator">|</span> Binlog_Ignore_DB <span class="token operator">|</span> Executed_Gtid_Set <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">------------------+----------+--------------+------------------+-------------------+</span>
+<span class="token operator">|</span> mysql<span class="token operator">-</span>bin<span class="token number">.000010</span> <span class="token operator">|</span>      <span class="token number">570</span> <span class="token operator">|</span>              <span class="token operator">|</span>                  <span class="token operator">|</span>                   <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">------------------+----------+--------------+------------------+-------------------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment">-- 查看 Binlog 日志文件，打印信息包含了 Event_type（事件类型）和原生的 DML 语句，更加的简单方便</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">SHOW</span> BINLOG EVENTS <span class="token operator">IN</span> <span class="token string">'mysql-bin.000010'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">------------------+-----+----------------+-----------+-------------+-------------------------------------------------------------------------------------------+</span>
+<span class="token operator">|</span> Log_name         <span class="token operator">|</span> Pos <span class="token operator">|</span> Event_type     <span class="token operator">|</span> Server_id <span class="token operator">|</span> End_log_pos <span class="token operator">|</span> Info                                                                                      <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">------------------+-----+----------------+-----------+-------------+-------------------------------------------------------------------------------------------+</span>
+<span class="token operator">|</span> mysql<span class="token operator">-</span>bin<span class="token number">.000010</span> <span class="token operator">|</span>   <span class="token number">4</span> <span class="token operator">|</span> Format_desc    <span class="token operator">|</span>         <span class="token number">1</span> <span class="token operator">|</span>         <span class="token number">123</span> <span class="token operator">|</span> Server ver: <span class="token number">5.7</span><span class="token punctuation">.</span><span class="token number">28</span><span class="token operator">-</span>log<span class="token punctuation">,</span> Binlog ver: <span class="token number">4</span>                                                     <span class="token operator">|</span>
+<span class="token operator">|</span> mysql<span class="token operator">-</span>bin<span class="token number">.000010</span> <span class="token operator">|</span> <span class="token number">123</span> <span class="token operator">|</span> Previous_gtids <span class="token operator">|</span>         <span class="token number">1</span> <span class="token operator">|</span>         <span class="token number">154</span> <span class="token operator">|</span>                                                                                           <span class="token operator">|</span>
+<span class="token operator">|</span> mysql<span class="token operator">-</span>bin<span class="token number">.000010</span> <span class="token operator">|</span> <span class="token number">154</span> <span class="token operator">|</span> Anonymous_Gtid <span class="token operator">|</span>         <span class="token number">1</span> <span class="token operator">|</span>         <span class="token number">219</span> <span class="token operator">|</span> <span class="token keyword">SET</span> @<span class="token variable">@SESSION.GTID_NEXT</span><span class="token operator">=</span> <span class="token string">'ANONYMOUS'</span>                                                      <span class="token operator">|</span>
+<span class="token operator">|</span> mysql<span class="token operator">-</span>bin<span class="token number">.000010</span> <span class="token operator">|</span> <span class="token number">219</span> <span class="token operator">|</span> Query          <span class="token operator">|</span>         <span class="token number">1</span> <span class="token operator">|</span>         <span class="token number">298</span> <span class="token operator">|</span> <span class="token keyword">BEGIN</span>                                                                                     <span class="token operator">|</span>
+<span class="token operator">|</span> mysql<span class="token operator">-</span>bin<span class="token number">.000010</span> <span class="token operator">|</span> <span class="token number">298</span> <span class="token operator">|</span> Rows_query     <span class="token operator">|</span>         <span class="token number">1</span> <span class="token operator">|</span>         <span class="token number">409</span> <span class="token operator">|</span> <span class="token comment"># INSERT INTO `worker` (`type`, `name`, `salary`, `version`) VALUES ('C', 'app', 3200, 0) |</span>
+<span class="token operator">|</span> mysql<span class="token operator">-</span>bin<span class="token number">.000010</span> <span class="token operator">|</span> <span class="token number">409</span> <span class="token operator">|</span> Table_map      <span class="token operator">|</span>         <span class="token number">1</span> <span class="token operator">|</span>         <span class="token number">473</span> <span class="token operator">|</span> table_id: <span class="token number">125</span> <span class="token punctuation">(</span>imooc_mysql<span class="token punctuation">.</span>worker<span class="token punctuation">)</span>                                                        <span class="token operator">|</span>
+<span class="token operator">|</span> mysql<span class="token operator">-</span>bin<span class="token number">.000010</span> <span class="token operator">|</span> <span class="token number">473</span> <span class="token operator">|</span> Write_rows     <span class="token operator">|</span>         <span class="token number">1</span> <span class="token operator">|</span>         <span class="token number">539</span> <span class="token operator">|</span> table_id: <span class="token number">125</span> flags: STMT_END_F                                                           <span class="token operator">|</span>
+<span class="token operator">|</span> mysql<span class="token operator">-</span>bin<span class="token number">.000010</span> <span class="token operator">|</span> <span class="token number">539</span> <span class="token operator">|</span> Xid            <span class="token operator">|</span>         <span class="token number">1</span> <span class="token operator">|</span>         <span class="token number">570</span> <span class="token operator">|</span> <span class="token keyword">COMMIT</span> <span class="token comment">/* xid=5500 */</span>                                                                     <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">------------------+-----+----------------+-----------+-------------+-------------------------------------------------------------------------------------------+</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这里介绍的两种查看 Binlog 的方法都很简单、实用，自此，我们也可以得到一些结论：Binlog 中记录了详细的数据变更情况，使用 Binlog 收集增量数据其实就是解析 Binlog 日志得到记录在日志里的信息，并最终完成增量数据的提取。</p>
+</div><div class="cl-preview-section"><h2 id="binlog-在业务中的应用">3. Binlog 在业务中的应用</h2>
+</div><div class="cl-preview-section"><p>理解了业务场景（需求），也对 Binlog 有了比较深入、细致的认识（建议把上面的示例过程都自己执行一遍，真实的感受下 Binlog 的使用经历），接下来，就可以把 Binlog 实际的应用于业务中了。</p>
+</div><div class="cl-preview-section"><h3 id="mysql-的-masterslave-协议">3.1 MySQL 的 Master/Slave 协议</h3>
+</div><div class="cl-preview-section"><p>在讲解 Binlog 的应用之前，我们需要先搞清楚 MySQL 的 Master/Slave 协议。下面这张图标识的是 MySQL 的主从复制过程，其中包含了两个线程：IO 线程（Master 端）和 SQL 线程（Slave 端）。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed46d7a000151f606900330.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>我们可以清晰的看到，MySQL 主从复制依赖于 Binlog：Master 服务器接收到来自 Slave 服务器的 IO 线程的请求后，Master 服务器上的 IO 线程根据 Slave 服务器的 IO 线程请求的信息，读取指定 Binlog 日志文件指定位置之后的 Binlog 日志信息，然后返回给 Slave 端的 IO 线程。由于 Binlog 中包含了完整的数据库变更信息，Slave 只需要 “重做一遍” Binlog 日志记录，就可以达到与 Master 一致的状态了。</p>
+</div><div class="cl-preview-section"><p>我们想要实时得到 Binlog 的变更信息，其实就需要 Master/Slave 协议，也就是说我们需要把应用 “伪装” 成 Slave，去监听 Master 的 Binlog 变更，并等待 Master 同步变更日志。</p>
+</div><div class="cl-preview-section"><h3 id="监听-binlog-的框架">3.2 监听 Binlog 的框架</h3>
+</div><div class="cl-preview-section"><p>有很多开源框架可以实现（按照 Master/Slave 协议的接口要求实现即可监听到 Binlog，按照 Binlog 的格式规范解析即可得到可读信息）监听 Binlog 并把它解释为可读的信息，所以，我们不要重复造轮子，况且造这个轮子的成本有些高。</p>
+</div><div class="cl-preview-section"><p>对应于各种语言，基本上都会有监听、解析 Binlog 的开源实现。下面，我来介绍一些业界广泛使用的开源作品：</p>
+</div><div class="cl-preview-section"><ul>
+<li>JAVA
+<ul>
+<li><strong><a href="https://github.com/shyiko/mysql-binlog-connector-java">mysql-binlog-connector-java</a></strong>：代码简洁，可读性好，强烈推荐</li>
+<li><strong><a href="https://github.com/alibaba/canal">alibaba canal</a></strong>：阿里背书，功能强大，但是组件过重，依赖过多</li>
+</ul>
+</li>
+<li>Python
+<ul>
+<li><strong><a href="https://github.com/noplay/python-mysql-replication">python-mysql-replication</a></strong>：代码可读性好，文档齐全</li>
+</ul>
+</li>
+<li>Go
+<ul>
+<li><strong><a href="https://github.com/siddontang/go-mysql">go-mysql</a></strong>：性能卓越，可用性强</li>
+</ul>
+</li>
+<li>PHP
+<ul>
+<li><strong><a href="https://github.com/bullsoft/php-binlog">php-binlog</a></strong></li>
+</ul>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>当我们理解了从 Binlog 中获取增量数据的原理，也确定了监听、解析 Binlog 的框架，接下来，就可以去完成设计方案，即设计与 Binlog 相关的数据结构。</p>
+</div><div class="cl-preview-section"><h3 id="监听-binlog-的设计">3.3 监听 Binlog 的设计</h3>
+</div><div class="cl-preview-section"><p>对于监听设计，我会以 Java 语言（其实各种语言都很相似，定义类，类中定义需要的元素等等）举例说明。首先，我们需要确定数据表列的编码，代码如下（逻辑代码，并不是完整的代码）：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// 数据表列的编码 -&gt; 字段名的 Map 定义</span>
+<span class="token keyword">private</span> Map<span class="token operator">&lt;</span>Integer<span class="token punctuation">,</span> String<span class="token operator">&gt;</span> posMap <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token operator">&lt;</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 查询数据表列编码的 SQL 语句</span>
+<span class="token keyword">private</span> String SQL_SCHEMA <span class="token operator">=</span> <span class="token string">"select table_schema, table_name, "</span> <span class="token operator">+</span>
+        <span class="token string">"column_name, ordinal_position from information_schema.columns "</span> <span class="token operator">+</span>
+        <span class="token string">"where table_schema = ? and table_name = ?"</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 使用 JdbcTemplate 执行 SQL 语句</span>
+jdbcTemplate<span class="token punctuation">.</span><span class="token function">query</span><span class="token punctuation">(</span>SQL_SCHEMA<span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">Object</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">{</span>
+      “database”<span class="token punctuation">,</span> “tablename”
+<span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>rs<span class="token punctuation">,</span> i<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">int</span> pos <span class="token operator">=</span> rs<span class="token punctuation">.</span><span class="token function">getInt</span><span class="token punctuation">(</span><span class="token string">"ORDINAL_POSITION"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    String colName <span class="token operator">=</span> rs<span class="token punctuation">.</span><span class="token function">getString</span><span class="token punctuation">(</span><span class="token string">"COLUMN_NAME"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 填充数据表列编码到列名的映射</span>
+    posMap<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>pos <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">,</span> colName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>接下来，构造一个 Object 用于存储解析的 Binlog 信息（这个对象非常重要，它决定了你将来怎样在业务中使用 Binlog 数据）。代码如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">/**
+ * &lt;h1&gt;存储解析的 Binlog 信息&lt;/h1&gt;
+ */</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">BinlogRowData</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 数据库名</span>
+    <span class="token keyword">private</span> String schemaName<span class="token punctuation">;</span>
+    <span class="token comment">// 表名</span>
+    <span class="token keyword">private</span> String tableName<span class="token punctuation">;</span>
+    <span class="token comment">// 事件类型</span>
+    <span class="token keyword">private</span> EventType eventType<span class="token punctuation">;</span>
+    <span class="token comment">// 更新之后的数据，对于删除类型来说，即为空</span>
+    <span class="token keyword">private</span> List<span class="token operator">&lt;</span>Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> String<span class="token operator">&gt;&gt;</span> after<span class="token punctuation">;</span>
+    <span class="token comment">// 更新之前的数据，对于插入类型来说，即为空</span>
+    <span class="token keyword">private</span> List<span class="token operator">&lt;</span>Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> String<span class="token operator">&gt;&gt;</span> before<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>有了这些定义之后，我们就可以使用框架来监听并解析 Binlog 日志了。我这里选择使用 <a href="https://github.com/shyiko/mysql-binlog-connector-java">mysql-binlog-connector-java</a>，当然，你可以选择你更熟悉的框架来实现。代码如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// 参数 Event 是框架传递的 Binlog 事件，代表一条完整的 Binlog 操作日志</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">onEvent</span><span class="token punctuation">(</span>Event event<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 获取到事件类型</span>
+    EventType type <span class="token operator">=</span> event<span class="token punctuation">.</span><span class="token function">getHeader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getEventType</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token comment">// 如果是 TABLE_MAP 事件，可以从中获取到操作的库名和表名</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>type <span class="token operator">==</span> EventType<span class="token punctuation">.</span>TABLE_MAP<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        TableMapEventData data <span class="token operator">=</span> event<span class="token punctuation">.</span><span class="token function">getData</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>tableName <span class="token operator">=</span> data<span class="token punctuation">.</span><span class="token function">getTable</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>dbName <span class="token operator">=</span> data<span class="token punctuation">.</span><span class="token function">getDatabase</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 如果不是更新、插入、删除事件，直接忽略即可，毕竟我们是想要增量变化的数据</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>type <span class="token operator">!=</span> EventType<span class="token punctuation">.</span>EXT_UPDATE_ROWS
+            <span class="token operator">&amp;&amp;</span> type <span class="token operator">!=</span> EventType<span class="token punctuation">.</span>EXT_WRITE_ROWS
+            <span class="token operator">&amp;&amp;</span> type <span class="token operator">!=</span> EventType<span class="token punctuation">.</span>EXT_DELETE_ROWS<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// 表名和库名是否已经完成填充</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>StringUtils<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>dbName<span class="token punctuation">)</span> <span class="token operator">||</span> StringUtils<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span>tableName<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        log<span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"no meta data event"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+        <span class="token comment">// “想办法” 去构造 BinlogRowData 对象</span>
+        BinlogRowData rowData <span class="token operator">=</span> <span class="token function">buildRowData</span><span class="token punctuation">(</span>event<span class="token punctuation">.</span><span class="token function">getData</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>rowData <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token comment">// 设置事件类型</span>
+        rowData<span class="token punctuation">.</span><span class="token function">setEventType</span><span class="token punctuation">(</span>type<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        ex<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        log<span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span>ex<span class="token punctuation">.</span><span class="token function">getMessage</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 不要忘记每一次 Binlog 操作结束时，重置库名和表名</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>dbName <span class="token operator">=</span> <span class="token string">""</span><span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>tableName <span class="token operator">=</span> <span class="token string">""</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以看出，监听、解析 Binlog 的过程其实就是填充 BinlogRowData 对象的过程，毕竟 BinlogRowData 代表的就是 “格式化” 之后的增量数据。收集到增量数据之后，更新索引或缓存就是简单的业务逻辑了。</p>
+</div><div class="cl-preview-section"><h2 id="总结">4. 总结</h2>
+</div><div class="cl-preview-section"><p>Binlog 是 MySQL 日志系统的核心组成，对于线上应用来说，一定会打开这个开关。随着需求的发展，Binlog 的作用不仅仅是局限于主从同步和数据恢复，甚至可以用于增量数据的收集，这无疑是让人非常兴奋的。另外，关于 Binlog 的面试题也是应接不暇的，所以，你更应该努力理解 Binlog，并尝试去应用它。</p>
+</div><div class="cl-preview-section"><h2 id="问题">5. 问题</h2>
+</div><div class="cl-preview-section"><p>每一次操作过程产生的 Binlog 都会带有 TABLE_MAP 事件，你知道这是为什么吗 ？<br><br>
+仔细阅读 Binlog，你会发现不仅数据列使用数字编码，表也是使用数字编码，你知道表的编码存储在哪里吗 ？<br><br>
+使用你所熟悉的 Binlog 监听框架，完成一次监听、解析 Binlog 的过程 ？</p>
+</div><div class="cl-preview-section"><h2 id="参考资料">6. 参考资料</h2>
+</div><div class="cl-preview-section"><p>《高性能 MySQL（第三版）》<br><br>
+<a href="https://github.com/shyiko/mysql-binlog-connector-java">GitHub：mysql-binlog-connector-java</a><br><br>
+<a href="https://dev.mysql.com/doc/refman/5.7/en/replication-options-binary-log.html">MySQL 官方文档：Binary Logging Options and Variables</a><br><br>
+<a href="https://dev.mysql.com/doc/refman/5.7/en/mysqlbinlog.html">MySQL 官方文档：mysqlbinlog — Utility for Processing Binary Log Files</a><br><br>
+<a href="https://dev.mysql.com/doc/refman/5.7/en/binlog-replication-configuration-overview.html">MySQL 官方文档：Binary Log File Position Based Replication Configuration Overview</a><br><br>
+<a href="https://dev.mysql.com/doc/refman/5.7/en/replication-multi-source-adding-binlog-master.html">MySQL 官方文档：Adding a Binary Log Based Master to a Multi-Source Replication Slave</a><br><br>
+<a href="https://dev.mysql.com/doc/refman/5.7/en/mysqlbinlog-backup.html">MySQL 官方文档：Using mysqlbinlog to Back Up Binary Log Files</a><br><br>
+<a href="https://dev.mysql.com/doc/refman/5.7/en/mysqlbinlog-row-events.html">MySQL 官方文档：mysqlbinlog Row Event Display</a></p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5e9edc7000011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/5678">
+						<img src="https://img4.mukewang.com/55cb44a70001f44501000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_yy_13</h4>
+						<div class="comment-text">主从同步的图片挂了</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-31</span>
+						<a href="/read/commentdetail/5678">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5678" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5393">
+						<img src="https://img.mukewang.com/599cc57b00015fa302110206-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">街边七号</h4>
+						<div class="comment-text">1. 不清楚，不过观察日志发现在`UPDATE,DELETE,INSERT`这种事件中日志记录的是table_id，而紧挨着的上面一条table_map事件就记录了操作的数据库.表名和tableid的映射，但是不明白为什么不直接记录，而要分开记录为两个事件。  
+2.在information_schema.innodb_tables中找到了table_id的列,但是值和binlog中记录的并不一致  
+3.</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-10</span>
+						<a href="/read/commentdetail/5393">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="5393" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=71">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '22 binlog 实现增量数据收集方案的设计',
+					'CID': '1838',
+					'Teacher': '勤一'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "22 binlog 实现增量数据收集方案的设计",
+                    desc: "打包 MySQL 常用高级技巧特性",
+                    imgUrl: 'https:https://img2.mukewang.com/5e65bd6e0001444005400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5e65bd6e0001444005400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/71',
+                    link: 'https://m.imooc.com/read/71'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

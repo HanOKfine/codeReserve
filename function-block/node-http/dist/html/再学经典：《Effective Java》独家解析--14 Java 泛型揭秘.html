@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>14 Java 泛型揭秘</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="学习Java很重要，学会怎么学习Java更重要">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "1988";
+	var chapter_title = "14 Java 泛型揭秘";
+	var aid = "78";
+	var a_name = "再学经典：《Effective Java》独家解析";
+	var a_price = "68.00";
+	var a_pic = "https://img3.mukewang.com/5ecf522a00013a1d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '78';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-06-12&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			14 Java 泛型揭秘
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5ece29f20001578f06400359.jpg')"></div>
+	
+	
+		<a href="/read/78">
+			<div class="course-entry">
+				<img src="https://img1.mukewang.com/54dc328d0001b75e04630463-40-40.jpg" alt="明明如月">
+				<h3>再学经典：《Effective Java》独家解析</h3>
+				<p>明明如月 · 高级JAVA开发工程师 </p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">耐心是一切聪明才智的基础。<p class="author">——柏拉图</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">1. 前言</h1>
+</div><div class="cl-preview-section"><p>《Effective Java》 第五章重点讲述泛型相关建议。第 26 条 “请不要使用原生态类型”；第 27 条 “消除非受检查的警告”；第 28 条 “列表优于数组”；第 29 条 “优先考虑泛型”；第 30 条 “优先考虑泛型方法”；第 31 条 “利用有限通配符提升 API 的灵活性”；等。</p>
+</div><div class="cl-preview-section"><p>这些建议的核心就推荐使用泛型。</p>
+</div><div class="cl-preview-section"><p>那么泛型是什么？Java 为什么要引入泛型？Java 泛型的本质是什么？</p>
+</div><div class="cl-preview-section"><p>本文将使用《Java 语言规范》的相关描述、反汇编带领大家和泛型进行亲密接触，更直接和形象地理解泛型。</p>
+</div><div class="cl-preview-section"><h1 id="概念">2. 概念</h1>
+</div><div class="cl-preview-section"><h2 id="泛型">2.1 泛型</h2>
+</div><div class="cl-preview-section"><p>参数化类型是形如  C&lt;T1,…,Tn&gt; 的类或接口，其中 C 是泛型名，而 &lt;T1,…,Tn&gt; 是表示该泛型的特定参数化形式的类型引元列表 <sup class="footnote-ref"><a href="#fn1" id="fnref1">1</a></sup>。</p>
+</div><div class="cl-preview-section"><p>可以使用通配符来明确界限。如？extends B 来表示 B 为上界； ?  super B 表示 B 为下界。其中？extends Object 等价于无通配符 ？。</p>
+</div><div class="cl-preview-section"><h2 id="类型擦除">2.2 类型擦除</h2>
+</div><div class="cl-preview-section"><p>类型擦除是指从可能包含参数化类型和类型变量的类型映射为不再是参数化类型或类型变量的类型。</p>
+</div><div class="cl-preview-section"><p>关于泛型擦除 Oracle 类型擦除文档给出了下面的解释：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>为了实现泛型，Java 编译器将类型擦除应用于 <sup class="footnote-ref"><a href="#fn2" id="fnref2">2</a></sup>:</p>
+<ul>
+<li>将有边界的泛型所有类型参数替换为其边界类型或无边界对象替换为 Object 类型。因此，生成的字节码只包含普通的类、接口和方法。</li>
+<li>必要时插入类型强制转换以保证类型安全。</li>
+<li>生成桥方法以保持扩展泛型类型中的多态性。</li>
+</ul>
+</blockquote>
+</div><div class="cl-preview-section"><p><a href="https://docs.oracle.com/javase/specs/jls/se8/html/jls-4.html#jls-4.5">[JLS 4.8]</a> 给出了说明：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>To facilitate interfacing with non-generic legacy code, it is possible to use as a type the erasure (<a href="https://docs.oracle.com/javase/specs/jls/se8/html/jls-4.html#jls-4.6">§4.6</a>) of a parameterized type (<a href="https://docs.oracle.com/javase/specs/jls/se8/html/jls-4.html#jls-4.5">§4.5</a>) or the erasure of an array type (<a href="https://docs.oracle.com/javase/specs/jls/se8/html/jls-10.html#jls-10.1">§10.1</a>) whose element type is a parameterized type. Such a type is called a <em>raw type</em>.</p>
+<p>为了方便与非泛型遗留代码之间的交互，可以将参数化类型的擦除或元素类型为参数化类型的数组类型的擦除当做类型使用。这种类型被称为原生类型。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>如果用 |T| 来表示类型 T 的擦除。</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>参数化类型 G&lt;T1,…,Tn&gt; 的擦除是 | G|。</p>
+</li>
+<li>
+<p>嵌套类型 T.C 的擦除是 |T|.C。</p>
+</li>
+<li>
+<p>数组类型 T [] 的擦除是 |T|[]。</p>
+</li>
+<li>
+<p>类型变量的擦除是其最左边界的擦除。</p>
+</li>
+<li>
+<p>每种其它类型的擦除都是该类型自身。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>类型擦除也会将构造器或方法的签名，映射为没有任何参数化类型或类型变量的签名。</p>
+</div><div class="cl-preview-section"><p>如果一个构造器或方法的签名被擦除，那么该方法的返回类型，或泛化方法或构造器的类型参数也要被擦除。</p>
+</div><div class="cl-preview-section"><p>在泛化方法签名的擦除中，是没有任何类型参数的。</p>
+</div><div class="cl-preview-section"><p>比如在同一个类上定义下面两个函数：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">boolean</span> <span class="token function">and</span><span class="token punctuation">(</span>List<span class="token operator">&lt;</span>Boolean<span class="token operator">&gt;</span> booleans<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 省略</span>
+    <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">boolean</span> <span class="token function">and</span><span class="token punctuation">(</span>List<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span> booleans<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 省略</span>
+    <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>由于泛型擦除后签名相同，因此会有冲突：<br>
+<img src="https://img.mukewang.com/5ee2e8fd00012b0316920546.png" alt="图片描述"><br>
+那么函数签名是啥呢？</p>
+</div><div class="cl-preview-section"><p>我们可以通过第一章所学的反汇编，对源代码编译后的类文件进行反汇编：</p>
+</div><div class="cl-preview-section"><p>javap -c -s -l -v Util</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java">警告<span class="token operator">:</span> 二进制文件Util包含com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>effectivejava<span class="token punctuation">.</span>generic<span class="token punctuation">.</span>Util
+Classfile xxx<span class="token operator">/</span>generic<span class="token operator">/</span>Util<span class="token punctuation">.</span><span class="token keyword">class</span>
+  <span class="token class-name">Last</span> modified <span class="token number">2020</span><span class="token operator">-</span><span class="token number">2</span><span class="token operator">-</span><span class="token number">23</span><span class="token punctuation">;</span> size <span class="token number">356</span> bytes
+  MD5 checksum 7c3de7c209ffe53e75bc25c256ad15ed
+  Compiled from <span class="token string">"Util.java"</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>effectivejava<span class="token punctuation">.</span>generic<span class="token punctuation">.</span>Util</span>
+  minor version<span class="token operator">:</span> <span class="token number">0</span>
+  major version<span class="token operator">:</span> <span class="token number">52</span>
+  flags<span class="token operator">:</span> ACC_PUBLIC<span class="token punctuation">,</span> ACC_SUPER
+Constant pool<span class="token operator">:</span>
+   #<span class="token number">1</span> <span class="token operator">=</span> Methodref          #<span class="token number">3</span><span class="token punctuation">.</span>#<span class="token number">14</span>         <span class="token comment">// java/lang/Object."&lt;init&gt;":()V</span>
+   #<span class="token number">2</span> <span class="token operator">=</span> Class              #<span class="token number">15</span>            <span class="token comment">// com/imooc/effectivejava/generic/Util</span>
+   #<span class="token number">3</span> <span class="token operator">=</span> Class              #<span class="token number">16</span>            <span class="token comment">// java/lang/Object</span>
+   #<span class="token number">4</span> <span class="token operator">=</span> Utf8               <span class="token operator">&lt;</span>init<span class="token operator">&gt;</span>
+   #<span class="token number">5</span> <span class="token operator">=</span> <span class="token function">Utf8</span>               <span class="token punctuation">(</span><span class="token punctuation">)</span>V
+   #<span class="token number">6</span> <span class="token operator">=</span> Utf8               Code
+   #<span class="token number">7</span> <span class="token operator">=</span> Utf8               LineNumberTable
+   #<span class="token number">8</span> <span class="token operator">=</span> Utf8               and
+   #<span class="token number">9</span> <span class="token operator">=</span> <span class="token function">Utf8</span>               <span class="token punctuation">(</span>Ljava<span class="token operator">/</span>util<span class="token operator">/</span>List<span class="token punctuation">;</span><span class="token punctuation">)</span>Z
+  #<span class="token number">10</span> <span class="token operator">=</span> Utf8               Signature
+  #<span class="token number">11</span> <span class="token operator">=</span> <span class="token function">Utf8</span>               <span class="token punctuation">(</span>Ljava<span class="token operator">/</span>util<span class="token operator">/</span>List<span class="token operator">&lt;</span>Ljava<span class="token operator">/</span>lang<span class="token operator">/</span>String<span class="token punctuation">;</span><span class="token operator">&gt;</span><span class="token punctuation">;</span><span class="token punctuation">)</span>Z
+  #<span class="token number">12</span> <span class="token operator">=</span> Utf8               SourceFile
+  #<span class="token number">13</span> <span class="token operator">=</span> Utf8               Util<span class="token punctuation">.</span>java
+  #<span class="token number">14</span> <span class="token operator">=</span> NameAndType        #<span class="token number">4</span><span class="token operator">:</span>#<span class="token number">5</span>          <span class="token comment">// "&lt;init&gt;":()V</span>
+  #<span class="token number">15</span> <span class="token operator">=</span> Utf8               com<span class="token operator">/</span>imooc<span class="token operator">/</span>effectivejava<span class="token operator">/</span>generic<span class="token operator">/</span>Util
+  #<span class="token number">16</span> <span class="token operator">=</span> Utf8               java<span class="token operator">/</span>lang<span class="token operator">/</span>Object
+<span class="token punctuation">{</span>
+  <span class="token keyword">public</span> com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>effectivejava<span class="token punctuation">.</span>generic<span class="token punctuation">.</span><span class="token function">Util</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    descriptor<span class="token operator">:</span> <span class="token punctuation">(</span><span class="token punctuation">)</span>V
+    flags<span class="token operator">:</span> ACC_PUBLIC
+    Code<span class="token operator">:</span>
+      stack<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> locals<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> args_size<span class="token operator">=</span><span class="token number">1</span>
+         <span class="token number">0</span><span class="token operator">:</span> aload_0
+         <span class="token number">1</span><span class="token operator">:</span> invokespecial #<span class="token number">1</span>                  <span class="token comment">// Method java/lang/Object."&lt;init&gt;":()V</span>
+         <span class="token number">4</span><span class="token operator">:</span> <span class="token keyword">return</span>
+      LineNumberTable<span class="token operator">:</span>
+        line <span class="token number">5</span><span class="token operator">:</span> <span class="token number">0</span>
+
+  <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">boolean</span> <span class="token function">and</span><span class="token punctuation">(</span>java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>List<span class="token operator">&lt;</span>java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>String<span class="token operator">&gt;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    descriptor<span class="token operator">:</span> <span class="token punctuation">(</span>Ljava<span class="token operator">/</span>util<span class="token operator">/</span>List<span class="token punctuation">;</span><span class="token punctuation">)</span>Z
+    flags<span class="token operator">:</span> ACC_PUBLIC<span class="token punctuation">,</span> ACC_STATIC
+    Code<span class="token operator">:</span>
+      stack<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> locals<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> args_size<span class="token operator">=</span><span class="token number">1</span>
+         <span class="token number">0</span><span class="token operator">:</span> iconst_1
+         <span class="token number">1</span><span class="token operator">:</span> ireturn
+      LineNumberTable<span class="token operator">:</span>
+        line <span class="token number">10</span><span class="token operator">:</span> <span class="token number">0</span>
+    Signature<span class="token operator">:</span> #<span class="token number">11</span>                          <span class="token comment">// (Ljava/util/List&lt;Ljava/lang/String;&gt;;)Z</span>
+<span class="token punctuation">}</span>
+SourceFile<span class="token operator">:</span> <span class="token string">"Util.java"</span>
+
+</code></pre>
+</div><div class="cl-preview-section"><p>类型擦除后的描述（descriptor）显示参数为 <code>java.util.List</code>， 返回值为 <code>boolean</code> 类型。</p>
+</div><div class="cl-preview-section"><p>另外我们还观察到，编译后的字节码文件中并没有抹去泛型的所有信息，被存储到了 Signature 中（如常量池 #10、 #11 ）。</p>
+</div><div class="cl-preview-section"><p><strong>那么为什么要泛型擦除呢？</strong></p>
+</div><div class="cl-preview-section"><p><a href="https://docs.oracle.com/javase/tutorial/java/generics/erasure.html">Oracle 官方教程的类型擦除一节</a>有这样一句描述：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>Type erasure ensures that no new classes are created for parameterized types; consequently, generics incur no runtime overhead.</p>
+<p>类型擦除确保不会为参数化类型创建新类；因此，泛型不会产生运行时开销。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>可知泛型擦除的一个原因是避免创建新类，造成性能开销。另外一个重要原因是为了向下兼容。</p>
+</div><div class="cl-preview-section"><h1 id="目的">3. 目的</h1>
+</div><div class="cl-preview-section"><p>前面我们对泛型有了初步的了解，那么 Java 为什么要引入泛型特性呢？</p>
+</div><div class="cl-preview-section"><p>我们在 Oralce 的泛型擦除文档中找到了这句话：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>Generics were introduced to the Java language to provide tighter type checks at compile time and to support generic programming.<sup class="footnote-ref"><a href="#fn2" id="fnref2:1">2</a></sup></p>
+<p>Java 引入泛型是为了在编译器提供更严格的类型检查并支持泛型编程。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>我们还可以在 <a href="https://docs.oracle.com/javase/1.5.0/docs/guide/language/generics.html">Oracle 的泛型文档</a>中找到答案：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>When you take an element out of a <code>Collection</code>, you must cast it to the type of element that is stored in the collection. Besides being inconvenient, this is unsafe. The compiler does not check that your cast is the same as the collection’s type, so the cast can fail at run time.</p>
+<p>如果你想从集合中获取元素，你就需要将它（强转）转化为存入集合的类型。</p>
+<p>这样做既不方便也不安全。编译器无法检查你获取的对象和存入的对象类型是否一致，因此运行时可能会产生类型转换异常。</p>
+<p>Generics provides a way for you to communicate the type of a collection to the compiler, so that it can be checked. Once the compiler knows the element type of the collection, the compiler can check that you have used the collection consistently and can insert the correct casts on values being taken out of the collection.</p>
+<p>泛型定义了集合中元素的类型，编译器可以根据这个类型对元素进行检查。并且当你想要从集合中取出元素是，会自动的帮你转换泛型类型。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>请看下面的示例：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token comment">// 从集合 c 中移除第 4 个元素，元素必须为字符串类型</span>
+<span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">expurgate</span><span class="token punctuation">(</span>Collection c<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span>Iterator i <span class="token operator">=</span> c<span class="token punctuation">.</span><span class="token function">iterator</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token punctuation">.</span><span class="token function">hasNext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token punctuation">)</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">(</span>String<span class="token punctuation">)</span> i<span class="token punctuation">.</span><span class="token function">next</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">4</span><span class="token punctuation">)</span> <span class="token comment">// 可能产生类型转换异常</span>
+        i<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如果使用泛型：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">expurgate</span><span class="token punctuation">(</span>Collection<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span> c<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span>Iterator<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span> i <span class="token operator">=</span> c<span class="token punctuation">.</span><span class="token function">iterator</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token punctuation">.</span><span class="token function">hasNext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token punctuation">)</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>i<span class="token punctuation">.</span><span class="token function">next</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">4</span><span class="token punctuation">)</span>
+        i<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>从上述文档和上述案例我们可知泛型的好处有 <sup class="footnote-ref"><a href="#fn3" id="fnref3">3</a></sup>：</p>
+</div><div class="cl-preview-section"><ul>
+<li>类型安全。存储的是啥类型，取出的就是啥类型。不用担心类型转换异常。</li>
+<li>可读性更高。在编码阶段就知道泛型集合、泛型方法要处理的对象类型。</li>
+<li>代码重用。泛型合并了同类型的处理代码，使代码重用度提高。</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="总结">4. 总结</h1>
+</div><div class="cl-preview-section"><p>本文通过 Java 官方文档的一些描述以及通过编写 Demo ，使用反汇编的手段对泛型进行了深入学习。</p>
+</div><div class="cl-preview-section"><p>了解了泛型的好处，即类型安全、可读性高和代码复用。了解了泛型擦除的目的是为了向下兼容。</p>
+</div><div class="cl-preview-section"><h1 id="思考与练习">5. 思考与练习</h1>
+</div><div class="cl-preview-section"><p>1、如果不直接使用泛型，该如何保证类型安全？</p>
+</div><div class="cl-preview-section"><p>2、泛型的缺点是什么？</p>
+</div><div class="cl-preview-section"><h1 id="参考资料">参考资料</h1>
+<hr class="footnotes-sep">
+<section class="footnotes">
+<ol class="footnotes-list">
+<li id="fn1" class="footnote-item"><p><a href="https://docs.oracle.com/javase/specs/jls/se8/html/jls-4.html#jls-4.5">https://docs.oracle.com/javase/specs/jls/se8/html/jls-4.html#jls-4.5</a> <a href="#fnref1" class="footnote-backref">↩︎</a></p>
+</li>
+<li id="fn2" class="footnote-item"><p><a href="https://docs.oracle.com/javase/tutorial/java/generics/erasure.html">https://docs.oracle.com/javase/tutorial/java/generics/erasure.html</a> <a href="#fnref2" class="footnote-backref">↩︎</a> <a href="#fnref2:1" class="footnote-backref">↩︎</a></p>
+</li>
+<li id="fn3" class="footnote-item"><p>杨冠宝（孤尽）、高海慧（鸣莎）.《码处高效》. 电子工业出版社. 2018 <a href="#fnref3" class="footnote-backref">↩︎</a></p>
+</li>
+</ol>
+</section>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img1.mukewang.com/5ece29cd000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=78">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '14 Java 泛型揭秘',
+					'CID': '1988',
+					'Teacher': '明明如月'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "14 Java 泛型揭秘",
+                    desc: "学习Java很重要，学会怎么学习Java更重要",
+                    imgUrl: 'https:https://img3.mukewang.com/5ecf522a00013a1d05400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5ecf522a00013a1d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/78',
+                    link: 'https://m.imooc.com/read/78'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

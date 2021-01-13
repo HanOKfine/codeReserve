@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>07 别整虚的！揭开Spring IoC、DI的神秘面纱</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="Java工程师提升必修课">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "2";
+	var chapter_id = "2020";
+	var chapter_title = "07 别整虚的！揭开Spring IoC、DI的神秘面纱";
+	var aid = "77";
+	var a_name = "剖析Spring5核心原理";
+	var a_price = "68.00";
+	var a_pic = "https://img1.mukewang.com/5ec1f3830001652c05400720.jpg";
+	var userId = 0;
+
+	var column_id = '77';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-10&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			07 别整虚的！揭开Spring IoC、DI的神秘面纱
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5ece096b0001908e06400359.jpg')"></div>
+	
+	
+		<a href="/read/77">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5cfe2ab00001bd1606380638-40-40.jpg" alt="David">
+				<h3>剖析Spring5核心原理</h3>
+				<p>David · 资深架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">没有引发任何行动的思想都不是思想，而是梦想。 <p class="author">—— 马丁</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="背景">背景</h2>
+</div><div class="cl-preview-section"><p>说到 Spring 框架，人们往往大谈特谈一些似乎很高深的东西，比如依赖注入DI，控制反转 IoC，面向切面编程 AOP 等等。那么 DI 和 IoC 究竟分别是什么？它们又是怎么来的？背后隐藏了什么东西呢？</p>
+</div><div class="cl-preview-section"><p>“不要给我们打电话，我们会给你打电话（don‘t call us, we‘ll call you）”这是著名的好莱坞原则。在好莱坞，把简历递交给演艺公司后就只有回家等待。由演艺公司对整个娱乐项的完全控制，演员只能被动式的接受公司的差使,在需要的环节中，完成自己的演出。</p>
+</div><div class="cl-preview-section"><p>IoC 是 Inversion of Control 的简称，IoC 的原理就是基于好莱坞原则，所有的组件都是被动的（Passive），所有的组件初始化和调用都由<strong>容器</strong>负责。</p>
+</div><div class="cl-preview-section"><p><strong>IoC（控制反转）：</strong> 全称为：Inverse of Control。从字面上理解就是控制反转了，将对在自身对象中的一个内置对象的控制反转，反转后不再由自己本身的对象进行控制这个内置对象的创建，而是由第三方系统去控制这个内置对象的创建。</p>
+</div><div class="cl-preview-section"><p><strong>DI（依赖注入）：</strong> 全称为 Dependency Injection，意思自身对象中的内置对象是通过注入的方式进行创建。</p>
+</div><div class="cl-preview-section"><p>那么 <strong>IoC</strong> 和 <strong>DI</strong> 这两者又是什么关系呢？</p>
+</div><div class="cl-preview-section"><h1 id="spring-ioc-容器">Spring IoC 容器</h1>
+</div><div class="cl-preview-section"><p>IoC 就是一种软件设计思想，DI 是这种软件设计思想的一个实现。而 Spring 中的核心机制就是 DI。为什么是 DI 呢？这有一段典故：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>“<em>The question is, what aspect of control are [they] inverting?</em>” Martin Fowler posed this question about Inversion of Control (IoC) on his site in 2004. Fowler suggested renaming the principle to make it more self-explanatory and came up with <em>Dependency Injection</em>.</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>Bean 是 spring 的原材料，所以我们先来讲一下怎么理解 Bean。</p>
+</div><div class="cl-preview-section"><p>Bean 在 Spring 中是可以复用的组件，Spring 帮忙管理这些组件，如果想要在 Spring 中使用组件时，无需实例化，可以直接使用。</p>
+</div><div class="cl-preview-section"><p>一个简单的比喻：Spring 是一个外包公司即乙方，Bean 是这个公司的基层员工，甲方将项目外包给乙方，而不用关心乙方如何招聘员工，在项目紧急需要外包人员时直接使用���可。</p>
+</div><div class="cl-preview-section"><p>Spring 的本质就是一个 Bean 工厂（BeanFactory）或者说 Bean 容器，它按照我们的要求，生产我们需要的各种各样的 Bean，提供给我们使用。只是在生产 Bean 的过程中，需要解决 Bean 之间的依赖问题，才引入了依赖注入（DI）这种技术。也就是说依赖注入是 BeanFactory 生产 Bean 时为了解决 Bean 之间的依赖的一种技术而已。</p>
+</div><div class="cl-preview-section"><p>具体的控制反转是如何操作的，Spring 启动的时候都做了什么事情，怎么将 Bean 放入到容器，在使用的时候又是如何获取 Bean 的（拿出对应的方法进行讲解）</p>
+</div><div class="cl-preview-section"><h1 id="beanfactory-的形成">BeanFactory 的形成</h1>
+</div><div class="cl-preview-section"><p>BeanFactory 是访问 Bean 容器的根接口，它是一个 Bean 容器的基本客户端视图。</p>
+</div><div class="cl-preview-section"><p>先让我们看看 BeanFactory 的前生后世吧！</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ecdeac300010b2c03720446.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>BeanFactory 有四个重要的子接口：</p>
+</div><div class="cl-preview-section"><p><strong>SimpleJndiBeanFactory</strong> 是 spring beanFactory 接口的基于 jndi 的简单实现。不支持枚举 Bean 定义，故不需要实现 ListableBeanFactory 接口。这个 Bean 工厂可以解析制定名称的 jndi 名称，在 J2EE 应用中，jndi 名称的命名空间为"java:/comp/env/"。这个 Bean 工厂主要和 Spring 的 CommonAnnotationBeanPostProcessor 联合使用；</p>
+</div><div class="cl-preview-section"><p><strong>ListableBeanFactory</strong> 是 BeanFactory 接口的扩展接口，它可以枚举所有的 Bean 实例，而不是客户端通过名称一个一个的查询得出所有的实例。要预加载所有的 Bean 定义的 BeanFactory 可以实现这个接口来。该接口定义了访问容器中 Bean 基本信息的若干方法，如查看 Bean 的个数、获取某一类型 Bean 的配置名、查看容器中是否包括某一 Bean 等方法；</p>
+</div><div class="cl-preview-section"><p><strong>HierarchicalBeanFactory</strong> 是一个 Beanfactory 子接口实现，可以作为层次结构的一部分。相对应的 bean Factory 方法 setParentBeanFactory 允许在一个可配置 BeanFactory 中设置它们的父 Beanfactory；</p>
+</div><div class="cl-preview-section"><p><strong>AutowireCapableBeanFactory</strong> 是 BeanFactory 接口的扩展实现，假如它们想要对已经存在的 Bean 暴露它的功能，实现它就能实现自动装配功能。定义了将容器中的 Bean 按某种规则（如按名字匹配、按类型匹配等）进行自动装配的方法；</p>
+</div><div class="cl-preview-section"><p><strong>ConfigurableBeanFactory</strong> 是一个配置接口，大部分 BeanFactory 实现了这个接口。这个接口提供了对一个 BeanFactory 进行配置的便利方法，加上 BeanFactory 接口的客户端方法。增强了 IoC 容器的可定制性，它定义了设置类装载器、属性编辑器、容器初始化后置处理器等方法；</p>
+</div><div class="cl-preview-section"><p><strong>ConfigurableListableBeanFactory</strong> 它同时继承了 ListableBeanFactory，AutowireCapableBeanFactory 和ConfigurableBeanFactory，提供了对 Bean 定义的分析和修改的便利方法，同时也提供了对单例的预实例化。</p>
+</div><div class="cl-preview-section"><p>BeanFactory的形成可不是一蹴而就的，它的形成过程也经历了一番波折。</p>
+</div><div class="cl-preview-section"><h3 id="形成过程">形成过程</h3>
+</div><div class="cl-preview-section"><h4 id="出生">1. 出生</h4>
+</div><div class="cl-preview-section"><p>BeanFactory 有四个子接口，添加了四种不同的能力：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ecdea0700019ae104500207.jpg" alt="图片描述"><br>
+分别是：</p>
+</div><div class="cl-preview-section"><p><strong>SimpleJndiBeanFactory</strong>：支持 jndi；</p>
+</div><div class="cl-preview-section"><p><strong>AutowireCapableBeanFactory</strong>：支持自动装配；</p>
+</div><div class="cl-preview-section"><p><strong>HierarchicalBeanFactory</strong>：支持层次结构，ConfigurableListableBeanFactory 实现了 HierarchicalBeanFactory，提供了可配置功能；</p>
+</div><div class="cl-preview-section"><p><strong>ListableBeanFactory</strong>：支持枚举。</p>
+</div><div class="cl-preview-section"><h4 id="长大成人">2. 长大成人</h4>
+</div><div class="cl-preview-section"><p>Bean 经过两次进化，到 DefaultListableBeanFactory，完善了 Bean 容器的功能。</p>
+</div><div class="cl-preview-section"><p>DefaultListableBeanFactory 实现 AbstractAutowireCapableBeanFactory<br>
+，ConfigurableListableBeanFactory, BeanDefinitionRegistry, Serializable 等多个接口。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ecdea180001f3bc04250429.jpg" alt="图片描述"><br>
+此时，DefaultListableBeanFactory 已经成人，可以独立参加工作了！</p>
+</div><div class="cl-preview-section"><p>javaBean：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ecdea29000192de04280388.jpg" alt="图片描述"><br>
+DefaultListableBeanFactory 测试类：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ecdea3800019e3d08820646.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h4 id="发展">3. 发展</h4>
+</div><div class="cl-preview-section"><p>XmlBeanFactory 通过从 xml 文件中读取 Bean 的定义和依赖。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ecdeaed00012adf04660473.jpg" alt="图片描述"><br>
+xmlBeanFactory 可以通过 xml 配置方式，减少我们的代码。</p>
+</div><div class="cl-preview-section"><p><strong>实例</strong></p>
+</div><div class="cl-preview-section"><p>文件目录<br>
+<img src="https://img.mukewang.com/5ecdeb0800010a8604300623.jpg" alt="图片描述"><br>
+HelloBean 如上例所示。</p>
+</div><div class="cl-preview-section"><p>配置文件：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ecdeb240001ef9509770168.jpg" alt="图片描述"><br>
+测试用例：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ecdeb3e0001222a06400297.jpg" alt="图片描述"><br>
+<strong>自己写的代码、测试用例使用代码框的形式展示</strong></p>
+</div><div class="cl-preview-section"><h1 id="总结">总结</h1>
+</div><div class="cl-preview-section"><p>我们为什么需要 Spring 框架来给我们提供这个 BeanFactory 的功能呢？原因是一般我们认为是，可以将原来硬编码的依赖，通过 Spring 这个 BeanFactory 这个工长来注入依赖，也就是说原来只有依赖方和被依赖方，现在我们引入了第三方——Spring 这个 BeanFactory，由它来解决 Bean 之间的依赖问题，达到了松耦合的效果；</p>
+</div><div class="cl-preview-section"><p>这个只是原因之一，还有一个更加重要的原因：在没有 Spring 这个 BeanFactory 之前，我们都是直接通过 new 来实例化各种对象，现在各种对象 Bean 的生产都是通过 BeanFactory 来实例化的，这样的话，Spring 这个BeanFactory 就可以在实例化 Bean 的过程中，做一些小动作——在实例化 Bean 的各个阶段进行一些额外的处理，也就是说 BeanFactory 会在 Bean 的生命周期的各个阶段中对 Bean 进行各种管理，并且 Spring 将这些阶段通过各种接口暴露给我们，让我们可以对 Bean 进行各种处理，我们只要让 Bean 实现对应的接口，那么 Spring 就会在 Bean 的生命周期调用我们实现的接口来处理该 Bean。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img2.mukewang.com/5ece095f000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/5696">
+						<img src="https://img4.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">初心9288168</h4>
+						<div class="comment-text">比方说这段：IoC（控制反转）： 全称为：Inverse of Control。从字面上理解就是控制反转了，将对在自身对象中的一个内置对象的控制反转，反转后不再由自己本身的对象进行控制这个内置对象的创建，而是由第三方系统去控制这个内置对象的创建。 <br /><br />字面上有点令人难懂</div>
+						<div>
+							
+								<div class="reply">讲师回复：开始的时候是正式的定义，比较理论。后面做了比喻：一个简单的比喻：Spring 是一个外包公司即乙方，Bean 是这个公司的基层员工，甲方将项目外包给乙方，而不用关心乙方如何招聘员工，在项目紧急需要外包人员时直接使用即可。请知悉！</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-01</span>
+						<a href="/read/commentdetail/5696">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5696" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5695">
+						<img src="https://img3.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">初心9288168</h4>
+						<div class="comment-text">作者写得有点官方，令人有点难懂。希望作者参考Springboot私房菜的专栏思路去写</div>
+						<div>
+							
+								<div class="reply">讲师回复：感谢您的提醒。IoC官方的定义本身比较抽象，我在后面的段落里做了详细的描述。如果想更快的理解，可以想想好莱坞原则(Hollywood Principle)</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-01</span>
+						<a href="/read/commentdetail/5695">
+							<span class="icon r"><i class="imwap-comment"></i><em>3</em></span>
+						</a>
+						<span data-cid="5695" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=77">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '07 别整虚的！揭开Spring IoC、DI的神秘面纱',
+					'CID': '2020',
+					'Teacher': 'David'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "07 别整虚的！揭开Spring IoC、DI的神秘面纱",
+                    desc: "Java工程师提升必修课",
+                    imgUrl: 'https:https://img1.mukewang.com/5ec1f3830001652c05400720.jpg',
+                    otherImgUrl: 'https://img1.mukewang.com/5ec1f3830001652c05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/77',
+                    link: 'https://m.imooc.com/read/77'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

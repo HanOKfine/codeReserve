@@ -1,0 +1,852 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>18 多路复用：select 和 poll 是如何工作的呢？</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="学好通用知识，提升技术竞争力">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2107";
+	var chapter_title = "18 多路复用：select 和 poll 是如何工作的呢？";
+	var aid = "80";
+	var a_name = "零基础学透网络编程";
+	var a_price = "58.00";
+	var a_pic = "https://img.mukewang.com/5ed8c1c600015fc805400720.jpg";
+	var userId = 0;
+
+	var column_id = '80';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-06-09&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			18 多路复用：select 和 poll 是如何工作的呢？
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img1.mukewang.com/5ed9fd6c0001145706400359.jpg')"></div>
+	
+	
+		<a href="/read/80">
+			<div class="course-entry">
+				<img src="https://img2.mukewang.com/5458620000018a2602200220-40-40.jpg" alt="陈子兴">
+				<h3>零基础学透网络编程</h3>
+				<p>陈子兴 · 资深软件架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">我们活着不能与草木同腐，不能醉生梦死，枉度人生，要有所作为。<p class="author">——方志敏</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="前言">前言</h2>
+</div><div class="cl-preview-section"><p>回顾过去，我们学习了基于 TCP、UDP、UNIX 域三种协议的 Socket 编程。这三类协议是 Socket 编程中最基础的部分，也是应用最广的部分。最近又学习了三个非常重要的主题：如何设置 Socket 选项，如何基于域名进行编程，如何控制网络接口设备。尽管这三个主题没有涉及到具体的协议，但也是 Socket 编程中不可或缺的一部分，起着辅助的作用。</p>
+</div><div class="cl-preview-section"><p>从本文开始，我们就要进入 Socket 编程的高阶部分学习，这一部分内容考虑更多的是性能和吞吐量，会涉及到很多设计相关的主题。</p>
+</div><div class="cl-preview-section"><p>还记得 nwchecker 程序吗？最早的 nwchecker TCP server 程序是不能支持多客户端的，因为 nwchecker TCP server 调用了 accept 函数后线程就会阻塞，如果接收到某个 nwchecker TCP client 连接请求，accept 函数会返回，此时 nwchecker TCP server 就要和此 nwchecker TCP client 通信��nwchecker TCP server 调用 recv 函数，线程有可能会被阻塞。此时如果有新客户端请求建立连接，服务器也无法做出响应。</p>
+</div><div class="cl-preview-section"><p>针对这个问题，我们的的解决方案是主线程循环调用 accept 函数，一旦有新客户端连接成功，就会调用 fork 函数创建一个子进程，由子进程专门和此客户端进行通信，而主线程是专职做好 accept 工作。这种工作模式是服务器为每一个客户端 fork 一个单独的子进程，客户端和子进程是一对一的关系。试想一下，如果有大量的客户端同时请求和服务器通信，系统到底能创建多少个子进程呢？</p>
+</div><div class="cl-preview-section"><p>其实解决 TCP 服务器同时支持多个客户端的问题，本质上是要解决服务器如何同时支持多个文件描述符的问题。对于 TCP 服务器来说，和客户端建立的每一个新连接都会创建一个新的文件描述符，TCP 服务器必须要解决多个文件描述符同时读写的问题。</p>
+</div><div class="cl-preview-section"><p>针对这类问题，操作系统也有相应的解决方案，叫 <strong>I/O 多路复用机制</strong>（I/O Multiplex），是一套专用的系统 API。目前主流操作系统提供的 <strong>I/O 多路复用</strong> API 如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>select，是通用机制，Windows、Unix-like 系统都支持；</li>
+<li>poll，是 UNIX-like 系统支持；</li>
+<li>devpoll，是 SUN Solaris 系统支持。当然，SUN 公司已经不存在了；</li>
+<li>epoll, 是 Linux 系统支持的主流机制；</li>
+<li>Kqueue，是 freebsd 内核支持的机制，Mac OS、IOS 系统也支持；</li>
+<li>IOCP，是 Windows 系统支持的机制。</li>
+</ul>
+</div><div class="cl-preview-section"><p>本文只介绍 select 和 poll。devpoll 本专栏不做介绍。epoll、kqueue、IOCP 在后面的专栏介绍。</p>
+</div><div class="cl-preview-section"><p>我们先了解一下 I/O 多路复用的工作模式。</p>
+</div><div class="cl-preview-section"><h2 id="io-多路复用工作模式">I/O 多路复用工作模式</h2>
+</div><div class="cl-preview-section"><p>我们知道调用 socket() 函数可以创建 Socket <strong>文件描述符</strong>。其实在 Unix-like 系统中，一切 I/O 设备都可以看做文件，每个打开的 I/O 设备都用<strong>文件描述符</strong>来表示，这为程序员带来了极大地便利。</p>
+</div><div class="cl-preview-section"><p>操作系统内核中维护了一个文件描述符表，用于记录每一个打开的 I/O 设备或 Socket，比如 磁盘文件、CDROM、Socket 等。内核中的文件描述符表是用数组实现的，数组的每一个元素保存的是打开的文件描述符。调用 open() 函数或者 socket() 函数返回的 FD，是文件描述符表数组的索引。</p>
+</div><div class="cl-preview-section"><p>操作系统提供的 <strong>I/O 多路复用机制</strong>用于监听多个<strong>文件描述符</strong>的读写事件。我们通过一张图来展示下<strong>I/O 多路复用机制</strong>的工作模式。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed9a8b800018df510210601.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>从图中可以看出，我们可以向 I/O Multiplex 设置多个文件描述符，这些文件描述符可以是 PIPE、FIFO、Socket。I/O Multiplex 会监听这些文件描述符的 I/O 事件，当有事件发生会通知应用程序。</p>
+</div><div class="cl-preview-section"><p>下面，我们先分析一下 select 的工作原理。</p>
+</div><div class="cl-preview-section"><h2 id="select-工作原理">select 工作原理</h2>
+</div><div class="cl-preview-section"><p>select 是所有操作系统都支持的机制。我们就以 linux 系统为例，分析一下 select 函数的细节。在 linux 系统中，select 函数所需要包含的头文件如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token comment">/* According to POSIX.1-2001, POSIX.1-2008 */</span>
+ <span class="token macro property">#<span class="token directive keyword">include</span> <span class="token string">&lt;sys/select.h&gt;</span></span>
+<span class="token comment">/* According to earlier standards */</span>
+<span class="token macro property">#<span class="token directive keyword">include</span> <span class="token string">&lt;sys/time.h&gt;</span></span>
+<span class="token macro property">#<span class="token directive keyword">include</span> <span class="token string">&lt;sys/types.h&gt;</span></span>
+<span class="token macro property">#<span class="token directive keyword">include</span> <span class="token string">&lt;unistd.h&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在 linux 系统中， select 函数是在 glibc 中实现的，其主要原理就是应用程序将需要监听的<strong>文件描述符</strong>通过接口参数传给操作系统内核。<strong>文件描述符</strong>关心的事件主要有读、写、异常三类。select 是一个同步调用，当没有事件发生的时候，调用 select 函数的线程会被系统设置为“休眠等待”状态，一旦某个监听的<strong>文件描述符</strong>产生了 I/O 事件，调用 select 函数的用户线程就会被唤醒，select 函数调用就会返回给应用程序。select 函数也可以设置 timeout 事件，直到 timeout 过期还没有 I/O 事件发生，系统也会唤醒调用 select 函数的线程。当 select 返回以后，应用程序可以根据函数返回值做出相应处理。select 函数原型如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token keyword">int</span> <span class="token function">select</span><span class="token punctuation">(</span><span class="token keyword">int</span> nfds<span class="token punctuation">,</span>
+    fd_set <span class="token operator">*</span>readfds<span class="token punctuation">,</span>
+    fd_set <span class="token operator">*</span>writefds<span class="token punctuation">,</span>
+    fd_set <span class="token operator">*</span>exceptfds<span class="token punctuation">,</span>
+    <span class="token keyword">struct</span> timeval <span class="token operator">*</span>timeout<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>nfds 表示监听的文件描述符个数，取值是最大文件描述符 + 1；</p>
+</li>
+<li>
+<p>readfds 表示关心读事件的文件描述符集合，类型是 fd_set；</p>
+</li>
+<li>
+<p>writefds 表示关心写事件的文件描述符集合，类型是 fd_set；</p>
+</li>
+<li>
+<p>exceptfds 表示关心异常事件的文件描述符集合，类型是 fd_set；</p>
+</li>
+<li>
+<p>timeout 表示系统等待所监听的事件发生的时间，类型是 struct timeval。</p>
+<pre class="  language-c"><code class="prism  language-c"><span class="token keyword">struct</span> timeval
+<span class="token punctuation">{</span>
+    <span class="token keyword">long</span> tv_sec<span class="token punctuation">;</span><span class="token comment">//秒</span>
+    <span class="token keyword">long</span> tv_usec<span class="token punctuation">;</span><span class="token comment">//微秒</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<ul>
+<li>当 timeout 传入 NULL，表示 select 要等待所监听的文件描述符产生 I/O 事件才返回，不受 timeout 参数影响；</li>
+<li>当 timeout.tv_sec 或 timeout.tv_usec 不为 0，如果在 timeout 指定的超时时间过期之前有监听的事件发生，那么 select 就会返回；否则，select 会在 timeout 超时后返回；</li>
+<li>当 timeout.tv_sec 和 timeout.tv_usec 都为 0，select 调用会立即返回，不管是否有监听的事件发生。</li>
+</ul>
+</li>
+<li>
+<p>函数返回值说明：</p>
+<ul>
+<li>如果返回值<strong>大于</strong> 0，表示函数成功返回。返回值表示 readfds、writefds、exceptfds 中所监听的文件描述符中产生事件的描述符总数，这时只有遍历这三个集合才知道是哪个文件描述符产生了 I/O 事件；</li>
+<li>如果返回值<strong>等于</strong> 0，表示直到超时，都没有读、写、异常事件发生；</li>
+<li>如果返回值<strong>小于</strong> 0，表示函数调用发生了错误，具体错误原因要参考 errno 变量的值。</li>
+</ul>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>select 的辅助函数说明：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token keyword">void</span> <span class="token function">FD_CLR</span><span class="token punctuation">(</span><span class="token keyword">int</span> fd<span class="token punctuation">,</span> fd_set <span class="token operator">*</span>set<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 清除 set 集合中所设置的 fd</span>
+<span class="token keyword">int</span>  <span class="token function">FD_ISSET</span><span class="token punctuation">(</span><span class="token keyword">int</span> fd<span class="token punctuation">,</span> fd_set <span class="token operator">*</span>set<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 检查 set 集合中是否设置了 fd</span>
+<span class="token keyword">void</span> <span class="token function">FD_SET</span><span class="token punctuation">(</span><span class="token keyword">int</span> fd<span class="token punctuation">,</span> fd_set <span class="token operator">*</span>set<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 向 set 集合设置 fd</span>
+<span class="token keyword">void</span> <span class="token function">FD_ZERO</span><span class="token punctuation">(</span>fd_set <span class="token operator">*</span>set<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 将 set 集合清零</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>select 调用线程被系统设置为<strong>休眠状态</strong>以后，再次被唤醒的条件如下：</p>
+</div><div class="cl-preview-section"><ol>
+<li>监听的某个文件描述有事件发生；</li>
+<li>select 调用线程被中断处理器借走执行中断；</li>
+<li>select 函数设置的超时时间过期；</li>
+<li>select 函数调用出现了错误。</li>
+</ol>
+</div><div class="cl-preview-section"><p>现在该介绍另外一个多路复用机制 poll 了。</p>
+</div><div class="cl-preview-section"><h2 id="poll-工作原理">poll 工作原理</h2>
+</div><div class="cl-preview-section"><p>poll 是所有 Unix-Like 系统都支持的一个 I/O Multiplex 机制，它的功能类似 select。我们还是以 linux 系统为例分析 poll 的工作原理。</p>
+</div><div class="cl-preview-section"><p>使用 poll 函数，只需要包含 poll.h 即可。poll 函数也是一个系统调用，它的工作原理是应用程序将需要监听的<strong>文件描述符</strong>通过接口参数传给操作系统内核。<strong>文件描述符</strong>关心的事件主要有读、写、异常三类。poll 是一个同步系统调用，当没要监听的<strong>文件描述符</strong>没有产生 I/O 事件时，poll 的调用线程会被系统阻塞并且被设置为<strong>休眠状态</strong>。一旦某个监听的<strong>文件描述符</strong>产生了 I/O 事件，poll 的调用线程就会被系统唤醒，从而重新得到执行，poll 函数就会返回执行结果给应用程序。poll 函数也可以设置 timeout 事件，就算用户设置的某个超时时间过期还没有 I/O 事件发生，系统也会唤醒调用 poll 函数的线程。当 poll 返回以后，应用程序可以根据函数返回值做出相应处理。poll 函数的原型如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token macro property">#<span class="token directive keyword">include</span> <span class="token string">&lt;poll.h&gt;</span></span>
+<span class="token keyword">int</span> <span class="token function">poll</span><span class="token punctuation">(</span><span class="token keyword">struct</span> pollfd <span class="token operator">*</span>fds<span class="token punctuation">,</span> nfds_t nfds<span class="token punctuation">,</span> <span class="token keyword">int</span> timeout<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>fds 表示要监听的<strong>文件描述符</strong>的集合，是 struct pollfd 类型的数组。应用程序需要创建一个 pollfd 类型的数组，将每一个要监听的 fd 添加到数组中，必须要给此 fd 设置监听的事件。struct pollfd 类型的定义如下：</p>
+<pre class="  language-c"><code class="prism  language-c"><span class="token keyword">struct</span> pollfd <span class="token punctuation">{</span>
+    <span class="token keyword">int</span>   fd<span class="token punctuation">;</span>         <span class="token comment">/* file descriptor */</span>
+    <span class="token keyword">short</span> events<span class="token punctuation">;</span>     <span class="token comment">/* requested events */</span>
+    <span class="token keyword">short</span> revents<span class="token punctuation">;</span>    <span class="token comment">/* returned events */</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+</code></pre>
+<ul>
+<li>fd 是要监听的文件描述符；</li>
+<li>events 是输入参数，由应用程序设置 fd 所关心的事件，通过事件类型枚举“按位或”的方式进行设置；</li>
+<li>revents 是输出参数，由系统设置此 fd 上发生的事件，通过事件类型枚举“按位或”的方式进行设置。向 events 和 revents 设置的事件类型如下：
+<ul>
+<li><strong>POLLIN</strong> ：表示读事件，对于 Socket 来说就是接收对方的数据包；</li>
+<li><strong>POLLOUT</strong> ：表示写事件，对于 Socket 来说就是向对方发送数据；</li>
+<li><strong>POLLHUP</strong> ：表示连接被对方关闭，这种关闭是正常关闭；</li>
+<li><strong>POLLERR</strong> ：表示 Socket 产生了网络错误，比如连接异常断开。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>nfds 表示 fds 数组的长度；</p>
+</li>
+<li>
+<p>timeout 表示超时时间，单位是毫秒(ms)：</p>
+<ul>
+<li>如果 timeout <strong>大于</strong> 0，表示超时时间过期后 poll 所监听的事件还没有发生，poll 函数就会返回；</li>
+<li>如果 timeout <strong>等于</strong> 0，表示 poll 函数调用会立即返回；</li>
+<li>如果 timeout <strong>小于</strong> 0，表示 poll 不受超时时间控制。</li>
+</ul>
+</li>
+<li>
+<p>函数返回值说明：</p>
+<ul>
+<li>如果返回值<strong>大于</strong> 0，表示函数成功返回，返回值表示 fds 中所监听的文件描述符产生事件的描述符的总数，遍历 fds 数组，检查每一个数组元素的 revents 字段，就可以判断是否有事件发生；</li>
+<li>如果返回值<strong>等于</strong> 0，表示直到超时，也没有读、写、异常事件发生；</li>
+<li>如果返回值<strong>小于</strong> 0，表示函数调用发生了错误，具体错误原因要参考 errno 变量的值。</li>
+</ul>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>poll 调用线程被系统设置为<strong>休眠状态</strong>以后，再次被唤醒的条件如下：</p>
+</div><div class="cl-preview-section"><ol>
+<li>监听的某个文件描述有事件发生；</li>
+<li>poll 调用线程被中断处理器借走执行中断；</li>
+<li>poll 函数设置的超时时间过期；</li>
+<li>poll 函数调用出现了错误。</li>
+</ol>
+</div><div class="cl-preview-section"><p>下来我们就通过一个简单例子感受一下 poll 和 select 调用方法。</p>
+</div><div class="cl-preview-section"><h2 id="poll-和-select-实验">poll 和 select 实验</h2>
+</div><div class="cl-preview-section"><p>我们知道 Unix 域套接字是用于进程间通信的，本实验小程序就要实现一个进程间通信的的功能，具体细节如下：</p>
+</div><div class="cl-preview-section"><ol>
+<li>父进程创建 3 个子进程，每个子进程每隔一个时间周期向父进程发送一个消息，时间间隔是 5 秒内的随机值；</li>
+<li>父进程要同时和 3 个进程进行通信，读取子进程发的消息并且打印在控制台。</li>
+</ol>
+</div><div class="cl-preview-section"><p>要想实现这个功能，首先父进程得创建一个 Unix 域服务端，然后调用 accept 函数等待子进程连接，每个子进程都要创建一个 Unix 域客户端然后去连接父进程。由于进程间通信是非常通用的逻辑，所以操作系统为我们提供了 socketpair 函数，此函数可以直接返回一个连接好的 Socket 文件描述符，这样可以省去创建、连接、监听等系列步骤。socketpair 函数的原型如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token macro property">#<span class="token directive keyword">include</span> <span class="token string">&lt;sys/types.h&gt;</span></span>
+<span class="token macro property">#<span class="token directive keyword">include</span> <span class="token string">&lt;sys/socket.h&gt;</span></span>
+
+<span class="token keyword">int</span> <span class="token function">socketpair</span><span class="token punctuation">(</span><span class="token keyword">int</span> domain<span class="token punctuation">,</span> <span class="token keyword">int</span> type<span class="token punctuation">,</span> <span class="token keyword">int</span> protocol<span class="token punctuation">,</span> <span class="token keyword">int</span> sv<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>domain 表示地址族，在 linux 中只支持 AF_LOCAL 或 AF_UNIX；</li>
+<li>type 表示 Socket 类型，SOCK_STREAM 或 SOCK_DGRAM；</li>
+<li>protocol 表示协议类型，一般填 0；</li>
+<li>sv 是一个包含 2 个元素的 int 型数组，是一个输出参数，由系统保存已经连接好的读、写 FD，sv[0] 用于保存写 FD，sv[1] 用于保存读 FD。</li>
+</ul>
+</div><div class="cl-preview-section"><p>本实验小程序就是通 socketpair 函数来创建父进程和子进程通信的 Socket 文件描述符。</p>
+</div><div class="cl-preview-section"><p>最后，由于父进程同时需要和三个子进程进行通信，需要通过 select 或者 poll 来实现 I/O 多路复用。我们针对 poll 和 select 都提供了样例代码，保存在 “imooc-sock-core-tech\03-17_认识select和poll” 目录下面。在文中我们只分析 select 相关的代码，由于代码规模不到 100 行，我们就直接粘贴完整代码，如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c">  <span class="token number">1</span> #include <span class="token operator">&lt;</span>sys<span class="token operator">/</span>select<span class="token punctuation">.</span>h<span class="token operator">&gt;</span>
+  <span class="token number">2</span> #include <span class="token operator">&lt;</span>sys<span class="token operator">/</span>time<span class="token punctuation">.</span>h<span class="token operator">&gt;</span>
+  <span class="token number">3</span> #include <span class="token operator">&lt;</span>sys<span class="token operator">/</span>types<span class="token punctuation">.</span>h<span class="token operator">&gt;</span>
+  <span class="token number">4</span> #include <span class="token operator">&lt;</span>sys<span class="token operator">/</span>socket<span class="token punctuation">.</span>h<span class="token operator">&gt;</span>
+  <span class="token number">5</span> #include <span class="token operator">&lt;</span>sys<span class="token operator">/</span>wait<span class="token punctuation">.</span>h<span class="token operator">&gt;</span>
+  <span class="token number">6</span> #include <span class="token operator">&lt;</span>stdio<span class="token punctuation">.</span>h<span class="token operator">&gt;</span>
+  <span class="token number">7</span> #include <span class="token operator">&lt;</span>stdlib<span class="token punctuation">.</span>h<span class="token operator">&gt;</span>
+  <span class="token number">8</span> #include <span class="token operator">&lt;</span>unistd<span class="token punctuation">.</span>h<span class="token operator">&gt;</span>
+  <span class="token number">9</span> #include <span class="token operator">&lt;</span>errno<span class="token punctuation">.</span>h<span class="token operator">&gt;</span>
+ <span class="token number">10</span>
+ <span class="token number">11</span> <span class="token keyword">void</span> <span class="token function">child_worker</span><span class="token punctuation">(</span><span class="token keyword">int</span> fd<span class="token punctuation">)</span>
+ <span class="token number">12</span> <span class="token punctuation">{</span>
+ <span class="token number">13</span>     <span class="token function">srand</span><span class="token punctuation">(</span>fd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">14</span>     <span class="token keyword">unsigned</span> <span class="token keyword">char</span> num <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+ <span class="token number">15</span>     <span class="token keyword">while</span><span class="token punctuation">(</span>num<span class="token operator">++</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">16</span>         <span class="token function">sleep</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token function">rand</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">%</span> <span class="token number">5</span><span class="token punctuation">)</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">17</span>         <span class="token function">write</span><span class="token punctuation">(</span>fd<span class="token punctuation">,</span> <span class="token operator">&amp;</span>num<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>num<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">18</span>     <span class="token punctuation">}</span>
+ <span class="token number">19</span>     <span class="token function">close</span><span class="token punctuation">(</span>fd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">20</span> <span class="token punctuation">}</span>
+ <span class="token number">21</span>
+ <span class="token number">22</span> <span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token keyword">int</span> argc<span class="token punctuation">,</span> <span class="token keyword">char</span> <span class="token operator">*</span>argv<span class="token punctuation">)</span>
+ <span class="token number">23</span> <span class="token punctuation">{</span>
+ <span class="token number">24</span>     <span class="token keyword">int</span> sock_fds<span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">}</span><span class="token punctuation">;</span>
+ <span class="token number">25</span>     fd_set readfds<span class="token punctuation">;</span>
+ <span class="token number">26</span>     <span class="token keyword">int</span> worker_exit<span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">;</span>
+ <span class="token number">27</span>     pid_t worker_pids<span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">;</span>
+ <span class="token number">28</span>
+ <span class="token number">29</span>
+ <span class="token number">30</span>     <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">3</span><span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">31</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">socketpair</span><span class="token punctuation">(</span>AF_LOCAL<span class="token punctuation">,</span> SOCK_STREAM<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> sock_fds<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">33</span>             <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+ <span class="token number">34</span>         <span class="token punctuation">}</span>
+ <span class="token number">35</span>     <span class="token punctuation">}</span>
+ <span class="token number">36</span>
+ <span class="token number">37</span>     <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">3</span><span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">38</span>         pid_t pid <span class="token operator">=</span> <span class="token function">fork</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">39</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span>pid <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">40</span>             <span class="token function">close</span><span class="token punctuation">(</span>sock_fds<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">41</span>             <span class="token function">child_worker</span><span class="token punctuation">(</span>sock_fds<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">42</span>         <span class="token punctuation">}</span><span class="token keyword">else</span><span class="token punctuation">{</span>
+ <span class="token number">43</span>             worker_pids<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> pid<span class="token punctuation">;</span>
+ <span class="token number">44</span>             <span class="token function">close</span><span class="token punctuation">(</span>sock_fds<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">45</span>         <span class="token punctuation">}</span>
+ <span class="token number">46</span>     <span class="token punctuation">}</span>
+ <span class="token number">47</span>
+ <span class="token number">48</span>     <span class="token keyword">while</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">49</span>         <span class="token keyword">int</span> maxfd <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+ <span class="token number">50</span>         <span class="token function">FD_ZERO</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>readfds<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">51</span>         <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">3</span><span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">52</span>             <span class="token function">FD_SET</span><span class="token punctuation">(</span>sock_fds<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>readfds<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">53</span>             <span class="token keyword">if</span> <span class="token punctuation">(</span>sock_fds<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">&gt;</span> maxfd<span class="token punctuation">)</span>
+ <span class="token number">54</span>                 maxfd <span class="token operator">=</span> sock_fds<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+ <span class="token number">55</span>         <span class="token punctuation">}</span>
+ <span class="token number">56</span>
+ <span class="token number">57</span>         <span class="token keyword">int</span> nfds <span class="token operator">=</span> <span class="token function">select</span><span class="token punctuation">(</span>maxfd <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>readfds<span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">58</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span>nfds <span class="token operator">==</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">60</span>             <span class="token keyword">if</span> <span class="token punctuation">(</span>errno <span class="token operator">==</span> EINTR<span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">61</span>                 <span class="token keyword">continue</span><span class="token punctuation">;</span>
+ <span class="token number">62</span>             <span class="token punctuation">}</span>
+ <span class="token number">63</span>
+ <span class="token number">64</span>             <span class="token keyword">break</span><span class="token punctuation">;</span>
+ <span class="token number">65</span>         <span class="token punctuation">}</span>
+ <span class="token number">66</span>
+ <span class="token number">67</span>         <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">3</span><span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">68</span>             <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">FD_ISSET</span><span class="token punctuation">(</span>sock_fds<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>readfds<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">69</span>                 <span class="token keyword">int</span> num <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+ <span class="token number">70</span>                 <span class="token function">read</span><span class="token punctuation">(</span>sock_fds<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>num<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>num<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">72</span>                 <span class="token keyword">if</span> <span class="token punctuation">(</span>num <span class="token operator">==</span> <span class="token number">255</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">73</span>                    worker_exit<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+ <span class="token number">74</span>                 <span class="token punctuation">}</span>
+ <span class="token number">75</span>             <span class="token punctuation">}</span>
+ <span class="token number">76</span>         <span class="token punctuation">}</span>
+ <span class="token number">77</span>
+ <span class="token number">78</span>         <span class="token keyword">int</span> exit_num<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span>
+ <span class="token number">79</span>         <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token punctuation">;</span>exit_num <span class="token operator">&lt;</span> <span class="token number">3</span><span class="token punctuation">;</span> <span class="token operator">++</span>exit_num<span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">80</span>             <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>worker_exit<span class="token punctuation">[</span>exit_num<span class="token punctuation">]</span><span class="token punctuation">)</span>
+ <span class="token number">81</span>                 <span class="token keyword">break</span><span class="token punctuation">;</span>
+ <span class="token number">82</span>         <span class="token punctuation">}</span>
+ <span class="token number">83</span>         <span class="token comment">// exit loop</span>
+ <span class="token number">84</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span>exit_num <span class="token operator">==</span> <span class="token number">3</span><span class="token punctuation">)</span>
+ <span class="token number">85</span>             <span class="token keyword">break</span><span class="token punctuation">;</span>
+ <span class="token number">86</span>     <span class="token punctuation">}</span>
+ <span class="token number">87</span>
+ <span class="token number">88</span>     <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">3</span><span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">89</span>         <span class="token function">waitpid</span><span class="token punctuation">(</span>worker_pids<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> WUNTRACED<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">90</span>         <span class="token function">close</span><span class="token punctuation">(</span>sock_fds<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">91</span>     <span class="token punctuation">}</span>
+ <span class="token number">92</span>
+ <span class="token number">93</span>     <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+ <span class="token number">94</span> <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>第 1 ~ 9 行是需要包含的头文件；</li>
+<li>第 11 ~ 20 行是子进程执行逻辑，我们让子进程 sleep 1 ~ 5 秒然后向父进程发送一个数字。数字类型是 unsigned char，所以发送到数字 255 的时候，子进程就会退出，子进程退出的时候需要关闭打开的 fd；</li>
+<li>第 30 ~ 35 行是调用 socketpair 创建三组文件描述符，用于父进程和每个子进程间的通信。注意，传入的地址族要求是 UNIX 域类型；</li>
+<li>第 37 ~ 46 行是调用 fork 创建三个子进程。注意：对于子进程来说要关闭 sv[1] 中保存的 FD；对于父进程来说要关闭 sv[0] 中保存的 FD；</li>
+<li>第 50 行是调用 FD_ZERO 初始化 readfds，这个步骤必须要做的，否则会出现未定义行为；</li>
+<li>第 51 ~ 55 行是调用 FD_SET 向 readfds 设置每个监听的 FD，同时要计算 maxfd；</li>
+<li>第 57 行是调用 select 函数，第一个参数传入的是 maxfd + 1，第二个是传入 readfds 的指针，剩下参数我们不关注都传入 NULL；</li>
+<li>第 58 ~ 65 行是处理 select 函数的返回值，如果是返回 -1，需要处理错误码是 EINTR 的情况，因为有可能是 signal 导致的中断。如果是这种情况，还需要继续执行；其他错误原因，表示是出错，要退出循环；</li>
+<li>第 67 ~ 76 行是遍历 readfds 集合处理读事件。注意需要调用 FD_ISSET 判断 fd 是否被操作系统设置，如果设置了代表事件发生，需要调用 read 读取；</li>
+<li>第 78 ~ 85 行是判断 3 个子进程是否全部退出，如果全部退出，那么结束 select 循环调用；</li>
+<li>第 88 ~ 91 行是调用 waitpid 释放子进程资源，防止出现僵尸进程。</li>
+</ul>
+</div><div class="cl-preview-section"><p>有关 select 函数的调用流程总结如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>应用程序需要提供 fd_set 类型的集合，用于设置读、写、异常三类事件；</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>注意：关心哪一类事件就提供哪一类集合即可，不关心的传入 NULL。一定要注意三个参数在 select 中的顺序。</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>应用程序需要通过 FD_SET 函数将某个 fd 所关心的事件设置到对应的集合。比如读事件，就是设置到 readfds 中；</li>
+<li>应用程序如果需要设置超时时间，需要设置 timeout 参数，否则传入 NULL 即可；</li>
+<li>当 select 返回以后，系统会再次设置 readfds、writefds、exceptfds 三个参数，表示哪些 fd 产生了监听的事件。为此，应用程序必须要遍历三个集合才能知道哪个 fd 产生了事件；</li>
+<li>当应用程序再次调用 select 的时候，必须将 readfds、writefds、exceptfds 三个参数再次设置。</li>
+</ul>
+</div><div class="cl-preview-section"><p>关于 poll 的用法是大同小异，我们不再赘述。下来我们对 poll 和 select 的特点做一个对比。</p>
+</div><div class="cl-preview-section"><h2 id="poll-和-select-对比">poll 和 select 对比</h2>
+</div><div class="cl-preview-section"><ul>
+<li>select 基本所有系统都支持，而 poll 有的系统是不支持的，比如 Windows 系统；</li>
+<li>select 需要用户计算 maxfd，而 poll 不需要；</li>
+<li>select 采用位模式来存储用户设置的 fd，也就是说每个 fd 在 fd_set 中的位置是固定死的，这样当 fd 取值比较大的时候，系统必须要按位遍历，会带来性能问题。而 poll 不依赖 fd 的取值；</li>
+<li>select 所支持的 fd 个数是有限制的，由 glibc 中的 FD_SETSIZE 定义的，默认值是 1024。如果要突破这个限制，需要修改 glibc 中 FD_SETSIZE 值，然后重新编译 glibc，而 poll 没有这个限制；</li>
+<li>每次调用 select，都需要重新设置 readfds、writefds、exceptfds，因为系统会修改这三个参数。而 poll 不需要这样，因为系统通过 struct pollfd 的 revents 返回发生的事件。</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="总结">总结</h2>
+</div><div class="cl-preview-section"><p>本文介绍的 <strong>I/O 多路复用</strong>机制是用来解决同时处理多个文件描述的读写问题。我们介绍了使用最为广泛的 select函数和 poll 函数。最后通过父子进程间通信的小程序演示了 select 和 poll 的具体用法。文中详细分析了 select 示例程序，希望你能自行分析一下 poll 示例程序。</p>
+</div><div class="cl-preview-section"><p>在示例程序中，我们只是展示了读事件，那么到底什么情况下需要写事件呢？其实，在实际产品应用中监听写事件的场景也很多。就拿 poll 函数来说，如果是监听 UDP Socket 的  POLLOUT 事件，那么 poll 马上会返回；如果是监听 TCP Socket 的 POLLOUT 事件，那么情况有些不同。我们已经学过 TCP 是可靠传输协议，TCP 是通过滑动窗口来控制发送流量的，发送出去的报文段只有收到对方的 ACK，发送窗口才会向右滑动。如果因为网络原因导致了发送的报文段得不到 ACK，那么发送窗口就会变为 0，此时不能发送数据，所以就不会产生 POLLOUT 事件；如果发送窗口向右滑动了，表示可以继续向对方发送数据了，系统会产生 POLLOUT 事件，此时应用程序就可以继续调用 send 发送数据了。</p>
+</div><div class="cl-preview-section"><p>到此，最为简单常用的 I/O Multiplex 机制就介绍完了。</p>
+</div><div class="cl-preview-section"><h2 id="思考时间">思考时间</h2>
+</div><div class="cl-preview-section"><ol>
+<li>
+<p>完善本文的 select 示例程序，增加“写事件”的处理逻辑。</p>
+</li>
+<li>
+<p>完善本文的 poll 示例程序，增加一个 Timer 逻辑。</p>
+</li>
+</ol>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5ed9fd72000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=80">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '18 多路复用：select 和 poll 是如何工作的呢？',
+					'CID': '2107',
+					'Teacher': '陈子兴'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "18 多路复用：select 和 poll 是如何工作的呢？",
+                    desc: "学好通用知识，提升技术竞争力",
+                    imgUrl: 'https:https://img.mukewang.com/5ed8c1c600015fc805400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5ed8c1c600015fc805400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/80',
+                    link: 'https://m.imooc.com/read/80'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

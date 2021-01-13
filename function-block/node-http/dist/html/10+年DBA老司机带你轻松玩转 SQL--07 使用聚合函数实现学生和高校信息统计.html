@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>07 使用聚合函数实现学生和高校信息统计</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="0基础入门，掌握4大主流数据库的SQL技术">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "1";
+	var chapter_id = "2265";
+	var chapter_title = "07 使用聚合函数实现学生和高校信息统计";
+	var aid = "85";
+	var a_name = "10+年DBA老司机带你轻松玩转 SQL";
+	var a_price = "48.00";
+	var a_pic = "https://img4.mukewang.com/5f23b6e70001de8a05400720.jpg";
+	var userId = 0;
+
+	var column_id = '85';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-19&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			07 使用聚合函数实现学生和高校信息统计
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img.mukewang.com/5f2cb71800012bc306400426.jpg')"></div>
+	
+	
+		<a href="/read/85">
+			<div class="course-entry">
+				<img src="https://img1.mukewang.com/5f524cc00001990609600960-40-40.jpg" alt="简逸">
+				<h3>10+年DBA老司机带你轻松玩转 SQL</h3>
+				<p>简逸 · 资深数据库工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">每个人的生命都是一只小船，理想是小船的风帆。<p class="author">——张海迪</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>在日常数据统计时，经常需要计算一些列的总和、平均值和总行数等等，而不需要获取某一行的具体值，这时就会用到<strong>聚合函数</strong>。数据库为我们提供了五个常用的聚合函数，分别是：</p>
+</div><div class="cl-preview-section"><ul>
+<li>求和函数 sum() ；</li>
+<li>求平均值函数 avg()；</li>
+<li>求总行数函数 count()；</li>
+<li>求最大值函数 max()；</li>
+<li>求最小值函数 min()。</li>
+</ul>
+</div><div class="cl-preview-section"><p>下面我们来详细了解每个聚合函数的用法。</p>
+</div><div class="cl-preview-section"><h2 id="使用sum函数计算一个学生所有课程成绩之和">7.1 使用Sum函数计算一个学生所有课程成绩之和</h2>
+</div><div class="cl-preview-section"><p>下面的 SQL 用 sum() 函数计算学生的所有课程总成绩，表 elective 存放了所有学生所选课程的成绩，字段 grade 存放的是学生成绩，sid 是学生编号，对应 student(学生表) 中的sid：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span>  <span class="token function">sum</span><span class="token punctuation">(</span>grade<span class="token punctuation">)</span> <span class="token keyword">as</span> sum_grade  <span class="token keyword">from</span> elective  <span class="token keyword">where</span> sid <span class="token operator">=</span><span class="token number">1001</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f30a4df000144d503180112.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>结果中编号为 1001 的学生所有课程成绩之和为 269 ，返回结果只有一个值，sum_grade 为返回数据集的别名。我们再来验证上面的计算是否正确：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span>  cid<span class="token punctuation">,</span>grade   <span class="token keyword">from</span> elective  <span class="token keyword">where</span> sid <span class="token operator">=</span><span class="token number">1001</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f30a4ea00010aca03920165.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>从原始记录中可以看到该名学生的三科成绩分别为 95,8 5和 89，总成绩刚好与上面计算结果一致。<strong>sum() 求和函数不仅可以计算单个字段值，也可以对计算后的字段值进行汇总</strong>，假设学生成绩表的成绩包含了附加 10 ��，那么要计算一个学生所有课程的实际成绩（减去10分）之和就可以这样来编写Sql:</p>
+<pre><code>select  sum(grade-10) as sum_grade  from elective  where sid =1001 
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f30a4f20001a61f03590128.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>结果集中该名学生的实际成绩总和是每科成绩减去 10 后的求和，当然其他聚合函数也是可以对计算后的字段进行再聚合计算。</p>
+</div><div class="cl-preview-section"><h2 id="使用-avg-函数计算学生的平均年龄和平均成绩">7.2  使用 Avg 函数计算学生的平均年龄和平均成绩</h2>
+</div><div class="cl-preview-section"><p>当我们需要计算学生表中所有学生的平均年龄时，就可以使用 Avg 函数：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token function">avg</span><span class="token punctuation">(</span>age<span class="token punctuation">)</span> <span class="token keyword">as</span> avg_age <span class="token keyword">from</span> student
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：<br>
+<img src="https://img.mukewang.com/5f30a4fe00013be603220153.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>使用 avg() 函数对 age 年龄字段求平均值，返回所有学生的平均年龄。也可以通过这个函数计算某个课程的平均成绩：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span>  <span class="token function">avg</span><span class="token punctuation">(</span>grade<span class="token punctuation">)</span> <span class="token keyword">as</span> avg_grade  <span class="token keyword">from</span> elective  <span class="token keyword">where</span> sid <span class="token operator">=</span><span class="token number">1002</span> 
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f30a5070001279d03040148.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>编号为 1002 的学生的平均成绩为 89 分。</p>
+</div><div class="cl-preview-section"><h2 id="使用-count-函数统计学生表总记录数">7.3 使用 Count 函数统计学生表总记录数</h2>
+</div><div class="cl-preview-section"><p>count() 函数用于计算满足限制条件下所有记录的行数，下面一条 Sql 是查询学生表的记录总行数：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token function">count</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">,</span><span class="token function">count</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">)</span> <span class="token punctuation">,</span><span class="token function">count</span><span class="token punctuation">(</span>gender<span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token function">count</span><span class="token punctuation">(</span>id<span class="token punctuation">)</span> <span class="token keyword">from</span> student
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f30a5100001f4c805210141.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>可以看到，count(*) 和 count(1) 统计了所有的行，count(id) 和 count(gender) 是统计字段非 null 值的所有行数，由于 gender 字段中大乔的性别为 null，该条记录被 count(gender) 忽略，所以 count(gender) 的数值比总行数少 1，ID 不存在 null 值，所以 count(id) 也是 18，和 count(*) 统计结果一致。需要注意的是，<strong>不只是 count 函数会忽略 null 值，其他聚合函数也会这样做</strong>。</p>
+</div><div class="cl-preview-section"><p>另外在日常统计中，经常使用 count 来统计一个字段不同值的个数，下面的 Sql 语句用来查询高校信息表中存在高校的城市数：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token function">count</span><span class="token punctuation">(</span><span class="token keyword">distinct</span> cityid<span class="token punctuation">)</span> <span class="token keyword">from</span> school 
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f30a5180001988003090135.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>结果返回了存在高校的城市有 331 个，数据库首先通过 distinct 关键字将城市 ID 去重，然后通过 count 函数统计出记录数。</p>
+</div><div class="cl-preview-section"><h2 id="使用-max-函数计算学生中的最大年龄">7.4 使用 max 函数计算学生中的最大年龄</h2>
+</div><div class="cl-preview-section"><p>数据库提供了 max() 函数来计算一个字段的最大值，下面 Sql 可以查询学生表中的最大年龄值：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token function">max</span><span class="token punctuation">(</span>age<span class="token punctuation">)</span> <span class="token keyword">as</span> max_age  <span class="token keyword">from</span> student
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f30a5200001c0e803150146.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>从结果集看，学生表中最大年龄是 32 岁，返回的也是单值。</p>
+</div><div class="cl-preview-section"><h2 id="使用-min-函数计算学生中的最小年龄">7.5使用 min 函数计算学生中的最小年龄</h2>
+</div><div class="cl-preview-section"><p>和最大值函数用法一样，如果要返回一个字段的最小值就可以通过 min() 函数来实现。下面是一条查询学生表中最小年龄的 Sql：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token function">min</span><span class="token punctuation">(</span>age<span class="token punctuation">)</span> <span class="token keyword">as</span> min_age  <span class="token keyword">from</span> student
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f30a5280001559a02680136.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>结果返回了学生表中年龄的最小值为 20。</p>
+</div><div class="cl-preview-section"><h2 id="聚合函数的组合使用">7.6 聚合函数的组合使用</h2>
+</div><div class="cl-preview-section"><p>上面的例子都是单独使用聚合函数，其实这些函数可以组合一起返回，比如下面是用来查询学生表中的最小年龄值，最大年龄值，总记录行数。</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token function">min</span><span class="token punctuation">(</span>age<span class="token punctuation">)</span> <span class="token punctuation">,</span><span class="token function">max</span><span class="token punctuation">(</span>age<span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token function">count</span><span class="token punctuation">(</span>id<span class="token punctuation">)</span> <span class="token keyword">from</span> student
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f30a52f0001ef4804220118.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>上面的查询语句一并返回了三条结果，聚合函数是可以自由组合的，为我们日常统计提供了很大的便利。</p>
+</div><div class="cl-preview-section"><p>当然聚合函数的组合也可以放在带有where子句的查询语句中，比如下面是用来查询学生表中年龄超过27岁的最小年龄值，最大年龄值，总记录行数。</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token function">min</span><span class="token punctuation">(</span>age<span class="token punctuation">)</span> <span class="token punctuation">,</span><span class="token function">max</span><span class="token punctuation">(</span>age<span class="token punctuation">)</span><span class="token punctuation">,</span><span class="token function">count</span><span class="token punctuation">(</span>id<span class="token punctuation">)</span> <span class="token keyword">from</span> student <span class="token keyword">where</span> age <span class="token operator">&gt;</span> <span class="token number">27</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f30a53800013bfb04260151.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="总结">7.7 总结</h2>
+</div><div class="cl-preview-section"><p>本小节结合实例对五种聚合函数进行了详细的介绍，并重点介绍两个或两个以上的聚合函数组合查询的实例，这些都是在实际数据统计中必备的知识,下节我们一起了解分组查询的使用。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img1.mukewang.com/5f2cb71e00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥48.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=85">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '07 使用聚合函数实现学生和高校信息统计',
+					'CID': '2265',
+					'Teacher': '简逸'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "07 使用聚合函数实现学生和高校信息统计",
+                    desc: "0基础入门，掌握4大主流数据库的SQL技术",
+                    imgUrl: 'https:https://img4.mukewang.com/5f23b6e70001de8a05400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5f23b6e70001de8a05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/85',
+                    link: 'https://m.imooc.com/read/85'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

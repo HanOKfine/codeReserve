@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>32 一起探究下事务的实现原理吧</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="打包 MySQL 常用高级技巧特性">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "1955";
+	var chapter_title = "32 一起探究下事务的实现原理吧";
+	var aid = "71";
+	var a_name = "实战派 MySQL 高阶应用指南";
+	var a_price = "68.00";
+	var a_pic = "https://img4.mukewang.com/5e65bd6e0001444005400720.jpg";
+	var userId = 0;
+
+	var column_id = '71';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-19&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			32 一起探究下事务的实现原理吧
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img4.mukewang.com/5ec3378f0001af0106400426.jpg')"></div>
+	
+	
+		<a href="/read/71">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5c36c432000158e609600960-40-40.jpg" alt="勤一">
+				<h3>实战派 MySQL 高阶应用指南</h3>
+				<p>勤一 · BAT 高级研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">天才就是长期劳动的结果。<p class="author">——牛顿</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>事务是 MySQL 这样的关系型数据库区别于 NoSQL 的重要方面，是保证数据一致性的重要手段。在之前讲解 “事务隔离级别” 时曾经说过，事务具有 ACID（原子性、一致性、隔离性和持久性）四大特性。那么，想要搞清楚事务的实现原理，其实就是对应到这四大特性的实现原理。这一节里，我们就一起探索下 MySQL 事务是怎么实现的吧。</p>
+</div><div class="cl-preview-section"><h2 id="原子性概念及其实现">1. 原子性概念及其实现</h2>
+</div><div class="cl-preview-section"><p>原子本身是化学中的一个名词，是指构成化学元素的最小粒子。对于现代计算机而言，人们对它进行了概念上的扩展，使得原子性不仅仅与 MySQL 事务有关系，它同样会出现在很多场景或技术中。</p>
+</div><div class="cl-preview-section"><h3 id="什么是原子性">1.1 什么是原子性</h3>
+</div><div class="cl-preview-section"><p>原子性是指多个操作是一个不可分割的工作单位，其中的每一个操作，要么全都做，要么全都不做。原子性是事务最基本的特性，可以想象：如果不具备原子性，当其中的部分操作出现错误或者抛出异常时，就会导致数据丢失或错误，且无法恢复到原始状态。</p>
+</div><div class="cl-preview-section"><p>如果事务中的某一条 SQL 语句执行失败，则已经执行的语句也必须回滚，即退回到事务执行之前的状态，且终止事务的执行。由于原子性用于保证 “状态的正确性”，所以，它是数据库最基本的特性。</p>
+</div><div class="cl-preview-section"><h3 id="原子性是怎么实现的">1.2 原子性是怎么实现的</h3>
+</div><div class="cl-preview-section"><p>实现原子性的关键，是当事务出现错误时能够及时回滚（撤销当前事务中已经执行成功的 SQL 语句），对于 InnoDB 而言，它依赖于 undo log（回滚日志）。undo log 的思想是非常简单的：当事务对数据库进行修改时，InnoDB 会生成对应的 undo log；如果事务执行失败或主动调用了 Rollback，则可以利用 undo log 中的信息将数据恢复到事务发生之前的状态。</p>
+</div><div class="cl-preview-section"><p>关于 undo log，我们需要重点关注的是：它是逻辑日志。可以简单的认为：undo log 中存储的是 SQL，事务中执行的每一条 INSERT 都对应了一条 DELETE；同样，对于每一条 UPDATE，也会对应着一条 “相反的” UPDATE 语句。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec337b30001912d06900108.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="持久性概念及其实现">2. 持久性概念及其实现</h2>
+</div><div class="cl-preview-section"><p>持久性也是一个比较好理解的特性，它表达的含义是：事务一旦被提交，就不能再执行回滚操作了。如果想要 “恢复” 到事务提交之前的状态，就必须重新提交一个 “相反” 的事务，实现抵消。</p>
+</div><div class="cl-preview-section"><h3 id="什么是持久性">2.1 什么是持久性</h3>
+</div><div class="cl-preview-section"><p>数据库最基本的功能就是实现对数据的存储，而这种存储一定是 “持久性” 的。持久性的定义如下：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>事务一旦被提交，它对数据库的改变就是永久性的，之后的其他操作或故障不应该对它有任何影响。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h3 id="持久性是怎么实现的">2.2 持久性是怎么实现的</h3>
+</div><div class="cl-preview-section"><p>与原子性类似，事务的持久性也是依赖 InnoDB 日志实现的，它叫做 Redo Log（重做日志）。Redo Log 由两部分组成：</p>
+</div><div class="cl-preview-section"><ul>
+<li>内存中的重做日志缓冲区，是易失的</li>
+<li>磁盘上的重做日志文件，是持久的</li>
+</ul>
+</div><div class="cl-preview-section"><p>当我们在事务中对数据进行修改时，Redo Log 的工作流程（以 UPDATE 操作为例）如下图所示：<br>
+<img src="https://img.mukewang.com/5ec3ae2e0001755106440312.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>可以看到，Redo Log 的整个流程包含了5个步骤：</p>
+</div><div class="cl-preview-section"><ul>
+<li>执行 UPDATE 操作</li>
+<li>将原始数据从磁盘读取到内存中，并修改（UPDATE）内存中的数据</li>
+<li>生成一条重做日志写入到 “重做日志缓冲区” 中，记录数据被修改后的值</li>
+<li>事务提交时，将 “重做日志缓冲区” 中的内容刷写到 “重做日志文件” 中</li>
+<li>事务提交之后，将内存中修改的数据写入到磁盘中</li>
+</ul>
+</div><div class="cl-preview-section"><p>通过对原子性和持久性的学习，我们了解了 MySQL 中的另外两种日志（其实是 InnoDB 的）：回滚日志和重做日志。在数据库系统中，回滚日志用于对事务的影响进行撤销，而重做日志则是对已经提交的事务进行重做。</p>
+</div><div class="cl-preview-section"><h2 id="隔离性概念及其实现">3. 隔离性概念及其实现</h2>
+</div><div class="cl-preview-section"><p>简单来说，隔离性是用来解决事务并发的相关问题的。它与原子性、持久性对应于事务本身不同，隔离性所涵盖的是不同事务之间的相互影响。即它所追求的是并发场景下事务之间的相互不干扰。</p>
+</div><div class="cl-preview-section"><h3 id="什么是隔离性">3.1 什么是隔离性</h3>
+</div><div class="cl-preview-section"><p>隔离性指的是：每一个事务内部的操作都与其他事务是隔离的，并发执行的各个事务之间不能相互干扰。数据库所定义的最高级别的隔离性是 “可串行化（Serializable）”，但在实际应用中，由于需要平衡性能，几乎不会选择严格的 “可串行化”。</p>
+</div><div class="cl-preview-section"><p>不论是多么复杂的事务操作，经过拆解，都可以化简为读操作和写操作的组合。那么，隔离性实际上也就是说：</p>
+</div><div class="cl-preview-section"><ul>
+<li>一个事务写操作对另一个事务写操作的影响</li>
+<li>一个事务写操作对另一个事务读操作的影响</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="隔离性是怎么实现的">3.2 隔离性是怎么实现的</h3>
+</div><div class="cl-preview-section"><p>虽然 “可串行化” 可以解决隔离性的问题，但是，它会严重降低数据库的运行性能。所以，数据库定义了不同的隔离级别（在之前已经讲解过，这里不再赘述），交由用户自行去权衡隔离性与数据一致性。</p>
+</div><div class="cl-preview-section"><p>数据库对于隔离级别的实现使用的是 “并发控制机制” 对在同一时间执行的事务进行控制，而 InnoDB 则是通过锁来实现 “并发控制机制”。InnoDB 同时支持表锁和行锁，且出于对性能的考虑，绝大多数情况下使用的都是行锁。</p>
+</div><div class="cl-preview-section"><p>在 MySQL 中，有两种方式可以查看 InnoDB 当前持有的锁。首先，我们需要在两个会话中做一些 “操作”。如下所示：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token comment">-- 在 “会话 A” 中开启事务</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">START</span> <span class="token keyword">TRANSACTION</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment">-- “会话 A” 更新 worker 表的记录</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">UPDATE</span> worker <span class="token keyword">SET</span> name <span class="token operator">=</span> <span class="token string">'qinyi'</span> <span class="token keyword">WHERE</span> id <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+<span class="token keyword">Rows</span> <span class="token keyword">matched</span>: <span class="token number">1</span>  Changed: <span class="token number">0</span>  <span class="token keyword">Warnings</span>: <span class="token number">0</span>
+
+<span class="token comment">-- 在 “会话 B” 中开启事务</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">START</span> <span class="token keyword">TRANSACTION</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment">-- “会话 B” 更新 worker 表的记录，此时操作会被 Hang 住</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">UPDATE</span> worker <span class="token keyword">SET</span> name <span class="token operator">=</span> <span class="token string">'qinyi'</span> <span class="token keyword">WHERE</span> id <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>由于 “会话 B” 获取不到锁，最终会报 “获取锁超时” 错误。在 “会话 B” 等待锁的时间里，我们可以去查看锁的信息（第一种方式）：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token comment">-- 通过查看 information_schema 系统库中的 innodb_locks 表可以看到事务占用锁的信息</span>
+<span class="token comment">-- lock_trx_id 标识的是事务 id</span>
+<span class="token comment">-- lock_type 是 RECORD，代表行锁（行记录锁）</span>
+<span class="token comment">-- lock_mode 是 X，代表写锁</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> information_schema<span class="token punctuation">.</span>innodb_locks<span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">---------------+-------------+-----------+-----------+------------------------+------------+------------+-----------+----------+-----------+</span>
+<span class="token operator">|</span> lock_id       <span class="token operator">|</span> lock_trx_id <span class="token operator">|</span> lock_mode <span class="token operator">|</span> lock_type <span class="token operator">|</span> lock_table             <span class="token operator">|</span> lock_index <span class="token operator">|</span> lock_space <span class="token operator">|</span> lock_page <span class="token operator">|</span> lock_rec <span class="token operator">|</span> lock_data <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">---------------+-------------+-----------+-----------+------------------------+------------+------------+-----------+----------+-----------+</span>
+<span class="token operator">|</span> <span class="token number">38934</span>:<span class="token number">147</span>:<span class="token number">3</span>:<span class="token number">3</span> <span class="token operator">|</span> <span class="token number">38934</span>       <span class="token operator">|</span> X         <span class="token operator">|</span> RECORD    <span class="token operator">|</span> <span class="token punctuation">`</span>imooc_mysql<span class="token punctuation">`</span><span class="token punctuation">.</span><span class="token punctuation">`</span>worker<span class="token punctuation">`</span> <span class="token operator">|</span> <span class="token keyword">PRIMARY</span>    <span class="token operator">|</span>        <span class="token number">147</span> <span class="token operator">|</span>         <span class="token number">3</span> <span class="token operator">|</span>        <span class="token number">3</span> <span class="token operator">|</span> <span class="token number">2</span>         <span class="token operator">|</span>
+<span class="token operator">|</span> <span class="token number">38933</span>:<span class="token number">147</span>:<span class="token number">3</span>:<span class="token number">3</span> <span class="token operator">|</span> <span class="token number">38933</span>       <span class="token operator">|</span> X         <span class="token operator">|</span> RECORD    <span class="token operator">|</span> <span class="token punctuation">`</span>imooc_mysql<span class="token punctuation">`</span><span class="token punctuation">.</span><span class="token punctuation">`</span>worker<span class="token punctuation">`</span> <span class="token operator">|</span> <span class="token keyword">PRIMARY</span>    <span class="token operator">|</span>        <span class="token number">147</span> <span class="token operator">|</span>         <span class="token number">3</span> <span class="token operator">|</span>        <span class="token number">3</span> <span class="token operator">|</span> <span class="token number">2</span>         <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">---------------+-------------+-----------+-----------+------------------------+------------+------------+-----------+----------+-----------+</span>
+<span class="token number">2</span> <span class="token keyword">rows</span> <span class="token operator">in</span> <span class="token keyword">set</span><span class="token punctuation">,</span> <span class="token number">1</span> warning <span class="token punctuation">(</span><span class="token number">0.01</span> sec<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>我们还可以通过 <code>SHOW ENGINE INNODB STATUS</code> 命令查看当前 InnoDB 存储引擎的详细信息，这其中当然也包含了锁相关的信息（第二种方式）。如下所示（由于打印的内容太多，省略了无关的信息）：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql">mysql<span class="token operator">&gt;</span> <span class="token keyword">SHOW</span> <span class="token keyword">ENGINE</span> <span class="token keyword">INNODB</span> <span class="token keyword">STATUS</span><span class="token punctuation">;</span>
+<span class="token comment">---TRANSACTION 38934, ACTIVE 29 sec starting index read</span>
+mysql <span class="token keyword">tables</span> <span class="token operator">in</span> <span class="token keyword">use</span> <span class="token number">1</span><span class="token punctuation">,</span> locked <span class="token number">1</span>
+<span class="token keyword">LOCK</span> WAIT <span class="token number">2</span> <span class="token keyword">lock</span> struct<span class="token punctuation">(</span>s<span class="token punctuation">)</span><span class="token punctuation">,</span> heap size <span class="token number">1136</span><span class="token punctuation">,</span> <span class="token number">1</span> <span class="token keyword">row</span> <span class="token keyword">lock</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span>
+MySQL thread id <span class="token number">5</span><span class="token punctuation">,</span> OS thread handle <span class="token number">123145537167360</span><span class="token punctuation">,</span> query id <span class="token number">169</span> localhost root updating
+
+<span class="token comment">---TRANSACTION 38933, ACTIVE 88 sec</span>
+<span class="token number">2</span> <span class="token keyword">lock</span> struct<span class="token punctuation">(</span>s<span class="token punctuation">)</span><span class="token punctuation">,</span> heap size <span class="token number">1136</span><span class="token punctuation">,</span> <span class="token number">1</span> <span class="token keyword">row</span> <span class="token keyword">lock</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span>
+MySQL thread id <span class="token number">2</span><span class="token punctuation">,</span> OS thread handle <span class="token number">123145536331776</span><span class="token punctuation">,</span> query id <span class="token number">173</span> localhost root starting
+<span class="token keyword">SHOW</span> <span class="token keyword">ENGINE</span> <span class="token keyword">INNODB</span> <span class="token keyword">STATUS</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="一致性概念及其实现">4. 一致性概念及其实现</h2>
+</div><div class="cl-preview-section"><p>一致性是事务四大特性中最难理解的一个，它关注的是数据的可见性，中间状态（事务在执行过程中，既不是开始，也没有结束）的数据对外是不可见的，只有最初状态和最终状态的数据对外可见。</p>
+</div><div class="cl-preview-section"><h3 id="什么是一致性">4.1 什么是一致性</h3>
+</div><div class="cl-preview-section"><p>一致性是指事务将数据库从一种一致性状态变为下一种一致性状态，在事务开始之前和之后，数据库的完整性约束（实体完整性、列完整性、外键约束、用户自定义的完整性）没有被破坏。</p>
+</div><div class="cl-preview-section"><p>关于一致性，最经典的例子就是 “转账”，即 A 与 B 之间进行转账操作（这是一次事务），无论这中间发生了什么（成功或失败的转账动作），它们的总和必须是不变的。不过，这里还有一层含义：转账操作要么全部成功，要么全部失败，这不是事务的原子性吗 ？但是，仔细分析，你会发现，原子性和一致性的侧重点是不同的。</p>
+</div><div class="cl-preview-section"><h3 id="一致性是怎么实现的">4.2 一致性是怎么实现的</h3>
+</div><div class="cl-preview-section"><p>之前所介绍的原子性、持久性和隔离性都是为了保证数据库状态的一致性，所以，一致性是数据库事务追求的终极目标。但同时，我们不能仅仅依赖于数据库层面保证一致性，应用层面同样需要做出努力。</p>
+</div><div class="cl-preview-section"><p>实现一致性的方法包括：</p>
+</div><div class="cl-preview-section"><ul>
+<li>保证原子性、持久性和隔离性，它们是一致性保证的基础</li>
+<li>数据库层面的限制，例如插入的字符串长度不能超过列限制（约束）</li>
+<li>应用代码的判断，校验出错及时抛出异常</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="总结">5. 总结</h2>
+</div><div class="cl-preview-section"><p>支持事务是 InnoDB 最核心的特性之一，而事务的 ACID 四大特性是保障应用程序正确运行的基石。原子性和持久性是最容易理解的两大特性；严格的隔离性会对性能有较大影响，在实际的应用中会相对有所权衡；一致性不仅是数据库自身的完整性要求，同样也对应用程序的开发者带来了挑战。</p>
+</div><div class="cl-preview-section"><h2 id="问题">6. 问题</h2>
+</div><div class="cl-preview-section"><p>原子性和一致性的侧重点分别是什么 ？<br><br>
+你在应用程序中是怎样考虑一致性的 ？出现问题时，你怎样解决的呢 ？<br><br>
+你听过分布式事务吗 ？它是怎么实现的呢 ？</p>
+</div><div class="cl-preview-section"><h2 id="参考资料">7. 参考资料</h2>
+</div><div class="cl-preview-section"><p>《高性能 MySQL（第三版）》<br><br>
+《MySQL技术内幕：InnoDB存储引擎（第2版）》<br><br>
+<a href="https://dev.mysql.com/doc/refman/5.7/en/innodb-information-schema-examples.html">MySQL 官方文档：Using InnoDB Transaction and Locking Information</a><br><br>
+<a href="https://dev.mysql.com/doc/refman/5.7/en/show-engine.html">MySQL 官方文档：SHOW ENGINE Statement</a><br><br>
+<a href="https://dev.mysql.com/doc/refman/5.7/en/innodb-locks-table.html">MySQL 官方文档：The INFORMATION_SCHEMA INNODB_LOCKS Table</a><br><br>
+<a href="https://dev.mysql.com/doc/refman/5.7/en/innodb-locking-transaction-model.html">MySQL 官方文档：InnoDB Locking and Transaction Model</a><br><br>
+<a href="https://dev.mysql.com/doc/refman/5.7/en/innodb-in-memory-structures.html">MySQL 官方文档：InnoDB In-Memory Structures</a><br><br>
+<a href="https://dev.mysql.com/doc/refman/5.7/en/innodb-on-disk-structures.html">MySQL 官方文档：InnoDB On-Disk Structures</a></p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img.mukewang.com/5ec3379500011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=71">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '32 一起探究下事务的实现原理吧',
+					'CID': '1955',
+					'Teacher': '勤一'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "32 一起探究下事务的实现原理吧",
+                    desc: "打包 MySQL 常用高级技巧特性",
+                    imgUrl: 'https:https://img4.mukewang.com/5e65bd6e0001444005400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5e65bd6e0001444005400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/71',
+                    link: 'https://m.imooc.com/read/71'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

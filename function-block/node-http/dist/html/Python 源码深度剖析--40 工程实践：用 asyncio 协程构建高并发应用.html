@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>40 工程实践：用 asyncio 协程构建高并发应用</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="突破技术瓶颈，迈向更高岗位">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "2";
+	var chapter_id = "1936";
+	var chapter_title = "40 工程实践：用 asyncio 协程构建高并发应用";
+	var aid = "76";
+	var a_name = "Python 源码深度剖析";
+	var a_price = "68.00";
+	var a_pic = "https://img4.mukewang.com/5eb68ab400017cda05400720.jpg";
+	var userId = 0;
+
+	var column_id = '76';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-09-10&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			40 工程实践：用 asyncio 协程构建高并发应用
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img1.mukewang.com/5f5592f90001e69b06400426.jpg')"></div>
+	
+	
+		<a href="/read/76">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/5e4a3ec90001ef8d04000400-40-40.jpg" alt="fasionchan">
+				<h3>Python 源码深度剖析</h3>
+				<p>fasionchan · 资深 Python 研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">既然我已经踏上这条道路，那么，任何东西都不应妨碍我沿着这条路走下去。<p class="author">——康德</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>互联网的基础是网络通讯，应用对网络请求的处理能力非常关键。</p>
+</div><div class="cl-preview-section"><h2 id="c10k问题">C10K问题</h2>
+</div><div class="cl-preview-section"><p>在互联网尚未普及的早期，一台服务器同时在线<em>100</em> 个用户已经算是非常大型的应用了，工程上没有什么挑战。</p>
+</div><div class="cl-preview-section"><p>随着 <em>Web 2.0</em> 时代的到来，用户群体承几何倍数增长，服务器需要更强的并发处理能力才能承载海量的用户。这时，著名的 <em>C10K</em> 问题诞生了——如何让单台服务器同时支撑 <em>1</em> 万个客户端连接？</p>
+</div><div class="cl-preview-section"><p>最初的服务器应用编程模型，是基于进程/线程的：当一个新的客户端连接上来，服务器就分配一个进程或线程，来处理这个新连接。这意味着，想要解决 <em>C10K</em> 问题，操作系统需要同时运行 <em>1</em> 万个进程或线程。</p>
+</div><div class="cl-preview-section"><p>进程和线程是操作系统中，开销最大的资源之一。每个新连接都新开进程/线程，将造成极大的资源浪费。况且，受硬件资源制约，系统同一时间能运行的进程/线程数存在上限。</p>
+</div><div class="cl-preview-section"><p>换句话讲，在进程/线程模型中，每台服务器能处理的客户端连接数是非常有限的。为支持海量的业务，只能通过堆服务器这种简单粗暴的方式来实现。但这样的人海战术，既不稳定，也不经济。</p>
+</div><div class="cl-preview-section"><p>为了在单个进程/线程中同时处理多个网络连接，<em>select</em> 、 <em>poll</em> 、<em>epoll</em> 等 <strong>IO多路复用</strong> 技术应运而生。在 IO 多路复用模型，进程/线程不再阻塞在某个连接上，而是同时监控多个连接，只处理那些有新数据达到的活跃连接。</p>
+</div><div class="cl-preview-section"><h2 id="为什么需要协程">为什么需要协程</h2>
+</div><div class="cl-preview-section"><p>单纯的 IO 多路复用编程模型，不像阻塞式编程模型那样直观，这为工程项目带来诸多不便。最典型的像 <em>JavaScript</em> 中的回调式编程模型，程序中各种 <em>callback</em> 函数满天飞，这不是一种直观的思维方式。</p>
+</div><div class="cl-preview-section"><p>为实现阻塞式那样直观的编程模型，协程(用户态线程)的概念被提出来。协程在进程/线程基础之上，实现多个执行上下文。由 <em>epoll</em> 等IO多路复用技术实现的事件循环，则负责驱动协程的调度、执行。</p>
+</div><div class="cl-preview-section"><p>协程可以看做是IO多路复用技术更高层次的封装。虽然与原始IO���路复用相比有一定的性能开销，但与进程/线程模型相比却非常突出。协程占用资源比进程/线程少，而且切换成本比较低。因此，协程在高并发应用领域潜力无限。</p>
+</div><div class="cl-preview-section"><p>然而，协程独特的运行机制，让初学者吃了不少亏，错漏百出。</p>
+</div><div class="cl-preview-section"><p>接下来，我们通过若干简单例子，探索协程应用之道，从中体会协程的作用，并揭示高并发应用设计、部署中存在的常见误区。由于 <em>asyncio</em> 是 <em>Python</em> 协程发展的主要趋势，例子便以 <em>asyncio</em> 为讲解对象。</p>
+</div><div class="cl-preview-section"><h2 id="第一个协程应用">第一个协程应用</h2>
+</div><div class="cl-preview-section"><p>协程应用由事件循环驱动，套接字必须是非阻塞模式，否则会阻塞事件循环。因此，一旦使用协程，就要跟很多类库说拜拜。以 <em>MySQL</em> 数据库操作为例，如果我们使用 <em>asyncio</em> ，就要用 <em>aiomysql</em> 包来连数据库。</p>
+</div><div class="cl-preview-section"><p>而想要开发 <em>Web</em> 应用，则可以用 <em>aiohttp</em> 包，它可以通过 <em>pip</em> 命令安装：</p>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash">$ pip <span class="token function">install</span> aiohttp
+</code></pre>
+</div><div class="cl-preview-section"><p>这个例子实现一个完整 <em>Web</em> 服务器，虽然它只有返回当前时间的功能：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">from</span> aiohttp <span class="token keyword">import</span> web
+<span class="token keyword">from</span> datetime <span class="token keyword">import</span> datetime
+
+<span class="token keyword">async</span> <span class="token keyword">def</span> <span class="token function">handle</span><span class="token punctuation">(</span>request<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">return</span> web<span class="token punctuation">.</span>Response<span class="token punctuation">(</span>text<span class="token operator">=</span>datetime<span class="token punctuation">.</span>now<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>strftime<span class="token punctuation">(</span><span class="token string">'%Y-%m-%d %H:%M:%S'</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+app <span class="token operator">=</span> web<span class="token punctuation">.</span>Application<span class="token punctuation">(</span><span class="token punctuation">)</span>
+app<span class="token punctuation">.</span>add_routes<span class="token punctuation">(</span><span class="token punctuation">[</span>
+    web<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">'/'</span><span class="token punctuation">,</span> handle<span class="token punctuation">)</span><span class="token punctuation">,</span>
+<span class="token punctuation">]</span><span class="token punctuation">)</span>
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">'__main__'</span><span class="token punctuation">:</span>
+    web<span class="token punctuation">.</span>run_app<span class="token punctuation">(</span>app<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><ol>
+<li>第 <em>4</em> 行，实现处理函数，获取当前时间并返回；</li>
+<li>第 <em>7</em> 行，创建应用对象，并将处理函数注册到路由中；</li>
+<li>第 <em>13</em> 行，将 <em>Web</em> 应用跑起来，默认端口是 <em>8080</em> ；</li>
+</ol>
+</div><div class="cl-preview-section"><p>当一个新的请求到达时，<em>aiohttp</em> 将创建一个新协程来处理该请求，它将负责执行对应的处理函数。因此，处理函数必须是合法的协程函数，以 <em>async</em> 关键字开头。</p>
+</div><div class="cl-preview-section"><p>将程序跑起来后，我们就可以通过它获悉当前时间。在命令行中，可以用 <em>curl</em> 命令来发起请求：</p>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash">$ curl http://127.0.0.1:8080/
+2020-08-06 15:50:34
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="压力测试">压力测试</h2>
+</div><div class="cl-preview-section"><p>研发高并发应用，需要评估应用的处理能力。我们可以在短时间内发起大量的请求，并测算应用的吞吐能力。然而，就算你手再快，一秒钟也只能发起若干个请求呀。怎么办呢？</p>
+</div><div class="cl-preview-section"><p>我们需要借助一些压力测试工具，例如 <em>Apache</em> 工具集中的 <em>ab</em> 。如何安装使用 <em>ab</em> 不在本文的讨论范围，请参考这篇文章： <a href="https://network.fasionchan.com/zh_CN/latest/performance/web-pressure-test.html">Web压力测试</a> 。</p>
+</div><div class="cl-preview-section"><p>事不宜迟，我们先以 <em>100</em> 为并发数，压 <em>10000</em> 个请求看看结果：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python">$ ab <span class="token operator">-</span>n <span class="token number">10000</span> <span class="token operator">-</span>c <span class="token number">100</span> http<span class="token punctuation">:</span><span class="token operator">//</span><span class="token number">127.0</span><span class="token punctuation">.</span><span class="token number">0.1</span><span class="token punctuation">:</span><span class="token number">8080</span><span class="token operator">/</span>
+This <span class="token keyword">is</span> ApacheBench<span class="token punctuation">,</span> Version <span class="token number">2.3</span> <span class="token operator">&lt;</span>$Revision<span class="token punctuation">:</span> <span class="token number">1706008</span> $<span class="token operator">&gt;</span>
+Copyright <span class="token number">1996</span> Adam Twiss<span class="token punctuation">,</span> Zeus Technology Ltd<span class="token punctuation">,</span> http<span class="token punctuation">:</span><span class="token operator">//</span>www<span class="token punctuation">.</span>zeustech<span class="token punctuation">.</span>net<span class="token operator">/</span>
+Licensed to The Apache Software Foundation<span class="token punctuation">,</span> http<span class="token punctuation">:</span><span class="token operator">//</span>www<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>org<span class="token operator">/</span>
+
+Benchmarking <span class="token number">127.0</span><span class="token punctuation">.</span><span class="token number">0.1</span> <span class="token punctuation">(</span>be patient<span class="token punctuation">)</span>
+Completed <span class="token number">1000</span> requests
+Completed <span class="token number">2000</span> requests
+Completed <span class="token number">3000</span> requests
+Completed <span class="token number">4000</span> requests
+Completed <span class="token number">5000</span> requests
+Completed <span class="token number">6000</span> requests
+Completed <span class="token number">7000</span> requests
+Completed <span class="token number">8000</span> requests
+Completed <span class="token number">9000</span> requests
+Completed <span class="token number">10000</span> requests
+Finished <span class="token number">10000</span> requests
+
+
+Server Software<span class="token punctuation">:</span>        Python<span class="token operator">/</span><span class="token number">3.8</span>
+Server Hostname<span class="token punctuation">:</span>        <span class="token number">127.0</span><span class="token punctuation">.</span><span class="token number">0.1</span>
+Server Port<span class="token punctuation">:</span>            <span class="token number">8080</span>
+
+Document Path<span class="token punctuation">:</span>          <span class="token operator">/</span>
+Document Length<span class="token punctuation">:</span>        <span class="token number">19</span> <span class="token builtin">bytes</span>
+
+Concurrency Level<span class="token punctuation">:</span>      <span class="token number">100</span>
+Time taken <span class="token keyword">for</span> tests<span class="token punctuation">:</span>   <span class="token number">5.972</span> seconds
+Complete requests<span class="token punctuation">:</span>      <span class="token number">10000</span>
+Failed requests<span class="token punctuation">:</span>        <span class="token number">0</span>
+Total transferred<span class="token punctuation">:</span>      <span class="token number">1700000</span> <span class="token builtin">bytes</span>
+HTML transferred<span class="token punctuation">:</span>       <span class="token number">190000</span> <span class="token builtin">bytes</span>
+Requests per second<span class="token punctuation">:</span>    <span class="token number">1674.43</span> <span class="token punctuation">[</span><span class="token comment">#/sec] (mean)</span>
+Time per request<span class="token punctuation">:</span>       <span class="token number">59.722</span> <span class="token punctuation">[</span>ms<span class="token punctuation">]</span> <span class="token punctuation">(</span>mean<span class="token punctuation">)</span>
+Time per request<span class="token punctuation">:</span>       <span class="token number">0.597</span> <span class="token punctuation">[</span>ms<span class="token punctuation">]</span> <span class="token punctuation">(</span>mean<span class="token punctuation">,</span> across <span class="token builtin">all</span> concurrent requests<span class="token punctuation">)</span>
+Transfer rate<span class="token punctuation">:</span>          <span class="token number">277.98</span> <span class="token punctuation">[</span>Kbytes<span class="token operator">/</span>sec<span class="token punctuation">]</span> received
+
+Connection Times <span class="token punctuation">(</span>ms<span class="token punctuation">)</span>
+              <span class="token builtin">min</span>  mean<span class="token punctuation">[</span><span class="token operator">+</span><span class="token operator">/</span><span class="token operator">-</span>sd<span class="token punctuation">]</span> median   <span class="token builtin">max</span>
+Connect<span class="token punctuation">:</span>        <span class="token number">0</span>    <span class="token number">2</span>   <span class="token number">1.5</span>      <span class="token number">1</span>      <span class="token number">15</span>
+Processing<span class="token punctuation">:</span>    <span class="token number">43</span>   <span class="token number">58</span>   <span class="token number">5.0</span>     <span class="token number">57</span>      <span class="token number">89</span>
+Waiting<span class="token punctuation">:</span>       <span class="token number">29</span>   <span class="token number">47</span>   <span class="token number">6.3</span>     <span class="token number">47</span>      <span class="token number">85</span>
+Total<span class="token punctuation">:</span>         <span class="token number">43</span>   <span class="token number">60</span>   <span class="token number">4.8</span>     <span class="token number">58</span>      <span class="token number">90</span>
+
+Percentage of the requests served within a certain time <span class="token punctuation">(</span>ms<span class="token punctuation">)</span>
+  <span class="token number">50</span><span class="token operator">%</span>     <span class="token number">58</span>
+  <span class="token number">66</span><span class="token operator">%</span>     <span class="token number">59</span>
+  <span class="token number">75</span><span class="token operator">%</span>     <span class="token number">60</span>
+  <span class="token number">80</span><span class="token operator">%</span>     <span class="token number">61</span>
+  <span class="token number">90</span><span class="token operator">%</span>     <span class="token number">65</span>
+  <span class="token number">95</span><span class="token operator">%</span>     <span class="token number">69</span>
+  <span class="token number">98</span><span class="token operator">%</span>     <span class="token number">72</span>
+  <span class="token number">99</span><span class="token operator">%</span>     <span class="token number">85</span>
+ <span class="token number">100</span><span class="token operator">%</span>     <span class="token number">90</span> <span class="token punctuation">(</span>longest request<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li><em>-n</em> 选项，指定总请求数，即总共发多少个请求；</li>
+<li>-c 选项，指定并发数，即同时发多少个请求；</li>
+</ul>
+</div><div class="cl-preview-section"><p>从 <em>ab</em> 输出的报告中可以获悉，<em>10000</em> 个请求全部成功，总共耗时 <em>5.972</em> 秒，处理速度可以达到 <em>1674.43</em> 个每秒。</p>
+</div><div class="cl-preview-section"><p>现在，我们尝试提高并发数，看处理速度有没有提升：</p>
+</div><div class="cl-preview-section"><pre><code>$ ab -n 10000 -c 100 http://127.0.0.1:8080/
+</code></pre>
+</div><div class="cl-preview-section"><p>在 <em>1000</em> 并发数下，<em>10000</em> 个请求在 <em>5.771</em> 秒内完成，处理速度是 <em>1732.87</em> ，略有提升但很不明显。这一点也不意外，例子中的处理逻辑绝大部分都是计算型，虚增并发数几乎没有任何意义。</p>
+</div><div class="cl-preview-section"><h2 id="协程擅长做什么">协程擅长做什么</h2>
+</div><div class="cl-preview-section"><p>协程擅长处理 <em>IO</em> 型的应用逻辑，举个例子，当某个协程在等待数据库响应时，事件循环将唤醒另一个就绪协程来执行，以此提高吞吐。为降低复杂性，我们通过在程序中睡眠来模拟等待数据库的效果。</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">import</span> asyncio
+
+<span class="token keyword">from</span> aiohttp <span class="token keyword">import</span> web
+<span class="token keyword">from</span> datetime <span class="token keyword">import</span> datetime
+
+<span class="token keyword">async</span> <span class="token keyword">def</span> <span class="token function">handle</span><span class="token punctuation">(</span>request<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token comment"># 睡眠一秒钟</span>
+    asyncio<span class="token punctuation">.</span>sleep<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> web<span class="token punctuation">.</span>Response<span class="token punctuation">(</span>text<span class="token operator">=</span>datetime<span class="token punctuation">.</span>now<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>strftime<span class="token punctuation">(</span><span class="token string">'%Y-%m-%d %H:%M:%S'</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+app <span class="token operator">=</span> web<span class="token punctuation">.</span>Application<span class="token punctuation">(</span><span class="token punctuation">)</span>
+app<span class="token punctuation">.</span>add_routes<span class="token punctuation">(</span><span class="token punctuation">[</span>
+    web<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">'/'</span><span class="token punctuation">,</span> handle<span class="token punctuation">)</span><span class="token punctuation">,</span>
+<span class="token punctuation">]</span><span class="token punctuation">)</span>
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">'__main__'</span><span class="token punctuation">:</span>
+    web<span class="token punctuation">.</span>run_app<span class="token punctuation">(</span>app<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th><strong>并发数</strong></th>
+<th><strong>请求总数</strong></th>
+<th><strong>耗时(秒)</strong></th>
+<th><strong>处理速度(请求/秒)</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>100</td>
+<td>10000</td>
+<td>102.310</td>
+<td>97.74</td>
+</tr>
+<tr>
+<td>500</td>
+<td>10000</td>
+<td>22.129</td>
+<td>451.89</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>10000</td>
+<td>12.780</td>
+<td>782.50</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>可以看到，随着并发数的增加，处理速度也有明显的提升，趋势接近线性。</p>
+</div><div class="cl-preview-section"><h2 id="操作系统因素">操作系统因素</h2>
+</div><div class="cl-preview-section"><p>当我们以 <em>10000</em> 并发对程序进行压测时，程序不断抛出 <em>OSError</em> 异常：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python">socket<span class="token punctuation">.</span>accept<span class="token punctuation">(</span><span class="token punctuation">)</span> out of system resource
+socket<span class="token punctuation">:</span> <span class="token operator">&lt;</span>asyncio<span class="token punctuation">.</span>TransportSocket fd<span class="token operator">=</span><span class="token number">6</span><span class="token punctuation">,</span> family<span class="token operator">=</span>AddressFamily<span class="token punctuation">.</span>AF_INET<span class="token punctuation">,</span> <span class="token builtin">type</span><span class="token operator">=</span>SocketKind<span class="token punctuation">.</span>SOCK_STREAM<span class="token punctuation">,</span> proto<span class="token operator">=</span><span class="token number">6</span><span class="token punctuation">,</span> laddr<span class="token operator">=</span><span class="token punctuation">(</span><span class="token string">'0.0.0.0'</span><span class="token punctuation">,</span> <span class="token number">8080</span><span class="token punctuation">)</span><span class="token operator">&gt;</span>
+Traceback <span class="token punctuation">(</span>most recent call last<span class="token punctuation">)</span><span class="token punctuation">:</span>
+  File <span class="token string">"/home/fasion/opt/python3.8.5/lib/python3.8/asyncio/selector_events.py"</span><span class="token punctuation">,</span> line <span class="token number">162</span><span class="token punctuation">,</span> <span class="token keyword">in</span> _accept_connection
+  File <span class="token string">"/home/fasion/opt/python3.8.5/lib/python3.8/socket.py"</span><span class="token punctuation">,</span> line <span class="token number">292</span><span class="token punctuation">,</span> <span class="token keyword">in</span> accept
+OSError<span class="token punctuation">:</span> <span class="token punctuation">[</span>Errno <span class="token number">24</span><span class="token punctuation">]</span> Too many <span class="token builtin">open</span> files
+</code></pre>
+</div><div class="cl-preview-section"><p><em>Linux</em> 进程默认可以打开的文件描述符只有 <em>1024</em> 个：</p>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash">$ <span class="token function">ulimit</span> -n
+1024
+</code></pre>
+</div><div class="cl-preview-section"><p>当一个新请求连接达到时，事件循环将调用 <em>accept</em> 系统调用来接收。accept 系统调用将为新连接分配一个套接字( <em>socket</em> )，这将占用一个文件描述符。</p>
+</div><div class="cl-preview-section"><p>由于 <em>10000</em> 并发数远远超过 <em>1024</em> ，程序的文件描述符很快就会被耗尽，这就是它抛异常的根源。要解决程序报错问题，唯一的途径就是将进程文件描述符数调大，用 <em>ulimit</em> 命令即可搞定：</p>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash">$ <span class="token function">ulimit</span> -n 20000
+$ <span class="token function">ulimit</span> -n
+20000
+</code></pre>
+</div><div class="cl-preview-section"><p>进程 <strong>资源限制</strong> ( <em>rlimit</em> )与 <em>ulimit</em> 命令的用法超出本文的范围，更多介绍请参考这篇文章：<a href="https://linux.fasionchan.com/zh_CN/latest/administration/kernel/rlimit.html">资源限制</a> 。</p>
+</div><div class="cl-preview-section"><p>进程可打开的文件描述符数，直接制约进程承载的连接数，不可小视。网络应用部署时，如果忘记检查 <em>rlimit</em> 配置，很有可能造成故障。实际上，这类血案并不少见，我早年间也踩过坑。</p>
+</div><div class="cl-preview-section"><p>除了 <em>rlimit</em> ，内核参数，特别是与套接字相关的，在某些场景下也是需要特别注意的。因受篇幅所限，这里就不展开讨论了。</p>
+</div><div class="cl-preview-section"><h2 id="阻塞陷阱">阻塞陷阱</h2>
+</div><div class="cl-preview-section"><p>协程由事件循环驱动，不能调用阻塞函数，不然将阻塞事件循环。事件循环一旦被阻塞，它便无法调度其他协程，只能等待阻塞函数返回。不信我们将 <em>sleep</em> 函数换成 <em>time</em> 模块中的阻塞版本，看看会发生什么事情？</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">import</span> time
+
+<span class="token keyword">from</span> aiohttp <span class="token keyword">import</span> web
+<span class="token keyword">from</span> datetime <span class="token keyword">import</span> datetime
+
+<span class="token keyword">async</span> <span class="token keyword">def</span> <span class="token function">handle</span><span class="token punctuation">(</span>request<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token comment"># 睡眠一秒钟</span>
+    time<span class="token punctuation">.</span>sleep<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> web<span class="token punctuation">.</span>Response<span class="token punctuation">(</span>text<span class="token operator">=</span>datetime<span class="token punctuation">.</span>now<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>strftime<span class="token punctuation">(</span><span class="token string">'%Y-%m-%d %H:%M:%S'</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+app <span class="token operator">=</span> web<span class="token punctuation">.</span>Application<span class="token punctuation">(</span><span class="token punctuation">)</span>
+app<span class="token punctuation">.</span>add_routes<span class="token punctuation">(</span><span class="token punctuation">[</span>
+    web<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">'/'</span><span class="token punctuation">,</span> handle<span class="token punctuation">)</span><span class="token punctuation">,</span>
+<span class="token punctuation">]</span><span class="token punctuation">)</span>
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">'__main__'</span><span class="token punctuation">:</span>
+    web<span class="token punctuation">.</span>run_app<span class="token punctuation">(</span>app<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>由于我们有预感程序的吞吐将大受影响，压测总请求数降为 <em>100</em> ，并发数也降为从 <em>1</em> 起步：</p>
+</div><div class="cl-preview-section"><pre><code>$ ab -n 100 -c 1 http://127.0.0.1:8080/
+</code></pre>
+</div><div class="cl-preview-section"><p>测试结果如下，不管并发数是 <em>1</em> 、 <em>10</em> 还是 <em>100</em> ，压测耗时都是 <em>100</em> 秒左右，处理速度都是 <em>1</em> 个每秒：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th><strong>并发数</strong></th>
+<th><strong>请求总数</strong></th>
+<th><strong>耗时(秒)</strong></th>
+<th><strong>处理速度(请求/秒)</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>100</td>
+<td>100.344</td>
+<td>1.00</td>
+</tr>
+<tr>
+<td>10</td>
+<td>100</td>
+<td>102.248</td>
+<td>0.98</td>
+</tr>
+<tr>
+<td>100</td>
+<td>100</td>
+<td>100.230</td>
+<td>1.00</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>测试结果表明，一旦事件循环被阻塞，程序的并发处理能力将急剧下降。因此，千万不能在协程中调用同步阻塞的类库！</p>
+</div><div class="cl-preview-section"><p>在目前的 <em>Python</em> 的生态，大部分库仍然是同步的。比如 <em>requests</em> ，这是一个很好用的 <em>http</em> 请求库。但很不幸，它是同步的，会阻塞事件循环。因此，协程应用不能使用 <em>requests</em> ，只能使用 <em>requests-async</em> 或 <em>aiohttp</em> 中的替代品。</p>
+</div><div class="cl-preview-section"><p>那么，编写基于 <em>asyncio</em> 的协程应用，如何选择合适的类库呢？下面列举一些常用的替代品：</p>
+</div><div class="cl-preview-section"><ul>
+<li><em>aiohttp</em> ，发起 <em>http</em> 请求或实现 <em>http</em> 服务器；</li>
+<li><em>requests-async</em> ，异步版 <em>requests</em> ，用于发起 <em>http</em> 请求；</li>
+<li><em>aiomysql</em> ，用于连接 <em>MySQL</em> 数据库；</li>
+<li>aiokafka ，用于连接 <em>Kafka</em> 消息队列；</li>
+<li><em>aio_pika</em> ，用于连接基于 <em>AMQP</em> 协议的消息队列，例如 <em>RabbitMQ</em> ；</li>
+<li><em>etc</em></li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="总结">总结</h2>
+</div><div class="cl-preview-section"><p>经过本节的实战练习，我们对协程的运行机制有了更深刻的认识，要点总结如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>协程擅长 <strong>IO密集型</strong> 场景，对 <strong>计算密集型</strong> 场景几乎没有任何意义；</li>
+<li>协程中不能调用同步阻塞式类库，否则将阻塞事件循环，性能骤降；</li>
+<li>进程可打开文件数、内存参数等操作系统因素，也会制约程序的处理能力，必须重视；</li>
+</ul>
+</div><div class="cl-preview-section"><p>协程有自己擅长的领域，也存在一些局限性。运用协程时，还需要注意避免一些误区。不过只要真正理解这些要点，相信协程式应用程序开发，是可以轻松驾驭的。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5f55930000011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6778">
+						<img src="https://img2.mukewang.com/56a348690001fe1006400640-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">lttzzlllX</h4>
+						<div class="comment-text">同步日志对性能的影响: 像aiohttp.web,sanic,fastapi等框架默认会开启access_log,而日志存盘是同步的, 而且存盘是比较耗时的。如果禁止掉access_log,性能还会有大幅度提升。</div>
+						<div>
+							
+								<div class="reply">讲师回复：没错。如果日志比较重要不能关，还可以将日志操作异步化。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-14</span>
+						<a href="/read/commentdetail/6778">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6778" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6738">
+						<img src="https://img1.mukewang.com/5b8cee960001fd0102000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕仰5091509</h4>
+						<div class="comment-text">现在，我们尝试提供并发数 -》现在，我们尝试提高并发数<br /><br /><br />$ ab -n 10000 -c 100 http://127.0.0.1:8080/<br /><br />-c 1000</div>
+						<div>
+							
+								<div class="reply">讲师回复：收到，多谢指正~</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-07</span>
+						<a href="/read/commentdetail/6738">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6738" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=76">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '40 工程实践：用 asyncio 协程构建高并发应用',
+					'CID': '1936',
+					'Teacher': 'fasionchan'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "40 工程实践：用 asyncio 协程构建高并发应用",
+                    desc: "突破技术瓶颈，迈向更高岗位",
+                    imgUrl: 'https:https://img4.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/76',
+                    link: 'https://m.imooc.com/read/76'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

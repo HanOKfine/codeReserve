@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>18 文件下载功能设计</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="轻量级项目，系统化经验">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "1";
+	var chapter_id = "1729";
+	var chapter_title = "18 文件下载功能设计";
+	var aid = "73";
+	var a_name = "架构思维成长之微服务";
+	var a_price = "68.00";
+	var a_pic = "https://img2.mukewang.com/5e86b0220001a99d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '73';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-07-15&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			18 文件下载功能设计
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5e8c343700011f8406400359.jpg')"></div>
+	
+	
+		<a href="/read/73">
+			<div class="course-entry">
+				<img src="https://img2.mukewang.com/5e6eebd60001a49207000933-40-40.jpg" alt="曼巴out">
+				<h3>架构思维���长之微服务</h3>
+				<p>曼巴out · 上市公司资深架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">当你做成功一件事，千万不要等待着享受荣誉，应该再做那些需要的事。 <p class="author">—— 巴斯德</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="业务需求">1. 业务需求</h1>
+</div><div class="cl-preview-section"><p>需要实现文件下载功能，但是不仅限于传统的文件下载，还需要满足以下特性的下载：</p>
+</div><div class="cl-preview-section"><ul>
+<li>由于文件是切块进行存储的，如何下载的时候变成一个完整的文件？</li>
+<li>不仅可以下载单个文件，还要支持多个文件 / 夹下载，比如：同时勾选多个文件下载、勾选多个文件夹下载等等</li>
+<li>要保证超大文件的下载不会导致内存溢出</li>
+</ul>
+</div><div class="cl-preview-section"><p>本节内容主要是设计和实现满足以上三点需求的下载功能</p>
+</div><div class="cl-preview-section"><p>效果图如下所示</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9da4f00001675c15610743.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h1 id="功能设计">2. 功能设计</h1>
+</div><div class="cl-preview-section"><h2 id="基本知识了解">2.1 基本知识了解</h2>
+</div><div class="cl-preview-section"><p>首先，我们都知道如果传统的下载实现方式，如果是超大文件的下载肯定是会内存溢出的，所以我们才需要进行下载功能的改进。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>知识 1：简单了解文件下载的原理</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>要想了解文件下载的原理，我们得先来了解 Http 协议，Http 协议是我们用的最多的一种协议，也是做 Java Web 开发使用的协议，但是 Java 的 Servlet 的底层帮我们做了封装，不需要手工的解析 Http 协议，因此我们很少去了解其原理。Http 协议其实就是一种规则，客户端按照这种规则去编码数据，通过网络传输到服务端，服务端再按这种规则去解码数据。如果了解过 Netty 的同学应该比较清楚，基于 Netty 通讯框架，我们可以自定义自己的协议（私有协议），而 Http 它是一种公有协议。</p>
+</div><div class="cl-preview-section"><p>下载的时候，Java 后台需要做两个操作</p>
+</div><div class="cl-preview-section"><ol>
+<li>把文件的字节流（byte []）放到响应体里面；</li>
+<li>在响应头告诉浏览器用什么方式打开文件，浏览器收到协议之后，按标准去解码协议，然后做出处理。</li>
+</ol>
+</div><div class="cl-preview-section"><p>其实，浏览器自己也会有一套默认的规则，比如：你在浏览器直接访问某个文件，如果是图片、pdf 等它自己会在页面打开，如果是 doc 等它则会提示下载。原因是：服务器通过 MIME 告知响应内容类型，而浏览器则通过 MIME 类型来确定如何处理文档。</p>
+</div><div class="cl-preview-section"><p>静态文件下载示例：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">//1.静态文件的位置</span>
+	project
+		src<span class="token operator">/</span>main<span class="token operator">/</span>java
+		src<span class="token operator">/</span>main<span class="token operator">/</span>resources
+			<span class="token keyword">static</span>
+				test<span class="token punctuation">.</span>doc
+
+<span class="token comment">//2.在浏览器直接访问静态文件，进行文件下载</span>
+	http<span class="token operator">:</span><span class="token operator">/</span><span class="token operator">/</span><span class="token number">192.168</span><span class="token punctuation">.</span><span class="token number">1.8</span><span class="token operator">:</span><span class="token number">8080</span><span class="token operator">/</span>project<span class="token operator">-</span>name<span class="token operator">/</span>test<span class="token punctuation">.</span>doc
+
+<span class="token comment">//3.下载原因说明</span>
+	<span class="token number">1</span>）Tomcat自动帮我们读取该文件，并且通过输出流给写回浏览器
+	<span class="token number">2</span>）因为<span class="token string">'doc'</span><span class="token operator">=</span><span class="token operator">&gt;</span><span class="token string">'application/msword'</span>，所以该类型浏览器自动下载
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>知识 2：网络 IO 和 磁盘 IO 的了解</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>其实无论 网络 IO 和 磁盘 IO，你只需要把它当做一条河流，河流它必然有源头和流向，其实 IO 也是一样。当读取文件流的时候，是读取本地磁盘的文件呢？还是读取客户端传递过来的文件呢？当写文件的时候，是写到本地磁盘呢？还是通过网络写到客户端呢？</p>
+</div><div class="cl-preview-section"><p>读取 IO 示例：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">//读取磁盘IO</span>
+<span class="token annotation punctuation">@Test</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">readFileIO</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception<span class="token punctuation">{</span>
+    FileInputStream is<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">FileInputStream</span><span class="token punctuation">(</span><span class="token string">"E:/测试IO.txt"</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//从磁盘获取IO</span>
+    <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> bytes<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">byte</span><span class="token punctuation">[</span>is<span class="token punctuation">.</span><span class="token function">available</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    is<span class="token punctuation">.</span><span class="token function">read</span><span class="token punctuation">(</span>bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    String str<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">String</span><span class="token punctuation">(</span>bytes<span class="token punctuation">,</span><span class="token string">"GBK"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"输出结果："</span><span class="token operator">+</span>str<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">//输出结果：大家好，我是本地IO</span>
+
+
+<span class="token comment">//读取网络IO</span>
+<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> IOException<span class="token punctuation">{</span>
+    ServerSocket server<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">ServerSocket</span><span class="token punctuation">(</span><span class="token number">8080</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Socket client<span class="token operator">=</span>server<span class="token punctuation">.</span><span class="token function">accept</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    InputStream is<span class="token operator">=</span>client<span class="token punctuation">.</span><span class="token function">getInputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//从网络获取IO</span>
+    <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> bytes<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">byte</span><span class="token punctuation">[</span>is<span class="token punctuation">.</span><span class="token function">available</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    is<span class="token punctuation">.</span><span class="token function">read</span><span class="token punctuation">(</span>bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    String msg<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">String</span><span class="token punctuation">(</span>bytes<span class="token punctuation">,</span><span class="token string">"UTF-8"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"输出结果："</span><span class="token operator">+</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">//浏览器输入：http://127.0.0.1:8080查看输出结果</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>写出 IO 示例：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">//写到磁盘IO</span>
+<span class="token annotation punctuation">@Test</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">readFileIO</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception<span class="token punctuation">{</span>
+    FileInputStream is<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">FileInputStream</span><span class="token punctuation">(</span><span class="token string">"E:/测试IO.txt"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> bytes<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">byte</span><span class="token punctuation">[</span>is<span class="token punctuation">.</span><span class="token function">available</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    is<span class="token punctuation">.</span><span class="token function">read</span><span class="token punctuation">(</span>bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	
+    <span class="token comment">//输出到磁盘</span>
+    OutputStream out<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">FileOutputStream</span><span class="token punctuation">(</span><span class="token string">"E:/测试IO2.txt"</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//输出到磁盘IO</span>
+    out<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">//写到网络IO</span>
+<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> IOException<span class="token punctuation">{</span>
+    ServerSocket server<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">ServerSocket</span><span class="token punctuation">(</span><span class="token number">8080</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Socket client<span class="token operator">=</span>server<span class="token punctuation">.</span><span class="token function">accept</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    InputStream is<span class="token operator">=</span>client<span class="token punctuation">.</span><span class="token function">getInputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> bytes<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">byte</span><span class="token punctuation">[</span>is<span class="token punctuation">.</span><span class="token function">available</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    is<span class="token punctuation">.</span><span class="token function">read</span><span class="token punctuation">(</span>bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    String msg<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">String</span><span class="token punctuation">(</span>bytes<span class="token punctuation">,</span><span class="token string">"UTF-8"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"输出："</span><span class="token operator">+</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    OutputStream out<span class="token operator">=</span>client<span class="token punctuation">.</span><span class="token function">getOutputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//输出到网络当中</span>
+    out<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span><span class="token string">"你好"</span><span class="token punctuation">.</span><span class="token function">getBytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>通过上面案例解说，目的就是让大家知道，其实文件下载就是普通的文件流输出，跟我们平时做磁盘 IO 输出没啥区别，只不过它是网络 IO 而已。除此之外，我们还需要了解一下 Http 协议，因为把文件流输出到网络当中，我们还要通过协议告诉浏览器使用什么方式打开，仅此而已。</p>
+</div><div class="cl-preview-section"><p>通过以上两个小知识点，我相信大家应该能对我们本节的需求有一定的思路。</p>
+</div><div class="cl-preview-section"><h2 id="流程分析">2.2 流程分析</h2>
+</div><div class="cl-preview-section"><p>通过上面的了解，我们知道了文件下载是怎么回事，但是我们的需求是要比普通的文件下载要复杂的，那么复杂在哪里呢？</p>
+</div><div class="cl-preview-section"><ul>
+<li>第一：我们的文件是切块，而不是完整的文件，那么如何下载的时候变成完整的文件？</li>
+<li>第二：如何同时下载多个文件呢？采用什么方式下载？</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>问题 1：如何让切块最后变成完整文件进行下载呢？说说我的想法</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p><strong>方案一：服务端合并完整文件</strong></p>
+<ul>
+<li>
+<p><strong>思路</strong>：服务器端把切块按序号由小到大进行排序，并且按顺序输出到服务器临时目录（自动合并一个完整文件），然后再把该文件返回浏览器。</p>
+</li>
+<li>
+<p><strong>缺点</strong>：但是这种模式的缺点非常的明显，如果合并之后的文件非常的大，那么将导致内存溢出。</p>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>方案二：客户端合并完整文件</strong></p>
+<ul>
+<li><strong>思路</strong>：服务器端把切块按序号由小到大进行排序，并且输出到网络当中，所有的切块输出共用一个输出流，浏览器自动合并。</li>
+<li><strong>优点</strong>：把文件的合并交由客户端进行处理，减轻了服务端的压力</li>
+<li><strong>举例说明</strong>：如果这里感觉有点抽象的话，举个比较形象的例子：<code>OutputStream out=client.getOutputStream();</code> 当做是新修一条单向铁路，每个切块是火车的具体车厢，一辆完整的火车由很多车厢组成。只不过是现在把车厢拆开独立开往目的地，等所有的车厢都达到终点，则把铁路拆除，此时终点站的车厢依然是排成一列完整的火车。但是如果每个切块独立创建一个 <code>OutputStream out=client.getOutputStream();</code>，那么就好比每个车厢独立一条铁路，最后终点站就无法组成一辆完整的火车了，而是并排的车厢。</li>
+</ul>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>示例代码如下所示：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">//第一步：根据md5获取切块信息集合（按切块排序）</span>
+List<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span> urls<span class="token operator">=</span>filePreviewService<span class="token punctuation">.</span><span class="token function">getChunksByFilemd5</span><span class="token punctuation">(</span>filemd5<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">//第二步：获取输出流（分别是两种模式的IO）</span>
+<span class="token comment">//OutputStream out=new FileOutoutStream("E:/name.txt");//磁盘IO</span>
+OutputStream out<span class="token operator">=</span>response<span class="token punctuation">.</span><span class="token function">getOutoutStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">//网络IO</span>
+
+<span class="token comment">//第三步：遍历集合</span>
+<span class="token keyword">for</span><span class="token punctuation">(</span>String url<span class="token operator">:</span>urls<span class="token punctuation">)</span><span class="token punctuation">{</span>				
+    <span class="token comment">//1.根据路径去文件系统获取切块的字节流</span>
+    <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> bytes<span class="token operator">=</span>filePreviewService<span class="token punctuation">.</span><span class="token function">getBytesByUrl</span><span class="token punctuation">(</span>url<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">//2.输出字节流</span>
+    out<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">//第四步：关闭输出流</span>
+out<span class="token punctuation">.</span><span class="token function">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>问题 2：同一个下载请求如何同时下载多个文件呢？</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>其实浏览器是无法一次请求下载多个文件的，大家应该都是知道，浏览器下载的时候，会弹出一个确认框让你选择保存到本地那个目录，并且指定名称，因此是无法多个的。那么是否可以多个文件共用一个输出流呢？如果共用的话，那么这些文件最终被合并成一个独立文件了。下面说说我的思路是什么样的。</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p><strong>方案一：压缩下载</strong></p>
+<ul>
+<li><strong>思路</strong>：在服务器端把文件分别按照对应的切块合并成独立的文件；再把这些独立的文件最终压缩成一个完整的压缩包；客户下载压缩包之后，解压之后自然保留完整的目录结构。但是注意的是，如果最终合并的压缩包很大，则将会导致内存溢出。</li>
+<li>优点：是 b/s 架构下目前很好的思路了，如果谁有更好的方案可以留言讨论</li>
+<li><strong>缺点</strong>：
+<ol>
+<li>浏览器其实也是一个 c/s 架构的客户端，但是不像自定义 c/s 客户端那样可控制。</li>
+<li>如何多个文件压缩之后还是很大，那么不适合这种模式</li>
+</ol>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>方案二：c/s 客户端下载</strong></p>
+<ul>
+<li><strong>思路</strong>：使用 Java Swing（当然也可以使用 c++、c#）开发客户端桌面程序，下载多个文件时，客户端分别发起多次来获取文件字节流，然后保存到客户端本地</li>
+<li><strong>优点</strong>：无论是客户端还是服务端的压力都很小，性能很高</li>
+<li><strong>缺点</strong>：对应没有接触过 c/s 架构的同学来说技术难点稍微高一点</li>
+</ul>
+</li>
+<li>
+<p>最后的方案，下载之前判断下载的文件大小，如果大于我们设置的阈值，则提示使用 c/s 版本的网盘客户端进行下载；如果小于阈值则压缩成一个独立的包进行下载。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>分析到这里，相信大家应该都能理解了吧，我们这里重点介绍的是<code>压缩包下载模式</code>，c/s 架构则不讲解。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9da47300015cf308080290.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>上面的图是压缩包模式下载的完整流程图，但是如果一个方法实现完整个流程，则将会非常的复杂，甚至请求超时，因此需要拆分成以下几个步骤。</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>第一次请求</strong>：计算文件的总大小和判断是否超过阈值</li>
+<li><strong>第二次请求</strong>：合并切块、压缩文件；并且把压缩包的完整下载路径给返回客户端</li>
+<li><strong>第三次请求</strong>：根据压缩包的下载路径，发起下载请求</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="小结">3. 小结</h1>
+</div><div class="cl-preview-section"><p>本节内容主要讲解 Http 协议的大概原理、磁盘 IO 和网络 IO、以及文件下载的核心思路，希望大概能够掌握。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5e86d94f00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/5659">
+						<img src="https://img.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕工程6182945</h4>
+						<div class="comment-text">阀值到底是不是阈值</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-29</span>
+						<a href="/read/commentdetail/5659">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5659" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=73">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '18 文件下载功能设计',
+					'CID': '1729',
+					'Teacher': '曼巴out'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "18 文件下载功能设计",
+                    desc: "轻量级项目，系统化经验",
+                    imgUrl: 'https:https://img2.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/73',
+                    link: 'https://m.imooc.com/read/73'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

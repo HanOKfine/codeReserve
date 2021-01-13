@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>03 微服务项目的划分及构建</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="轻量级项目，系统化经验">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "2";
+	var chapter_id = "1714";
+	var chapter_title = "03 微服务项目的划分及构建";
+	var aid = "73";
+	var a_name = "架构思维成长之微服务";
+	var a_price = "68.00";
+	var a_pic = "https://img3.mukewang.com/5e86b0220001a99d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '73';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-06-16&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			03 微服务项目的划分及构建
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img4.mukewang.com/5e86c72f0001d16506400359.jpg')"></div>
+	
+	
+		<a href="/read/73">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5e6eebd60001a49207000933-40-40.jpg" alt="曼巴out">
+				<h3>架构思维成长之微服务</h3>
+				<p>曼巴out · 上市公司资深架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">如果说我比别人看得要远一点，那是因为我站在巨人的肩上。<p class="author">——牛顿</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">1. 前言</h1>
+</div><div class="cl-preview-section"><p>上一节，我们了解了微服务架构模式之后，对于没有经验的同学，或许架构图显的比较抽象，那么怎么去把架构进行落地呢？本节主要是以网盘系统为案例，讲解如何去规划项目的结构及使用 Maven 进行项目的构建。</p>
+</div><div class="cl-preview-section"><h1 id="项目地址信息">2.  项目地址信息</h1>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>访问地址： <a href="http://106.15.248.223/disk">http://106.15.248.223/disk</a></p>
+</li>
+<li>
+<p>代码地址：<a href="https://gitee.com/college996/zwz-netdisk.git">https://gitee.com/college996/zwz-netdisk.git</a></p>
+</li>
+<li>
+<p>网盘系统部署需要依赖的组件：</p>
+<p>​ 链接：<a href="https://pan.baidu.com/s/1Jp1Nmqid6Ph6PatQlVkOuA">https://pan.baidu.com/s/1Jp1Nmqid6Ph6PatQlVkOuA</a><br>
+​ 提取码：34fe</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>网盘项目结构如下图所示：<br>
+<img src="https://img.mukewang.com/5e86b7e70001f1d102930287.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>序号</th>
+<th>工程名称</th>
+<th>工程说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> 1</td>
+<td>netdisk</td>
+<td> 父工程，类型是 pom</td>
+</tr>
+<tr>
+<td>2</td>
+<td>netdisk-service-api</td>
+<td> 服务 API 工程，用来定义接口，被其他工程集成</td>
+</tr>
+<tr>
+<td> 3</td>
+<td>netdisk-service-provider</td>
+<td> 服务实现工程，独立部署</td>
+</tr>
+<tr>
+<td> 4</td>
+<td>netdisk-user-api</td>
+<td> 用户 API 工程，用来定义接口，被其他工程集成</td>
+</tr>
+<tr>
+<td> 5</td>
+<td>netdisk-user-provider</td>
+<td> 用户实现工程，独立部署</td>
+</tr>
+<tr>
+<td> 6</td>
+<td>netdisk-web-manage</td>
+<td> 网盘管理系统，对外提供 restfull 接口，独立部署</td>
+</tr>
+<tr>
+<td> 7</td>
+<td>netdisk-web-perpc</td>
+<td> 个人网盘系统，对外提供 restfull 接口，独立部署</td>
+</tr>
+<tr>
+<td> 8</td>
+<td>utils-common</td>
+<td> 通用工具类工程，被其他工程集成</td>
+</tr>
+<tr>
+<td> 9</td>
+<td>utils-filelogs</td>
+<td> 文件日志工程，用来采集日志，被其他工程集成</td>
+</tr>
+<tr>
+<td> 10</td>
+<td>utils-filesearch</td>
+<td> 文件搜索工程，底层集成 Solr 实现全文检索，被其他工程集成</td>
+</tr>
+<tr>
+<td> 11</td>
+<td>utils-filestore</td>
+<td> 文件存储过程，底层集成 FastDFS 实现文件存储，被其他工程集成</td>
+</tr>
+<tr>
+<td> 12</td>
+<td>utils-office</td>
+<td>Office 文件的转换，被其他工程集成</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>Maven 工程类型</p>
+</div><div class="cl-preview-section"><ul>
+<li>pom 工程，父目录工程，它的作用是管理子工程和聚合打包</li>
+<li> jar 工程，被 war 工程集成��包的，常见的有工具类工程、api 工程等</li>
+<li> war 工程，最终打成 war，并且独立部署到 Tomcat 里面（注意的是，SpringBoot 内置容器，打成 jar 即可运行）</li>
+</ul>
+</div><div class="cl-preview-section"><p>其实项目划分，并没有统一的要求，就类似于微服务的划分粒度一样，没有说一定要这样才是正确的，虽然没有统一标准，但是行业内都是这么做的，那我们最好去借鉴别人的做法，看看主流做法是什么样的。以下是常见的工程划分规则。</p>
+</div><div class="cl-preview-section"><p>模式 1：订单服务，每个服务下包含三个工程，分别是 api、service、controller 工程，结果比较清晰。</p>
+</div><div class="cl-preview-section"><pre><code>order							（pom）
+	|-- order-api				（jar）
+	|-- order-service-web		（war）
+	|-- order-web				（war）
+</code></pre>
+</div><div class="cl-preview-section"><p>模式 2：订单服务，每个服务下包含两个工程，分别是 api、serivice，controller 工程则另外管理</p>
+</div><div class="cl-preview-section"><pre><code>order							（pom）
+	|-- order-api				（jar）
+	|-- order-service-web		（war）
+	
+order-web						（war）
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>总结，其实这两种模式我个人觉得都差不多，没有所谓的好与坏，主要看团队分工情况，如果张三专门负责开发 controller 过程，李四专门开发 serivce 过程，则可以选择模式 2。如果张三既然开发 controller 过程也有开发 service 过程，则可以选择模式 1。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h1 id="工程规划">3. 工程规划</h1>
+</div><div class="cl-preview-section"><p>根据上节的架构规划，我们采用的是以下这种模式，后期可以再根据并发量来把 Service 服务再拆分。<br>
+<img src="https://img.mukewang.com/5e86b8020001ecac08290274.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>把原来单体项目的 Controller 层和 Service 层拆分成独立的服务，它们之间进行远程通讯</li>
+<li> Controller 工程又根据不同的客户端进行拆分成独立的工程</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>思考：网盘系统是否需要独立管理自己的用户账号呢？<br>
+<img src="https://img.mukewang.com/5e86b81600015f8509350407.png" alt="图片描述"></p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>网盘系统应该是一个通用性项目，可以无缝和业务系统对接，并且是每个企业都可以灵活的拿来使用的这么一个小产品。因此它不应该独立管理自己的用户账号，而是应该和其他系统共用一套用户，实现单点登录。</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>思考：按照上面的架构图，直接访问蓝色的<code>用户系统</code>去进行账号认证，会有什么不妥呢？</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>这种模式看起来没有什么问题，但是其实存在一个很严重的问题：限制太严重了。比如 A 公司有自己用户系统（C# 开发），B 公司也有自己的用户服务（Java 开发），但是网盘系统是通过 Dubbo 做服务治理的，那么此时 A、B 两个公司都想集成网盘系统的话，要么改造用户库，提供标准接口给网盘系统调用；要么改造网盘系统，换种方式去调用用户系统。这样的话网盘移植性就会变的很差劲了。</li>
+</ul>
+</div><div class="cl-preview-section"><p>网盘架构优化如下所示：<br>
+<img src="https://img.mukewang.com/5e86b82f0001cbac09350407.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>独立一个<code>中间服务</code>，它提供标准的 Dubbo 接口给网盘系统集成。它的底层实现则是去调用<code>用户服务</code>的接口，至于用户服务使用的什么技术、什么语言则不重要，一律可以通过 http 协议进行通讯。用户系统对于网盘系统来说是透明的，无论用户系统是怎么实现的都无需改动网盘代码，只需要针对中间服务进行改造即可，这样就显的非常的灵活了。</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>思考：网盘系统是否需要封装自己的工具类呢？应该怎么去封装呢？</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>一般情况下，每个公司都会有自己独立封装的工具类工程，比如：Apache-Common 工具类工程、谷歌的 Guava 工程等等。我们也可以为了把常用的工具重复使用，则可以封装自己的工具类。</li>
+<li>目前把常见的业务场景进行了封装，比如：文件系统、全文检索、日志采集、Office 文件转换这几个业务场景封装起来，方便使用（后面实战部分会详细介绍）。</li>
+</ul>
+</div><div class="cl-preview-section"><p>通过上面的分析，我们应该大概清楚网盘系统的项目情况了吧，这里给大家汇总一下。</p>
+</div><div class="cl-preview-section"><p>模式 1：所有工程直接列到根目录下面</p>
+</div><div class="cl-preview-section"><pre><code>netdisk
+	|-- netdisk-web-manage		（后台controller工程）
+	|-- netdisk-web-perpc		（个人controller工程）
+	|-- netdisk-service-api		（服务api接口工程）
+	|-- netdisk-service-provier	（服务工程）
+	|-- netdisk-user-api		（用户api接口工程）
+	|-- netdisk-user-provider	（用户中间项目工程）
+	|-- utils-filestore			（工具-文件存储）
+	|-- utils-filesearch		（工具-全文检索）
+	|-- utils-office			（工具-文件转换）
+	|-- utils-filelogs			（工具-日志采集）
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>描述：新建一个 parent 工程（netdisk），直接在其下面创建子工程</p>
+</li>
+<li>
+<p>优点：结构相对简单，一目了然</p>
+</li>
+<li>
+<p>缺点：如果项目庞大，工程数量太多的话，看起来比较混乱</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>模式 2：把 service、user、utils 封装起来</p>
+</div><div class="cl-preview-section"><pre><code>netdisk
+	|-- netdisk-web-manage		（后台controller工程）
+	|-- netdisk-web-perpc		（个人controller工程）
+	|-- netdisk-service			（pom工程）
+	|  |-- netdisk-service-api	
+	|  |-- netdisk-service-provider	
+	|-- netdisk-user			（pom工程）
+	|  |-- netdisk-user-api		
+	|  |-- netdisk-user-provider		
+	|-- netdisk-utils
+	|  |-- utils-filestore		（工具-文件存储）
+	|  |-- utils-filesearch		（工具-全文检索）
+	|  |-- utils-office			（工具-文件转换）
+	|  |-- utils-filelogs		（工具-日志采集）
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>描述：新建一个 parent 工程（netdisk），在其下面又可以根据不同业务在进行细分</li>
+<li>优点：对项目进行分类管理，比较规范</li>
+<li>缺点：结构相对复杂</li>
+</ul>
+</div><div class="cl-preview-section"><p>以上两种模式主要根据工程的规模、数量来选择吧，如果规模比较大则建议模式 2，否则模式 1 就可以了。</p>
+</div><div class="cl-preview-section"><h1 id="工程构建">4. 工程构建</h1>
+</div><div class="cl-preview-section"><p>那么如何使用 Maven 进行构建上面规划好的网盘项目呢？</p>
+</div><div class="cl-preview-section"><p>第一步：创建 netdisk 根目录项目，它是一个 <code>pom</code> 项目，注意是的创建的是 <code>Maven Project</code> 项目</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e86b84e00015b7d08290315.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e86b85e000106ac05090392.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e86b86c0001e5b406520486.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e86b8780001287a06300471.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>第二步：在 netdisk 下创建各个子项目，注意是的创建的是 <code>Maven Module</code> 项目<br>
+<img src="https://img.mukewang.com/5e86b88500017c3906710242.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e86b892000120b405070390.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e86b89d0001e69906470217.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>好了，上面主要是通过截图来展示 Maven 如何创建项目，主要是照顾基础不是很好的同学。其中 Maven 项目分为 <code>Maven Project</code> 和 <code>Maven Module</code> 两种类型的项目。<font color="red">如果对于 Maven 不是很熟悉的同学，后面有一个专门的 Maven 章节。</font></p>
+</div><div class="cl-preview-section"><p>网盘系统项目之间的关系如下图所示：<br>
+<img src="https://img.mukewang.com/5e86b8b100012fe208160359.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>蓝色部分的工程是独立部署的项目；白色工程则是被集成的工程，主要是 api 和工具类工程。</li>
+<li>上面的关系图应该不难理解，就不细说了。</li>
+</ul>
+</div><div class="cl-preview-section"><p>那么项目之间的关系如何表示呢？主要通过 Maven 的 pom.xml 来配置，请参考以下示例：</p>
+</div><div class="cl-preview-section"><p>netdisk-service-provider 工程的 pom.xml</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token comment">&lt;!--api工程坐标--&gt;</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>com.micro<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>netdisk-service-api<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">&gt;</span></span>0.0.1-SNAPSHOT<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+<span class="token comment">&lt;!--utils-filestore工程坐标--&gt;</span>
+<span class="token comment">&lt;!--utils-filesearch工程坐标--&gt;</span>
+<span class="token comment">&lt;!--utils-filelogs工程坐标--&gt;</span>
+<span class="token comment">&lt;!--utils-office工程坐标--&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：核心是把项目工程的规划过程和项目之间的关系这两点搞清楚。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h1 id="小结">5. 小结</h1>
+</div><div class="cl-preview-section"><p>本节主要讲解网盘系统项目工程结构的规划、创建、关系，重点理解<code>认证服务</code>的规划，为了提高网盘系统的移植的灵活性，独立构建一个中间件服务，专门负责跟具体的用户系统对接。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5e86d6d6000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/5846">
+						<img src="https://img1.mukewang.com/5973657500015f8701000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_那些年_31</h4>
+						<div class="comment-text">老师，课程没有源码么？</div>
+						<div>
+							
+								<div class="reply">讲师回复：有的，购买专栏里面会有源码地址的</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-16</span>
+						<a href="/read/commentdetail/5846">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5846" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5495">
+						<img src="https://img1.mukewang.com/5333a1660001394602000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕标3246374</h4>
+						<div class="comment-text">学习老师分析问题的思维方法</div>
+						<div>
+							
+								<div class="reply">讲师回复：谢谢支持哈</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-18</span>
+						<a href="/read/commentdetail/5495">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5495" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=73">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '03 微服务项目的划分及构建',
+					'CID': '1714',
+					'Teacher': '曼巴out'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "03 微服务项目的划分及构建",
+                    desc: "轻量级项目，系统化经验",
+                    imgUrl: 'https:https://img3.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦���快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/73',
+                    link: 'https://m.imooc.com/read/73'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

@@ -1,0 +1,907 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>13 Netty服务如何接收新的连接</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="全面掌握迈向高级工程师的必备技能">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2172";
+	var chapter_title = "13 Netty服务如何接收新的连接";
+	var aid = "82";
+	var a_name = "网络编程之Netty一站式精讲";
+	var a_price = "68.00";
+	var a_pic = "https://img3.mukewang.com/5f052aa90001f15b05400720.jpg";
+	var userId = 0;
+
+	var column_id = '82';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-07-28&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			13 Netty服务如何接收新的连接
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img.mukewang.com/5f0595830001a3ac06400359.jpg')"></div>
+	
+	
+		<a href="/read/82">
+			<div class="course-entry">
+				<img src="https://img3.mukewang.com/5d9c91f40001dcac05000500-40-40.jpg" alt="彤哥读源码">
+				<h3>网络编程之Netty一站式精讲</h3>
+				<p>彤哥读源码 · 互联网大厂项目经理</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">合理安排时间，就等于节约时间。<p class="author">——培根</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">前言</h1>
+</div><div class="cl-preview-section"><p>你好，我是彤哥。</p>
+</div><div class="cl-preview-section"><p>上一节，我们一起学习了服务启动过程的源码剖析，简单回顾一下，服务启动的时候会创建 ServerSocketChannel，并将之与 ChannelPipeline、EventLoop、Selector、Java 原生 Channel 进行绑定，同时通过 Java 原生 Channel 绑定到一个本地地址。</p>
+</div><div class="cl-preview-section"><p>那么，如果有新连接进来，服务是如何接收（或接受，Accept）的呢？</p>
+</div><div class="cl-preview-section"><p>本节，我们就来深入学习服务接收连接的源码剖析。</p>
+</div><div class="cl-preview-section"><h1 id="问题">问题</h1>
+</div><div class="cl-preview-section"><p>经过上一节的学习，我们知道，服务启动的时候会往 NioServerSocketChannel 对应的 ChannelPipeline 后面添加一个叫做 ServerBootstrapAcceptor 的 ChannelHandler，那么，今天的问题是：</p>
+</div><div class="cl-preview-section"><ol>
+<li>ServerBootstrapAcceptor 的作用是什么？</li>
+<li>接收连接的过程是否也要跟 Java 原生 Channel ���交道？</li>
+<li>Selector 又是在哪里使用到的？</li>
+</ol>
+</div><div class="cl-preview-section"><p>带着这几个问题进入今天的探索吧。</p>
+</div><div class="cl-preview-section"><h1 id="调试技巧">调试技巧</h1>
+</div><div class="cl-preview-section"><p>上一节，有我们自己编写的 main () 方法为基础，我们把第一个断点打在 main () 方法中，跟着断点一步一步调试即可剖析出整个服务启动过程的源码，本节的主题为服务接收新连接，断点该打在哪里呢？又该如何调试呢？</p>
+</div><div class="cl-preview-section"><p>针对这个问题，我给出我的解决方案，有更好方案的同学，也可留言或者私聊我贡献给大家。</p>
+</div><div class="cl-preview-section"><p>我们知道，Netty 中将 ChannelHandler 分成 inbound 和 outbound 两种类型，既然是接收新连接，那肯定是 inbound，所以，我们先从 ChannelInboundHandler 这个接口出发，分析它有哪些方法，简单瞄一眼，大致发现有三种可能跟接收新连接有关系的：</p>
+</div><div class="cl-preview-section"><ul>
+<li>channelRegistered ()/channelUnregistered ()，服务启动的时候有看到 Register 相关的调用</li>
+<li> channelActive ()/channelInactive ()，服务启动绑定完地址的时候有看到 Active 相关的调用</li>
+<li> channelRead ()/channelReadComplete ()，暂未看到在哪里使用的</li>
+</ul>
+</div><div class="cl-preview-section"><p>简单分析一下，上面两种类型在服务启动的时候都有见过它们的源码，所以，不太可能是在接收新连接的时候调用的，因此，只剩下 channelRead ()/channelReadComplete () 这两个方法是有极大可能是在接收新连接的时候调用的，根据名称也能大概猜测是这样的。</p>
+</div><div class="cl-preview-section"><p>所以，我们只需要找到一个 ChannelInboundHandler，把断点打在它的 channelRead () 方法中，就能大概率的跟踪到接收新连接的过程。</p>
+</div><div class="cl-preview-section"><p>通过上一节的分析，我们知道，服务启动完成后，只有一个 Channel，也就是 NioServerSocketChannel，而它对应的 ChannelPipeline 中是有四个 Handler 的，即 head&lt;=&gt;LoggingHandler&lt;=&gt;ServerBootstrapAcceptor&lt;=&gt;tail，所以，我们只要把断点打在这四个 Handler 中的任意一个的 channelRead () 方法中即可。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>确切地说应该是 ChannelHandlerContext，本系列课程，不严格区分 ChannelHandler 和 ChannelHandlerContext 的语义，大家根据上下文很容易理解即可。但是，要记住 ChannelPipeline 中包含的是 ChannelHandlerContext 的双向链表，而 ChannelHandlerContext 中才是具体的 ChannelHandler。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>本节，我们就把断点打在 HeadContext 的 channelRead () 方法中。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>HeadContext，即是一个 ChannelHandlerContext，又是一个 ChannelInboundHandler，同时也是 ChannelOutboundHandler。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h1 id="服务接收新连接过程">服务接收新连接过程</h1>
+</div><div class="cl-preview-section"><p>OK，在启动服务之前，请先将上一节的所有断点取消掉，待服务启动完成后，再在 HeadContext 的 channelRead () 方法中打一个断点，然后，进入今天的源码剖析阶段。</p>
+</div><div class="cl-preview-section"><p>打开 XSHELL，输入 <code>telnet localhost 8007</code>，回车，可以看到，服务端成功停在了 HeadContext 的 channelRead () 方法的断点处：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f180b030001beb319200913.png" alt="图片描述"><br>
+好了，下面要讲我的独家秘技了 —— <strong>观察线程栈</strong>。观察线程栈，会发现一些非常熟悉的字眼，比如 “NioEventLoop”、“run”、“processSelectedKeys”，如果你看不出这么明显的字眼，说明前面的 NIO 部分没有好好学习哦。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>为了照顾大部分同学，我们再回顾下 NIO 编程的大致过程：</p>
+<ul>
+<li>先是启动 ServerSocketChannel，并注册 Accept 事件；</li>
+<li>轮询调用 Selector 的 select () 方法，select () 方法还有两个兄弟 ——selectNow ()，select (timeout)；</li>
+<li>调用 Selector 的 selectedKeys () 方法，拿到轮询到的 SelectionKey；</li>
+<li>遍历这些 selectedKeys，处理它们感兴趣到的事件；</li>
+<li>如果是 Accept 事件，则从 SelectionKey 中取出 ServerSocketChannel，并 accept () 出来一个 SocketChannel；</li>
+<li>把这个 SocketChannel 也注册到 Selector 上，并注册 Read 事件；</li>
+</ul>
+</blockquote>
+</div><div class="cl-preview-section"><p>所以，这里我们大胆猜测，Netty 底层接收新连接跟 Java 原生 Channel 是一致的，而且它的 select 是在 NioEventLoop 的 run () 方法中，并在获取到 SelectedKeys 之后，调用了 processSelectedKeys () 方法处理这些 SelectionKey。</p>
+</div><div class="cl-preview-section"><p>至于，我们的猜测对不对呢？打开 NioEventLoop 的 run () 方法看一看：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token comment">// io.netty.channel.nio.NioEventLoop#run</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">int</span> selectCnt <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token comment">// 死循环，还记得NIO中的死循环吗？</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token punctuation">;</span><span class="token punctuation">;</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            <span class="token keyword">int</span> strategy<span class="token punctuation">;</span>
+            <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                strategy <span class="token operator">=</span> selectStrategy<span class="token punctuation">.</span><span class="token function">calculateStrategy</span><span class="token punctuation">(</span>selectNowSupplier<span class="token punctuation">,</span> <span class="token function">hasTasks</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">switch</span> <span class="token punctuation">(</span>strategy<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">case</span> SelectStrategy<span class="token punctuation">.</span>CONTINUE<span class="token operator">:</span>
+                        <span class="token keyword">continue</span><span class="token punctuation">;</span>
+                    <span class="token keyword">case</span> SelectStrategy<span class="token punctuation">.</span>BUSY_WAIT<span class="token operator">:</span>
+                    <span class="token keyword">case</span> SelectStrategy<span class="token punctuation">.</span>SELECT<span class="token operator">:</span>
+                        <span class="token keyword">long</span> curDeadlineNanos <span class="token operator">=</span> <span class="token function">nextScheduledTaskDeadlineNanos</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        <span class="token keyword">if</span> <span class="token punctuation">(</span>curDeadlineNanos <span class="token operator">==</span> <span class="token operator">-</span>1L<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                            curDeadlineNanos <span class="token operator">=</span> NONE<span class="token punctuation">;</span> <span class="token comment">// nothing on the calendar</span>
+                        <span class="token punctuation">}</span>
+                        nextWakeupNanos<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>curDeadlineNanos<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">hasTasks</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                                <span class="token comment">// key1，select()相关的方法</span>
+                                strategy <span class="token operator">=</span> <span class="token function">select</span><span class="token punctuation">(</span>curDeadlineNanos<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                            <span class="token punctuation">}</span>
+                        <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+                            nextWakeupNanos<span class="token punctuation">.</span><span class="token function">lazySet</span><span class="token punctuation">(</span>AWAKE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                        <span class="token punctuation">}</span>
+                    <span class="token keyword">default</span><span class="token operator">:</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">IOException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token function">rebuildSelector0</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                selectCnt <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+                <span class="token function">handleLoopException</span><span class="token punctuation">(</span>e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">continue</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+
+            selectCnt<span class="token operator">++</span><span class="token punctuation">;</span>
+            cancelledKeys <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+            needsToSelectAgain <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+            <span class="token keyword">final</span> <span class="token keyword">int</span> ioRatio <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>ioRatio<span class="token punctuation">;</span>
+            <span class="token keyword">boolean</span> ranTasks<span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>ioRatio <span class="token operator">==</span> <span class="token number">100</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span>strategy <span class="token operator">&gt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        <span class="token comment">// key2，处理SelectionKey</span>
+                        <span class="token function">processSelectedKeys</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+                    ranTasks <span class="token operator">=</span> <span class="token function">runAllTasks</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>strategy <span class="token operator">&gt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">final</span> <span class="token keyword">long</span> ioStartTime <span class="token operator">=</span> System<span class="token punctuation">.</span><span class="token function">nanoTime</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                    <span class="token comment">// key2，处理SelectionKey</span>
+                    <span class="token function">processSelectedKeys</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">final</span> <span class="token keyword">long</span> ioTime <span class="token operator">=</span> System<span class="token punctuation">.</span><span class="token function">nanoTime</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> ioStartTime<span class="token punctuation">;</span>
+                    ranTasks <span class="token operator">=</span> <span class="token function">runAllTasks</span><span class="token punctuation">(</span>ioTime <span class="token operator">*</span> <span class="token punctuation">(</span><span class="token number">100</span> <span class="token operator">-</span> ioRatio<span class="token punctuation">)</span> <span class="token operator">/</span> ioRatio<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+                ranTasks <span class="token operator">=</span> <span class="token function">runAllTasks</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+		<span class="token comment">// 省略其他代码</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>从这个方法中，我们可以发现一些关键信息：</p>
+</div><div class="cl-preview-section"><ul>
+<li>有个死循环，跟 NIO 编程一模一样；</li>
+<li>找到了一个看起来像是 select () 的调用 select (curDeadlineNanos)；</li>
+<li>找到了一个看起来像是处理 SelectionKey 的方法 processSelectedKeys ()；</li>
+</ul>
+</div><div class="cl-preview-section"><p>至于是不是呢，让我们先来看看 <code>select(curDeadlineNanos)</code> 方法：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token comment">// io.netty.channel.nio.NioEventLoop#select</span>
+<span class="token keyword">private</span> <span class="token keyword">int</span> <span class="token function">select</span><span class="token punctuation">(</span><span class="token keyword">long</span> deadlineNanos<span class="token punctuation">)</span> <span class="token keyword">throws</span> IOException <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>deadlineNanos <span class="token operator">==</span> NONE<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 无限期阻塞</span>
+        <span class="token keyword">return</span> selector<span class="token punctuation">.</span><span class="token function">select</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">long</span> timeoutMillis <span class="token operator">=</span> <span class="token function">deadlineToDelayNanos</span><span class="token punctuation">(</span>deadlineNanos <span class="token operator">+</span> 995000L<span class="token punctuation">)</span> <span class="token operator">/</span> 1000000L<span class="token punctuation">;</span>
+    <span class="token comment">// 不阻塞的selectNow()和阻塞一段时间的select(timeout)</span>
+    <span class="token keyword">return</span> timeoutMillis <span class="token operator">&lt;=</span> <span class="token number">0</span> <span class="token operator">?</span> selector<span class="token punctuation">.</span><span class="token function">selectNow</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">:</span> selector<span class="token punctuation">.</span><span class="token function">select</span><span class="token punctuation">(</span>timeoutMillis<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以看到，这里把 select () 的三兄弟都考虑在内了，根据传进来的超时时间判断调用哪个 select () 方法。</p>
+</div><div class="cl-preview-section"><p>再看看 <code>processSelectedKeys()</code> 方法：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token comment">// io.netty.channel.nio.NioEventLoop#processSelectedKeys</span>
+<span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">processSelectedKeys</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>selectedKeys <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 我们这里有新连接进来，肯定不为空</span>
+        <span class="token function">processSelectedKeysOptimized</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        <span class="token function">processSelectedKeysPlain</span><span class="token punctuation">(</span>selector<span class="token punctuation">.</span><span class="token function">selectedKeys</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">processSelectedKeysOptimized</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 遍历SelectionKey</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> selectedKeys<span class="token punctuation">.</span>size<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">final</span> SelectionKey k <span class="token operator">=</span> selectedKeys<span class="token punctuation">.</span>keys<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span>
+        <span class="token comment">// 优化GC</span>
+        selectedKeys<span class="token punctuation">.</span>keys<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        <span class="token comment">// 取出SelectionKey中的附件，还记得附件是什么吗？</span>
+        <span class="token comment">// 上一节，服务启动的时候把Selector、Java原生Channel、Netty的Channel绑定在一起了</span>
+        <span class="token comment">// 其中，Netty的Channel是通过attachment绑定到SelectionKey中的</span>
+        <span class="token comment">// 所以，针对新连接建立的过程，这里取出来的就是Netty中的NioServerSocketChannel</span>
+        <span class="token keyword">final</span> Object a <span class="token operator">=</span> k<span class="token punctuation">.</span><span class="token function">attachment</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>a <span class="token keyword">instanceof</span> <span class="token class-name">AbstractNioChannel</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 处理之</span>
+            <span class="token function">processSelectedKey</span><span class="token punctuation">(</span>k<span class="token punctuation">,</span> <span class="token punctuation">(</span>AbstractNioChannel<span class="token punctuation">)</span> a<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+            <span class="token annotation punctuation">@SuppressWarnings</span><span class="token punctuation">(</span><span class="token string">"unchecked"</span><span class="token punctuation">)</span>
+            NioTask<span class="token operator">&lt;</span>SelectableChannel<span class="token operator">&gt;</span> task <span class="token operator">=</span> <span class="token punctuation">(</span>NioTask<span class="token operator">&lt;</span>SelectableChannel<span class="token operator">&gt;</span><span class="token punctuation">)</span> a<span class="token punctuation">;</span>
+            <span class="token function">processSelectedKey</span><span class="token punctuation">(</span>k<span class="token punctuation">,</span> task<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>needsToSelectAgain<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            selectedKeys<span class="token punctuation">.</span><span class="token function">reset</span><span class="token punctuation">(</span>i <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token function">selectAgain</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                i <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">processSelectedKey</span><span class="token punctuation">(</span>SelectionKey k<span class="token punctuation">,</span> AbstractNioChannel ch<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">final</span> AbstractNioChannel<span class="token punctuation">.</span>NioUnsafe unsafe <span class="token operator">=</span> ch<span class="token punctuation">.</span><span class="token function">unsafe</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token comment">// 省略异常处理等其他代码</span>
+
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+        <span class="token keyword">int</span> readyOps <span class="token operator">=</span> k<span class="token punctuation">.</span><span class="token function">readyOps</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment">// 如果是Connect事件</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>readyOps <span class="token operator">&amp;</span> SelectionKey<span class="token punctuation">.</span>OP_CONNECT<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">int</span> ops <span class="token operator">=</span> k<span class="token punctuation">.</span><span class="token function">interestOps</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            ops <span class="token operator">&amp;=</span> <span class="token operator">~</span>SelectionKey<span class="token punctuation">.</span>OP_CONNECT<span class="token punctuation">;</span>
+            k<span class="token punctuation">.</span><span class="token function">interestOps</span><span class="token punctuation">(</span>ops<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            unsafe<span class="token punctuation">.</span><span class="token function">finishConnect</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token comment">// 如果是Write事件</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>readyOps <span class="token operator">&amp;</span> SelectionKey<span class="token punctuation">.</span>OP_WRITE<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            ch<span class="token punctuation">.</span><span class="token function">unsafe</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forceFlush</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token comment">// 如果是Read事件或者Accept事件</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>readyOps <span class="token operator">&amp;</span> <span class="token punctuation">(</span>SelectionKey<span class="token punctuation">.</span>OP_READ <span class="token operator">|</span> SelectionKey<span class="token punctuation">.</span>OP_ACCEPT<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span> <span class="token operator">||</span> readyOps <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            unsafe<span class="token punctuation">.</span><span class="token function">read</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">CancelledKeyException</span> ignored<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        unsafe<span class="token punctuation">.</span><span class="token function">close</span><span class="token punctuation">(</span>unsafe<span class="token punctuation">.</span><span class="token function">voidPromise</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以看到，这里的写法也是跟我们的 NIO 编程保持一致的，针对不同的事件使用不同的逻辑进行处理，不同的是，Netty 中具体的处理逻辑交给了 Channel 的 unsafe 来处理，对于接收新连接的过程，这里的 unsafe 无疑就是 NioServerSocketChannel 中的 unsafe 了。</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token comment">// io.netty.channel.nio.AbstractNioMessageChannel.NioMessageUnsafe#read</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">read</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">assert</span> <span class="token function">eventLoop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">inEventLoop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">final</span> ChannelConfig config <span class="token operator">=</span> <span class="token function">config</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">final</span> ChannelPipeline pipeline <span class="token operator">=</span> <span class="token function">pipeline</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">final</span> RecvByteBufAllocator<span class="token punctuation">.</span>Handle allocHandle <span class="token operator">=</span> <span class="token function">unsafe</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">recvBufAllocHandle</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    allocHandle<span class="token punctuation">.</span><span class="token function">reset</span><span class="token punctuation">(</span>config<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">boolean</span> closed <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+    Throwable exception <span class="token operator">=</span> null<span class="token punctuation">;</span>
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            <span class="token keyword">do</span> <span class="token punctuation">{</span>
+                <span class="token comment">// key1，读取消��</span>
+                <span class="token keyword">int</span> localRead <span class="token operator">=</span> <span class="token function">doReadMessages</span><span class="token punctuation">(</span>readBuf<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>localRead <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">break</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>localRead <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    closed <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+                    <span class="token keyword">break</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+
+                allocHandle<span class="token punctuation">.</span><span class="token function">incMessagesRead</span><span class="token punctuation">(</span>localRead<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">while</span> <span class="token punctuation">(</span>allocHandle<span class="token punctuation">.</span><span class="token function">continueReading</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Throwable</span> t<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            exception <span class="token operator">=</span> t<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token keyword">int</span> size <span class="token operator">=</span> readBuf<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> size<span class="token punctuation">;</span> i <span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            readPending <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+            <span class="token comment">// key2，触发channelRead()</span>
+            pipeline<span class="token punctuation">.</span><span class="token function">fireChannelRead</span><span class="token punctuation">(</span>readBuf<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        readBuf<span class="token punctuation">.</span><span class="token function">clear</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        allocHandle<span class="token punctuation">.</span><span class="token function">readComplete</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        pipeline<span class="token punctuation">.</span><span class="token function">fireChannelReadComplete</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>exception <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            closed <span class="token operator">=</span> <span class="token function">closeOnReadError</span><span class="token punctuation">(</span>exception<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            pipeline<span class="token punctuation">.</span><span class="token function">fireExceptionCaught</span><span class="token punctuation">(</span>exception<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>closed<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            inputShutdown <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">isOpen</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token function">close</span><span class="token punctuation">(</span><span class="token function">voidPromise</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>readPending <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span>config<span class="token punctuation">.</span><span class="token function">isAutoRead</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token function">removeReadOp</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>从这个方法中我们可以捕捉到两个关键方法：</p>
+</div><div class="cl-preview-section"><ul>
+<li>doReadMessages (readBuf)，读取消息，如何读取？读取的内容是什么？</li>
+<li>pipeline.fireChannelRead (readBuf.get (i))，触发 ChannelHandler 的 channelRead () 方法，最终由谁处理？</li>
+</ul>
+</div><div class="cl-preview-section"><p>我们先来看第一个方法 <code>doReadMessages(readBuf)</code>:</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token comment">// io.netty.channel.socket.nio.NioServerSocketChannel#doReadMessages</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">protected</span> <span class="token keyword">int</span> <span class="token function">doReadMessages</span><span class="token punctuation">(</span>List<span class="token operator">&lt;</span>Object<span class="token operator">&gt;</span> buf<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+    <span class="token comment">// key1，看起来跟Java原生Channel有关系</span>
+    SocketChannel ch <span class="token operator">=</span> SocketUtils<span class="token punctuation">.</span><span class="token function">accept</span><span class="token punctuation">(</span><span class="token function">javaChannel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>ch <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment">// key2，构造了一个Netty的NioSocketChannel，并把Java原生SocketChannel传入</span>
+            buf<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">NioSocketChannel</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> ch<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> <span class="token number">1</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Throwable</span> t<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        logger<span class="token punctuation">.</span><span class="token function">warn</span><span class="token punctuation">(</span><span class="token string">"Failed to create a new channel from an accepted socket."</span><span class="token punctuation">,</span> t<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            ch<span class="token punctuation">.</span><span class="token function">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Throwable</span> t2<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            logger<span class="token punctuation">.</span><span class="token function">warn</span><span class="token punctuation">(</span><span class="token string">"Failed to close a socket."</span><span class="token punctuation">,</span> t2<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// io.netty.util.internal.SocketUtils#accept</span>
+<span class="token keyword">public</span> <span class="token keyword">static</span> SocketChannel <span class="token function">accept</span><span class="token punctuation">(</span><span class="token keyword">final</span> ServerSocketChannel serverSocketChannel<span class="token punctuation">)</span> <span class="token keyword">throws</span> IOException <span class="token punctuation">{</span>
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> AccessController<span class="token punctuation">.</span><span class="token function">doPrivileged</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">PrivilegedExceptionAction</span><span class="token operator">&lt;</span>SocketChannel<span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token annotation punctuation">@Override</span>
+            <span class="token keyword">public</span> SocketChannel <span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> IOException <span class="token punctuation">{</span>
+                <span class="token comment">// 调用Java原生的aacept()方法创建一个SocketChannel</span>
+                <span class="token keyword">return</span> serverSocketChannel<span class="token punctuation">.</span><span class="token function">accept</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">PrivilegedActionException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">throw</span> <span class="token punctuation">(</span>IOException<span class="token punctuation">)</span> e<span class="token punctuation">.</span><span class="token function">getCause</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以，Netty 最终还是调用的 Java 原生的 SeverSocketChannel 的 accept () 方法来创建一个 SocketChannel，并把这个 SocketChannel 绑定到 Netty 自己的 NioSocketChannel 中，还记得上一节创建 NioServerSocketChannel 的过程吗？</p>
+</div><div class="cl-preview-section"><p>NioSocketChannel 的创建过程也是一样的，我就不贴源码了，简单再回顾一下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>将 Java 原生 Channel 配置成非阻塞 <code>ch.configureBlocking(false)</code>；</li>
+<li>设置感兴趣的事件为 Read 事件，NioServerSocketChannel 感兴趣的事件为 Accept 事件；</li>
+<li>分配 id；</li>
+<li>创建 unsafe；</li>
+<li>创建 ChannelPipeline；</li>
+</ul>
+</div><div class="cl-preview-section"><p>好了，到这里 SocketChannel 就创建好了，但是它的 pipeline 中还是只有 head 和 tail 两个 Handler，还无法处理消息，那么，ChannelPipeline 的初始化在哪里呢？</p>
+</div><div class="cl-preview-section"><p>这就轮到 <code>pipeline.fireChannelRead(readBuf.get(i))</code> 这行代码来发挥作用了，这里的 pipeline 实际上是 NioServerSocketChannel 对应的 ChannelPipeline，通过上一节的分析我们知道，服务启动完成后这个 ChannelPipeline 中的双向链表为 <code>head&lt;=&gt;LoggingHandler&lt;=&gt;ServerBootstrapAcceptor&lt;=&gt;tail</code>，很显然，只有 ServerBootstrapAcceptor 这个 ChannelHandler 会往子 ChannelPipeline 中添加子 ChannelHandler，所以，我们直接看 ServerBootstrapAcceptor 的 channelRead () 方法即可。</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token comment">// io.netty.bootstrap.ServerBootstrap.ServerBootstrapAcceptor#channelRead</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token annotation punctuation">@SuppressWarnings</span><span class="token punctuation">(</span><span class="token string">"unchecked"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">channelRead</span><span class="token punctuation">(</span>ChannelHandlerContext ctx<span class="token punctuation">,</span> Object msg<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 这里的msg就是上面的readBuf.get(i)，也就是NioSocketChannel，也就是子Channel</span>
+    <span class="token keyword">final</span> Channel child <span class="token operator">=</span> <span class="token punctuation">(</span>Channel<span class="token punctuation">)</span> msg<span class="token punctuation">;</span>
+    <span class="token comment">// 添加子ChannelHandler，这里同样也是以ChannelInitializer的形式添加的</span>
+    child<span class="token punctuation">.</span><span class="token function">pipeline</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">addLast</span><span class="token punctuation">(</span>childHandler<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 设置子Channel的配置等信息</span>
+    <span class="token function">setChannelOptions</span><span class="token punctuation">(</span>child<span class="token punctuation">,</span> childOptions<span class="token punctuation">,</span> logger<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">setAttributes</span><span class="token punctuation">(</span>child<span class="token punctuation">,</span> childAttrs<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 将子Channel注册到workerGroup中的一个EventLoop上</span>
+        childGroup<span class="token punctuation">.</span><span class="token function">register</span><span class="token punctuation">(</span>child<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">addListener</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">ChannelFutureListener</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token annotation punctuation">@Override</span>
+            <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">operationComplete</span><span class="token punctuation">(</span>ChannelFuture future<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>future<span class="token punctuation">.</span><span class="token function">isSuccess</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token function">forceClose</span><span class="token punctuation">(</span>child<span class="token punctuation">,</span> future<span class="token punctuation">.</span><span class="token function">cause</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Throwable</span> t<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token function">forceClose</span><span class="token punctuation">(</span>child<span class="token punctuation">,</span> t<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这里的代码跟上一节中 <code>initAndRegister()</code> 方法中的逻辑是完全一样的，我们就不再赘述了。</p>
+</div><div class="cl-preview-section"><p>好了，今天的源码剖析基本就讲完了，让我们来总结一下服务接收新连接的过程：</p>
+</div><div class="cl-preview-section"><ol>
+<li>Netty 中轮询的方法是写在 NioEventLooop 中的；</li>
+<li>Netty 底层也是通过 Java 原生 ServerSocketChannel 来接收新连接的；</li>
+<li>Netty 将接收到的 SocketChannel 包装成了 NioSocketChannel，并给它分配 ChannelPipeline 等元素；</li>
+<li>Netty 中通过 ServerBootstrapAcceptor 这个 ChannelHandler 来初始化 NioSocketChannel 的配置并将其注册到 EventLoop 中；</li>
+<li>注册到 EventLoop 中同样也会与这个 EventLoop 中的 Selector 绑定，Netty 的 NioSocketChannel 同样地也是以附件的形式绑定在 SelectionKey 中；</li>
+</ol>
+</div><div class="cl-preview-section"><p>至此，一个 SocketChannel 才算真正建立完成，也就可以接收消息了。</p>
+</div><div class="cl-preview-section"><h1 id="后记">后记</h1>
+</div><div class="cl-preview-section"><p>本节，我们一起学习了 Netty 中服务接收新连接过程的源码剖析，相对于上一节，你可能会发现，本节的内容似乎要简单不少，对的，万事开头难，源码剖析也是一样，一开始入门会比较困难，一旦入门了，越往后越简单。</p>
+</div><div class="cl-preview-section"><p>通过本节的剖析，我们知道了 Netty 中接收新连接的过程跟 Java 原生 NIO 是同出一辙，或者说是对 Java 原生 NIO 的增强，那么，既然连接已经就绪，如何接收消息呢？且听下回分解。</p>
+</div><div class="cl-preview-section"><h1 id="思维导图">思维导图</h1>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f180ae50001631315560631.png" alt="图片描述"></p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img.mukewang.com/5f05440000011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=82">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '13 Netty服务如何接收新的连接',
+					'CID': '2172',
+					'Teacher': '彤哥读源码'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "13 Netty服务如何接收新的连接",
+                    desc: "全面掌握迈向高级工程师的必备技能",
+                    imgUrl: 'https:https://img3.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/82',
+                    link: 'https://m.imooc.com/read/82'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

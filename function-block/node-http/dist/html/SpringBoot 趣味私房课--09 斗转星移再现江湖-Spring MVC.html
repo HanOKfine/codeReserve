@@ -1,0 +1,1395 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>09 斗转星移再现江湖-Spring MVC</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="够吃管饱的SpringBoot大餐">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "13";
+	var chapter_id = "1805";
+	var chapter_title = "09 斗转星移再现江湖-Spring MVC";
+	var aid = "75";
+	var a_name = "SpringBoot 趣味私房课";
+	var a_price = "58.00";
+	var a_pic = "https://img.mukewang.com/5e9cfd1f0001ece605400720.jpg";
+	var userId = 0;
+
+	var column_id = '75';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-26&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			09 斗转星移再现江湖-Spring MVC
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5e9cffac0001839306400359.jpg')"></div>
+	
+	
+		<a href="/read/75">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5e776f3c000149fd10801080-40-40.jpg" alt="刘水镜">
+				<h3>SpringBoot 趣味私房课</h3>
+				<p>刘水镜 · 知名 A.I. 公司 Java 工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">人只有献身于社会，才能找出那短暂而有风险的生命的意义。<p class="author">——爱因斯坦</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="思想与原理">1. 思想与原理</h1>
+</div><div class="cl-preview-section"><h2 id="简介">1.1 简介</h2>
+</div><div class="cl-preview-section"><p>Spring MVC，对于熟悉它的人自然不必多说。但如果你对它不太了解，那么我为你简单介绍一下。Spring MVC 的名字由两部分组成，Spring 彰显了它的家族身份，而 MVC 则代表它的能力。那么 MVC 究竟是什么呢？</p>
+</div><div class="cl-preview-section"><p><strong>MVC 模式</strong> 是软件工程中的一种软件架构模式，把软件系统分为三个基本部分：模型（Model）、视图（View）和控制器（Controller）。</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>视图（View）</strong> 在 JavaEE 应用程序中，视图（View）可以由 JSP（Java Server Page）担任。在现在前后端分离的模式下，View 已经由前端所取代。</li>
+<li><strong>控制器（Controller）</strong> JavaEE 应用中，Controller 可能是一个 Servlet 。在 Spring MVC 中担任控制器角色的是 DispatcherServlet。</li>
+<li><strong>模型（Model）</strong> Model 则是由一个实体 Bean 来实现，主要对应数据层。</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="原理">1.2 原理</h2>
+</div><div class="cl-preview-section"><p>Spring MVC 最核心的思想在于 <code>DispatcherServlet</code> 。在现在的开发模式中，我们主要使用的也是 Spring MVC 的这一核心功能。那么 <code>DispatcherServlet</code> 究竟是何方神圣呢？</p>
+</div><div class="cl-preview-section"><p>还记得大明湖畔，呸！还记得姑苏慕容吗？没错，就是那个以斗转星移闻名于世，致力于光复大燕的慕容家族。我们这里就拿 <code>斗转星移</code> 和 <code>DispatcherServlet</code> 做一个类比。它们两个都是从外部接收一个东西（内力/请求）然后经过一系列转换，最后返回给外部（内力/响应）。当年慕容龙城凭借其自创的 <code>斗转星移</code> 威震江湖，「天龙八部」中斗转星移连扫地僧口中天下第一的 <code>降龙十八掌</code> 都能化解，足见此种武功的精妙所在。不过后来遇到段誉的六脉神剑就不太灵光了，可能是当年慕容龙城设计 <code>斗转星移</code> 的时候，没有太多的考虑高并发的业务场景吧（六脉神剑）。哈哈，脑洞一下。</p>
+</div><div class="cl-preview-section"><p>Spring MVC 内部处理流程如下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9ac00c0001278911570606.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>浏览器发起一个请求（如：<a href="http://localhost:8080/hello%EF%BC%89%EF%BC%8C">http://localhost:8080/hello），</a> 会经历如下步骤：</p>
+</div><div class="cl-preview-section"><ol>
+<li>DispatcherServlet 接收到请求</li>
+<li>通过 HandlerMapping 找到对应的 handler</li>
+<li>然后通过 HandlerAdapter 调用 Controller 进行后续业务逻辑处理（3-4）</li>
+<li>处理完业务逻辑后，Controller 将视图名返回给 HandlerAdapter</li>
+<li>DispatcherServlet 选择合适的 ViewResolver 生成 View 对象</li>
+<li>最后 View 渲染并返回响应数据</li>
+</ol>
+</div><div class="cl-preview-section"><h2 id="深入核心">1.3 深入核心</h2>
+</div><div class="cl-preview-section"><p>三个核心组件：</p>
+</div><div class="cl-preview-section"><ul>
+<li>Handler</li>
+<li>HandlerMapping</li>
+<li>HanderAdapter</li>
+</ul>
+</div><div class="cl-preview-section"><p>Handler 是用来做具体事情的，对应的是 Controller 里面的方法，所有有 @RequestMapping 标注的方法都可以看做为一个 Handler。</p>
+</div><div class="cl-preview-section"><p>HandlerMapping 是用来找到 Handler 的，是请求路径与 Handler 的映射关系。</p>
+</div><div class="cl-preview-section"><p>HandlerAdapter 从名字看，可以知道它是一个适配器。它是用来跟具体的 Handler 配合使用的。可以简单理解为各种电子产品与电源适配器（充电器）的关系。</p>
+</div><div class="cl-preview-section"><p>DispatcherServlet 最核心的方法就是 doDispatch ，doDispatch 主要做了四件事：</p>
+</div><div class="cl-preview-section"><ol>
+<li>根据 request 找到 Handler</li>
+<li>根据 Handler 找到对应的 HanderAdapter</li>
+<li>用 HanderAdapter 处理 Handler</li>
+<li>处理经过以上步骤的结果</li>
+</ol>
+</div><div class="cl-preview-section"><p>精简后的源码如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// 根据 request 找到 Handler</span>
+mappedHandler <span class="token operator">=</span> <span class="token function">getHandler</span><span class="token punctuation">(</span>processedRequest<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 根据 Handler 找到对应的 HanderAdapter</span>
+HandlerAdapter ha <span class="token operator">=</span> <span class="token function">getHandlerAdapter</span><span class="token punctuation">(</span>mappedHandler<span class="token punctuation">.</span><span class="token function">getHandler</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 用 HanderAdapter 处理 Handler</span>
+mv <span class="token operator">=</span> ha<span class="token punctuation">.</span><span class="token function">handle</span><span class="token punctuation">(</span>processedRequest<span class="token punctuation">,</span> response<span class="token punctuation">,</span> mappedHandler<span class="token punctuation">.</span><span class="token function">getHandler</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 处理经过以上步骤的结果</span>
+<span class="token function">processDispatchResult</span><span class="token punctuation">(</span>processedRequest<span class="token punctuation">,</span> response<span class="token punctuation">,</span> mappedHandler<span class="token punctuation">,</span> mv<span class="token punctuation">,</span> dispatchException<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>简单看一下查找 Handler 和 HandlerAdapter 的代码：</p>
+</div><div class="cl-preview-section"><p>查找 Handler：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">protected</span> HandlerExecutionChain <span class="token function">getHandler</span><span class="token punctuation">(</span>HttpServletRequest request<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+   <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>handlerMappings <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">for</span> <span class="token punctuation">(</span>HandlerMapping mapping <span class="token operator">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>handlerMappings<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+         HandlerExecutionChain handler <span class="token operator">=</span> mapping<span class="token punctuation">.</span><span class="token function">getHandler</span><span class="token punctuation">(</span>request<span class="token punctuation">)</span><span class="token punctuation">;</span>
+         <span class="token keyword">if</span> <span class="token punctuation">(</span>handler <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> handler<span class="token punctuation">;</span>
+         <span class="token punctuation">}</span>
+      <span class="token punctuation">}</span>
+   <span class="token punctuation">}</span>
+   <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如上代码所示，迭代 Mapping 集合，找到后返回，找不到返回 <code>null</code> ，如果找不到对应的 Mapping 一般情况下就会看到我们熟悉的 <code>404</code>了。</p>
+</div><div class="cl-preview-section"><p>查找 HandlerAdapter：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">protected</span> HandlerAdapter <span class="token function">getHandlerAdapter</span><span class="token punctuation">(</span>Object handler<span class="token punctuation">)</span> <span class="token keyword">throws</span> ServletException <span class="token punctuation">{</span>
+   <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>handlerAdapters <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">for</span> <span class="token punctuation">(</span>HandlerAdapter adapter <span class="token operator">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>handlerAdapters<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+         <span class="token keyword">if</span> <span class="token punctuation">(</span>adapter<span class="token punctuation">.</span><span class="token function">supports</span><span class="token punctuation">(</span>handler<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> adapter<span class="token punctuation">;</span>
+         <span class="token punctuation">}</span>
+      <span class="token punctuation">}</span>
+   <span class="token punctuation">}</span>
+   <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">ServletException</span><span class="token punctuation">(</span><span class="token string">"No adapter for handler ["</span> <span class="token operator">+</span> handler <span class="token operator">+</span>
+         <span class="token string">"]: The DispatcherServlet configuration needs to include a HandlerAdapter that supports this handler"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>和查找 Handler 稍有不同，如果找不到对应的 HandlerAdapter 直接抛出一个 <code>ServletException</code>。</p>
+</div><div class="cl-preview-section"><h2 id="小结">1.4 小结</h2>
+</div><div class="cl-preview-section"><p>OK，又到了总结收获的时候了。在本节的第一部分，我们一起对 Spring MVC 的核心原理进行了深入的学习。了解了 Spring MVC 的核心思想，内部处理流程，三大核心组件，还一起学习了 Spring MVC 的部分源码。内容的深度比之前的小节要深一些，如果你觉得学起来有难度，那么你可以从本节的第二部分开始学，学完 Spring MVC 的具体使用，再回过头来学习它的原理。</p>
+</div><div class="cl-preview-section"><h1 id="注解">2. 注解</h1>
+</div><div class="cl-preview-section"><p>在本节的第一部分我们一起学习了一下原理性的东西，还看了一下源码。原理就好比是内功心法，实践操作就像武功招式。学了内功心法，接下来我们要配合招式，让它们融会贯通才能发挥出最大威力。在第二部分我们将会实践以下内容：</p>
+</div><div class="cl-preview-section"><ul>
+<li>常用注解</li>
+<li>获取参数</li>
+<li>数据校验</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="常用注解">2.1 常用注解</h2>
+</div><div class="cl-preview-section"><p>在学习 Spring MVC 的常用注解之前，我们先看一下我们之前都用了哪些 Spring MVC 的注解，它们属不属于今天要说的常用注解呢？</p>
+</div><div class="cl-preview-section"><p>我们前面写的代码不多，与 Spring MVC 相关的只有一个 <code>HelloController</code>：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@RestController</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">HelloController</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/hello"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> String <span class="token function">hello</span><span class="token punctuation">(</span><span class="token annotation punctuation">@RequestParam</span><span class="token punctuation">(</span>required <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">)</span> String name<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>name <span class="token operator">!=</span> null <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span><span class="token string">""</span><span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> <span class="token string">"Hello "</span> <span class="token operator">+</span> name<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> <span class="token string">"Hello Spring Boot"</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在这段代码中我们用到了下面三个注解：</p>
+</div><div class="cl-preview-section"><ul>
+<li>@RestController</li>
+<li>@GetMapping</li>
+<li>@RequestParam</li>
+</ul>
+</div><div class="cl-preview-section"><p>下面表格是 Spring MVC 中常用注解：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>注解</th>
+<th>作用域</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>@Controller</td>
+<td>类</td>
+<td>Controller标识</td>
+</tr>
+<tr>
+<td>@RequestMapping</td>
+<td>类/方法</td>
+<td>URL映射</td>
+</tr>
+<tr>
+<td>@ResponseBody</td>
+<td>类/方法</td>
+<td>以Json方式返回</td>
+</tr>
+<tr>
+<td>@RequestParam</td>
+<td>参数</td>
+<td>按名字接收参数</td>
+</tr>
+<tr>
+<td>@RequestBody</td>
+<td>参数</td>
+<td>接收Json参数</td>
+</tr>
+<tr>
+<td>@PathVariable</td>
+<td>参数</td>
+<td>接收URL中的参数</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>嗯？好像除了<code>@RequestParam</code> 以外，其他的都不是上面的所说的常用注解呀！难道我们之前用的都是比较小众的注解？哈哈，不是这样的，这里就引出另外一个概念了——组合注解。</p>
+</div><div class="cl-preview-section"><h2 id="组合注解">2.2 组合注解</h2>
+</div><div class="cl-preview-section"><p>啥是组合注解呢？往下走，一看便知：</p>
+</div><div class="cl-preview-section"><ul>
+<li>@RestController = @Controller + @ResponseBody</li>
+<li>@GetMapping = @RequestMapping(method = RequestMethod.GET)</li>
+<li>@PostMapping = @RequestMapping(method = RequestMethod.POST)</li>
+<li>@PutMapping = @RequestMapping(method = RequestMethod.PUT)</li>
+<li>@PatchMapping = @RequestMapping(method = RequestMethod.PATCH)</li>
+<li>@DeleteMapping = @RequestMapping(method = RequestMethod.DELETE)</li>
+</ul>
+</div><div class="cl-preview-section"><p>相信聪明的你已经发现了，组合注解就是具有多个功能的注解，由多个注解或者一个注解 + 一个特定的属性值组成的注解，相当于对注解的一种封装。</p>
+</div><div class="cl-preview-section"><p>@RestController 不仅可以标识一个 Controller ，还能让被标识的 Controller 中的所有方法都返回 JSON 格式的数据；@GetMapping 不仅可以映射一个请求路径，还让该路径只响应 GET 方法。</p>
+</div><div class="cl-preview-section"><h2 id="接收参数">2.3 接收参数</h2>
+</div><div class="cl-preview-section"><p>Spring MVC 的主要工作就是接收外部的请求，然后根据请求去调用相应的服务，最后将处理结果返回。外部发来的请求会以各种形式带着各式各样的参数，以达到不同的目的。那么接下来我们就一起看看 Spring MVC 都有哪些接收请求参数的本领吧！</p>
+</div><div class="cl-preview-section"><p>Spring MVC 有四种接收参数的方式：</p>
+</div><div class="cl-preview-section"><ul>
+<li>无注解方式</li>
+<li>@RequestParam 方式</li>
+<li>@PathVariable 方式</li>
+<li>@RequestBody 方式</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="准备">2.3.1 准备</h3>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Data</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">User</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> String name<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> age<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>使用 <code>@Data</code> 注解需要添加以下依赖：</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>org.projectlombok<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>lombok<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>然后需要在 IDEA 安装 Lombok 插件。</p>
+</div><div class="cl-preview-section"><h3 id="无注解">2.3.2 无注解</h3>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Api</span>
+<span class="token annotation punctuation">@RestController</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">ParamController</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@ApiOperation</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"无注解方式"</span><span class="token punctuation">)</span>
+    <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/noannotation"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> User <span class="token function">noAnnotation</span><span class="token punctuation">(</span> User user<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> user<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9abff00001e28d15480756.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><blockquote>
+<p><a href="http://localhost:8080/noannotation?name=%E6%97%A0%E6%B3%A8%E8%A7%A3%E6%96%B9%E5%BC%8F&amp;age=1">http://localhost:8080/noannotation?name=无注解方式&amp;age=1</a></p>
+</blockquote>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9abf860001bc0c14660400.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h3 id="requestparam方式">2.3.3 @RequestParam方式</h3>
+</div><div class="cl-preview-section"><p>@RequestParam 注解有四个属性：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>属性</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name</td>
+<td>String</td>
+<td>参数名称</td>
+</tr>
+<tr>
+<td>value</td>
+<td>String</td>
+<td>name 属性的别名</td>
+</tr>
+<tr>
+<td>required</td>
+<td>boolean</td>
+<td>指定是否为必传参数（为 true 时不传会报错）</td>
+</tr>
+<tr>
+<td>defaultValue</td>
+<td>String</td>
+<td>参数默认值</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@ApiOperation</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"@RequestParam方式"</span><span class="token punctuation">)</span>
+<span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/requestparam"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> User <span class="token function">RequestParam</span><span class="token punctuation">(</span><span class="token annotation punctuation">@RequestParam</span> String name<span class="token punctuation">,</span> <span class="token annotation punctuation">@RequestParam</span> <span class="token keyword">int</span> age<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  User user <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">User</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  user<span class="token punctuation">.</span><span class="token function">setName</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  user<span class="token punctuation">.</span><span class="token function">setAge</span><span class="token punctuation">(</span>age<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> user<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9abf6e0001d49515260790.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><blockquote>
+<p><a href="http://localhost:8080/requestparam?name=@RequestParam%E6%96%B9%E5%BC%8F&amp;age=4">http://localhost:8080/requestparam?name=@RequestParam方式&amp;age=4</a></p>
+</blockquote>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9abf5c000140d614780408.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h3 id="pathvariable方式">2.3.4 @PathVariable方式</h3>
+</div><div class="cl-preview-section"><p>@PathVariable 注解有三个属性：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>属性</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name</td>
+<td>String</td>
+<td>参数名称</td>
+</tr>
+<tr>
+<td>value</td>
+<td>String</td>
+<td>name 属性的别名</td>
+</tr>
+<tr>
+<td>required</td>
+<td>boolean</td>
+<td>指定是否为必传参数（为 true 时不传会报错）</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@ApiOperation</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"@PathVariable方式"</span><span class="token punctuation">)</span>
+<span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/pathvariable/{name}/{age}"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> User <span class="token function">PathVariable</span><span class="token punctuation">(</span><span class="token annotation punctuation">@PathVariable</span> String name<span class="token punctuation">,</span><span class="token annotation punctuation">@PathVariable</span> <span class="token keyword">int</span> age<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  User user <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">User</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  user<span class="token punctuation">.</span><span class="token function">setName</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  user<span class="token punctuation">.</span><span class="token function">setAge</span><span class="token punctuation">(</span>age<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> user<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9abf370001810015340810.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><blockquote>
+<p><a href="http://localhost:8080/pathvariable/@PathVariable%E6%96%B9%E5%BC%8F/2">http://localhost:8080/pathvariable/@PathVariable方式/2</a></p>
+</blockquote>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9abf2a000165f714800414.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h3 id="requestbody方式">2.3.5 @RequestBody方式</h3>
+</div><div class="cl-preview-section"><p>@RequestBody 只有一个属性：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>属性</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>required</td>
+<td>boolean</td>
+<td>指定是否为必传参数（为 true 时不传会报错）</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@ApiOperation</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"@RequestBody方式"</span><span class="token punctuation">)</span>
+<span class="token annotation punctuation">@PostMapping</span><span class="token punctuation">(</span><span class="token string">"/requestbody"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> User <span class="token function">RequestBody</span><span class="token punctuation">(</span><span class="token annotation punctuation">@RequestBody</span> User user<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> user<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9abf180001056515600900.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><blockquote>
+<p><a href="http://localhost:8080/requestbody">http://localhost:8080/requestbody</a></p>
+<p>以 POST 方式请求，将参数放到 body 里。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9abef80001908d14660400.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="数据验证">2.4 数据验证</h2>
+</div><div class="cl-preview-section"><p>说到传参，就抛不开参数的校验。在我们的实际开发中，需要根据需求对参数做各种各样的校验：是否为空、取值范围、是否为数字、Email 格式是否正确等等。在没有数据校验 API 之前，我们需要自己去实现这些校验的代码。在有了 JSR-303 之后，这些事情变得无比简单、方便，妈妈再也不用担心我不会做数据校验啦！</p>
+</div><div class="cl-preview-section"><p>Spring MVC 对 JSR-303 有着良好的支持，在 Spring Boot 的加持下，更是如鱼得水，我们连额外的 Jar 包依赖都不需要手动添加，因为它已经包含在 <code>spring-boot-starter-web</code> 里了，真是棒极了！下面我们看一个简单的例子：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Data</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">User</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@NotNull</span><span class="token punctuation">(</span>message <span class="token operator">=</span> <span class="token string">"名字不能为空"</span><span class="token punctuation">)</span>
+    <span class="token keyword">private</span> String name<span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@Range</span><span class="token punctuation">(</span>min <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span>max <span class="token operator">=</span> <span class="token number">120</span><span class="token punctuation">,</span>message <span class="token operator">=</span> <span class="token string">"年龄要在1到120之间"</span><span class="token punctuation">)</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> age<span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@Email</span><span class="token punctuation">(</span>message <span class="token operator">=</span> <span class="token string">"Email格式不正确"</span><span class="token punctuation">)</span>
+    <span class="token keyword">private</span> String email<span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@Past</span><span class="token punctuation">(</span>message <span class="token operator">=</span> <span class="token string">"生日必须为过去的时间"</span><span class="token punctuation">)</span>
+    <span class="token keyword">private</span> LocalDate birthDay<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>每个注解都有一个 <code>message</code> 属性，用来设置校验不通过时的提示信息。这里我不给出演示效果了，算是给你留一个小小的作业，自己实验一把，然后可以在评论里一起交流心得。</p>
+</div><div class="cl-preview-section"><p>下面是我们比较常用的数据校验注解，完整的可以去 <code>javax.validation.constraints</code> 包中查找。</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th><strong>注解</strong></th>
+<th><strong>说明</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@Null</code></td>
+<td>被注释的元素必须为 <code>null</code></td>
+</tr>
+<tr>
+<td><code>@NotNull</code></td>
+<td>被注释的元素必须不为 <code>null</code></td>
+</tr>
+<tr>
+<td><code>@AssertTrue</code></td>
+<td>被注释的元素必须为 <code>true</code></td>
+</tr>
+<tr>
+<td><code>@AssertFalse</code></td>
+<td>被注释的元素必须为 <code>false</code></td>
+</tr>
+<tr>
+<td><code>@Min(value)</code></td>
+<td>被注释的元素必须是一个数字，其值必须大于等于指定的最小值</td>
+</tr>
+<tr>
+<td><code>@Max(value)</code></td>
+<td>被注释的元素必须是一个数字，其值必须小于等于指定的最大值</td>
+</tr>
+<tr>
+<td><code>@DecimalMin(value)</code></td>
+<td>被注释的元素必须是一个数字，其值必须大于等于指定的最小值</td>
+</tr>
+<tr>
+<td><code>@DecimalMax(value)</code></td>
+<td>被注释的元素必须是一个数字，其值必须小于等于指定的最大值</td>
+</tr>
+<tr>
+<td><code>@Size(max, min)</code></td>
+<td>被注释的元素的大小必须在指定的范围内</td>
+</tr>
+<tr>
+<td><code>@Digits (integer, fraction)</code></td>
+<td>被注释的元素必须是一个数字，其值必须在可接受的范围内</td>
+</tr>
+<tr>
+<td><code>@Past</code></td>
+<td>被注释的元素必须是一个过去的日期</td>
+</tr>
+<tr>
+<td><code>@Future</code></td>
+<td>被注释的元素必须是一个将来的日期</td>
+</tr>
+<tr>
+<td><code>@Pattern(value)</code></td>
+<td>被注释的元素必须符合指定的正则表达式</td>
+</tr>
+<tr>
+<td><code>@Email</code></td>
+<td>被注释的元素必须是电子邮箱地址</td>
+</tr>
+<tr>
+<td><code>@Length</code></td>
+<td>被注释的字符串的大小必须在指定的范围内</td>
+</tr>
+<tr>
+<td><code>@NotEmpty</code></td>
+<td>被注释的字符串的必须非空</td>
+</tr>
+<tr>
+<td><code>@Range</code></td>
+<td>被注释的元素必须在合适的范围内</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><h2 id="小结-1">2.5 小结</h2>
+</div><div class="cl-preview-section"><p>OK，通过这一部分的学习，我们掌握了 Spring MVC 的常用注解、学会了各种接收参数的姿势、还 get 到了数据校验的技巧，可谓是收获满满。这部分的内容更加注重实践，所以，你可不要偷懒呦！Spring MVC 的这节内容比较多，如果你累了可以先休息一下，放松一下再来学习后面的内容。在接下来的部分，我们一起来学习一下 Spring MVC 的拦截器。</p>
+</div><div class="cl-preview-section"><h1 id="拦截器">3. 拦截器</h1>
+</div><div class="cl-preview-section"><h2 id="简介-1">3.1 简介</h2>
+</div><div class="cl-preview-section"><p>书接上回，在这一趴我们一起来学习一下 Spring MVC 中的拦截器。拦截器在我们日常开发当中有着很重要的地位，很多重要的功能需要借助拦截器帮我们完成。我们通常会使用拦截器帮我们完成以下功能：</p>
+</div><div class="cl-preview-section"><ul>
+<li>登录认证</li>
+<li>权限验证</li>
+<li>记录日志</li>
+<li>性能监控</li>
+<li>…</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="自定义拦截器">3.2 自定义拦截器</h2>
+</div><div class="cl-preview-section"><p>接下来我们学习如何写一个拦截器。Spring MVC 中所有的拦截器都实现/继承自 <code>HandlerInterceptor</code> 接口。我们想要写一个自定义拦截器的话，需要实现/继承 <code>HandlerInterceptor</code> 或其子接口/实现类。下图是 Spring MVC 中拦截器的类图（还有几个类是 <code>HandlerInterceptorAdapter</code>的子类，这里没有列出）：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9abed20001b27620800520.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><code>HandlerInterceptor</code> 接口的源码如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">HandlerInterceptor</span> <span class="token punctuation">{</span>
+
+  	<span class="token comment">// 处理器执行前被调用</span>
+	<span class="token keyword">default</span> <span class="token keyword">boolean</span> <span class="token function">preHandle</span><span class="token punctuation">(</span>HttpServletRequest request<span class="token punctuation">,</span> HttpServletResponse response<span class="token punctuation">,</span> Object handler<span class="token punctuation">)</span>
+			<span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+
+		<span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+	
+  	<span class="token comment">// 处理器执行后，视图渲染前被调用</span>
+	<span class="token keyword">default</span> <span class="token keyword">void</span> <span class="token function">postHandle</span><span class="token punctuation">(</span>HttpServletRequest request<span class="token punctuation">,</span> HttpServletResponse response<span class="token punctuation">,</span> Object handler<span class="token punctuation">,</span>
+			<span class="token annotation punctuation">@Nullable</span> ModelAndView modelAndView<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+	<span class="token punctuation">}</span>
+
+  	<span class="token comment">// 视图渲染完成后背调用</span>
+	<span class="token keyword">default</span> <span class="token keyword">void</span> <span class="token function">afterCompletion</span><span class="token punctuation">(</span>HttpServletRequest request<span class="token punctuation">,</span> HttpServletResponse response<span class="token punctuation">,</span> Object handler<span class="token punctuation">,</span>
+			<span class="token annotation punctuation">@Nullable</span> Exception ex<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+	<span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>该接口包含三个默认实现（ Java 8）的方法—— preHandle、postHandle 和 afterCompletion 。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>下面我们自定义一个最简单、纯净的拦截器，也就是直接实现 <code>HandlerInterceptor</code> 接口。</p>
+</div><div class="cl-preview-section"><p>新建一个类 <code>LogInterceptor</code> 并实现 <code>HandlerInterceptor</code> 接口：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Slf4j</span>
+<span class="token annotation punctuation">@Component</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">LogInterceptor</span> <span class="token keyword">implements</span> <span class="token class-name">HandlerInterceptor</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">preHandle</span><span class="token punctuation">(</span>HttpServletRequest request<span class="token punctuation">,</span> HttpServletResponse response<span class="token punctuation">,</span> Object handler<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"preHandle"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">postHandle</span><span class="token punctuation">(</span>HttpServletRequest request<span class="token punctuation">,</span> HttpServletResponse response<span class="token punctuation">,</span> Object handler<span class="token punctuation">,</span> ModelAndView modelAndView<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"postHandle"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">afterCompletion</span><span class="token punctuation">(</span>HttpServletRequest request<span class="token punctuation">,</span> HttpServletResponse response<span class="token punctuation">,</span> Object handler<span class="token punctuation">,</span> Exception ex<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"afterCompletion"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>在三个方法中分别添加了一条日志打印的代码。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>新建一个类 <code>WebConfigurer</code> 并实现 <code>WebMvcConfigurer</code> 接口，用于注册我们自定义的拦截器：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Configuration</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">WebConfigurer</span> <span class="token keyword">implements</span> <span class="token class-name">WebMvcConfigurer</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@Autowired</span>
+    <span class="token keyword">private</span> LogInterceptor logInterceptor<span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">addInterceptors</span><span class="token punctuation">(</span>InterceptorRegistry registry<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        registry<span class="token punctuation">.</span><span class="token function">addInterceptor</span><span class="token punctuation">(</span>logInterceptor<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在 <code>HelloController</code> 的 <code>hello</code> 方法中添加一条日志打印代码：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Api</span>
+<span class="token annotation punctuation">@Slf4j</span>
+<span class="token annotation punctuation">@RestController</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">HelloController</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@ApiOperation</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"Hello Spring Boot 方法"</span><span class="token punctuation">)</span>
+    <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/hello"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> String <span class="token function">hello</span><span class="token punctuation">(</span><span class="token annotation punctuation">@RequestParam</span><span class="token punctuation">(</span>required <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">)</span> <span class="token annotation punctuation">@ApiParam</span><span class="token punctuation">(</span><span class="token string">"名字"</span><span class="token punctuation">)</span> String name<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>name <span class="token operator">==</span> null <span class="token operator">||</span> <span class="token string">""</span><span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            name <span class="token operator">=</span> <span class="token string">"Spring Boot"</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"hello"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token string">"Hello "</span><span class="token operator">+</span>name<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>OK，接下来启动工程，并访问以下<code>hello</code> 方法，控制台会看到如下的输出：</p>
+</div><div class="cl-preview-section"><pre><code>com.imooc.springboot.LogInterceptor      : preHandle
+com.imooc.springboot.HelloController     : hello
+com.imooc.springboot.LogInterceptor      : postHandle
+com.imooc.springboot.LogInterceptor      : afterCompletion
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>这代表我们的自定义拦截器成功了，恭喜！</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="拦截器执行流程">3.3 拦截器执行流程</h2>
+</div><div class="cl-preview-section"><p>从控制台的日志输出，我们可以大概看出拦截器的执行流程。下面我们来更加深入的学习一下拦截器的整个执行流程：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9abea90001c57d07710426.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ol>
+<li>执行 preHandle 方法，该方法会返回一个布尔值。如果为 false ，则结束本次请求：如果为 true 则继续。</li>
+<li>执行处理器逻辑，也就是我们的 Controller 。</li>
+<li>执行 postHandle 方法。</li>
+<li>执行视图解析和视图渲染 （我们直接返回了 JSON 对象，所以没有视图处理）。</li>
+<li>执行 afterCompletion 方法。</li>
+</ol>
+</div><div class="cl-preview-section"><p>我们可以在 <code>DispatcherServlet</code> 的 <code>doDispatch</code> 方法的源码中进一步验证这个执行逻辑：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">doDispatch</span><span class="token punctuation">(</span>HttpServletRequest request<span class="token punctuation">,</span> HttpServletResponse response<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+	<span class="token keyword">try</span> <span class="token punctuation">{</span>
+		<span class="token keyword">try</span> <span class="token punctuation">{</span>
+			
+			<span class="token comment">// 返回 HandlerExecutionChain  其中包含了拦截器队列</span>
+			mappedHandler <span class="token operator">=</span> <span class="token function">getHandler</span><span class="token punctuation">(</span>processedRequest<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+			<span class="token comment">//调用拦截器 PreHandle 方法，若返回 false 将直接 return</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>mappedHandler<span class="token punctuation">.</span><span class="token function">applyPreHandle</span><span class="token punctuation">(</span>processedRequest<span class="token punctuation">,</span> response<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+				<span class="token keyword">return</span><span class="token punctuation">;</span>
+			<span class="token punctuation">}</span>
+
+			<span class="token comment">// 处理 Controller</span>
+			mv <span class="token operator">=</span> ha<span class="token punctuation">.</span><span class="token function">handle</span><span class="token punctuation">(</span>processedRequest<span class="token punctuation">,</span> response<span class="token punctuation">,</span> mappedHandler<span class="token punctuation">.</span><span class="token function">getHandler</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+			<span class="token comment">// 调用拦截器的 PostHandle 方法</span>
+			mappedHandler<span class="token punctuation">.</span><span class="token function">applyPostHandle</span><span class="token punctuation">(</span>processedRequest<span class="token punctuation">,</span> response<span class="token punctuation">,</span> mv<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">}</span>
+
+		<span class="token comment">// 调用拦截器的 afterCompletion 方法</span>
+		<span class="token function">processDispatchResult</span><span class="token punctuation">(</span>processedRequest<span class="token punctuation">,</span> response<span class="token punctuation">,</span> mappedHandler<span class="token punctuation">,</span> mv<span class="token punctuation">,</span> dispatchException<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>以上是精简以后的 <code>doDispatch</code> 源码。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="多个拦截器的执行顺序">3.4 多个拦截器的执行顺序</h2>
+</div><div class="cl-preview-section"><p>我们再添加一个拦截器 <code>TimeInterceptor</code> 用来记录接口执行的时间：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Slf4j</span>
+<span class="token annotation punctuation">@Component</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TimeInterceptor</span> <span class="token keyword">implements</span> <span class="token class-name">HandlerInterceptor</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">private</span> ThreadLocal<span class="token operator">&lt;</span>Long<span class="token operator">&gt;</span> threadLocalStart <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ThreadLocal</span><span class="token operator">&lt;</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> ThreadLocal<span class="token operator">&lt;</span>Long<span class="token operator">&gt;</span> threadLocalEnd <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ThreadLocal</span><span class="token operator">&lt;</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  	<span class="token comment">// 记录开始时间</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">preHandle</span><span class="token punctuation">(</span>HttpServletRequest request<span class="token punctuation">,</span> HttpServletResponse response<span class="token punctuation">,</span> Object handler<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+        <span class="token keyword">long</span> startTIme <span class="token operator">=</span> System<span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        threadLocalStart<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>startTIme<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"开始时间：{}"</span><span class="token punctuation">,</span> startTIme<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+  	<span class="token comment">// 记录结束时间</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">postHandle</span><span class="token punctuation">(</span>HttpServletRequest request<span class="token punctuation">,</span> HttpServletResponse response<span class="token punctuation">,</span> Object handler<span class="token punctuation">,</span> ModelAndView modelAndView<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+        <span class="token keyword">long</span> endTIme <span class="token operator">=</span> System<span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        threadLocalEnd<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>endTIme<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"结束时间：{}"</span><span class="token punctuation">,</span> endTIme<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+  	<span class="token comment">// 计算接口执行时间</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">afterCompletion</span><span class="token punctuation">(</span>HttpServletRequest request<span class="token punctuation">,</span> HttpServletResponse response<span class="token punctuation">,</span> Object handler<span class="token punctuation">,</span> Exception ex<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+        <span class="token keyword">long</span> startTime <span class="token operator">=</span> threadLocalStart<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">long</span> endTime <span class="token operator">=</span> threadLocalEnd<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"接口执行时间：{} 毫秒"</span><span class="token punctuation">,</span> endTime <span class="token operator">-</span> startTime<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>控制台输出：</p>
+</div><div class="cl-preview-section"><pre><code>com.imooc.springboot.LogInterceptor      : preHandle
+com.imooc.springboot.TimeInterceptor     : 开始时间：1561885760593
+com.imooc.springboot.HelloController     : hello
+com.imooc.springboot.TimeInterceptor     : 结束时间：1561885760627
+com.imooc.springboot.LogInterceptor      : postHandle
+com.imooc.springboot.TimeInterceptor     : 接口执行时间：34 毫秒
+com.imooc.springboot.LogInterceptor      : afterCompletion
+</code></pre>
+</div><div class="cl-preview-section"><p>通过控制台的输出信息，我们可以看到多个拦截器的执行顺序有些类似数据结构中的栈——先进后出。</p>
+</div><div class="cl-preview-section"><p>下面我们再通过一张图来更加形象的展示一下这个逻辑：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9abe8a00012b6806560706.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="小结-2">3.5 小结</h2>
+</div><div class="cl-preview-section"><p>OK，在这一趴中，我们学习了拦截器的基本使用，以及其内部的执行逻辑。还实践了两个应用场景——记录日志和监控接口执行时间，还知道了多个拦截器是先进后出的执行顺序。通过这一部分的学习，你已经掌握了拦截器的应用与原理了。</p>
+</div><div class="cl-preview-section"><h1 id="结语">4. 结语</h1>
+</div><div class="cl-preview-section"><p>关于 Spring MVC 的这一节内容比较多，从原理到应用再到拦截器的使用，内容着实不少呢。需要你课后慢慢消化与实践。另外，想问问各位同学，你喜欢读这种长篇干货，还是短小精悍的文章呢？</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5e996ba700011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6190">
+						<img src="https://img3.mukewang.com/5333a08f0001700202000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕移动0446252</h4>
+						<div class="comment-text">注意jsr303在springboot2.3.0就改了，不是这样的了。</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-17</span>
+						<a href="/read/commentdetail/6190">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6190" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6119">
+						<img src="https://img2.mukewang.com/596737af0001f90501800180-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">Yellowone</h4>
+						<div class="comment-text">数据验证不生效额 = =</div>
+						<div>
+							
+								<div class="reply">讲师回复：加微信给你看下，liushuijinger</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-13</span>
+						<a href="/read/commentdetail/6119">
+							<span class="icon r"><i class="imwap-comment"></i><em>4</em></span>
+						</a>
+						<span data-cid="6119" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6084">
+						<img src="https://img1.mukewang.com/564ffc1c0001e55100400040-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">YUnHolding丶sand</h4>
+						<div class="comment-text">关于多个拦截器的执行顺序，可以看一下作者提供的源代码中WebConfigure类中，addInterceptors方法中，添加拦截器的顺序：
+@Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(logInterceptor);
+        registry.addInterceptor(timeInterceptor);
+    }
+
+先添加了logInterceptor，再添加timeInterceptor，所以先执行logInterceptor的preHandle方法，然后再执行timeInterceptor的preHandle方法。。。</div>
+						<div>
+							
+								<div class="reply">讲师回复：是的。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-09</span>
+						<a href="/read/commentdetail/6084">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6084" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5997">
+						<img src="https://img3.mukewang.com/5d53766b00014b5c27361824-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">乃好</h4>
+						<div class="comment-text">手动微笑，难道验证不要加@Validated吗？我说咋没用</div>
+						<div>
+							
+								<div class="reply">讲师回复：需要的，在 Controller 方法参数前面加上 @Valid 注解。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-01</span>
+						<a href="/read/commentdetail/5997">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5997" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5886">
+						<img src="https://img.mukewang.com/5a2cef030001da1301000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_Sophia_20</h4>
+						<div class="comment-text">为什么我的控制台无法出现我想看到的东西</div>
+						<div>
+							
+								<div class="reply">讲师回复：你看到了啥？</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-20</span>
+						<a href="/read/commentdetail/5886">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5886" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5885">
+						<img src="https://img.mukewang.com/5a2cef030001da1301000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_Sophia_20</h4>
+						<div class="comment-text">spring-boot-starter-parent  2.3.0 版本以后 starter-web 中就没有数据校验的依赖了，需要手动导入依赖
+
+org.springframework.bootspring-boot-starter-validation
+
+
+链接如下：https://blog.csdn.net/dongbeiou/article/details/106634573</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-20</span>
+						<a href="/read/commentdetail/5885">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="5885" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5806">
+						<img src="https://img4.mukewang.com/5333a28f00019e7702100210-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">fenkapian</h4>
+						<div class="comment-text">栈好像是先进后出的吧，队列才是先进先出的。
+另外请教下，多个拦截器的执行顺序，我知道是先执行各个拦截器的preHandle方法，但是先执行具体哪一个拦截器的preHandle呢？是什么规则确定的呢？</div>
+						<div>
+							
+								<div class="reply">讲师回复：多个拦截器执行也是类似先进后出呀。执行顺序由注册拦截器的顺序决定，具体顺序查看 WebConfigurer 类中的 addInterceptors 方法。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-11</span>
+						<a href="/read/commentdetail/5806">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5806" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5748">
+						<img src="https://img3.mukewang.com/5b8cf6740001a3b602000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">穆女生</h4>
+						<div class="comment-text">多个拦截器，为啥最后的after顺序跟前面的不一样</div>
+						<div>
+							
+								<div class="reply">讲师回复：去 org.springframework.web.servlet.HandlerExecutionChain 中看下源码就明白了。org.springframework.web.servlet.HandlerExecutionChain#applyPreHandle 方法是正向迭代 interceptor 数组，而 org.springframework.web.servlet.HandlerExecutionChain#applyPostHandle 和 org.springframework.web.servlet.HandlerExecutionChain#triggerAfterCompletion 都是反向迭代 interceptor 数组。所以在 pre 中先执行的 interceptor 在 post 和 after 中反而会后执行。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-06</span>
+						<a href="/read/commentdetail/5748">
+							<span class="icon r"><i class="imwap-comment"></i><em>2</em></span>
+						</a>
+						<span data-cid="5748" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5737">
+						<img src="https://img3.mukewang.com/5ee9c90700012b4c10801440-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">MarchGoGo</h4>
+						<div class="comment-text">喜欢短小精悍的</div>
+						<div>
+							
+								<div class="reply">讲师回复：其实原来这是三个小节，后来整合成了一个。嗯……</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-05</span>
+						<a href="/read/commentdetail/5737">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5737" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5730">
+						<img src="https://img1.mukewang.com/54584d7d00012c0f02200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">lihk</h4>
+						<div class="comment-text">安装了lombot插件,Enable annotation processing 也勾选了  @Data还是报错</div>
+						<div>
+							
+								<div class="reply">讲师回复：自己好了？难道这就是传说中的机器学习？电脑自己学会了新知识，然后把问题解决了。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-04</span>
+						<a href="/read/commentdetail/5730">
+							<span class="icon r"><i class="imwap-comment"></i><em>4</em></span>
+						</a>
+						<span data-cid="5730" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5207">
+						<img src="https://img2.mukewang.com/5a1526d10001990501000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_庞庞_0</h4>
+						<div class="comment-text">希望多讲一些原理性的东西，比如为什么要这样，很多时候都是知道要这样，却不知道为什么要这样。</div>
+						<div>
+							
+								<div class="reply">讲师回复：感谢支持！一大波原理在后面等着你呦</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-04-27</span>
+						<a href="/read/commentdetail/5207">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5207" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=75">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '09 斗转星移再现江湖-Spring MVC',
+					'CID': '1805',
+					'Teacher': '刘水镜'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "09 斗转星移再现江湖-Spring MVC",
+                    desc: "够吃管饱的SpringBoot大餐",
+                    imgUrl: 'https:https://img.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/75',
+                    link: 'https://m.imooc.com/read/75'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

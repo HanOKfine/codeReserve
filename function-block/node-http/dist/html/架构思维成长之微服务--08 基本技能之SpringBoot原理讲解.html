@@ -1,0 +1,1027 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>08 基本技能之SpringBoot原理讲解</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="轻量级项目，系统化经验">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "2";
+	var chapter_id = "1719";
+	var chapter_title = "08 基本技能之SpringBoot原理讲解";
+	var aid = "73";
+	var a_name = "架构思维成长之微服务";
+	var a_price = "68.00";
+	var a_pic = "https://img2.mukewang.com/5e86b0220001a99d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '73';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-07-15&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			08 基本技能之SpringBoot原理讲解
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5e86c7b600012d9006400359.jpg')"></div>
+	
+	
+		<a href="/read/73">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5e6eebd60001a49207000933-40-40.jpg" alt="曼巴out">
+				<h3>架构思维成长之微服务</h3>
+				<p>曼巴out · 上市公司资深架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">古之立大事者，不唯有超世之才，亦必有坚韧不拔之志。<p class="author">——苏轼</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="、前言">1、前言</h1>
+</div><div class="cl-preview-section"><p>SpringBoot 我相信大家还是比较熟悉的，上手使用非常的简单，同时 SpringBoot 涉及的内容非常的广泛，由于篇幅有限，此处就不讲平时工作当中很琐碎的细节问题；比如 Web 相关的（拦截器怎么使用、跨域等等）；如何与 Redis 整合、如何与 ORM 框架整合等等之类的东西了；这里主要是讲解 SpringBoot 的核心原理。</p>
+</div><div class="cl-preview-section"><p>什么是 SpringBoot</p>
+</div><div class="cl-preview-section"><ul>
+<li>SpringBoot 是对 Spring 的封装，简化 Spring 原来繁琐的配置，使用更加的方便；它并不是 Spring 和 SpringMVC 的合并，也不是为了淘汰它们两个，它是 spring 约定优于配置的一个产品。</li>
+</ul>
+</div><div class="cl-preview-section"><p>SpringBoot 的优势</p>
+</div><div class="cl-preview-section"><ul>
+<li>快速创建独立运行的 Spring 项目以及与主流框架集成</li>
+<li>使用嵌入式的 Servlet 容器（默认是 Tomcat），无需打成 war 放入外置 Tomcat 运行</li>
+<li> starters 自动依赖与版本控制，如果是 SpringBoot 内置的业务场景的话，则无需再指定 version 了</li>
+<li>大量的自动配置，简化开发，也可修改默认值</li>
+<li>无需配置 XML，无代码生成，开箱即用</li>
+<li>准生产环境的运行时应用监控</li>
+<li>适合微服务模块，微服务规模比较庞大，服务数量比较多，希望快速的搭建每个服务，简化服务的开发</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="、快速上手">2、快速上手</h1>
+</div><div class="cl-preview-section"><p><strong>第一步：</strong> 创建 SpringBoot 项目</p>
+</div><div class="cl-preview-section"><p>那么如何创建 SpringBoot 项目呢？有几种方式来创建 SpringBoot 项目呢？</p>
+</div><div class="cl-preview-section"><ul>
+<li>方式一：直接使用 Spring 官网提供的脚手架来创建，然后再把项目导入开发工具里面</li>
+<li>方式二：IDEA 来创建，它默认有 sts 插件了</li>
+<li>方式三：Eclipse 安装 sts 插件，然后使 sts 创建来创建项目</li>
+<li>方式四：手工创建 Maven 项目，然后按照 SpringBoot 项目的规范来手工添加入口类、application.properties、配置坐标和插件等。</li>
+<li>总结，前三种方案，创建的出来默认是 SpringBoot 规范的项目，方案四的话，需要手工来配置。</li>
+</ul>
+</div><div class="cl-preview-section"><p>SpringBoot 项目标准结构</p>
+</div><div class="cl-preview-section"><pre><code>projectname
+	|-- src/main/java
+	|  |-- App.java					（入口启动类）
+	|-- src/main/resources
+	|  |-- application.properties	（配置文件，可以是yml和properties）
+	|-- pom.xml
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>它其实就是一个 Maven 项目，只不过是多了一些包结构规范约束。</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>第二步：</strong> 引入 starters，在 pom.xml</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>parent</span><span class="token punctuation">&gt;</span></span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>spring-boot-starter-parent<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">&gt;</span></span>1.5.9.RELEASE<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>parent</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>spring-boot-starter-web<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>build</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>finalName</span><span class="token punctuation">&gt;</span></span>${project.artifactId}<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>finalName</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugins</span><span class="token punctuation">&gt;</span></span>
+        <span class="token comment">&lt;!--SpringBoot插件，如果不配置的话开发可以运行，但是打包之后无法运行 --&gt;</span>
+        <span class="token comment">&lt;!--原因：该插件是根据SpringBoot项目的约束规范，找到项目的入口类、资源文件等--&gt;</span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugin</span><span class="token punctuation">&gt;</span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>spring-boot-maven-plugin<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">&gt;</span></span>
+                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>fork</span><span class="token punctuation">&gt;</span></span>true<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>fork</span><span class="token punctuation">&gt;</span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">&gt;</span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugin</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugins</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>build</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p><strong>第三步：</strong> 创建主程序</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@SpringBootApplication</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">App</span> <span class="token punctuation">{</span>	
+	<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		SpringApplication<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>App<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><strong>第四步：</strong> 配置文件</p>
+</div><div class="cl-preview-section"><p>src/main/resources/application.properties</p>
+</div><div class="cl-preview-section"><pre class="  language-properties"><code class="prism  language-properties"><span class="token attr-name">server.tomcat.uri-encoding</span><span class="token punctuation">=</span><span class="token attr-value">UTF-8</span>
+<span class="token attr-name">server.context-path</span><span class="token punctuation">=</span><span class="token attr-value">/projectname</span>
+<span class="token attr-name">server.port</span><span class="token punctuation">=</span><span class="token attr-value">8080</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><strong>第五步：</strong> 创建 Controller 类</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@RestController</span>
+<span class="token annotation punctuation">@RequestMapping</span><span class="token punctuation">(</span><span class="token string">"/test"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TestController</span><span class="token punctuation">{</span>
+    
+    <span class="token annotation punctuation">@RequestMapping</span><span class="token punctuation">(</span><span class="token string">"/hello"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> String <span class="token function">hello</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token string">"hello world"</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><strong>第六步：</strong> 启动程序</p>
+</div><div class="cl-preview-section"><ul>
+<li>右击 -&gt;run as main 函数即可启动项目</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="、自动装配原理分析">3、自动装配原理分析</h1>
+</div><div class="cl-preview-section"><h2 id="、spring装配思路分析">3.1、Spring 装配思路分析</h2>
+</div><div class="cl-preview-section"><p>我们都知道 Spring 的最核心的功能是 IOC，称之为反转控制，也就是说项目启动的时候 Spring 自动帮我们把实例创建好，放到 Spring 容器里面，这样做的好处如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>Spring 其实就是一个容器，底层是使用工厂模式 + 反射来创建实例。</p>
+</li>
+<li>
+<p>使用工厂模式来解耦，无需在代码里面显式的创建实例，如：<code>new UserService()</code>，把创建权利交给 Spring</p>
+</li>
+<li>
+<p>提高性能，如果每次调用的时候都创建实例，就比较浪费性能，其实这里有点类似于线程池，但是不同的是线程池默认不初始化线程，而是用到的时候再创建，后面使用的时候就无需创建直接拿来使用。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>Spring 的 IOC 如何使用呢？</p>
+</blockquote>
+</div><div class="cl-preview-section"><p><strong>方案一：</strong> 使用 xml 的方式进行</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>bean</span> <span class="token attr-name">id</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>testService<span class="token punctuation">"</span></span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>com.micro.service.impl.testServiceImpl<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>bean</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Autowired</span>
+<span class="token keyword">private</span> TestService testService<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>描述：直接在 applicationContext.xml 里面配置需要创建实例的对象</li>
+<li>缺点：如果项目很庞大，那么配置文件将会非常的多，虽然可以使用来拆分多个配置文件，但还是比较繁琐。</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>方案二：</strong> Spring2.5 的新功能，提供扫描 + 注解的方式</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token namespace">context:</span>component-scan</span><span class="token punctuation">/&gt;</span></span><span class="token comment">&lt;!--指定扫描包--&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token comment">//加该注解，则Spring自动创建实例，类似的注解还有@Service、@Repository</span>
+<span class="token annotation punctuation">@Component</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TestServiceImpl</span> <span class="token keyword">implements</span> <span class="token class-name">TestService</span><span class="token punctuation">{</span>
+    
+<span class="token punctuation">}</span>
+
+<span class="token annotation punctuation">@RestController</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TestController</span><span class="token punctuation">{</span>
+	<span class="token comment">//自动注入</span>
+	<span class="token annotation punctuation">@Autowired</span>
+	<span class="token keyword">private</span> TestService testService<span class="token punctuation">;</span>
+    
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>描述：在 applicationContext.xml 配置扫描包路径，Spring 会把含有<code>指定注解</code>的类创建实例并交给容器管理</li>
+<li>优点：减少大量的配置</li>
+<li>缺点：一般用来开发自己的业务代码，不适合用于集成第三方框架；第三方框架还��得在 xml 里面进行手工配置。</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>方案三：</strong> Spring3.0 的新功能，注解开发</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Configuration</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MyConfig</span><span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Bean</span>
+    <span class="token keyword">private</span> TestService <span class="token function">testService</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">TestServiceImpl</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token annotation punctuation">@RestController</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TestController</span><span class="token punctuation">{</span>
+	<span class="token comment">//自动注入</span>
+	<span class="token annotation punctuation">@Autowired</span>
+	<span class="token keyword">private</span> TestService testService<span class="token punctuation">;</span>
+    
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>描述：纯注解开发，不需要 applicationContext.xml 配置文件</p>
+<ul>
+<li>
+<p>@Configuration 标注的类，相当于 applicationContext.xml</p>
+</li>
+<li>
+<p>@Bean 标注的方法，相当于；返回值相当于 bean 的 class，方法名相当于 bean 的 id</p>
+</li>
+</ul>
+</li>
+<li>
+<p>优点：减少大量的配置</p>
+</li>
+<li>
+<p>缺点：一般用来开发自己的业务代码，不适合用于集成第三方框架；第三方框架还是得进行手工配置。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>思考：Spring 如何集成第三方框架呢？</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>前面三种方案一般都是用于我们自己的业务代码的开发，那么如果我们想使用 Spring 管理第三方框架那么要怎么做呢？下面以 Solr 为案例来讲解。</p>
+</div><div class="cl-preview-section"><p>①原生 API 的使用</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java">SolrServer solrServer<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">HttpSolrServer</span><span class="token punctuation">(</span><span class="token string">"http://ip:port/solr/collection1"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+solrServer<span class="token punctuation">.</span><span class="token function">deleteByQuery</span><span class="token punctuation">(</span><span class="token string">"id:123"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+solrServer<span class="token punctuation">.</span><span class="token function">commit</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>②Spring 的 xml 模式</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>bean</span> <span class="token attr-name">id</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>httpSolrServer<span class="token punctuation">"</span></span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>org.apache.solr.client.solrj.impl.HttpSolrServer<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>constructor-arg</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>baseURL<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>http://ip:port/solr/collection1<span class="token punctuation">"</span></span><span class="token punctuation">/&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>bean</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Autowired</span>
+<span class="token keyword">private</span> SolrServer solrServer<span class="token punctuation">;</span>
+
+solrServer<span class="token punctuation">.</span><span class="token function">deleteByQuery</span><span class="token punctuation">(</span><span class="token string">"id:123"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+solrServer<span class="token punctuation">.</span><span class="token function">commit</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>③Spring 的注解模式</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Configuration</span> <span class="token comment">//配置类</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SolrConfig</span><span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Bean</span>
+    <span class="token keyword">public</span> SolrServer solrServer<span class="token punctuation">{</span>
+        SolrServer solrServer<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">HttpSolrServer</span><span class="token punctuation">(</span><span class="token string">"http://ip:port/solr/collection1"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> solrServer<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SolrController</span><span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Autowired</span>
+	<span class="token keyword">private</span> SolrServer solrServer<span class="token punctuation">;</span>
+    
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">delete</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+        solrServer<span class="token punctuation">.</span><span class="token function">deleteByQuery</span><span class="token punctuation">(</span><span class="token string">"id:123"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		solrServer<span class="token punctuation">.</span><span class="token function">commit</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>问题：如果业务系统需要依赖非常多的第三方框架，比如：Redis、Solr、MQ、FastDFS 等</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>我们发现无论是 xml、还是 2.5 的扫描 + 注解、还是 3.0 的纯注解，那么我们都得手工管理第三方框架的 API，并且需要对 API 非常的熟悉。</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>思考：能不能把第三方框架的 API 在其内部交给 Spring 容器管理，业务系统只需要注入即可使用呢？</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>条件 1：第三方框架，必须是基于 Spring 来开发</li>
+<li>条件 2：业务系统需要手工指定不同框架的具体包路径，这样业务系统启动的时候，才能扫描这些路径</li>
+<li>但是这种模式其实非常的不灵活，因为项目启动的时候，Spring 是扫描指定路径下面的文件然后初始化实例放到容器里面，我们项目的包路径和第三方项目的包路径肯定是不一样的，比如说：我们项目的包路径是 <code>com.micro.*</code>，Solr 的包路径是 <code>org.apache.solr.*</code>，那么 Solr 的路径肯定不会被扫描，除非手工指定 <code>@ComponentScan</code>，但是如果每个开源项目都手工指定的话，工作量也很大并且也难以维护。</li>
+</ul>
+</div><div class="cl-preview-section"><p>正是因为 Spring 集成第三方框架太过麻烦，SpringBoot 就诞生了，由 SpringBoot 官网或者开源框架的官方帮我们封装好相应的 starter，其实就是他们帮我们把 API 交给 Spring 容器管理了，我们只需要 @Autowire 来注入 API 即可使用了。不需要做任何复杂的配置，比如 Solr 来说：</p>
+</div><div class="cl-preview-section"><p>①引入 starter</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>spring-boot-starter-data-solr<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>②直接使用</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Autowired</span>
+<span class="token keyword">private</span> SolrClient solrClient<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>是不是很简单，我们压根不用管 Spring 怎么管理 Solr 的。</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>通过查看 solr 对应 starter 的源码，具体如下：</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>下面的源码非常的简单，就不深入讲解了 </li>
+</ul>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Configuration</span> <span class="token comment">//配置类注解</span>
+<span class="token annotation punctuation">@ConditionalOnClass</span><span class="token punctuation">(</span><span class="token punctuation">{</span> HttpSolrClient<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> CloudSolrClient<span class="token punctuation">.</span><span class="token keyword">class</span> <span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token annotation punctuation">@EnableConfigurationProperties</span><span class="token punctuation">(</span>SolrProperties<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SolrAutoConfiguration</span> <span class="token punctuation">{</span>
+	<span class="token keyword">private</span> <span class="token keyword">final</span> SolrProperties properties<span class="token punctuation">;</span> <span class="token comment">//把连接信息封装到SolrProperties</span>
+	<span class="token keyword">private</span> SolrClient solrClient<span class="token punctuation">;</span>
+
+	<span class="token keyword">public</span> <span class="token function">SolrAutoConfiguration</span><span class="token punctuation">(</span>SolrProperties properties<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		<span class="token keyword">this</span><span class="token punctuation">.</span>properties <span class="token operator">=</span> properties<span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+
+    <span class="token comment">//创建bean实例</span>
+	<span class="token annotation punctuation">@Bean</span>
+	<span class="token annotation punctuation">@ConditionalOnMissingBean</span>
+	<span class="token keyword">public</span> SolrClient <span class="token function">solrClient</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		<span class="token keyword">this</span><span class="token punctuation">.</span>solrClient <span class="token operator">=</span> <span class="token function">createSolrClient</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>solrClient<span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+
+	<span class="token keyword">private</span> SolrClient <span class="token function">createSolrClient</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>StringUtils<span class="token punctuation">.</span><span class="token function">hasText</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>properties<span class="token punctuation">.</span><span class="token function">getZkHost</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+			<span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">CloudSolrClient</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>properties<span class="token punctuation">.</span><span class="token function">getZkHost</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">}</span>
+		<span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">HttpSolrClient</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>properties<span class="token punctuation">.</span><span class="token function">getHost</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>SpringBoot 给我们提供了好多的内置 starter，那么到底有哪些呢？主要有两种方式查看</p>
+</div><div class="cl-preview-section"><ul>
+<li>方式一：从 pom 层层进入，查看 <code>spring-boot-dependencies:1.5.9.RELEASE.pom</code> 里面的配置</li>
+<li>方式二：查看 jar，<code>spring-boot-autoconfigure-1.5.9.RELEASE.jar/META-INF/spring.factories</code>，找到 key 是 <code>org.springframework.boot.autoconfigure.EnableAutoConfiguration</code></li>
+</ul>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e8a88f10001c7fb05090182.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="、springboot自动装配分析">3.2、SpringBoot 自动装配分析</h2>
+</div><div class="cl-preview-section"><blockquote>
+<p>思考：SpringBoot 的 starter 如何封装的呢？它的核心原理是什么呢？</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>对于开源中间件来说，如果它们帮我们把该中间件的装配完全封装好，我们导入坐标就能使用，这个是最好不过的，毕竟这些中间件都是他们开发的，他们比我们使用者更加的熟悉，其实 SpringBoot 的出发点也是这样的，尽量减少开发者的工作量，做到傻瓜式的开发，下面让我们一起揭开 starter 自动装配的神秘面纱。</p>
+</div><div class="cl-preview-section"><p>不知道大家了解过 Java 提供 SPI 机制没有，Java SPI 实际上是基于 “接口编程 + 策略模式 + 配置文件” 组合实现的动态加载机制，举个简单的例子。</p>
+</div><div class="cl-preview-section"><p>项目结构</p>
+</div><div class="cl-preview-section"><pre><code>projectname
+	|-- src/main/java
+    |  |-- com.micro.service
+    |  |  |-- TestService.java			（接口）
+    |  |-- com.micro.service.impl
+    |  |  |-- TestServiceImpl1.java		（实现类1）
+    |  |  |-- TestServiceImpl2.java		（实现类2）
+	|-- src/main/resources
+	|  |-- META-INF/services/com.micro.service.TestService	（核心）
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>在 resource 建立 /META-INF/services 目录， 新增一个以接口命名的文件</li>
+<li>文件的内容是实现类的全路径，多个则换行 </li>
+</ul>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SPIMain</span><span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span><span class="token punctuation">{</span>
+        ServiceLoader<span class="token operator">&lt;</span>TestService<span class="token operator">&gt;</span> services<span class="token operator">=</span>ServiceLoader<span class="token punctuation">.</span><span class="token function">load</span><span class="token punctuation">(</span>TestService<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">for</span><span class="token punctuation">(</span>TestService service<span class="token operator">:</span>services<span class="token punctuation">)</span><span class="token punctuation">{</span>
+            s<span class="token punctuation">.</span><span class="token function">sayHello</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">//输出两个不同实现类的实现结构</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>SPI 的应用之一是可替换的插件机制，我们可以针对接口提供自己的实现类，并且在本工程下配置好就行。</li>
+<li>SPI 场景的应用，比如：数据库驱动包；Dubbo 里面提供的 SPI 扩展。mysql-connector-java-5.1.18.jar 就有一个 /META-INF/services/java.sql.Driver 里面内容是 com.mysql.jdbc.Driver 。</li>
+</ul>
+</div><div class="cl-preview-section"><p>其实 SpringBoot 内部也提供类似的 SPI 机制，第三方框架要想把对象交给 Spring 容器管理，则遵循这样的规范，那么项目启动的时候，就会加载。SpringBoot 的规范是 src/main/resource/META-INF/spring.factories 文件配置</p>
+</div><div class="cl-preview-section"><pre class="  language-properties"><code class="prism  language-properties"><span class="token attr-name">org.springframework.boot.autoconfigure.EnableAutoConfiguration</span><span class="token punctuation">=</span><span class="token attr-value">自定义的XxxAutoConfiguration</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>下面是 SpringBoot 自动装配原理图：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e8a869e0001113808800600.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>上面的流程图其实很简单，核心是 SpringFactoriesLoader 这里，它扫描各个 starter，并且获取它们的 spring.factories 里面的内容，然后通过反射解析得到实例对象，然后加入到 Spring 里面。减少了我们集成第三方框架的难度。（这部分的源码还是比较简单，大家也可以自己跟踪源码）</li>
+<li>SpringBoot 帮我们封装好了绝大部分的 starter，这就是为什么说 SpringBoot 是开箱即用。</li>
+<li>常见的第三方也会封装常见的 starter，比如：mybatis-spring-boot-starter；dubbo-spring-boot-starter；nacos-config-spring-boot-starter 等等。</li>
+<li>规则：SpringBoot 官方的 starter 是 spring-boot-starter-xxxx；第三方的则是 xxxx-spring-boot-starter。</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>总结：自动装配的核心思想和好处</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>原理：底层采用的是 Spring 的注解配置 (@Configuration+@Bean) 来管理对象；通过 spring.factories 来配置自动启动类，然后就会被 SpringBoot 自动加载。</li>
+<li>优点：简化 Spring 集成第三方框架的难度</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="、自定义starter">4、自定义 starter</h1>
+</div><div class="cl-preview-section"><p>第一步：新建工程和类</p>
+</div><div class="cl-preview-section"><pre><code>test
+	|-- test-spring-boot-starter				（工程,对外引用）
+	|  |-- src/main/java
+	|  |-- src/main/resources
+	|  |-- pom.xml
+	
+    |-- test-spring-boot-starter-autoconfigurer	（工程,实现功能）
+	|  |-- src/main/java
+	|  |  |-- com.micro.test
+	|  |  |  |-- TestService.java				（业务类）
+	|  |  |  |-- TestProperties.java			（配置文件类）
+	|  |  |  |-- TestAutoConfiguration.java		（自动启动类）
+	|  |-- src/main/resources
+	|  |  |-- META-INF/spring.factories			（配置文件）
+	|  |-- pom.xml
+</code></pre>
+</div><div class="cl-preview-section"><p>test-spring-boot-starter 的 pom.xml 配置</p>
+</div><div class="cl-preview-section"><ul>
+<li>它的作用是底层调用 autoconfigurer 工程并且对外提供引用 </li>
+</ul>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>com.micro.test<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>test-spring-boot-starter-autoconfigurer<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">&gt;</span></span>0.0.1-SNAPSHOT<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>test-spring-boot-starter-autoconfigurer 的 pom.xml 配置</p>
+</div><div class="cl-preview-section"><ul>
+<li>它的作用是，真正的业务实现 </li>
+</ul>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>spring-boot-starter<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>第二步：TestService.java 的开发</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TestService</span><span class="token punctuation">{</span>
+    <span class="token keyword">private</span> TestProperties testProperties<span class="token punctuation">;</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setTestProperties</span><span class="token punctuation">(</span>TestProperties testProperties<span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>testProperties<span class="token operator">=</span>testProperties<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">public</span> TestProperties <span class="token function">getTestProperties</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token keyword">return</span> testProperties<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    
+    <span class="token keyword">public</span> String <span class="token function">sayHello</span><span class="token punctuation">(</span>String name<span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token keyword">return</span> testProperties<span class="token punctuation">.</span><span class="token function">getPrefix</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">+</span><span class="token string">"--"</span><span class="token operator">+</span>name<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>第三步：TestProperties.java 的开发</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">//这个类和application.properties的配置内容关联起来</span>
+<span class="token annotation punctuation">@ConfigurationProperties</span><span class="token punctuation">(</span>prefix<span class="token operator">=</span><span class="token string">"test.hello"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TestProperties</span><span class="token punctuation">{</span>
+    <span class="token keyword">private</span> String prefix<span class="token punctuation">;</span>
+    
+    <span class="token comment">//set方法</span>
+    <span class="token comment">//get方法</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>第四步：TestAutoConfiguration.java 的开发</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Configuration</span>
+<span class="token comment">//让TestProperties类生效</span>
+<span class="token annotation punctuation">@EnableConfigurationProperties</span><span class="token punctuation">(</span>TestProperties<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span> 
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TestAutoConfiguration</span><span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Autowired</span>
+    <span class="token keyword">private</span> TestProperties testProperties<span class="token punctuation">;</span>
+    
+    <span class="token annotation punctuation">@Bean</span>
+    <span class="token keyword">public</span> TestService <span class="token function">testService</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+        TestService ts<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">TestService</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        ts<span class="token punctuation">.</span><span class="token function">setTestProperties</span><span class="token punctuation">(</span>testProperties<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> ts<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>第五步：spring.factories</p>
+</div><div class="cl-preview-section"><pre class="  language-properties"><code class="prism  language-properties"><span class="token attr-name">org.springframework.boot.autoconfigure.EnableAutoConfiguration</span><span class="token punctuation">=</span><span class="token attr-value">\
+com.micro.test.TestAutoConfiguration</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>第六步：<code>业务系统</code>集成使用自定义的 starter</p>
+</div><div class="cl-preview-section"><p>①在业务系统的 pom.xml 引入 test-spring-boot-starter-autoconfigurer 工程的坐标</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token comment">&lt;!--注意：引入的是starter工程，autoconfigurer工程--&gt;</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>test-spring-boot-starter<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">&gt;</span></span>0.0.1-SNAPSHOT<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>②在业务系统的 application.properties 配置信息（跟 TestProperties.java 类的属性对应）</p>
+</div><div class="cl-preview-section"><pre class="  language-properties"><code class="prism  language-properties"><span class="token attr-name">test.hello.pref</span><span class="token punctuation">=</span><span class="token attr-value">你好</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>③调用业务方法</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Autowired</span>
+<span class="token keyword">private</span> TestService testService<span class="token punctuation">;</span>
+
+testService<span class="token punctuation">.</span><span class="token function">sayHello</span><span class="token punctuation">(</span><span class="token string">"张三"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><h1 id="、小结">5、小结</h1>
+</div><div class="cl-preview-section"><p>本节内容主要讲解 SpringBoot 的快速入门、自动装配原理、自定义 starter。我们需要掌握的核心是自动装配的核心思想。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img2.mukewang.com/5e86d71c000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6936">
+						<img src="https://img3.mukewang.com/5d1d6a890001f8de09600960-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">专杀小幕</h4>
+						<div class="comment-text">这么干货的专栏为什么没人买惹</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-10-10</span>
+						<a href="/read/commentdetail/6936">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6936" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5685">
+						<img src="https://img1.mukewang.com/545864490001b5bd02200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">Jonathan__</h4>
+						<div class="comment-text">1.注解@Autowired写错了
+2.        org.springframework.bootspring-boot-starter2.2.5.RELEASE
+需要指定版本号才得行</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-31</span>
+						<a href="/read/commentdetail/5685">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="5685" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=73">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '08 基本技能之SpringBoot原理讲解',
+					'CID': '1719',
+					'Teacher': '曼巴out'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "08 基本技能之SpringBoot原理讲解",
+                    desc: "轻量级项目，系统化经验",
+                    imgUrl: 'https:https://img2.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/73',
+                    link: 'https://m.imooc.com/read/73'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

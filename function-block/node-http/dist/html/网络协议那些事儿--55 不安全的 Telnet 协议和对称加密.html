@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>55 不安全的 Telnet 协议和对称加密</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="前后端通用系列课">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "1";
+	var chapter_id = "1785";
+	var chapter_title = "55 不安全的 Telnet 协议和对称加密";
+	var aid = "54";
+	var a_name = "网络协议那些事儿";
+	var a_price = "68.00";
+	var a_pic = "https://img4.mukewang.com/5da923d60001a92f05400720.jpg";
+	var userId = 0;
+
+	var column_id = '54';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-04-10&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			55 不安全的 Telnet 协议和对称加密
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img.mukewang.com/5e8ed4f900010ce006400359.jpg')"></div>
+	
+	
+		<a href="/read/54">
+			<div class="course-entry">
+				<img src="https://img2.mukewang.com/5a54b58f0001c07902000200-40-40.jpg" alt="Oscar">
+				<h3>网络协议那些事儿</h3>
+				<p>Oscar · 一线大厂高级软件工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">一个人追求的目标越高，他的才力就发展得越快，对社会就越有益。<p class="author">——高尔基</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="内容简介">内容简介</h2>
+</div><div class="cl-preview-section"><hr>
+</div><div class="cl-preview-section"><ol>
+<li>前言</li>
+<li>连接到远程终端</li>
+<li>使用 SSH 的信息交换是如何加密的</li>
+<li>总结</li>
+</ol>
+</div><div class="cl-preview-section"><h2 id="前言">1. 前言</h2>
+</div><div class="cl-preview-section"><hr>
+</div><div class="cl-preview-section"><p>通过之前的课程，我们已经学习了 DHCP 协议，DNS 协议 和 HTTP 协议，也对 Web 有了很多的了解。</p>
+</div><div class="cl-preview-section"><p>这一课和下一课的内容应该会让你大呼过瘾，我们会聊很多内容，会学习如何连接到远程机器，及其原理。</p>
+</div><div class="cl-preview-section"><p>我们也会学习 SSH 协议，以及数据如何通过 SSH 加密，如何用 SSH 连接到远程电脑。</p>
+</div><div class="cl-preview-section"><p>因此，我们可以一窥安全（密码学）的奇幻世界。</p>
+</div><div class="cl-preview-section"><p>这一课对各位站长特别有用，因为我们可以远程连接到自己网站的服务器。</p>
+</div><div class="cl-preview-section"><p>现在越来越多的人购买了服务器，在服务器上可以架设自己的网站，或提供服务（比如游戏、文件服务器）。</p>
+</div><div class="cl-preview-section"><p>一般来说，对服务器的操作都需要远程连接（因为我们一般都是租用服务器提供商的远端电脑，除非你有钱“任性”，那你可以买几台电脑来做服务器。或者省钱一些的，可以买树莓派之类的来搭建自己的服务器），用终端来进行，而且基本都是用 SSH 协议来连接。</p>
+</div><div class="cl-preview-section"><h2 id="连接到远程终端">2. 连接到远程终端</h2>
+</div><div class="cl-preview-section"><hr>
+</div><div class="cl-preview-section"><p>到目前为止，我们的实践练习中对 Linux 的操作（例如我们在 Ubuntu 这个 Linux 发行版中的操作），都是我们本人坐在电脑前去操作自己面前的电脑。可能与我们原先还没学编程，使用 Windows 玩游戏没什么区别。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>怎奈我们不甘寂寞，在一个地方待久了，总想去外面闯闯、看看。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>Linux 的一个强大之处就是可以很方便地操作很远之处的另一台安装有 Linux 的电脑。这个功能早在 Unix 时代就已经有了。</p>
+</div><div class="cl-preview-section"><p>当然了，Windows 系统也可以远程连接到另一个 Windows 系统，我们也可以从 Linux 系统连接到 Windows 系统、macOS 系统，或者从 Windows 连接到 Linux，macOS，等等。</p>
+</div><div class="cl-preview-section"><p>今天，比如我住在中国，我可以很方便地远程连接到位于美国纽约的一台电脑。也可以连接到日本东京的一台电脑。我也可以操作美国纽约的那台电脑给日本东京的电脑发送文件。</p>
+</div><div class="cl-preview-section"><p>因为互联网的出现，这样的事情在今天看来已经很平常了。</p>
+</div><div class="cl-preview-section"><p>远程连接技术大大节约了时间和精力。假如没有这个技术，专门负责维护远程服务器的技术人员（通常称为 System Administrator，系统管理员）要给东京机房的电脑安装一个软件，那还得买飞机票去东京…</p>
+</div><div class="cl-preview-section"><p>服务器，英语是 server。一般是指 7 天 24 小时不关机的电脑，这些电脑和你家里的电脑类似，但又不一样（通常更强劲，噪音更大）：也有一个处理器，一个或多个硬盘，等等。服务器的主要特色是保持开机，始终连接互联网，提供服务。</p>
+</div><div class="cl-preview-section"><p>我们把连接到服务器的机器称为客户机，英语是 client，我们本课之后的图片中也会像下图这样来表述：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e8ed52a00017d1e13260574.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>目前，你家里的电脑应该还不能被称为一台服务器。当然，如果你愿意，你也可以将其“变为”一台服务器，只需要安装一些软件，做一些配置。</p>
+</div><div class="cl-preview-section"><p>还有就是：不关机。</p>
+</div><div class="cl-preview-section"><p>因为一台关机的服务器，就不是能“服务”的机器了。作为服务器必须“任劳任怨，随叫随到；宕机重启，永不言弃”。</p>
+</div><div class="cl-preview-section"><p>接下来，我们将有请今天的主角：<strong>SSH</strong> 上场。</p>
+</div><div class="cl-preview-section"><p>不过我们会先讲很多其他的相关知识点。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>前方密集知识点高能预警。准备好了吗？</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>我们将会以下面的顺序来介绍 SSH：</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>为什么要保护网络通信？</p>
+</li>
+<li>
+<p>SSH 又是如何保护网络通信的？</p>
+</li>
+<li>
+<p>SSH 的具体使用方法</p>
+</li>
+<li>
+<p>从 Telnet 协议到 SSH 协议</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><h4 id="telnet-协议：简单易用危险多">Telnet 协议：简单易用危险多</h4>
+</div><div class="cl-preview-section"><hr>
+</div><div class="cl-preview-section"><p>既然我们这课的重点是讲远程连接，那么我们就来谈谈远程连接的协议好了。首先，介绍一个老古董：</p>
+</div><div class="cl-preview-section"><p><strong><a href="https://baike.baidu.com/item/Telnet/810597">Telnet</a></strong></p>
+</div><div class="cl-preview-section"><p>这个协议简单、易用，在 20 世纪 80 年代就被创立了。它的功用就是在机器间传输简单信息。</p>
+</div><div class="cl-preview-section"><p>理论上，我们就可以使用 Telnet 来与远端机器通信啦，比如与我们的服务器通信。</p>
+</div><div class="cl-preview-section"><p>但是这个协议有什么缺点呢？那就是它太简单太基础了，因此传输的信息并没有经过加密，而是明文传输。</p>
+</div><div class="cl-preview-section"><p>在密码学（Cryptography）中，明文（plaintext 或 cleartext）是指传送方想要接收方获得的可读信息（比如“我爱你”，“Hello World”，等等）。</p>
+</div><div class="cl-preview-section"><p>明文经过加密所产生的信息被称为密文（ciphertext 或 cyphertext），而密文经过解密还原得来的信息就是明文。</p>
+</div><div class="cl-preview-section"><p>如果在互联网上传输明文，那是很危险的。假设以下场景：</p>
+</div><div class="cl-preview-section"><p>一台军方的客户端电脑请求军方的服务器提供发射导弹（可能是核弹…）的密码，服务器用明文将密码传输给客户端。如下图所示：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e8ed56e0001a88f07650303.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>从上图看来，并没有什么风险不是吗？因为信息只传递给了发出请求的客户机。</p>
+</div><div class="cl-preview-section"><p>但是，很有可能一个不怀好意的黑客，监听了上面两者通信的信息，就可以截取军方服务器发给军方客户机的明文信息了。如下图所示：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e8ed57e0001f31012920940.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>要阻止这样的黑客行为是很难的。虽说拦截数据这样的操作本身有难度，但是水平高的黑客是可以轻易做到的。</p>
+</div><div class="cl-preview-section"><p>比如, 像 Wireshark 这样的嗅探器软件就可以被用于监听网络（尤其是本地网络），可以截获数据。如下图所示（是我用 Wireshark 来嗅探我的无线网连接）：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e8ed59300011dc418061066.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>你也许会说：“呃… 等等。我只是想远程连接到我的电脑或服务器以便访问终端控制台。我可不会共享核弹密码！况且我在电脑上只是运行 <code>ls</code> 之类的命令，被人知道也无妨啊。”</p>
+</div><div class="cl-preview-section"><p>你的意思是你并不介意别人窥探你的电脑咯？好吧，你赢了…</p>
+</div><div class="cl-preview-section"><p>但是，当你连接到服务器时，你需要提供你的登录名和密码，假如被人窃取就麻烦了。</p>
+</div><div class="cl-preview-section"><p>所以，必须加密网络间传输的信息，你应该不希望自己的密码被人知道吧。</p>
+</div><div class="cl-preview-section"><h4 id="ssh-协议：保护信息的好方法">SSH 协议：保护信息的好方法</h4>
+</div><div class="cl-preview-section"><hr>
+</div><div class="cl-preview-section"><p>既然我们并不能阻止心怀不轨的人试图截取互联网上传输的信息，那么我们就要采取一些措施，使客户机和服务器之间以安全的方式通信。</p>
+</div><div class="cl-preview-section"><p>加密技术就是专门替我们做这等差事的：假如黑客获取了加密后的密码，他并不能做什么。</p>
+</div><div class="cl-preview-section"><p>但是怎么加密数据呢？别急，待我把主角 SSH 请上来~</p>
+</div><div class="cl-preview-section"><h2 id="使用-ssh-的信息交换是如何加密的">3. 使用 SSH 的信息交换是如何加密的</h2>
+</div><div class="cl-preview-section"><hr>
+</div><div class="cl-preview-section"><p>SSH 是英语 Secure SHell 的缩写，直译过来就是“安全的 Shell”，shell 是英语“壳”的意思。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>在计算机科学中，shell 俗称“壳”（自然界中的贝壳的英语也是 shell。“壳”用来区别于“核”（kernel），一个是外壳，一个是核心），是指“提供用户使用界面”的软件（命令解析器）。<br>
+它类似于 DOS 下的 command（英语“命令”的意思）和后来的 cmd.exe。<br>
+它接收用户命令，然后调用相应的应用程序。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>Linux 下有 Bash 等 Shell 程序。关于 Linux 和 Shell 编程，可以去学习我在慕课网的《<a href="https://coding.imooc.com/class/386.html">Linux核心技能与应用</a>》 这个实战，或者《<a href="https://www.imooc.com/read/39">Linux命令行与Shell脚本编程大全</a>》这个专栏。</p>
+</div><div class="cl-preview-section"><p>如果是 Windows 用户，那很有可能知道 cmd（是 command 的缩写）这个命令吧。我们之前的课程《<a href="https://www.imooc.com/read/54/article/1196">对OSI前两层的一些实践（上）</a>》也演示过了。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>cmd 确实比较低端… 不过微软终于在 2019 年 5 月推出了全新的终端，叫 Windows Terminal，还是不错的（虽然更新得有点晚…）。可以去看一下：<a href="https://github.com/microsoft/Terminal">https://github.com/microsoft/Terminal</a></p>
+</blockquote>
+</div><div class="cl-preview-section"><p>不可讳言，SSH 协议本身比较复杂，但是如果能对其大致原理有所了解，岂不快哉？</p>
+</div><div class="cl-preview-section"><p>如果知其所以然，那使用的时候也不会那么盲目了。所以我们从以下两条主线来了解 SSH：</p>
+</div><div class="cl-preview-section"><ol>
+<li>有哪些不同的加密方法</li>
+<li>SSH 又是如何运用加密方法来保护数据的</li>
+</ol>
+</div><div class="cl-preview-section"><h4 id="不同的加密方法">不同的加密方法</h4>
+</div><div class="cl-preview-section"><hr>
+</div><div class="cl-preview-section"><p>说到加密方法，就要涉及到相应的算法了。什么是算法呢？</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>百度百科的解释：<br>
+算法（Algorithm）是指解题方案的准确而完整的描述，是一系列解决问题的清晰指令，算法代表着用系统的方法描述解决问题的策略机制。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>因此，程序员需要掌握的 “数据结构与算法”里的算法，是很重要的。</p>
+</div><div class="cl-preview-section"><p>所以下面我们就直接用“加密算法”这个词了。</p>
+</div><div class="cl-preview-section"><p>要说不同的加密算法，那实在是三天三夜讲不完啊，所以我就不在这“一千零一夜”了。</p>
+</div><div class="cl-preview-section"><p>虽说我们不能了解所有的加密算法（也没那个必要），但是我们需要知道加密算法大致分两类：</p>
+</div><div class="cl-preview-section"><ul>
+<li>对称加密</li>
+<li>非对称加密</li>
+</ul>
+</div><div class="cl-preview-section"><h4 id="对称加密">对称加密</h4>
+</div><div class="cl-preview-section"><hr>
+</div><div class="cl-preview-section"><p>对称加密，英语是 Symmetric-Key Encryption，symmetric 是“对称的”的意思，key 是“钥匙/密钥”的意思，encryption 是“加密”的意思。所以全称其实是“对称密钥加密”。</p>
+</div><div class="cl-preview-section"><p>对称加密是比较简单的加密算法，但简单并不意味着不保险（有很安全的对称加密算法）。简单意味着功能比较好理解。</p>
+</div><div class="cl-preview-section"><p>对称加密算法用一个密钥（就是 key。是在明文转换为密文或将密文转换为明文的算法中输入的参数）来加密信息。</p>
+</div><div class="cl-preview-section"><p>举个例子，假如此密钥叫 superkey（super + key，意为“超级密钥”。super 是“超级的、特级的”的意思），而需要被加密的信息是 message（英语“信息”的意思），那么加密过程如下图所示：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e8ed60b00012cba14220392.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>上图是对称加密的加密过程的简单演示。传输方用 superkey 这个密钥将 message 这个明文信息进行加密，成为 i5%X2&amp;u3 这样的密文。</p>
+</div><div class="cl-preview-section"><p>之后，接收方用同样的密钥 superkey，对 i5%X2&amp;u3 这个密文进行解密，就重新得到了明文 message。解密的过程如下图所示：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e8ed6200001540212620360.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>上图就是对称加密中用同样的密钥 superkey 进行解密的过程。</p>
+</div><div class="cl-preview-section"><p>因此，不难理解，对称加密中“对称”的意思就是指加密和解密使用的是<strong>同一个</strong>密钥。因此加密方和解密方都须要知道这个密钥。</p>
+</div><div class="cl-preview-section"><p>这样，假如黑客截获了 i5%X2&amp;u3 这个传输的密文，他没有解密的密钥 superkey，他就不知道究竟是什么明文信息了。如下图所示：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e8ed6350001bbba14520898.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>你可能会说：“这样很不错啊！”</p>
+</div><div class="cl-preview-section"><p>但是，客户机和服务器都须要知道这个密钥。因此客户机首先要把这个密钥传给服务器，为了让服务器可以解密那些加密过的信息。</p>
+</div><div class="cl-preview-section"><p>实际上，为了达到上图的目的，客户机和服务器必须事先传递那个密钥 superkey。</p>
+</div><div class="cl-preview-section"><p>但是他们怎么传递呢？假如他们传递密钥用的是明文，那么黑客照样可以截获密钥，接下来就可以解密任何传递的加密信息了，不是吗？如下图所示：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e8ed6550001757512800898.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>因此，对称加密虽然强大，但是有一个致命的缺陷：必须谨慎地传递密钥。但这几乎是不可能的：因为首先得把密钥传递过去。</p>
+</div><div class="cl-preview-section"><p>你也许会问：“为什么我们不干脆把传递的密钥也加密呢？”</p>
+</div><div class="cl-preview-section"><p>好问题，你的想法是对的。看来你很聪明~</p>
+</div><div class="cl-preview-section"><p>为了加密用于对称加密的密钥（有点绕…），我们将用另一种方法：</p>
+</div><div class="cl-preview-section"><p><strong>非对称加密</strong></p>
+</div><div class="cl-preview-section"><p>只要用了这个方法，我们就不用担心密钥被黑客获取了。</p>
+</div><div class="cl-preview-section"><p>篇幅关系，我们下一课再讲解非对称加密。</p>
+</div><div class="cl-preview-section"><h2 id="总结">4. 总结</h2>
+</div><div class="cl-preview-section"><hr>
+</div><div class="cl-preview-section"><ol>
+<li>
+<p>我们可以远程连接到一台装有 Linux（或 Windows，Unix，macOS）操作系统的机器，进入它的终端。我们一般都是这样操作远程服务器的。</p>
+</li>
+<li>
+<p>我们一般把连接到远程服务器的电脑称为 client，就是客户。我们可以从多种操作系统远程连接到服务器的终端，比如从 Windows，Linux，macOS，Unix 系统。</p>
+</li>
+</ol>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img2.mukewang.com/5e8ed4fc00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/5010">
+						<img src="https://img.mukewang.com/56332cad00017ecd01000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">唯月_潇洒</h4>
+						<div class="comment-text">明文，
+对称加密，
+非对称加密
+，密钥加密，黑客拿到加密密钥，不是照样可以破解传输的内容么？</div>
+						<div>
+							
+								<div class="reply">讲师回复：所以你要看下一篇文章呀。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-04-14</span>
+						<a href="/read/commentdetail/5010">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5010" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=54">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '55 不安全的 Telnet 协议和对称加密',
+					'CID': '1785',
+					'Teacher': 'Oscar'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "55 不安全的 Telnet 协议和对称加密",
+                    desc: "前后端通用系列课",
+                    imgUrl: 'https:https://img4.mukewang.com/5da923d60001a92f05400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5da923d60001a92f05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/54',
+                    link: 'https://m.imooc.com/read/54'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

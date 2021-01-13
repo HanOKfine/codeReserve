@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>18 Spring IoC容器如何读取应用外部的xml，txt，图形或者属性文件？</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="Java工程师提升必修课">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2069";
+	var chapter_title = "18 Spring IoC容器如何读取应用外部的xml，txt，图形或者属性文件？";
+	var aid = "77";
+	var a_name = "剖析Spring5核心原理";
+	var a_price = "68.00";
+	var a_pic = "https://img.mukewang.com/5ec1f3830001652c05400720.jpg";
+	var userId = 0;
+
+	var column_id = '77';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-04&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			18 Spring IoC容器如何读取应用外部的xml，txt，图形或者属性文件？
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5f28fb850001239b06400359.jpg')"></div>
+	
+	
+		<a href="/read/77">
+			<div class="course-entry">
+				<img src="https://img1.mukewang.com/5cfe2ab00001bd1606380638-40-40.jpg" alt="David">
+				<h3>剖析Spring5核心原理</h3>
+				<p>David · 资深架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">不要问你的国家能够为你做些什么，而要问你可以为国家做些什么。<p class="author">——林肯</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="背景">背景</h2>
+</div><div class="cl-preview-section"><p>我们使用 Spring IoC 容器的时候，配置文件一般是放到到应用内部，如下所示：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eec221c0001571403630106.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>我们往往使用 ClassPathXmlApplicationContext 来根据相对的位置来读取这些内部文件。如果我们想要读取外部的 XML，txt 等文件，或者甚至是别的网站上的文件，该如何处理呢？</p>
+</div><div class="cl-preview-section"><h2 id="spring-读取外部文件实例">Spring 读取外部文件实例</h2>
+</div><div class="cl-preview-section"><p>Spring 同时也提供了一个 FileSystemXmlApplicationContext 可以读取外部的文件，甚至 URL 路径的文件，我们来看一个示例：</p>
+</div><div class="cl-preview-section"><p><strong>javaBean</strong><br>
+<img src="https://img.mukewang.com/5eec222b00019e5f02800279.png" alt="图片描述"><br>
+<strong>外部配置文件</strong></p>
+</div><div class="cl-preview-section"><p>E:\tmp\SpringBeans.xml</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eec22470001575609080194.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><strong>测试类</strong><br>
+<img src="https://img.mukewang.com/5eec225c0001f64806400229.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>容器 ApplicationContext 启动时从应用外部的磁盘空间读取 SpringBeans.xml 文件，然后获取定义的 Bean，最后输出 Bean 的方法。</p>
+</div><div class="cl-preview-section"><h2 id="spring-读取外部文件工作原理">Spring 读取外部文件工作原理</h2>
+</div><div class="cl-preview-section"><p><strong>查找关键点，打印出调用链</strong></p>
+</div><div class="cl-preview-section"><p>根据 ApplicationContext 的继承关系，我们知道 AbstractApplicationContext 继承了 DefaultResourceLoader，并实现了 getResources()，因此我们在 AbstractApplicationContext 的 getResources() 打印出调用调用链。</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Override</span>  
+<span class="token keyword">public</span> Resource<span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token function">getResources</span><span class="token punctuation">(</span>String locationPattern<span class="token punctuation">)</span> <span class="token keyword">throws</span> IOException <span class="token punctuation">{</span>  
+	 PrintStackUtil<span class="token punctuation">.</span><span class="token function">printStack</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  
+	 <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>resourcePatternResolver<span class="token punctuation">.</span><span class="token function">getResources</span><span class="token punctuation">(</span>locationPattern<span class="token punctuation">)</span><span class="token punctuation">;</span>  
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>打印出调用链如下：</p>
+</div><div class="cl-preview-section"><pre><code>打印序列号 1 调用类和方法：
+com.davidwang456.test.ApplicationContextTest$main
+打印序列号 2 调用类和方法： 
+org.springframework.context.support.FileSystemXmlApplicationContext$init
+打印序列号 3 调用类和方法： 
+org.springframework.context.support.FileSystemXmlApplicationContext$init
+打印序列号 4 调用类和方法： 
+org.springframework.context.support.AbstractApplicationContext$refresh  
+打印序列号 5 调用类和方法： 
+org.springframework.context.support.AbstractApplicationContext$obtainFreshBeanFactory  
+打印序列号 6 调用类和方法： 
+org.springframework.context.support.AbstractRefreshableApplicationContext$refreshBeanFactor
+打印序列号 7 调用类和方法： 
+org.springframework.context.support.AbstractXmlApplicationContext$loadBeanDefinitions
+打印序列号 8 调用类和方法： 
+org.springframework.context.support.AbstractXmlApplicationContext$loadBeanDefinitions
+打印序列号 9 调用类和方法： 
+org.springframework.beans.factory.support.AbstractBeanDefinitionReader$loadBeanDefinitions
+打印序列号 10 调用类和方法： 
+org.springframework.beans.factory.support.AbstractBeanDefinitionReader$loadBeanDefinitions
+打印序列号 11 调用类和方法： 
+org.springframework.beans.factory.support.AbstractBeanDefinitionReader$loadBeanDefinitions
+打印序列号 12 调用类和方法：
+org.springframework.context.support.AbstractApplicationContext$getResources
+打印序列号 13 调用类和方法： 
+com.davidwang456.test.util.PrintStackUtil$printStack
+打印序列号 14 调用类和方法： 
+java.lang.Thread$getAllStackTraces
+打印序列号 15 调用类和方法： 
+java.lang.Thread$dumpThreads
+</code></pre>
+</div><div class="cl-preview-section"><p><strong>分析链路源码，并深入原理</strong></p>
+</div><div class="cl-preview-section"><ol>
+<li>读取 XML 文件 AbstractBeanDefinitionReader.java：<br>
+<img src="https://img.mukewang.com/5f292e2900015e5b12740842.png" alt="图片描述"><br>
+其中 resourceLoader 即 FileSystemXmlApplicationContext。</li>
+</ol>
+</div><div class="cl-preview-section"><p>调用 PathMatchingResourcePatternResolver 的 getResources 方法：<br>
+<img src="https://img.mukewang.com/5f292e6d0001272411390645.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>调用 DefaultResourceLoader 的 getResource 方法：<br>
+<img src="https://img.mukewang.com/5f292ef3000114c110900654.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>再调用 FileSystemXmlApplicationContext 的 getResourceByPath：<br>
+<img src="https://img.mukewang.com/5eec249a0001594b06400240.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>最终将配置文件转换为 FileSystemResource。</p>
+</div><div class="cl-preview-section"><h2 id="总结">总结</h2>
+</div><div class="cl-preview-section"><p>在 Spring 中，一切皆资源，Spring 封装了各种 Resource 的实现：<br>
+<img src="https://img.mukewang.com/5eec24ad0001ab0103900513.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>ResourcePatternResolver 实现了 ResourceLoader 解析各种资源，其实现类有：<br>
+<img src="https://img.mukewang.com/5eec24df0001724904060231.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>比如 PathMatchingResourcePatternResolver 支持五种格式的资源：<br>
+<img src="https://img.mukewang.com/5f292ef3000114c110900654.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>Bean 定义的文件，不管内部的还是外部的 XML，txt，图形或者属性文件等等，都可以使用 ResourcePatternResolver 来转化为 Resource，利用 BeanDefinitionReader 来读取。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=77">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '18 Spring IoC容器如何读取应用外部的xml，txt，图形或者属性文件？',
+					'CID': '2069',
+					'Teacher': 'David'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "18 Spring IoC容器如何读取应用外部的xml，txt，图形或者属性文件？",
+                    desc: "Java工程师提升必修课",
+                    imgUrl: 'https:https://img.mukewang.com/5ec1f3830001652c05400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5ec1f3830001652c05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/77',
+                    link: 'https://m.imooc.com/read/77'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

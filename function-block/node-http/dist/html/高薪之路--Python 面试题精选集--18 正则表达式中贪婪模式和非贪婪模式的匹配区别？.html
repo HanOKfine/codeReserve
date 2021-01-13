@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>18 正则表达式中贪婪模式和非贪婪模式的匹配区别？</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="以问带学摸透面试套路">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "1";
+	var chapter_id = "1691";
+	var chapter_title = "18 正则表达式中贪婪模式和非贪婪模式的匹配区别？";
+	var aid = "69";
+	var a_name = "高薪之路--Python 面试题精选集";
+	var a_price = "68.00";
+	var a_pic = "https://img1.mukewang.com/5e4602ff000143af05400720.jpg";
+	var userId = 0;
+
+	var column_id = '69';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-03-20&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			18 正则表达式中贪婪模式和非贪婪模式的匹配区别？
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img1.mukewang.com/5e74234b00011ed706400426.jpg')"></div>
+	
+	
+		<a href="/read/69">
+			<div class="course-entry">
+				<img src="https://img2.mukewang.com/5e40f87d0001fdeb20001328-40-40.jpg" alt="Jarvinia">
+				<h3>高薪之路--Python 面试题精选集</h3>
+				<p>Jarvinia · 资深Python工程师，全栈工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">我们有力的道德就是通过奋斗取得物质上的成功；这种道德既适用于国家，也适用于个人。<p class="author">——罗素</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="问题：正则表达式匹配中-.-和-.-匹配区别？">问题：正则表达式匹配中 <code>(.*)</code> 和 <code>(.*?)</code> 匹配区别？</h2>
+</div><div class="cl-preview-section"><h3 id="面试官想从这道题中考察面试人什么？">面试官想从这道题中考察面试人什么？</h3>
+</div><div class="cl-preview-section"><p>要知道正则可以匹配不同的字符集合，你还可以指定它匹配的重复次数。这道题主要考的就是<strong>贪婪</strong>与<strong>非贪婪</strong>的使用，当然也会由这道题去触及一些在正则中经常使用到的元字符。</p>
+</div><div class="cl-preview-section"><h4 id="答案">答案</h4>
+</div><div class="cl-preview-section"><ul>
+<li><code>(.*)</code>是贪婪的，可以去匹配尽可能长的字符串。</li>
+<li><code>(.*?)</code>是非贪婪的，去匹配尽可能短的字符串。</li>
+</ul>
+</div><div class="cl-preview-section"><h4 id="拓展">拓展</h4>
+</div><div class="cl-preview-section"><h4 id="贪婪和非贪婪模式。">贪婪和非贪婪模式。</h4>
+</div><div class="cl-preview-section"><p>贪婪模式在整个表达式匹配成功的前提下，尽可能多的匹配，而非贪婪模式在整个表达式匹配成功的前提下，尽可能少的匹配。</p>
+</div><div class="cl-preview-section"><p>比如：这样一个字符串<code>pre&lt;tag&gt;a&lt;/tag&gt;&lt;tag&gt;b&lt;/tag&gt;&lt;tag&gt;c&lt;/tag&gt;post</code>，我们使用<code>&lt;tag&gt;.*&lt;/tag&gt;</code>，那么匹配结果会是：<code>&lt;tag&gt;a&lt;/tag&gt;&lt;tag&gt;b&lt;/tag&gt;&lt;tag&gt;c&lt;/tag&gt;</code></p>
+</div><div class="cl-preview-section"><p>如果我们使用非贪婪模式<code>&lt;tag&gt;.*?&lt;/tag&gt;</code>，那么匹配到的结果是：<code>&lt;tag&gt;a&lt;/tag&gt;</code>。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>Tips: <code>*</code>，<code>+</code>，<code>?</code>，<code>{n}</code>，<code>{m, n}</code>，<code>{m, }</code>修饰符都是贪婪的，但在修饰符之后添加<code>?</code>将使样式以非贪婪方式进行匹配。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h4 id="回溯现象">回溯现象</h4>
+</div><div class="cl-preview-section"><p>现在我们大概了解了贪婪和非贪婪模式的区别了，那么具体的匹配是怎么执行的呢？</p>
+</div><div class="cl-preview-section"><p>比如，我们要匹配这个字符串：</p>
+</div><div class="cl-preview-section"><p><code>"abc"</code></p>
+</div><div class="cl-preview-section"><p>先看看贪婪模式<code>".*"</code>是怎么匹配的？</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>匹配</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>步骤一</td>
+<td>匹配<code>"</code></td>
+<td>正则中的<code>"</code>匹配，匹配的索引指向下一个字符</td>
+</tr>
+<tr>
+<td>步骤二</td>
+<td>匹配<code>"abc"</code></td>
+<td>贪婪模式<code>.*</code>匹配尽可能多的字符，匹配的索引指向结尾</td>
+</tr>
+<tr>
+<td>步骤三</td>
+<td>匹配失败</td>
+<td>正则引擎尝试匹配<code>"</code>，但是当前索引已指向字符串的结束位置，所以匹配失败</td>
+</tr>
+<tr>
+<td>步骤四</td>
+<td>匹配<code>"abc</code></td>
+<td>回溯一次，控制权由交给<code>.*</code>，索引指向倒数一个位置</td>
+</tr>
+<tr>
+<td>步骤五</td>
+<td>匹配<code>"abc"</code></td>
+<td>控制权又回到<code>"</code>，刚好匹配成功</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>以上的匹配过程只回溯了一次，下面看看非贪婪模式<code>".*?"</code>。</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>匹配</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>步骤一</td>
+<td>匹配<code>"</code></td>
+<td>正则中的<code>"</code>匹配，匹配的索引指向下一个字符</td>
+</tr>
+<tr>
+<td>步骤二</td>
+<td>匹配<code>"a</code></td>
+<td>贪婪模式<code>.*?</code>匹配尽可能少的字符，匹配的索引指向<code>a</code></td>
+</tr>
+<tr>
+<td>步骤三</td>
+<td>匹配<code>"ab</code></td>
+<td>正则引擎尝试匹配<code>"</code>，但是当前索引已指向字符<code>b</code>，匹配失败</td>
+</tr>
+<tr>
+<td>步骤四</td>
+<td>匹配<code>"abc</code></td>
+<td>回溯一次，索引再吃进一个字符，当前索引已指向字符<code>c</code>，匹配失败</td>
+</tr>
+<tr>
+<td>步骤五</td>
+<td>匹配<code>"abc"</code></td>
+<td>回溯一次，索引再吃进一个字符，当前索引已指向字符<code>”</code>，匹配成功</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>贪婪和非贪婪的模式区别：贪婪是<strong>先吃进，回溯再让出</strong>，非贪婪是<strong>先忽略，回溯再吃进</strong>。所以，在设计正则模式的时候，尽量减少回溯的次数，但是，也并不是说所有情况下非贪婪模式就一定比贪婪模式回溯的次数多，具体情况要具体分析。</p>
+</div><div class="cl-preview-section"><p>在正则表达式中，经常看见一些特殊的字符串，比如<code>|</code>，<code>$</code>，<code>\s</code>。它们可以表示它们的普通含义，也可以匹配一些与众不同的东西，或者通过重复它们或改变它们的含义来影响正则的其他部分。我们把这些特殊的字符串称之为<strong>元字符</strong>。</p>
+</div><div class="cl-preview-section"><h5 id="元字符的使用">元字符的使用</h5>
+</div><div class="cl-preview-section"><p>元字符的完整列表：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>元字符</th>
+<th>匹配</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.</code></td>
+<td>匹配除了换行的任意字符</td>
+</tr>
+<tr>
+<td><code>*</code></td>
+<td>对它前面的正则式匹配0到任意次重复。</td>
+</tr>
+<tr>
+<td><code>?</code></td>
+<td>对它前面的正则式匹配一次或零次。</td>
+</tr>
+<tr>
+<td><code>+</code></td>
+<td>对它前面的正则式匹配1到任意次重复。</td>
+</tr>
+<tr>
+<td><code>{m}</code></td>
+<td>m次重复</td>
+</tr>
+<tr>
+<td><code>{m, n}</code></td>
+<td>m-n次重复</td>
+</tr>
+<tr>
+<td><code>[]</code></td>
+<td>用于指定字符类，用于匹配一组字符。但是如果元字符出现在这个字符类中，比如<code>[abc$]</code>，那么元字符<code>$</code>会失效，它只作为普通字符使用。</td>
+</tr>
+<tr>
+<td><code>^</code></td>
+<td>在行的开头匹配。</td>
+</tr>
+<tr>
+<td><code>$</code></td>
+<td>匹配以某个字符串结尾。</td>
+</tr>
+<tr>
+<td><code>()</code></td>
+<td>组合匹配。我们将每个括号内的正则看做一个组合，这样在匹配结束后，可以通过对捕获组的索引去引用匹配项，具体例子可以参考上面的匹配对象的<code>group</code>方法。</td>
+</tr>
+<tr>
+<td><code>|</code></td>
+<td><code>A|B</code> 匹配 A，B中任意一个</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>以 ‘\’ 开头的特殊序列表示通常有用的预定义字符集。</p>
+</div><div class="cl-preview-section"><ul>
+<li><code>\d</code>：匹配任何十进制数字，等价于<code>[0-9]</code></li>
+<li><code>\D</code>：匹配任何非十进制数字的字符。</li>
+<li><code>\w</code>：匹配Unicode词语的字符。</li>
+<li><code>\W</code>：匹配非Unicode词语的字符</li>
+<li><code>\s</code>：匹配任何Unicode空白字符。</li>
+<li><code>\S</code>：匹配任何非空白字符。</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>Tips：上面列举的都是常用的预定义字符集，有时候也会直接问你这些字符集的含义，所以要牢记。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="小结">小结</h2>
+</div><div class="cl-preview-section"><p>正则表达式的功能非常强大，也是我们身为程序员必须要掌握和了解的技能，上个小节和这个小节中我们列举了两个经常会在面试中碰到的问题，也拓展了一些 <code>re</code> 模块的用法。</p>
+</div><div class="cl-preview-section"><p>但是这对于我们掌握 <code>re</code> 来说是远远不够的，这就要同学们课后继续拓展了，大家加油~</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img1.mukewang.com/5e74234f00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/4611">
+						<img src="https://img4.mukewang.com/5e8ad0380001b9f619201080-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">肖建文</h4>
+						<div class="comment-text">老师的内容都挺好的，每个面试题下面也有相应的延伸，拓展。
+目前不够看，希望老师可以结合自身的时间，适当加快下更新进度，以免错过金三银四。
+另外，我看了整体的课程结构，没有 计算机网络，操作系统 这两个板块的内容，老师可以适当提供些相关的面试准备资料吗？</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-03-20</span>
+						<a href="/read/commentdetail/4611">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="4611" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=69">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '18 正则表达式中贪婪模式和非贪婪模式的匹配区别？',
+					'CID': '1691',
+					'Teacher': 'Jarvinia'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "18 正则表达式中贪婪模式和非贪婪模式的匹配区别？",
+                    desc: "以问带学摸透面试套路",
+                    imgUrl: 'https:https://img1.mukewang.com/5e4602ff000143af05400720.jpg',
+                    otherImgUrl: 'https://img1.mukewang.com/5e4602ff000143af05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/69',
+                    link: 'https://m.imooc.com/read/69'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

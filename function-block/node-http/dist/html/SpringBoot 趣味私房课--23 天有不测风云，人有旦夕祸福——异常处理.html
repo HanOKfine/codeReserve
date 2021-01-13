@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>23 天有不测风云，人有旦夕祸福——异常处理</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="够吃管饱的SpringBoot大餐">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "6";
+	var chapter_id = "1819";
+	var chapter_title = "23 天有不测风云，人有旦夕祸福——异常处理";
+	var aid = "75";
+	var a_name = "SpringBoot 趣味私房课";
+	var a_price = "58.00";
+	var a_pic = "https://img2.mukewang.com/5e9cfd1f0001ece605400720.jpg";
+	var userId = 0;
+
+	var column_id = '75';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-06-12&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			23 天有不测风云，人有旦夕祸福——异常处理
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img1.mukewang.com/5ebe608d000182ce06400426.jpg')"></div>
+	
+	
+		<a href="/read/75">
+			<div class="course-entry">
+				<img src="https://img3.mukewang.com/5e776f3c000149fd10801080-40-40.jpg" alt="刘水镜">
+				<h3>SpringBoot 趣味私房课</h3>
+				<p>刘水镜 · 知名 A.I. 公司 Java 工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">古之立大事者，不唯有超世之才，亦必有坚韧不拔之志。<p class="author">——苏轼</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">1. 前言</h1>
+</div><div class="cl-preview-section"><p>前面两小节我们一起学习了日志相关的知识，我们了解到利用好日志可以让我们快速的定位、解决问题。而我们今天要聊的内容 —— 异常，同样也是我们定位问题的关键依据。相信只要你接触过 Java 那么对于异常就不会陌生，尤其是 Java 中大名鼎鼎的空指针异常 —— NullPointerException（简称 NPE）。Java 也因为空指针问题而饱受诟病，虽然从 Java 8 开始引入了 Optional，但也并没有根除这个问题。</p>
+</div><div class="cl-preview-section"><p>扯远了，下面我们先看看什么是异常：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>程序在运行过程中，由于某些原因（操作不当或其他外部原因）导致程序执行发生意外，导致程序提前终止。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>首先，郑重声明，这不是什么权威的定义，是我对���常的一个简单概括。其实程序中的异常就相当于我们现实生活中的意外。</p>
+</div><div class="cl-preview-section"><p>我们日常生活中会遇到各种意料之外的情况，比如考试忘带准考证，答完题忘记写名字；比如因为交通拥堵导致赶不上火车或者飞机；再夸张一点比如 6500 万年前一颗小行星撞击地球，导致恐龙这个物种从此在地球上消失。对于这些情况，古人们已经总结的非常到位了。下面两句著名的诗词，相信你也耳熟能详了：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>天有不测风云，人有旦夕祸福。—— 吕蒙正</p>
+</blockquote>
+</div><div class="cl-preview-section"><blockquote>
+<p>人有悲欢离合，月有阴晴圆缺。—— 苏轼</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>PS：巧得是，吕蒙正和苏轼都是北宋时期的知识分子。</p>
+</div><div class="cl-preview-section"><p>人生总是充满了未知与不确定性，纵使你智商爆表、智慧超群，也不能掌控一切预测未来；同样的道理，任你代码写得多么无懈可击，系统架构再怎么高可用，也不能阻挡异常的发生。所以，我们要做的不是完全的避免异常的发生。而是当异常发生后，我们如何更优雅的处理，从而降低异常对程序的影响，以及可以及时人工介入解决问题。</p>
+</div><div class="cl-preview-section"><h1 id="异常分类">2. 异常分类</h1>
+</div><div class="cl-preview-section"><p>通过上面的内容，我们了解到，异常就是程序执行过程中发生了意外。而这些意外可以按照其严重性以及我们对于意外的处理能力分成不同的类型，下面我们就一起看看异常有哪些类型吧。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ebe60bf0001c5cd13950322.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>Java 中有非常完整的异常机制，所有的异常类型都有一个共同的爸比 ——Throwable。由上图可以看出 Throwable 下面有两个分支一个是 Error（致命异常），另一个是 Exception（非致命异常）。</p>
+</div><div class="cl-preview-section"><h2 id="error">2.1 Error</h2>
+</div><div class="cl-preview-section"><p>Error 比较特殊，它有两个声名远播的子类：OutOfMemoryError 和  StackOverflowError。光看这两个子类我们也能知道 Error 不好惹，一旦发生 Error 类型的错误，程序根本无法处理，只能进行人为干预（施展重启大法）。</p>
+</div><div class="cl-preview-section"><h2 id="checked-异常-与-unchecked-异常">2.2 checked 异常 与 unchecked 异常</h2>
+</div><div class="cl-preview-section"><p>Exception 这一分支下面分为了两个类型：checked 异常和 unchecked 异常。</p>
+</div><div class="cl-preview-section"><h3 id="checked-异常">checked 异常</h3>
+</div><div class="cl-preview-section"><p>checked 异常继承自 Exception，需要进行显式处理（try 或者 throws）的异常，否则发生编译错误，IDE 中会有错误提示（下图是 IDEA 中的提示效果）。Java 中的 checked 是一个庞大的家族，除了 RuntimeException 和 Error 以外的类都属于 checked 异常（上图中的 IOException 就是其中一员，下图中的 ClassNotFoundException 也是）。<br>
+<img src="https://img.mukewang.com/5ebe60b10001e3ed04760129.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h3 id="unchecked-异常">unchecked 异常</h3>
+</div><div class="cl-preview-section"><p>unchecked 异常也是 Exception 下的分支，并且它们全部是 RuntimeException 的子类。这类异常是我们日常开发中真正需要特别关心的（Error 我们的程序处理不了，checked 异常必须按规定处理），而我们在程序中编写的自定义异常，通常来说也应该继承自 RuntimeException（这里需要注意：Spring 的事务管理只有遇到 RuntimeException 的异常是才会回滚）。</p>
+</div><div class="cl-preview-section"><p>需要注意的是，unchecked 异常中有一些异常是我们可以通过编写更健壮的代码来避免的，没错，就是避免，可以做到完全避免。这类异常包括最常见的 NullPointerException、IndexOutOtBoundsException 等，需要避免这类异常的出现并不难，只需要我们在调用对象方法、获取集合元素时先做安全检查即可（比如先判断 person 对象是否为 null，在调用 person.getName () 方法），这需要我们在日常编码中养成好的编码习惯。</p>
+</div><div class="cl-preview-section"><h1 id="全局异常处理">3. 全局异常处理</h1>
+</div><div class="cl-preview-section"><p>上面我们从理论层面对于异常有了很全面的了解，接下来我们就动手实战一下在 Spring Boot 进行全局的异常处理。</p>
+</div><div class="cl-preview-section"><h2 id="全局异常捕获">3.1 全局异常捕获</h2>
+</div><div class="cl-preview-section"><p>Spring Boot 中进行全局异常捕获非常简单，其核心就是一个注解 ——@ControllerAdvice/@RestControllerAdvice。两者的区别类似 @Controller 与 @RestControllerAdvice，这里就不过多赘述了。我们直接看代码：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Slf4j</span>
+<span class="token annotation punctuation">@RestControllerAdvice</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">GlobalExceptionHandler</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@ExceptionHandler</span><span class="token punctuation">(</span>Exception<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> Result <span class="token function">handle</span><span class="token punctuation">(</span>Exception e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        Result result <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Result</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        result<span class="token punctuation">.</span><span class="token function">setCode</span><span class="token punctuation">(</span>MessageEnum<span class="token punctuation">.</span>UNKNOW_ERROR<span class="token punctuation">.</span><span class="token function">getCode</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        result<span class="token punctuation">.</span><span class="token function">setMessage</span><span class="token punctuation">(</span>e<span class="token punctuation">.</span><span class="token function">getMessage</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> null <span class="token operator">?</span> MessageEnum<span class="token punctuation">.</span>UNKNOW_ERROR<span class="token punctuation">.</span><span class="token function">getMessage</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">:</span> e<span class="token punctuation">.</span><span class="token function">getMessage</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        log<span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span>e<span class="token punctuation">.</span><span class="token function">getMessage</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> result<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@ExceptionHandler</span><span class="token punctuation">(</span>ApiException<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> Result <span class="token function">handle</span><span class="token punctuation">(</span>ApiException e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        Result result <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Result</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        result<span class="token punctuation">.</span><span class="token function">setCode</span><span class="token punctuation">(</span>e<span class="token punctuation">.</span><span class="token function">getCode</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        result<span class="token punctuation">.</span><span class="token function">setMessage</span><span class="token punctuation">(</span>e<span class="token punctuation">.</span><span class="token function">getMessage</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        log<span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span>e<span class="token punctuation">.</span><span class="token function">getMessage</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> result<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>GlobalExceptionHandler 的代码很简单，核心逻辑就是捕获异常，然后将错误信息进行封装，最后以 JSON 格式返回给前端。这里我们只是粗略的对 APIException 和 Exception 进行了分别捕获，实际应用中可以根据自己的情况定制更细化的方案，也就是多加上几个对应不同类型异常的方法而已，So Easy！</p>
+</div><div class="cl-preview-section"><h2 id="辅助类">3.2 辅助类</h2>
+</div><div class="cl-preview-section"><p>为了让我们的代码更加的优雅，我们需要添加两个辅助类 ——MessageEnum 和 Result。</p>
+</div><div class="cl-preview-section"><h3 id="错误消息封装">错误消息封装</h3>
+</div><div class="cl-preview-section"><p>MessageEnum 类封装了错误信息和错误代码，将它们集中起来统一管理为的是更好的应对将来的变化。假如程序中有 100 处都使用了 “操作成功！” 这句话作为 message 的话，我们就要写 100 遍。而当有一天，产品经理说，四个字太多了，我们直接改成 “成功！”，这样简洁。那你就需要将那 100 个 “操作成功！” 改成 “成功！”，想想都崩溃了。</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">enum</span> MessageEnum <span class="token punctuation">{</span>
+    <span class="token function">UNKNOW_ERROR</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"未知错误！"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">ERROR</span><span class="token punctuation">(</span><span class="token number">500</span><span class="token punctuation">,</span> <span class="token string">"系统错误"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">SUCCESS</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token string">"操作成功！"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token punctuation">;</span>
+    <span class="token keyword">private</span> Integer code<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> String message<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> Integer <span class="token function">getCode</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> code<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> String <span class="token function">getMessage</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> message<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token function">MessageEnum</span><span class="token punctuation">(</span>Integer code<span class="token punctuation">,</span> String message<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>code <span class="token operator">=</span> code<span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>message <span class="token operator">=</span> message<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>集中管理的好处显而易见，产品经理提出上面的需求，只需要在这个类中去掉两个字就搞定了。</p>
+</div><div class="cl-preview-section"><h3 id="接口返回值统一结构">接口返回值统一结构</h3>
+</div><div class="cl-preview-section"><p>Result 类的作用是让我们的接口返回值变得更加优雅，不管什么接口返回值都是三大件：code、message 和 业务数据。</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Result</span><span class="token operator">&lt;</span>T<span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">private</span> Integer code<span class="token punctuation">;</span>
+
+    <span class="token keyword">private</span> String message<span class="token punctuation">;</span>
+
+    <span class="token keyword">private</span> T data<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> Result <span class="token function">sucess</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token function">sucess</span><span class="token punctuation">(</span>null<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> Result <span class="token function">sucess</span><span class="token punctuation">(</span>Object data<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        Result result <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Result</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        result<span class="token punctuation">.</span><span class="token function">setMessage</span><span class="token punctuation">(</span>MessageEnum<span class="token punctuation">.</span>SUCCESS<span class="token punctuation">.</span><span class="token function">getMessage</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        result<span class="token punctuation">.</span><span class="token function">setCode</span><span class="token punctuation">(</span>MessageEnum<span class="token punctuation">.</span>SUCCESS<span class="token punctuation">.</span><span class="token function">getCode</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        result<span class="token punctuation">.</span><span class="token function">setData</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> result<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> Result <span class="token function">error</span><span class="token punctuation">(</span>Integer code<span class="token punctuation">,</span> String message<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        Result result <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Result</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        result<span class="token punctuation">.</span><span class="token function">setMessage</span><span class="token punctuation">(</span>message<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        result<span class="token punctuation">.</span><span class="token function">setCode</span><span class="token punctuation">(</span>code<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> result<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+
+    <span class="token comment">// getter and setter</span>
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+      
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="异常接口">3.3 异常接口</h2>
+</div><div class="cl-preview-section"><p>做好上面的准备工作，下面只需要编写几个抛出异常的接口来测试一下效果了。</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Api</span>
+<span class="token annotation punctuation">@RestController</span>
+<span class="token annotation punctuation">@RequestMapping</span><span class="token punctuation">(</span><span class="token string">"/exception"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">ExceptionController</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/apiexception"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> Result <span class="token function">apiException</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">ApiException</span><span class="token punctuation">(</span>MessageEnum<span class="token punctuation">.</span>ERROR<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/runtimeexception"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> Result <span class="token function">runtimeException</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">RuntimeException</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>发挥你的脑洞，多写几个不同的异常来玩玩吧。</p>
+</div><div class="cl-preview-section"><h1 id="一点感悟">4. 一点感悟</h1>
+</div><div class="cl-preview-section"><p>我经常暗自庆幸自己阴差阳错学了计算机专业，毕业后也一直在做与编程相关的事情。嗯？不都说程序员苦逼吗？咋你还庆幸呢？原因有很多，其中一个就是在编程的路上我总能收获一些意外之喜。就拿我们今天聊的异常处理来说吧，Error 类型是程序无法左右的，遇上了就只能接受，没有别的办法；而 checked 异常则是程序必须处理的异常，不处理程序就无法运行；还有像 NullPointerException 这类的异常，则是完全可以通过良好的编码习惯彻底规避掉的。</p>
+</div><div class="cl-preview-section"><p>看起来是新的知识，但仔细想想这不就是我们的人生吗？在我们的生命中，有些事是我们根本无法左右的（天灾人祸、生老病死），有些事情是遇到后必须处理的（比如女朋友要求我们做的事情），有些事是完全可以避免的（上课迟到、与家人因小事产生的争吵）。</p>
+</div><div class="cl-preview-section"><p>真的是人生如码，码如人生！</p>
+</div><div class="cl-preview-section"><h1 id="总结">5. 总结</h1>
+</div><div class="cl-preview-section"><p>OK，这一节我们学习了什么是异常、异常的分类以及如何在 Spring Boot 中进行全局异常处理。最后还小小的感悟了一下人生。最后抛出一个思考题 —— 做全局异常处理的意义何在，现实中的你需要全局异常处理吗？</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img1.mukewang.com/5e9a7edf00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6449">
+						<img src="https://img2.mukewang.com/5e6e51f10001e26004610500-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">转折点0</h4>
+						<div class="comment-text">全局异常看起来很好用 但是就线上运行的项目来说 一般不会进行全局异常处理 至少我目前的项目结构都是如此 都是单个方法独立捕获处理</div>
+						<div>
+							
+								<div class="reply">讲师回复：可以分享一下，你们是出于什么考虑，线上不用全局异常处理的吗？</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-06</span>
+						<a href="/read/commentdetail/6449">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6449" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6445">
+						<img src="https://img1.mukewang.com/5b8cef4c00018c1202000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕标4306927</h4>
+						<div class="comment-text">老师分享棒棒的，从第一篇看到了这篇，收获很多。也希望老师在 码如人生的路上走得更远，飞的更高</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-05</span>
+						<a href="/read/commentdetail/6445">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6445" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6311">
+						<img src="https://img1.mukewang.com/5ee9c90700012b4c10801440-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">MarchGoGo</h4>
+						<div class="comment-text">做全局异常可以让项目后期更好维护，更符合哲学中的……</div>
+						<div>
+							
+								<div class="reply">讲师回复：符合哲学中的啥？</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-27</span>
+						<a href="/read/commentdetail/6311">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6311" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5796">
+						<img src="https://img1.mukewang.com/545866a300016c6802200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">hwl_01</h4>
+						<div class="comment-text">checked异常只包含Exception下非RuntimeException下面的异常类，不包含Error类下面的吗？</div>
+						<div>
+							
+								<div class="reply">讲师回复：在《Java 核心技术卷》中，将 Error 归为了 unchecked 异常。而在《Effective Java》中，则认为 Error 不属于 unchecked 异常。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-10</span>
+						<a href="/read/commentdetail/5796">
+							<span class="icon r"><i class="imwap-comment"></i><em>2</em></span>
+						</a>
+						<span data-cid="5796" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5794">
+						<img src="https://img3.mukewang.com/545866a300016c6802200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">hwl_01</h4>
+						<div class="comment-text">uncharted 异常 这儿拼错了哦，老师。</div>
+						<div>
+							
+								<div class="reply">讲师回复：收到，感谢提醒。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-10</span>
+						<a href="/read/commentdetail/5794">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5794" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5741">
+						<img src="https://img3.mukewang.com/5f43d3180001e9d809700970-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">森林呀</h4>
+						<div class="comment-text">全局异常让我们大胆的去throw，不在想着掩耳盗铃，也拒绝了套娃式的try catch。另外一些业务规则（譬如查无结果），发现有些人也总是喜欢用异常的来处理，在我看来这是有问题的，不知老师怎么看？全局异常处理某种意义上有点像java的垃圾回收，我们需要jvm，我们始终是长不大的小孩子啊→_→</div>
+						<div>
+							
+								<div class="reply">讲师回复：根据业务规则抛异常，只要业务合理就没什么问题。全局异常和垃圾回收有哪些相似之处呢？</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-05</span>
+						<a href="/read/commentdetail/5741">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5741" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=75">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '23 天有不测风云，人有旦夕祸福——异常处理',
+					'CID': '1819',
+					'Teacher': '刘水镜'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "23 天有不测风云，人有旦夕祸福——异常处理",
+                    desc: "够吃管饱的SpringBoot大餐",
+                    imgUrl: 'https:https://img2.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/75',
+                    link: 'https://m.imooc.com/read/75'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

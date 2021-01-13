@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>28 网络 QoS 机制介绍</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="学好通用知识，提升技术竞争力">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "1";
+	var chapter_id = "2117";
+	var chapter_title = "28 网络 QoS 机制介绍";
+	var aid = "80";
+	var a_name = "零基础学透网络编程";
+	var a_price = "58.00";
+	var a_pic = "https://img4.mukewang.com/5ed8c1c600015fc805400720.jpg";
+	var userId = 0;
+
+	var column_id = '80';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-09-28&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			28 网络 QoS 机制介绍
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img.mukewang.com/5ed9fe7e0001862706400359.jpg')"></div>
+	
+	
+		<a href="/read/80">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5458620000018a2602200220-40-40.jpg" alt="陈子兴">
+				<h3>零基础学透网络编程</h3>
+				<p>陈子兴 · 资深软件架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">读书给人以快乐、给人以光彩、给人以才干。<p class="author">——培根</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="前言">前言</h2>
+</div><div class="cl-preview-section"><p>在前面的专栏，我们讨论的都是 TCP/IP 协议栈工作原理、Socket 编程等主题。本文将要讨论关于<strong>网络资源管理</strong>的主题，也就是经常说的计算机网络的 <strong>QoS</strong>（Quality of service）。通过前面专栏的学习，我相信你一定对<strong>分组交换网</strong>（Packet Switch Network）的概念了然于胸了吧。没错，计算机网络就是分组交换网。分组交换网的 QoS 机制是对<strong>服务优先级</strong>和<strong>资源预留</strong>进行控制，针对不同的用户、不同的应用程序、不同的数据流，提供不同的服务，保证不同级别数据流的服务质量。</p>
+</div><div class="cl-preview-section"><p>QoS 实现模型包含以下几种：</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>Best Effort 模型</strong>，并没有 QoS 策略，所有 Packet 都包含相同的优先级，路由器以平等的方式对待所有 Packet；</li>
+<li><strong>Integrated Services 模型</strong>，路由器为特定应用保留资源，保证此应用的 Packet 享有最高优先权；</li>
+<li><strong>Differentiated Services ���型</strong>，把网络资源进行分类划分，针对不同的应用提供不同优先级的服务。比如，可以给 VoIP 的语音 Packet 配最高优先级。IP 协议头的 DSCP 字段就是为了实现此 QoS 机制的。</li>
+</ul>
+</div><div class="cl-preview-section"><p>QoS 的量化指标包括：</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>延迟（Latency）</strong>，表示 Packet 从源主机发送到目标主机所花费的时间；</li>
+<li><strong>抖动（Jitter）</strong>，表示延迟的变化。网络状况是动态变化的，所以延迟也是动态变化的；</li>
+<li><strong>丢包率（Packet loss）</strong>，表在某一个统计周期内，丢包数占所有发送数据包的比例；</li>
+<li><strong>带宽</strong>，表示网络通信链路的最大传输速率，表征了信道容量。</li>
+</ul>
+</div><div class="cl-preview-section"><p>我们首先讨论一下网络延迟。</p>
+</div><div class="cl-preview-section"><h2 id="延迟（latency）">延迟（Latency）</h2>
+</div><div class="cl-preview-section"><p>网络延迟是指 Packet 从源主机发送到目标主机所花费的时间。我们知道分组交换网是共享网络，也就是没有独占的通信线路，Packet 从源主机发往目标主机，需要路由器选路和存储转发，经过逐跳转发才能到达对端主机。由于路由存储转发和动态选路的特性，网络延时随时都在不停的变化。在局域网中，网络延迟一般在 1 毫秒内。在互联网上，典型的网络延迟为几十到几百毫秒。影响网络延迟的主要因素有：</p>
+</div><div class="cl-preview-section"><ul>
+<li>路由的跳数。路由转发都需要时间，路由跳数越��，网络延迟就越大。</li>
+<li>网络的流量。网络流量越大，交换机和路由器排队的时间就越长，网络延时也就越大。</li>
+</ul>
+</div><div class="cl-preview-section"><p>在路由器逐跳转发分组的过程中，每一个路由器都换产生延迟，我们可以观察下图：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f71407300017a6409960402.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>上图演示了主机 A 给主机 B 发送数据包，经过路由器 A 和路由器 B 转发的过程。我们特别展示了路由器 A 转发分组时产生的延迟，我们用红色标号进行了标记，如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>处理延迟</strong>：路由器对分组进行完整性检查，路由查找花费的时间；</li>
+<li><strong>排队延迟</strong>：分组在输出队列中等待的时间；</li>
+<li><strong>发送延迟</strong>：指路由器链路层发送 bit 信号的时间；</li>
+<li><strong>传播延迟</strong>：是指 bit 位在物理介质中传播时间。</li>
+</ul>
+</div><div class="cl-preview-section"><p>我们把以上四种延迟叫做分组交换网的延迟。在分组经过的每一个路由器都会产生延迟，如果一个路由器产生的延迟记作 D(i)，那么 N 个路由器产生的延迟就是 N . D(i)。所以，端到端的网络延迟就是路由上所有节点所产生的延迟的总和。</p>
+</div><div class="cl-preview-section"><p>不仅路由器会带来延迟，端系统处理业务逻辑也会产生延迟。比如，在 VoIP 通信系统中，音频编解码器也会带来延迟，音频的 Jitter Buffer 也会带来延迟。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：<br>
+在阅读文献的时候经常会看到 Delay 和 Latency 两个英文单词，都表示延迟，有什么区别呢？<br>
+Delay 是指 One-Way 延迟，是单向延迟，即从 A 到 B 的延迟，或者是从 B 到 A 的延迟。<br>
+Latency 有时指 One-Way 延迟，有时指双向延迟，即表示的是 RTT。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>从上面的讨论来看，延迟是系统产生的、不可避免的，它会带来什么问题呢？</p>
+</div><div class="cl-preview-section"><ul>
+<li>对于非交互性应用领域，受网络延迟的影响不大。比如文件下载、上传服务。</li>
+<li>对于实时通信领域，网络延迟对通信服务质量的影响是非常大的。比如，拿 VoIP 通信系统来说，如果 RTT 在 100ms 以下，对 VoIP 的影响不大；如果 RTT 在 300ms 以下还可以交流；如果 RTT 在 300ms 以上，基本是无法交流的。</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="延迟的测量">延迟的测量</h2>
+</div><div class="cl-preview-section"><p>测量延迟有系统自动测量和网络管理员手动测量两种方式。我们之前讨论的 TCP 协议就是自动测量的方式。我们通常讨论的延迟都是指 Latency ，即 RTT。通过软件不好测量节点之间的单向延迟，经常是测量双向延迟，也就是 RTT（Round-trip time）。我们在《不辱使命_可靠传输协议 TCP 数据传输》一文中曾经探讨过 RTT 的测量，现在我们再回忆一下 RTT 与 RTO 一节。还记得下图吗？</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed9ae0f0001d5c207500559.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>在上图中，Client 测量出了 RTT1 和 RTT2，Server 测量出了 RTT。RTT 的测量思想很简单，我们就拿 Client 来举例，Client 在 c_time1 发送一个数据包，Server 收到此报文后<strong>立即</strong>在 s_time1 做出响应；Client 在 c_time2 收到 Server 的响应然后，通过 c_time2 - c_time1 就可以计算出 RTT1。通过一对请求、响应报文就可以测出 RTT。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>注意：<br>
+Server 在收到 Client 的数据包后，要立即做出响应，Client 才能计算出准确的 RTT。如果 Server 收到数据包后，延迟一段时间才发送响应，那么必须要把这段延迟通知给 Client，否则 Client 无法准确计算出 RTT。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>手动测量网络延迟，就需要网络监测工具了，最方便的就是系统自带的 ping 命令，这是一个应用非常广泛的工具，我们就不再赘述了。</p>
+</div><div class="cl-preview-section"><p>下来，我们接着讨论 QoS 的另外一个指标 Jitter。</p>
+</div><div class="cl-preview-section"><h2 id="抖动（jitter）">抖动（Jitter）</h2>
+</div><div class="cl-preview-section"><p><strong>抖动</strong>和<strong>延迟</strong>相关，但又不是同一个概念，抖动是指网络延迟的变化。每一个 Packet 在网络中传输的延迟是不一样的，在分组交换网中，网络拥塞和排队延迟将影响端到端的延迟，并导致通过同一路由传输的 Packet 的延迟各不相同，相邻两个 Packet 之间延迟的差异就叫做<strong>抖动</strong>，是用来描述延迟的变化程度的。</p>
+</div><div class="cl-preview-section"><p>引起抖动的原因有哪些呢？</p>
+</div><div class="cl-preview-section"><ul>
+<li>网络拥塞<br>
+我们在介绍 TCP 拥塞控制的时候，曾详细分析过，造成网络拥塞的主要原因就是网络流量超过了路由器的容量。</li>
+<li>硬件设备性能导致<br>
+比较老的硬件设备，在交换容量、端口的数量、端口支持的带宽大小、系统支持的协议版本等各方面都要差一些。</li>
+<li>无线网络<br>
+由于天气、外部环境对无线信号的干扰，障碍物、距离导致无线信号的衰减，都会造成网络抖动。</li>
+<li>网络安全软件设置导致<br>
+如果网络防火墙设置、网络代理设置、NAT 设置不合理，也会导致网络抖动。</li>
+</ul>
+</div><div class="cl-preview-section"><p>在理想的网络状态下，每一个 Packet 的延迟都是一样的，这样相邻两个 Packet 之间的 Jitter 应该是 0。但是现实往往没有这么理想，Jitter 会动态变化，Jitter 反映了网络延迟变化，或者网络发生了丢包。因此，抖动实时的反映了网络的当前状况，是应用程序非常重要的 QoS 指标。比如，拿音视频实时通信系统来说，网络抖动会直接影响到语言的沟通质量和视频画面效果。一般来说，Jitter 值在 35ms 以内，是可以接受的范围。</p>
+</div><div class="cl-preview-section"><p>如何解决网络抖动带来的问题呢？<br>
+网络抖动只是现象，本质上网络可能出现了拥塞、丢包、乱序。在音视频领域，Jitter Buffer 是解决网络抖动的一个重要手段，其核心是将数据包保存一段时间，目的是解决乱序问题。Jitter Buffer 会带来延迟，所以 Jitter Buffer 不能是无限大，对于 Jitter 很大的 Packet 要主动丢弃。</p>
+</div><div class="cl-preview-section"><h2 id="丢包率（packet-loss）">丢包率（Packet Loss）</h2>
+</div><div class="cl-preview-section"><p>网络拥塞、无线信号衰减、信号差错都可能导致丢包，这是一种现象。在 QoS 机制中，往往通过<strong>丢包率</strong>来衡量网络丢包情况，这是一个统计概念。丢包率的计算方法很简单，核心思想就是设定一个统计周期，统计一个周期内丢失的数据包占发送数据包总数的比例。</p>
+</div><div class="cl-preview-section"><p>丢包率是非常重要的一个 QoS 指标。网络丢包对音频、视频的影响非常大，会直接导致语音丢字、视频画面卡顿。除了信号衰减、设备老化导致的固定网络丢包以外，丢包主要是因为网络带宽达到上限，或者路由器出现拥塞。所以解决丢包的主要手段就是在发送端进行流量控制，同时要实时检测网络拥塞状况，这也是我们在《08-不辱使命_可靠传输协议 TCP 拥塞控制机制》一文中介绍的各种拥塞控制算法的作用了。</p>
+</div><div class="cl-preview-section"><p>下来，我们再了解一下网络带宽（Bandwidth）的概念。</p>
+</div><div class="cl-preview-section"><h2 id="带宽（bandwidth）">带宽（Bandwidth）</h2>
+</div><div class="cl-preview-section"><p>网络带宽是指通信链路上最大传输速率，单位是 bit/sec。需要注意的是，我们这里所讲的网络带宽和信号处理中所讲的带宽不是一个概念。信号处理中的带宽是指频率范围，单位是赫兹（Hertz）。我们这里所讲的网络带宽是指通信链路上的传输速率，单位是 bit/second。关于网络带宽的定义可以学习 Shannon–Hartley 定理。</p>
+</div><div class="cl-preview-section"><p>计算机网络带宽的测试方法也比较简单，基本思想就是频繁的向网络发送大量的的大数据包，然后探测出端到端的网络带宽。如果考虑具体的实现，你可以采用 UDP Socket，也可以采用 TCP Socket。由于 TCP 有流控，UDP 无流控，二者在细节处理上有一些差异，主要表现在如何判断网络容量达到了上限。</p>
+</div><div class="cl-preview-section"><h2 id="总结">总结</h2>
+</div><div class="cl-preview-section"><p>本文主要介绍了计算机网络 QoS 的基本概念，详细分析了延迟、抖动、丢包、带宽这四个 QoS 指标的含义。网络 QoS 也是非常大的一个主题，了解网络 QoS 机制，对我们分析网络带来的产品问题、评估产品质量都有很大的帮助，所以投入时间学习、研究是非常值得的。</p>
+</div><div class="cl-preview-section"><p>本文只是介绍了 QoS 概念、理论部分，至于如何通过编程来测量延迟、抖动、丢包、带宽，我们会在本专栏的最后项目中给出完整实现。尽请期待吧。</p>
+</div><div class="cl-preview-section"><h2 id="思考时间">思考时间</h2>
+</div><div class="cl-preview-section"><ol>
+<li>请思考：为什么测量网络延迟，需要通过一对请求、响应报文，而不是直接测量 One-Way 延迟呢？</li>
+<li>请学习 Shannon–Hartley 定理，了解计算机网络带宽的定义。</li>
+</ol>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img2.mukewang.com/5ed9fe82000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=80">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '28 网络 QoS 机制介绍',
+					'CID': '2117',
+					'Teacher': '陈子兴'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "28 网络 QoS 机制介绍",
+                    desc: "学好通用知识，提升技术竞争力",
+                    imgUrl: 'https:https://img4.mukewang.com/5ed8c1c600015fc805400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5ed8c1c600015fc805400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/80',
+                    link: 'https://m.imooc.com/read/80'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

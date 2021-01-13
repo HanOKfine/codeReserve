@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>05 使用 Where 实现学生年龄、性别过滤</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="0基础入门，掌握4大主流数据库的SQL技术">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "2";
+	var chapter_id = "2262";
+	var chapter_title = "05 使用 Where 实现学生年龄、性别过滤";
+	var aid = "85";
+	var a_name = "10+年DBA老司机带你轻松玩转 SQL";
+	var a_price = "48.00";
+	var a_pic = "https://img2.mukewang.com/5f23b6e70001de8a05400720.jpg";
+	var userId = 0;
+
+	var column_id = '85';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-19&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			05 使用 Where 实现学生年龄、性别过滤
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5f278b3a00011ed706400426.jpg')"></div>
+	
+	
+		<a href="/read/85">
+			<div class="course-entry">
+				<img src="https://img2.mukewang.com/5f524cc00001990609600960-40-40.jpg" alt="简逸">
+				<h3>10+年DBA老司机带你轻松玩转 SQL</h3>
+				<p>简逸 · 资深数据库工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">我好像是一只牛，吃的是草，挤出的是牛奶。<p class="author">——鲁迅</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>随着项目上线后用户量的增长，我们的数据表的记录会越来越多，很多时候我们只需要检索出一小部分数据，这时我们就需要学会如何过滤数据，本小节我们学习在 SQL 查询如何使用 Where 子句进行数据的筛选。</p>
+</div><div class="cl-preview-section"><h2 id="where-关键字">5.1 Where 关键字</h2>
+</div><div class="cl-preview-section"><p><strong>Where 是在编写 SQL 语句中特别常用的一个关键字，它的作用就是过滤去除一部分不需要的数据，从而获取满足查询条件的那部分数据</strong>。主流数据库使用Where关键字的格式：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">SELECT</span> 列字段名称 <span class="token keyword">FROM</span> <span class="token punctuation">[</span>表名称<span class="token punctuation">]</span> <span class="token keyword">WHERE</span> 列字段名 运算符 值
+</code></pre>
+</div><div class="cl-preview-section"><p>Where 关键字位于表名的后面，其中运算符包含大于（&gt;）、小于(&lt;)、等于(=)、不等于(&lt;&gt;)、大于或等于(&gt;=)、小于或等于(&lt;=)、IN、 BETWEEN  AND、Is null 等。</p>
+</div><div class="cl-preview-section"><p>值得注意的是：并不是所有数据库都支持运算符 !=(不等于) 的语法，但通过验证在 Oracle,SQL Server,MariaDB ,PostgreSQL 四大主流数据库中都可以执行成功，且返回结果正确。</p>
+</div><div class="cl-preview-section"><h2 id="班级学生年龄过滤">5.2 班级学生年龄过滤</h2>
+</div><div class="cl-preview-section"><p>话不多说，我们还是通过例子来学习 Where 关键字，假如我们想获取学生表中年龄为 29 的学生，可以这样编写SQL语句：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> student <span class="token keyword">where</span> age <span class="token operator">=</span> <span class="token number">29</span> 
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f278b70000138ba02820048.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>我们再看一个获取年龄不等于 25 的例子:</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> student <span class="token keyword">where</span> age <span class="token operator">&lt;&gt;</span> <span class="token number">25</span>   
+</code></pre>
+</div><div class="cl-preview-section"><p>或者：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> student <span class="token keyword">where</span> age <span class="token operator">!=</span> <span class="token number">25</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f278b7700018e1302480286.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>从返回结果可以看出所有不等于 25 的学生信息均会输出。大于等于操作符也经常在查询中被用到：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> student <span class="token keyword">where</span> age <span class="token operator">&gt;=</span> <span class="token number">29</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f278b7f000102a002470143.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>上面的这些例子都是单值比较，下面看一个多值判断的 SQL ：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> student <span class="token keyword">where</span> age <span class="token operator">between</span> <span class="token number">29</span> <span class="token operator">and</span> <span class="token number">32</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f278b870001515602830156.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>其实 <strong>between and 关键字不但支持数值字段的筛选，还支持时间类型和字符类型字段的筛选</strong>。时间类型和数值类型的使用场景较多，而字符类型使用场景较少，在这里不再赘述。最后我们再看一个使用 in 关键字的 SQL 例句：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> student <span class="token keyword">where</span> age  <span class="token operator">in</span> <span class="token punctuation">(</span><span class="token number">29</span><span class="token punctuation">,</span><span class="token number">32</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f278b900001790502490090.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>从返回的结果看，<strong>in关键字会将括号中所有值一一对比，最后将符合条件的记录全部返回</strong>。in 关键字后面的括号里可以为单个值，也可以是两个或多个值。</p>
+</div><div class="cl-preview-section"><p>仔细分析我们不难发现 <strong>in 和 between and 虽然都可以进行多值筛选，但它们使用场景却不同， in 返回结果集中可以是离散值也可以是连续值，between and  只能返回符合区间条件内所有值，不能将区间中的某个值过滤掉</strong>。</p>
+</div><div class="cl-preview-section"><h2 id="班级学生性别过滤">5.3 班级学生性别过滤</h2>
+</div><div class="cl-preview-section"><p>有时候我们无意中发现数据表中个别记录的值为 null，这时候我们就想通过一条 SQL 语句来把这种记录查询出来，并做后续的分析处理，下面我们就通过这样一条 SQL 将学生性别为 null 值的学生检索出来：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> student <span class="token keyword">where</span> gender  <span class="token operator">is</span> <span class="token boolean">null</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f278b97000138b902560046.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>由于这位大乔同学的性别值为 null，所以被返回。有时我们也需要使用 is not null 将那些值不为 null 的记录查找出来，就可以使用下面的 SQL 语句：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> student <span class="token keyword">where</span> gender  <span class="token operator">is</span> <span class="token operator">not</span> <span class="token boolean">null</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f278b9e000114e703420365.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>返回的结果集是大乔之外的所有学生记录。</p>
+</div><div class="cl-preview-section"><h2 id="and-和-or">5.4 and 和 or</h2>
+</div><div class="cl-preview-section"><p>当然，where 关键字后面也可以连续跟着多个运算符，运算符之间可以使用 And 和 Or 关键字连接 。当我们准备获取年龄大于 29 而且性别为男生的同学时，就可以这样编写 SQL：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> student <span class="token keyword">where</span> gender  <span class="token operator">=</span> <span class="token number">1</span> <span class="token operator">and</span> age <span class="token operator">&gt;</span> <span class="token number">29</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f278ba50001805804280130.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>这条 SQL 使用 And 关键字将年龄大于 29 和性别为女生两个筛选条件组合起来，获取他们的交集后返回。</p>
+</div><div class="cl-preview-section"><p><strong>在 Where 关键字后面 And 和 OR 不但可以单独使用，也可以组合使用</strong> ，组合的时候会发生一些有趣的现象，例如当我们准备查找年龄符合 25 以下或 31 以上的学生，且性别为男生信息时，如果这样编写SQL：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> student <span class="token keyword">where</span> age <span class="token operator">&lt;</span> <span class="token number">25</span> <span class="token operator">or</span> age <span class="token operator">&gt;</span> <span class="token number">31</span> <span class="token operator">and</span> gender<span class="token operator">=</span> <span class="token number">1</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f278bad0001ccfe03700133.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>返回的结果包含了女生小乔，这是<strong>因为 And 的优先级比 OR 高，SQL 先执行了 And 然后执行了 OR</strong>，导致最终结果返回了年龄符合 31 岁以上的男生和年龄在 25 以下任意性别的学生，显然这个结果不是我们想要的。正确的写法应该是这样的：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> student <span class="token keyword">where</span> <span class="token punctuation">(</span>age <span class="token operator">&lt;</span> <span class="token number">25</span> <span class="token operator">OR</span> age <span class="token operator">&gt;</span> <span class="token number">31</span> <span class="token punctuation">)</span> <span class="token operator">and</span> gender<span class="token operator">=</span> <span class="token number">1</span> 
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f278bb500017fc203730112.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>从上面例子可以看出，使用括号可以改变 SQL 的执行顺序，而且括号的优先级最高，先执行括号里面的 or 关键字，将 25 岁以下或 31 岁以上的学生与性别为男生的学生求交集，最终返回了我们想要的结果。</p>
+</div><div class="cl-preview-section"><h2 id="总结">5.5 总结</h2>
+</div><div class="cl-preview-section"><p>本小节详细介绍了使用Where关键字进行数据的筛选，并通过实例讲解了Where 子句中 and和or的使用方法，特别需要注意的是在组合使用or和and关键字时，别忘记使用括号，不但可以避免错误，而且可以增强代码的可读性。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5f278b4000011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6696">
+						<img src="https://img3.mukewang.com/5b8cf1760001ad0502000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">杀入互联网江湖</h4>
+						<div class="comment-text">最近入坑，是我找了好久的sql资料了，谢谢！！！</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-01</span>
+						<a href="/read/commentdetail/6696">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6696" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6496">
+						<img src="https://img4.mukewang.com/533e51f30001edf702000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">洪小才</h4>
+						<div class="comment-text">娓娓道来，很好</div>
+						<div>
+							
+								<div class="reply">讲师回复：谢谢关注，共同进步！</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-10</span>
+						<a href="/read/commentdetail/6496">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6496" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥48.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=85">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '05 使用 Where 实现学生年龄、性别过滤',
+					'CID': '2262',
+					'Teacher': '简逸'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "05 使用 Where 实现学生年龄、性别过滤",
+                    desc: "0基础入门，掌握4大主流数据库的SQL技术",
+                    imgUrl: 'https:https://img2.mukewang.com/5f23b6e70001de8a05400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5f23b6e70001de8a05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/85',
+                    link: 'https://m.imooc.com/read/85'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

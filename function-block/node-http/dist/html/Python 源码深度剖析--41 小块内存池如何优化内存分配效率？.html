@@ -1,0 +1,869 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>41 小块内存池如何优化内存分配效率？</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="突破技术瓶颈，迈向更高岗位">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "5";
+	var chapter_id = "1937";
+	var chapter_title = "41 小块内存池如何优化内存分配效率？";
+	var aid = "76";
+	var a_name = "Python 源码深度剖析";
+	var a_price = "68.00";
+	var a_pic = "https://img.mukewang.com/5eb68ab400017cda05400720.jpg";
+	var userId = 0;
+
+	var column_id = '76';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-10-21&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			41 小块内存池如何优化内存分配效率？
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5f58379300011a2e06400426.jpg')"></div>
+	
+	
+		<a href="/read/76">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5e4a3ec90001ef8d04000400-40-40.jpg" alt="fasionchan">
+				<h3>Python 源码深度剖析</h3>
+				<p>fasionchan · 资深 Python 研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">理想必须要人们去实现它，它不但需要决心和勇敢而且需要知识。<p class="author">——吴玉章</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>内存是软件系统必不可少的物理资源，精湛的内存管理技术是确保内存使用效率的关键，也是进阶高级研发的必备技巧。为提高内存分配效率，<em>Python</em> 内部做了很多殚心竭虑的优化，从中我们可以获得一些启发。</p>
+</div><div class="cl-preview-section"><p>开始研究 <em>Python</em> 内存池之前，我们先大致了解下 <em>Python</em> 内存管理层次：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583aaf000111b508670627.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>众所周知，计算机硬件资源由操作系统负责管理，内存资源也不例外。应用程序通过 <strong>系统调用</strong> 向操作系统申请内存，而 <em>C</em> 库函数则进一步将系统调用封装成通用的 <strong>内存分配器</strong> ，并提供了 <em>malloc</em> 系列函数。</p>
+</div><div class="cl-preview-section"><p><em>C</em> 库函数实现的通用目的内存管理器是一个重要的分水岭，即���存管理层次中的 <strong>第0层</strong> 。此层之上是应用程序自己的内存管理，此层之下则是隐藏在冰山下方的操作系统部分。</p>
+</div><div class="cl-preview-section"><p>操作系统内部是一个基于页表的虚拟内存管理器(<strong>第-1层</strong>)，以 <strong>页</strong> ( <em>page</em> )为单位管理内存，<em>CPU</em> <strong>内存管理单元</strong>( <em>MMU</em> )在这个过程中发挥重要作用。虚拟内存管理器下方则是底层存储设备(<strong>第-2层</strong>)，直接管理物理内存以及磁盘等二级存储设备。</p>
+</div><div class="cl-preview-section"><p>绿色部分则是 <em>Python</em> 自己的内存管理，分为 <em>3</em> 层：</p>
+</div><div class="cl-preview-section"><ul>
+<li>第 <em>1</em> 层，是一个内存分配器，接管一切内存分配，内部是本文的主角—— <strong>内存池</strong> ；</li>
+<li>第 <em>2</em> 层，在第 1 层提供的统一 <em>PyMem_XXXX</em> 接口基础上，实现统一的对象内存分配( <em>object.tp_alloc</em> )；</li>
+<li>第 <em>3</em> 层，为特定对象服务，例如前面章节介绍的 <em>float</em> 空闲对象缓存池；</li>
+</ul>
+</div><div class="cl-preview-section"><p>那么，<em>Python</em> 为什么不直接使用 <em>malloc</em> 系列函数，而是自己折腾一遍呢？原因主要是以下几点：</p>
+</div><div class="cl-preview-section"><ul>
+<li>引入内存池，可化解对象频繁创建销毁带来的内存分配压力；</li>
+<li>最大程度避免内存碎片化，提升内存利用效率；</li>
+<li><em>malloc</em> 有很多实现版本，不同实现性能千差万别；</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="内存碎片的挑战">内存碎片的挑��</h2>
+</div><div class="cl-preview-section"><p><strong>内存碎片化</strong> 是困扰经典内存分配器的一大难题，碎片化导致的结果也是惨重的。这是一个典型的内存碎片化例子：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583ab9000113ff04940194.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>虽然还有 <em>1900K</em> 的空闲内存，但都分散在一系列不连续的碎片上，甚至无法成功分配出 <em>1000K</em> 。</p>
+</div><div class="cl-preview-section"><p>那么，如何避免内存碎片化呢？想要解决问题，必先分析导致问题的根源。</p>
+</div><div class="cl-preview-section"><p>我们知道，应用程序请求内存块尺寸是不确定的，有大有小；释放内存的时机也是不确定的，有先有后。经典内存分配器将不同尺寸内存块混合管理，按照先来后到的顺序分配：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583ac00001f65610810339.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>当大块内存回收后，可以被分为更小的块，然后分配出去：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583ac700011fb410790226.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>而先分配的内存块未必先释放，慢慢地空洞就出现了：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583ace00019a5210780223.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>随着时间的推移，碎片化会越来越严重，最终变得支离破碎：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583ad70001dd5310860228.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>由此可见，将不同尺寸内存块混合管理，将大块内存切分后再次分配的做法是罪魁祸首。</p>
+</div><div class="cl-preview-section"><h2 id="按尺寸分类管理">按尺寸分类管理</h2>
+</div><div class="cl-preview-section"><p>揪出内存碎片根源后，解决方案也就浮出水面了——根据内存块尺寸，将内存空间划分成不同区域，独立管理。举个最简单的例子：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583ade0001461112290414.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>如图，内存被划分成小、中、大三个不同尺寸的区域，区域可由若干内存页组成，每个页都划分为统一规格的内存块。这样一来，小块内存的分配，不会影响大块内存区域，使其碎片化。</p>
+</div><div class="cl-preview-section"><p>每个区域的碎片仍无法完全避免，但这些碎片都是可以被重新分配出去的，影响不大。此外，通过优化分配策略，碎片还可被进一步合并。以小块内存为例，新内存优先从内存页 <em>1</em> 分配，内存页 <em>2</em> 将慢慢变空，最终将被整体回收。</p>
+</div><div class="cl-preview-section"><p>在 <em>Python</em> 虚拟机内部，时刻有对象创建、销毁，这引发频繁的内存申请、释放动作。这类内存尺寸一般不大，但分配、释放频率非常高，因此 <em>Python</em> 专门设计 <strong>内存池</strong> 对此进行优化。</p>
+</div><div class="cl-preview-section"><p>那么，尺寸多大的内存才会动用内存池呢？<em>Python</em> 以 <em>512</em> 字节为限，小于 <em>512</em> 的内存分配才会被内存池接管：</p>
+</div><div class="cl-preview-section"><ul>
+<li><em>0</em> ，直接调用 <em>malloc</em> 函数；</li>
+<li><em>1</em> ~ <em>512</em> ，由专门的内存池负责分配，内存池以内存尺寸进行划分；</li>
+<li><em>512</em> 以上，直接调动 <em>malloc</em> 函数；</li>
+</ul>
+</div><div class="cl-preview-section"><p>那么，<em>Python</em> 是否为每个尺寸的内存都准备一个独立内存池呢？答案是否定的，愿意有几个：</p>
+</div><div class="cl-preview-section"><ul>
+<li>内存规格有 <em>512</em> 种之多，如果内存池分也分 <em>512</em> 种，徒增复杂性；</li>
+<li>内存池种类越多，额外开销越大；</li>
+<li>如果某个尺寸内存只申请一次，将浪费内存页内其他空闲内存；</li>
+</ul>
+</div><div class="cl-preview-section"><p>相反，<em>Python</em> 以 <em>8</em> 字节为梯度，将内存块分为：<em>8</em> 字节、<em>16</em> 字节、<em>24</em> 字节，以此类推。总共 <em>64</em> 种：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th><strong>请求大小</strong></th>
+<th><strong>分配内存块大小</strong></th>
+<th><strong>类别编号</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 ~ 8</td>
+<td>8</td>
+<td>0</td>
+</tr>
+<tr>
+<td>9 ~ 16</td>
+<td>16</td>
+<td>1</td>
+</tr>
+<tr>
+<td>17 ~ 24</td>
+<td>24</td>
+<td>2</td>
+</tr>
+<tr>
+<td>25 ~ 32</td>
+<td>32</td>
+<td>3</td>
+</tr>
+<tr>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+</tr>
+<tr>
+<td>497 ~ 504</td>
+<td>504</td>
+<td>62</td>
+</tr>
+<tr>
+<td>505 ~ 512</td>
+<td>512</td>
+<td>63</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>以 <em>8</em> 字节内存块为例，内存池由多个 <strong>内存页</strong> ( <em>page</em> ，一般是 <em>4K</em> )构成，每个内存页划分为若干 <em>8</em> 字节内存块：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583ae700016da116330359.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>上图表示一个内存页，每个小格表示 <em>1</em> 字节，<em>8</em> 个字节组成一个块( <em>block</em> )。灰色表示空闲内存块，蓝色表示已分配内存块，深蓝色表示应用内存请求大小。</p>
+</div><div class="cl-preview-section"><p>只要请求的内存大小不超过 <em>8</em> 字节，<em>Python</em> 都在这个内存池为其分配一块 <em>8</em> 字节内存，就算只申请 1 字节内存也是如此。</p>
+</div><div class="cl-preview-section"><p>这种做法好处显而易见，前面提到的问题均得到解决，还带来另一个好处：内存起始地址均以计算机字为单位对齐。计算机以 <strong>字</strong> ( <em>word</em> )为单位访问内存，因此内存以字对齐可提升内存读写速度。字大小从早期硬件的 <em>2</em> 字节、<em>4</em> 字节，慢慢发展到现在的 <em>8</em> 字节，甚至 <em>16</em> 字节。</p>
+</div><div class="cl-preview-section"><p>当然了，有得必有失，内存利用率成了被牺牲的因素，平均利用率为 <em>(1+8)/2/8*100%</em> ，大约只有 <em>56.25%</em> 。</p>
+</div><div class="cl-preview-section"><p>乍然一看，内存利用率有些惨不忍睹，但这只是 8 字节内存块的平均利用率。如果考虑所有内存块的平均利用率，其实数值并不低——可以达到 98.65% 呢！计算方法如下：</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token comment"># 请求内存总量</span>
+total_requested <span class="token operator">=</span> <span class="token number">0</span>
+<span class="token comment"># 实际分配内存总量</span>
+total_allocated <span class="token operator">=</span> <span class="token number">0</span>
+
+<span class="token comment"># 请求内存从1到512字节</span>
+<span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">513</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    total_requested <span class="token operator">+=</span> i
+    <span class="token comment"># 实际分配内存为请求内存向上对齐为8的整数倍</span>
+    total_allocated <span class="token operator">+=</span> <span class="token punctuation">(</span>i<span class="token operator">+</span><span class="token number">7</span><span class="token punctuation">)</span><span class="token operator">//</span><span class="token number">8</span><span class="token operator">*</span><span class="token number">8</span>
+
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'{:.2f}%'</span><span class="token punctuation">.</span><span class="token builtin">format</span><span class="token punctuation">(</span>total_requested<span class="token operator">/</span>total_allocated<span class="token operator">*</span><span class="token number">100</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token comment"># 98.65%</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="内存池实现">内存池实现</h2>
+</div><div class="cl-preview-section"><h3 id="pool">pool</h3>
+</div><div class="cl-preview-section"><p>铺垫了这么多，终于可以开始研究源码，窥探 <em>Python</em> 内存池实现的秘密了，源码位于 <em>Objects/obmalloc.c</em> 。在源码中，我们发现对于 <em>64</em> 位系统，<em>Python</em> 将内存块大小定义为 <em>16</em> 字节的整数倍，而不是上述的 <em>8</em> 字节：</p>
+</div><div class="cl-preview-section"><pre class=" language-c"><code class="prism  language-c"><span class="token macro property">#<span class="token directive keyword">if</span> SIZEOF_VOID_P &gt; 4</span>
+<span class="token macro property">#<span class="token directive keyword">define</span> ALIGNMENT              16               </span><span class="token comment">/* must be 2^N */</span>
+<span class="token macro property">#<span class="token directive keyword">define</span> ALIGNMENT_SHIFT         4</span>
+<span class="token macro property">#<span class="token directive keyword">else</span></span>
+<span class="token macro property">#<span class="token directive keyword">define</span> ALIGNMENT               8               </span><span class="token comment">/* must be 2^N */</span>
+<span class="token macro property">#<span class="token directive keyword">define</span> ALIGNMENT_SHIFT         3</span>
+<span class="token macro property">#<span class="token directive keyword">endif</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>为画图方便，我们仍然假设内存块为 8 字节的整数倍，即(实际上，这些宏定义也是可配置的)：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism #  language-c"><span class="token macro property">#<span class="token directive keyword">define</span> ALIGNMENT               8</span>
+<span class="token macro property">#<span class="token directive keyword">define</span> ALIGNMENT_SHIFT         3</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>下面这个宏将类别编号转化成块大小，例如将类别 <em>1</em> 转化为块大小 <em>16</em> ：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism #  language-c"><span class="token macro property">#<span class="token directive keyword">define</span> INDEX2SIZE(I) (((uint)(I) + 1) &lt;&lt; ALIGNMENT_SHIFT)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><em>Python</em> 每次申请一个 <strong>内存页</strong> ( <em>page</em> )，然后将其划分为统一尺寸的 <strong>内存块</strong> ( <em>block</em> )，一个内存页大小是 <em>4K</em> ：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism #  language-c"><span class="token macro property">#<span class="token directive keyword">define</span> SYSTEM_PAGE_SIZE        (4 * 1024)</span>
+<span class="token macro property">#<span class="token directive keyword">define</span> SYSTEM_PAGE_SIZE_MASK   (SYSTEM_PAGE_SIZE - 1)</span>
+
+<span class="token macro property">#<span class="token directive keyword">define</span> POOL_SIZE               SYSTEM_PAGE_SIZE</span>
+<span class="token macro property">#<span class="token directive keyword">define</span> POOL_SIZE_MASK          SYSTEM_PAGE_SIZE_MASK</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><em>Python</em> 将内存页看做是由一个个内存块组成的池子( <em>pool</em> )，内存页开头是一个 <em>pool_header</em> 结构，用于组织当前页，并记录页中的空闲内存块：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token comment">/* Pool for small blocks. */</span>
+<span class="token keyword">struct</span> pool_header <span class="token punctuation">{</span>
+    <span class="token keyword">union</span> <span class="token punctuation">{</span> block <span class="token operator">*</span>_padding<span class="token punctuation">;</span>
+            uint count<span class="token punctuation">;</span> <span class="token punctuation">}</span> ref<span class="token punctuation">;</span>          <span class="token comment">/* number of allocated blocks    */</span>
+    block <span class="token operator">*</span>freeblock<span class="token punctuation">;</span>                   <span class="token comment">/* pool's free list head         */</span>
+    <span class="token keyword">struct</span> pool_header <span class="token operator">*</span>nextpool<span class="token punctuation">;</span>       <span class="token comment">/* next pool of this size class  */</span>
+    <span class="token keyword">struct</span> pool_header <span class="token operator">*</span>prevpool<span class="token punctuation">;</span>       <span class="token comment">/* previous pool       ""        */</span>
+    uint arenaindex<span class="token punctuation">;</span>                    <span class="token comment">/* index into arenas of base adr */</span>
+    uint szidx<span class="token punctuation">;</span>                         <span class="token comment">/* block size class index        */</span>
+    uint nextoffset<span class="token punctuation">;</span>                    <span class="token comment">/* bytes to virgin block         */</span>
+    uint maxnextoffset<span class="token punctuation">;</span>                 <span class="token comment">/* largest valid nextoffset      */</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li><em>count</em> ，已分配出去的内存块个数；</li>
+<li><em>freeblock</em> ，指向空闲块链表的第一块；</li>
+<li><em>nextpool</em> ，用于将 <em>pool</em> 组织成链表的指针，指向下一个 <em>pool</em> ；</li>
+<li><em>prevpool</em> ，用于将 <em>pool</em> 组织成链表的指针，指向上一个 <em>pool</em> ；</li>
+<li><em>szidx</em> ，尺寸类别编号；</li>
+<li><em>nextoffset</em> ，下一个未初始化内存块的偏移量；</li>
+<li><em>maxnextoffset</em> ，合法内存块最大偏移量；</li>
+</ul>
+</div><div class="cl-preview-section"><p>当 <em>Python</em> 通过内存池申请内存时，如果没有可用 <em>pool</em> ，内存池将新申请一个 <em>4K</em> 页，并进行初始化。注意到，由于新内存页总是由内存请求触发，因此初始化时第一个内存块便已经被分配出去了：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583af10001a0dc08400920.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>随着内存分配请求的发起，空闲块将被分配出去。<em>Python</em> 将从灰色区域取出下一个作为空闲块，直到灰色块用光：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583afb0001f77a04930918.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>当有内存块被释放时，比如第一块，<em>Python</em> 将其链入空闲块链表头。请注意空闲块链表的组织方式——每个块头部保存一个 <em>next</em> 指针，指向下一个空闲块：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583b040001d89a04960921.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>这样一来，一个 <em>pool</em> 在其生命周期内，可能处于以下 <em>3</em> 种状态(空闲内存块列表结构被省略，请自行脑补)：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583b0c00016c7b08090920.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li><em>empty</em> ，<strong>完全空闲</strong> 状态，内部所有内存块都是空闲的，没有任何块已被分配，因此 <em>count</em> 为 <em>0</em> ；</li>
+<li><em>used</em> ，<strong>部分使用</strong> 状态，内部内存块部分已被分配，但还有另一部分是空闲的；</li>
+<li><em>full</em> ，<strong>完全用满</strong> 状态，内部所有内存块都已被分配，没有任何空闲块，因此 <em>freeblock</em> 为 <em>NULL</em> ；</li>
+</ul>
+</div><div class="cl-preview-section"><p>为什么要讨论 <em>pool</em> 状态呢？——因为 <em>pool</em> 的状态决定 <em>Python</em> 对它的处理策略：</p>
+</div><div class="cl-preview-section"><ul>
+<li>如果 <em>pool</em> 完全空闲，<em>Python</em> 可以将它占用的内存页归还给操作系统，或者缓存起来，后续需要分配新 <em>pool</em> 时直接拿来用；</li>
+<li>如果 <em>pool</em> 完全用满，<em>Python</em> 就无须关注它了，将它丢到一边；</li>
+<li>如果 <em>pool</em> 只是部分使用，说明它还有内存块未分配，<em>Python</em> 则将它们以 <strong>双向循环链表</strong> 的形式组织起来；</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="可用-pool-链表">可用 pool 链表</h3>
+</div><div class="cl-preview-section"><p>由于 <em>used</em> 状态的 <em>pool</em> 只是部分使用，内部还有内存块未分配，将它们组织起来可供后续分配。<em>Python</em> 通过 <em>pool_header</em> 结构体中的 <em>nextpool</em> 和 <em>prevpool</em> 指针，将他们连成一个双向循环链表：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583b150001538c14790915.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>注意到，同个可用 <em>pool</em> 链表中的内存块大小规格都是一样的，上图以 <em>16</em> 字节类别为例。另外，为了简化链表处理逻辑，<em>Python</em> 引入了一个虚拟机节点，这是一个常见的 <em>C</em> 语言链表实现技巧。一个空的 <em>pool</em> 链表是这样的，判断条件是 <code>pool-&gt;nextpool == pool</code> ：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583b1d0001b3dc02900474.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>虚拟该节点只参与链表维护，并不实际管理内存块。因此，无须为虚拟节点分配一个完整的 <em>4K</em> 内存页，<em>64</em> 字节的 <em>pool_header</em> 结构体足矣。实际上，<em>Python</em> 作者们更抠，只分配刚好足够 <em>nextpool</em> 和 <em>prevpool</em> 指针用的内存，手法巧妙得令人瞠目结舌，我们稍后再表。</p>
+</div><div class="cl-preview-section"><p><em>Python</em> 优先从链表第一个 <em>pool</em> 分配内存块，如果 <em>pool</em> 用满则将其从链表中剔除：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583b250001d8c010710919.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>当一个内存块( <em>block</em> )被回收，<em>Python</em> 根据块地址计算得到 <em>pool</em> 地址。计算方法是大概是这样的：将 <em>block</em> 地址对齐为内存页( <em>pool</em> )尺寸的整数倍，便得到 <em>pool</em> 地址，具体请参看源码中的宏定义 <em>POOL_ADDR</em> 。</p>
+</div><div class="cl-preview-section"><p>得到 <em>pool</em> 地址后，<em>Python</em> 将空闲内存块插到空闲内存块链表头部。如果 <em>pool</em> 状态是由 <strong>完全用满</strong> ( <em>full</em> )变为 <strong>可用</strong> ( <em>used</em> )，<em>Python</em> 还会将它插回可用 <em>pool</em> 链表头部：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583b2d0001898d12530916.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>插到可用 <em>pool</em> 链表头部是为了保证比较满的 <em>pool</em> 在链表前面，以便优先使用。位于尾部的 <em>pool</em> 被使用的概率很低，随着时间的推移，更多的内存块被释放出来，慢慢变空。因此，<em>pool</em> 链表明显头重脚轻，靠前的 <em>pool</em> 比较满，而靠后的 <em>pool</em> 比较空，正如上图所示。</p>
+</div><div class="cl-preview-section"><p>当一个 <em>pool</em> 所有内存块( <em>block</em> )都被释放，状态就变为 <strong>完全空闲</strong>( <em>empty</em> )。<em>Python</em> 会将它移出链表，内存页可能直接归还给操作系统，或者缓存起来以备后用：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583b36000120f112090902.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>实际上，<em>pool</em> 链表任一节点均有机会完全空闲下来。这由概率决定，尾部节点概率最高，因此上图就这么画了。</p>
+</div><div class="cl-preview-section"><h3 id="pool-链表数组">pool 链表数组</h3>
+</div><div class="cl-preview-section"><p><em>Python</em> 内存池管理内存块，按照尺寸分门别类进行。因此，每种规格都需要维护一个独立的可用 <em>pool</em> 链表。如果以 <em>8</em> 字节为梯度，内存块规格可分 <em>64</em> 种之多(见上表)。</p>
+</div><div class="cl-preview-section"><p>那么，如何组织这么多 <em>pool</em> 链表呢？最直接的方法是分配一个长度为 <em>64</em> 的虚拟节点数组：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583b400001180c11200921.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>如果程序请求 <em>5</em> 字节，<em>Python</em> 将分配 <em>8</em> 字节内存块，通过数组第 <em>0</em> 个虚拟节点即可找到 <em>8</em> 字节 <em>pool</em> 链表；如果程序请求 <em>56</em> 字节，<em>Python</em> 将分配 <em>64</em> 字节内存块，则需要从数组第 <em>7</em> 个虚拟节点出发；其他以此类推。</p>
+</div><div class="cl-preview-section"><p>那么，虚拟节点数组需要占用多少内存呢？这不难计算：<span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mn>4</mn><mn>8</mn><mo>∗</mo><mn>6</mn><mn>8</mn><mo>=</mo><mn>3</mn><mn>0</mn><mn>7</mn><mn>2</mn><mo>=</mo><mn>3</mn><mi>K</mi></mrow><annotation encoding="application/x-tex">48 * 68 = 3072 = 3K</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.68333em;"></span><span class="strut bottom" style="height: 0.68333em; vertical-align: 0em;"></span><span class="base"><span class="mord mathrm">4</span><span class="mord mathrm">8</span><span class="mbin">∗</span><span class="mord mathrm">6</span><span class="mord mathrm">8</span><span class="mrel">=</span><span class="mord mathrm">3</span><span class="mord mathrm">0</span><span class="mord mathrm">7</span><span class="mord mathrm">2</span><span class="mrel">=</span><span class="mord mathrm">3</span><span class="mord mathit" style="margin-right: 0.07153em;">K</span></span></span></span></span></p>
+</div><div class="cl-preview-section"><p>哟，看上去还不少！<em>Python</em> 作者们可没这么大方，他们还从中抠出三分之二，具体是如何做到的呢？</p>
+</div><div class="cl-preview-section"><p>您可能已经注意到了，虚拟节点只参与维护链表结构，并不管理内存页。因此，虚拟节点其实只使用 <em>pool_header</em> 结构体中参与链表维护的 <em>nextpool</em> 和 <em>prevpool</em> 这两个指针字段：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583b57000144bc06200501.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>为避免浅蓝色部分内存浪费，<em>Python</em> 作者们将虚拟节点想象成一个个卡片，将深蓝色部分首尾相接，最终转换成一个纯指针数组。数组在 <em>Objects/obmalloc.c</em> 中定义，即 <em>usedpools</em> 。每个虚拟节点对应数组里面的两个指针：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583b5f0001337a15590795.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>接下来的一切交给想象力——将两个指针前后的内存空间想象成自己的，这样就得到一个虚无缥缈的却非常完整的 <em>pool_header</em> 结构体（如下图左边虚线部分），我们甚至可以使用这个 <em>pool_header</em> 结构体的地址！由于我们不会访问除了 <em>nextpool</em> 和 <em>prevpool</em> 指针以外的字段，因此虽有内存越界，却也无伤大雅。</p>
+</div><div class="cl-preview-section"><p>下图以一个代表空链表的虚拟节点为例，<em>nextpool</em> 和 <em>prevpool</em> 指针均指向 <em>pool_header</em> 自己。虽然实际上 <em>nextpool</em> 和 <em>prevpool</em> 都指向了数组中的其他虚拟节点，但逻辑上可以想象成指向当前的 <em>pool_header</em> 结构体：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f583b660001963211110585.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>卧槽，这移花接木大法也太牛逼了吧！非常享受研究源码的过程，当年研究 <em>Linux</em> 内核数据结构中的链表实现时，也是大开眼界！</p>
+</div><div class="cl-preview-section"><p>经过这般优化，数组只需 <em>16*64 = 1024</em> 字节的内存空间即可，折合 <em>1K</em> ，节省了三分之二。为了节约这 <em>2K</em> 内存，代码变得难以理解。我第一次阅读源码时，在纸上花了半天才完全弄懂这个思路。</p>
+</div><div class="cl-preview-section"><p>效率与代码可读性有时是一对矛盾，如何选择见仁见智。不过，如果是日常项目，我多半不会为了 <em>2K</em> 内存而引入复杂性。<em>Python</em> 作为基础工具，能省则省。当然这个思路也有可能是在内存短缺的年代引入的，然后就这么一直用着。</p>
+</div><div class="cl-preview-section"><p>不管怎样，我还是决定将它写出来。如果你有兴趣研究 <em>Objects/obmalloc.c</em> 中的源码，就不用像我一样费劲，瞎耽误功夫。</p>
+</div><div class="cl-preview-section"><p>因篇幅关系，源码无法一一列举。对源码感兴趣的同学，请自己动手，丰衣足食。结合图示阅读，应该可以做到事半功倍。什么，不知道从何入手？——那就紧紧抓住这两个函数吧，一个负责分配，一个负责释放：</p>
+</div><div class="cl-preview-section"><ul>
+<li><em>pymalloc_alloc</em></li>
+<li><em>pymalloc_free</em></li>
+</ul>
+</div><div class="cl-preview-section"><p>虽然本节研究了很多东西，但还无法涵盖 <em>Python</em> 内存池的全部秘密，<em>pool</em> 的管理同样因篇幅关系无法展开。后续有机会我会接着写，感兴趣的童鞋请关注我。等不及？——源码欢迎您！</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5f58379a00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6814">
+						<img src="https://img1.mukewang.com/5f3dd00b0001ad3625601600-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">纪老猴子_2020</h4>
+						<div class="comment-text">虚拟节点因为不需要保存内存页的细节，仅仅将包含相同大小内存的多个内存页组织起来，因此仅仅需要一个prev和next字段，其他字段不需要。Python的作者考虑到这点，来了一招移花接木，这种写法有点像OpenMPI源码中的freelist，将数组组织成链表，只不过Python源码中的写法更令人惊叹。从老师本讲展示的Python源码中的链表结构，应该和Linux Kernel中的list.h差不多，尤其是当链表中没有任何元素时，next和precv字段都指向自己，我们在纯C项目中经常用到Linux Kernel的list.h作为链表实现，那个container_of宏写的很神奇。</div>
+						<div>
+							
+								<div class="reply">讲师回复：对，让我大呼过瘾的正是container_of宏。Linux内核链表这种写法好处明显：不需要为每一种结构体都写一套链表操作！链表核心操作与特定的类型完全解耦，只需实现一次，就可无限使用！</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-18</span>
+						<a href="/read/commentdetail/6814">
+							<span class="icon r"><i class="imwap-comment"></i><em>2</em></span>
+						</a>
+						<span data-cid="6814" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6808">
+						<img src="https://img2.mukewang.com/5b8cf1810001c0b302000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕粉7273994</h4>
+						<div class="comment-text">好文 在网上翻来覆去找都是互相复制黏贴的东西 这种文章太难得了</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-17</span>
+						<a href="/read/commentdetail/6808">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6808" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6792">
+						<img src="https://img.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">Kada8109531</h4>
+						<div class="comment-text">请问，1/8/2/8是怎么计算的呀？</div>
+						<div>
+							
+								<div class="reply">讲师回复：你是指(1+8)/2/8吗？长度为8的内存块可以被当做1、2、……、8字节被申请和使用。假设申请尺寸是完全随机的，8字节中只有(1+8)/2是被利用的，其余的都是被浪费的。因此利用率是(1+8)/2/8*100% 。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-15</span>
+						<a href="/read/commentdetail/6792">
+							<span class="icon r"><i class="imwap-comment"></i><em>4</em></span>
+						</a>
+						<span data-cid="6792" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6784">
+						<img src="https://img2.mukewang.com/569a4bc5000101d901800180-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">西毒欧阳锋</h4>
+						<div class="comment-text">极为精彩，可以考虑出书。毕竟那本python2写的源码剖析的书有点老。</div>
+						<div>
+							
+								<div class="reply">讲师回复：感谢！如果效果不错，我们会考虑出书，到时记得要来捧场哈~</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-14</span>
+						<a href="/read/commentdetail/6784">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6784" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6780">
+						<img src="https://img.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕九州5232177</h4>
+						<div class="comment-text">老师写的非常棒，每篇都在仔细学习。</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-14</span>
+						<a href="/read/commentdetail/6780">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6780" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=76">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '41 小块内存池如何优化内存分配效率？',
+					'CID': '1937',
+					'Teacher': 'fasionchan'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "41 小块内存池如何优化内存分配效率？",
+                    desc: "突破技术瓶颈，迈向更高岗位",
+                    imgUrl: 'https:https://img.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/76',
+                    link: 'https://m.imooc.com/read/76'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

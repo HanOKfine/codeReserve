@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>06 内存分配与垃圾回收：Python 在垃圾回收中如何解决循环引用问题？</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="揭开被“简单易学”掩盖的Python真相">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "4";
+	var chapter_id = "2140";
+	var chapter_title = "06 内存分配与垃圾回收：Python 在垃圾回收中如何解决循环引用问题？";
+	var aid = "79";
+	var a_name = "Python 核心技术精讲";
+	var a_price = "78.00";
+	var a_pic = "https://img.mukewang.com/5ee98cca00018e2a05400720.jpg";
+	var userId = 0;
+
+	var column_id = '79';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-17&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			06 内存分配与垃圾回收：Python 在垃圾回收中如何解决循环引用问题？
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5ef94af9000112bf06400427.jpg')"></div>
+	
+	
+		<a href="/read/79">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5edcf963000148bc05200501-40-40.jpg" alt="郭元锴">
+				<h3>Python 核心技术精讲</h3>
+				<p>郭元锴 · BAT高级研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">一个人追求的目标越高，他的才力就发展得越快，对社会就越有益。<p class="author">——高尔基</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="引言">引言</h2>
+</div><div class="cl-preview-section"><p>能否写出高质量的代码是衡量一个软件工程师（ Software Engineer ）是否优秀的重要依据，而高质量代码的一个重要特质便是能够合理有效的利用内存。为了提高 Python 程序的内存利用率，了解和掌握 Python 内存管理的基本原理是必不可少的。本小节，我们便从内存入手，对 Python 中的内存分配和垃圾回收机制进行着重讲解。</p>
+</div><div class="cl-preview-section"><h2 id="内存与内存管理简介">内存与内存管理简介</h2>
+</div><div class="cl-preview-section"><h3 id="内存是什么？">内存是什么？</h3>
+</div><div class="cl-preview-section"><p>从计算机存储器的作用来讲，存储器可以分为主存储器，辅助存储���和缓冲存储器。</p>
+</div><div class="cl-preview-section"><p>其中主存储器，也称主存、内存或可执行存储器，是与 CPU 直接进行信息交换的存储器，它的读写速度相对较快，容量相对较小，通常用来保存进程运行时的程序和相应数据以供 CPU 使用；而辅存不能与 CPU 直接进行信息交换，它的容量较大，读写速度相对较慢。缓冲存储器常用于两个速度不同的部件之间，比如 CPU 和主存之间设置的高速缓冲存储 Cache（也可将内存的概念扩展为主存和高速缓冲存储器的合集）。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/wiki/5ed3c298094fdde509970258.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h3 id="操作系统的内存管理">操作系统的内存管理</h3>
+</div><div class="cl-preview-section"><p>由于内存的容量有限，很难承载系统以及用户进程所需的全部信息，所以操作系统需要对内存空间进行存储管理。在操作系统层面上内存管理的实现相当复杂，其大致功能包括内存空间的划分与动态分配、回收、扩充，以及存储保护，地址转换等等。</p>
+</div><div class="cl-preview-section"><h3 id="进程内的内存管理">进程内的内存管理</h3>
+</div><div class="cl-preview-section"><p>操作系统对各个进程的内存进行管理，同时我们也需要管理我们编写的程序所对应进程内的内存。从可用内存中申请内存并且具有足够内存来进行相关操作，以及在适当的时间释放内存，这些都是我们的程序和系统能够正常运行的前提。</p>
+</div><div class="cl-preview-section"><p>在 C / C++ 中，我们需要手动的进行内存管理，比如 C 语言中通过 <code>malloc</code> 和 <code>free</code> 函数来申请给定字节数的内存以及释放对应的��存。但在 Python 中，我们无须手动进行内存的申请和释放，Python 在内部帮我们完成了大量涉及到内存管理的操作，包括内存分配及垃圾回收。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/wiki/5ed3c2a6097f512007770383.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="内存分配">内存分配</h2>
+</div><div class="cl-preview-section"><h3 id="内存池机制">内存池机制</h3>
+</div><div class="cl-preview-section"><h4 id="什么是-pymalloc-？">什么是 PyMalloc ？</h4>
+</div><div class="cl-preview-section"><p>在 Python 中，有很多常用的数据结构，包括列表、字典等。比如在列表中，我们不仅可以保存其他不同类型的对象，而且可以非常方便的使用 <code>append</code>、<code>extend</code> 等方法对其进行动态的扩充。针对这些常用对象的一系列操作，会在 Python 中造成���存的频繁分配和释放，同时像 <code>int</code>、<code>list</code> 等 Python 对象的分配和释放通常涉及到的数据量相对较小，因此 Python 在内部引入了内存池机制，实现了小块内存的管理器（称为  PyMalloc ）用于提高处理小块内存的效率，这样避免了在底层频繁的 <code>malloc</code> 和 <code>free</code> 操作对效率带来的影响。</p>
+</div><div class="cl-preview-section"><h4 id="分配策略">分配策略</h4>
+</div><div class="cl-preview-section"><p>在内存分配中，Python 以 512 bytes 为界限对大内存和小内存进行划分，不超过 512 bytes 的内存申请，会通过 PyMalloc 管理器进行处理，超过 512 bytes 的内存申请，则会通过 C 中的 <code>malloc</code> 来进行处理。在管理器的内部，主要包括 <code>block</code>、<code>pool</code>、<code>arena</code> 层级， 其中 <code>block</code>是 Python 内存管理中的最小单元，一个 <code>pool</code> 中包含多个 <code>block</code>，多个 <code>pool</code> 构成一个 <code>arena</code>。 同时，由于内存池机制，Python 并不会将释放的内存立即归还操作系统。</p>
+</div><div class="cl-preview-section"><h3 id="缓冲池机制">缓冲池机制</h3>
+</div><div class="cl-preview-section"><p>在内存池机制的基础之上，Python 为了提高常用对象的创建和释放效率，又进一步对整数、字符串等对象建立了对象缓冲池。比如对于 [-5, 256] 内的小整数，Python 已经在内部创建好了对应的小整数对象的缓冲池。</p>
+</div><div class="cl-preview-section"><h2 id="垃圾回收">垃圾回收</h2>
+</div><div class="cl-preview-section"><p>垃圾回收是一种自动回收内存的技术，会将不再被使用的内存空间进行释放。在 CPython 中，垃圾回收主要是通过引用计数、标记清除及分代回收来完成的。使用引用计数来检测并清除不可访问的对象（ inaccessible objects ），并结合标记清除及分代回收来收集、定期检测及清除具有引用循环的对象。</p>
+</div><div class="cl-preview-section"><p>在 CPython 之外的一些其他实现中，它们的垃圾回收机制和 CPython 通常会有所不同，比如 PyPy 或 Jython。一些依赖 CPython 中引用计数的代码在这些实现下可能会出现问题，比如在 CPython 中使用 <code>open()</code> 打开相关文件后，可以不用显式的关闭它：</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token keyword">for</span> line <span class="token keyword">in</span> <span class="token builtin">open</span><span class="token punctuation">(</span><span class="token builtin">file</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+	do_something_with_line<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>但在其他实现中如果不显式的关闭打开的文件，则有可能会出现文件描述符耗尽的情况。如果想要你的代码移植性更好，可以使用下面 <code>with</code> 语句的方法或者显式的关闭文件，这样代码不但不依赖于任何实现，从而在可移植性和通用性上更好。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token keyword">with</span> <span class="token builtin">open</span><span class="token punctuation">(</span><span class="token builtin">file</span><span class="token punctuation">)</span> <span class="token keyword">as</span> f<span class="token punctuation">:</span>
+    <span class="token keyword">for</span> line <span class="token keyword">in</span> f<span class="token punctuation">:</span>
+	    do_something_with_line<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>垃圾回收机制虽然隐藏在 Python 内部，但是它非常重要，相比于 C 程序员手动进行内存的申请和释放（可能会造成内存泄露等相关问题），Python 的垃圾回收机制帮我们在背后完成了大量工作。通过下面几个方面，我们逐步了解 Python 中的垃圾回收机制。</p>
+</div><div class="cl-preview-section"><h3 id="python-中的引用关系：名字、对象、引用">Python 中的引用关系：名字、对象、引用</h3>
+</div><div class="cl-preview-section"><p>想要理解 Python 的垃圾回收机制，需要先理解 Python 中名字和对象之间的引用关系。</p>
+</div><div class="cl-preview-section"><p>我们先来看看在 C 语言中有关变量声明等过程的一段代码:</p>
+</div><div class="cl-preview-section"><pre class=" language-c"><code class="prism  language-c"> <span class="token keyword">int</span> a <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+ a <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>第一行表示声明及初始化变量，即为变量创建和标记存储空间，并指定了初始值；第二行表示为变量重新赋值。整个过程可以使用下图来表明，可以看到的是，在我们给变量重新赋值后，相同地址上的值被修改为 2。变量名 <code>a</code> 可称为标识符（在这里我们可以把变量理解为一块内存，把变量名理解为内存别名），声明过程把标识符和内存中某个特定的位置关联了起来（同时也确定了该位置存储的数据类型）。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/wiki/5ed3c2b909e1813a06400391.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>如果同样功能的代码，我们在 Python 下应该是怎样的过程？</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python">a <span class="token operator">=</span> <span class="token number">1</span>
+a <span class="token operator">=</span> <span class="token number">2</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在下图中便可以说明，这个过程显然和上图有很大区别。详细的说，在 Python 中，我们可把变量名称为名字（name），把对象理解为分配的一块内存，名字和对象之间的关联关系称为引用（有 C 语言基础的同学一定会发现，这种引用关系和 C 语言中的指针非常类似）。所以我们重新赋值，修改的是引用关系，名字 <code>a</code> 重新关联到另外一个对象 <code>2</code> 上，而不是修改原来的对象 <code>1</code> ，正如下图所示。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/wiki/5ed3c2f409266d3d04670402.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>注意，Python 中的名字和上面提到 C 语言中的标识符，我们可以把它们都理解为变量名，但在两种语言中，对变量名的处理方式是不同的（这也是这里我们选择把它们的名称区分开的原因，都称为变量名或许会造成一种理解上的困惑）。C 语言中的标识符相当于内存的别称，在执行过程中会被替代；而在 Python 中，名字会参与到运行过程中，并且名字和对象的映射关系会存放在命名空间中。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> a <span class="token operator">=</span> <span class="token number">1</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">globals</span><span class="token punctuation">(</span><span class="token punctuation">)</span>  <span class="token comment"># 以字典形式返回全局命名空间</span>
+<span class="token punctuation">{</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">,</span> <span class="token string">'a'</span><span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="引用计数（reference-counting）">引用计数（Reference Counting）</h3>
+</div><div class="cl-preview-section"><h4 id="基本概念">基本概念</h4>
+</div><div class="cl-preview-section"><p>在理解了引用的概念之后，引用计数又是什么呢？引用计数是一种内存管理技术，通过对对象的引用计数进行跟踪实现自动的内存管理，Python 的垃圾回收便是以引用计数为主的。具体的说，对象的引用计数随着程序的运行进行变动，当对象的引用计数变为零时，对应的内存便会被释放。可以通过 <code>sys.getrefcount</code> 来查看某个对象的引用计数。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">import</span> sys
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> a <span class="token operator">=</span> <span class="token string">"hello world"</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> sys<span class="token punctuation">.</span>getrefcount<span class="token punctuation">(</span>a<span class="token punctuation">)</span>  <span class="token comment"># 输出结果会比我们预期多1，因为a在sys.getrefcount()中作为参数也被引用了一次</span>
+<span class="token number">2</span>
+</code></pre>
+</div><div class="cl-preview-section"><h4 id="引用计数的实现">引用计数的实现</h4>
+</div><div class="cl-preview-section"><p>在 Python 的对象实现中，每个对象中都持有一个统计引用次数的计数器，当该计数器变为 0 时，对应对象的内存空间就会被回收。感兴趣的同学可以参考源码 <a href="https://github.com/python/cpython/blob/master/Include/object.h"><code>object.h</code></a> 中的 <code>PyObject</code> ，它是 Python 对象系统中最基础的部分，可以看到它的一个成员便是引用计数变量 <code>ob_refcnt</code>。</p>
+</div><div class="cl-preview-section"><pre class=" language-c"><code class="prism  language-c"><span class="token keyword">typedef</span> <span class="token keyword">struct</span> _object <span class="token punctuation">{</span>
+    <span class="token comment">// 省略部分代码</span>
+    Py_ssize_t ob_refcnt<span class="token punctuation">;</span>
+    <span class="token keyword">struct</span> _typeobject <span class="token operator">*</span>ob_type<span class="token punctuation">;</span>
+<span class="token punctuation">}</span> PyObject<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><h4 id="引用计数的问题">引用计数的问题</h4>
+</div><div class="cl-preview-section"><p>首先，引用计数在原理和实现上相对简单，并且延迟低、实时性强（计数变为 0 时便会立即释放内存），并且对于内存的回收分布在程序的运行时，不会造成瞬时的卡顿。但同时引用计数也导致了较多的空间占用（前文提到的每个对象都有持有一个引用计数变量 <code>ob_refcnt</code>），频繁的引用计数增减。与此同时，引用计数还存在两个相对严重的问题：</p>
+</div><div class="cl-preview-section"><ul>
+<li>引用计数无法处理循环引用。</li>
+<li>引用计数是非线程安全的（这个问题，我们会在 GIL 相关的小节中详细说明）。</li>
+</ul>
+</div><div class="cl-preview-section"><h4 id="循环引用">循环引用</h4>
+</div><div class="cl-preview-section"><p>什么是循环引用呢？我们先来看一段代码：</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">class</span> <span class="token class-name">Container</span><span class="token punctuation">:</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>     <span class="token keyword">def</span> <span class="token function">point</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">:</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>         self<span class="token punctuation">.</span>point <span class="token operator">=</span> value
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>         
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> container_one <span class="token operator">=</span> Container<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> container_two <span class="token operator">=</span> Container<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> container_one<span class="token punctuation">.</span>point<span class="token punctuation">(</span>container_two<span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> container_two<span class="token punctuation">.</span>point<span class="token punctuation">(</span>container_one<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这里我们可以使用 <code>objgraph</code> 来可视化我们上述创建的对象（<code>objgraph</code>是一个用于定位内存泄露的工具），大家是否还得在虚拟环境下安装第三方库的方法：</p>
+</div><div class="cl-preview-section"><pre class=" language-bash"><code class="prism  language-bash"><span class="token comment"># 在终端中进入虚拟环境</span>
+workon python-core-tech
+<span class="token comment"># 安装第三方库</span>
+pip <span class="token function">install</span> objgraph
+<span class="token comment"># 下面的库会帮助我们生成可视化图片</span>
+<span class="token function">sudo</span> apt <span class="token function">install</span> graphvi
+
+</code></pre>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">import</span> objgraph
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> objgraph<span class="token punctuation">.</span>show_backrefs<span class="token punctuation">(</span>container_one<span class="token punctuation">,</span> max_depth<span class="token operator">=</span><span class="token number">4</span><span class="token punctuation">,</span> filename<span class="token operator">=</span><span class="token string">"container.png"</span><span class="token punctuation">)</span>
+Graph written to <span class="token operator">/</span>tmp<span class="token operator">/</span>objgraph<span class="token operator">-</span>o748tdfx<span class="token punctuation">.</span>dot <span class="token punctuation">(</span><span class="token number">31</span> nodes<span class="token punctuation">)</span>
+Image generated <span class="token keyword">as</span> container<span class="token punctuation">.</span>png
+
+</code></pre>
+</div><div class="cl-preview-section"><p>这里我们截取生成图片的一部分，可能有些同学看到下面的图会有一些困惑，不要着急，我们目前只需要定位我们代码中的关键字即可，比如 <code>container_one</code>、<code>container_two</code>、<code>point</code>。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/wiki/5ed3c31c09c169ff05220537.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>我们把上面的关系简化一下便可以得到下图，指向对象的箭头数量可以理解为对象的引用计数， <code>container_one</code>、<code>container_two</code> 的引用计数都为 2。如下图所示，<code>container_one</code>、<code>container_two</code> 之间便构成了循环引用。循环引用是一个对象直接或者间接引用自身，从而在引用关系上构成环状结构��类似 <code>container_one.point(container_one)</code> 就是直接引用自身的一个例子）。另外，在 Python 中我们将能够持有其他对象引用的对象称为容器（ container ），只有容器对象才能造成循环引用。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/wiki/5ed3c3290920829608190508.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>那么循环引用会导致什么问题？我们清除掉命名空间内<code>container_one</code>、<code>container_two</code>的引用。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token keyword">del</span> container_one
+<span class="token keyword">del</span> container_two
+
+</code></pre>
+</div><div class="cl-preview-section"><p>如下图，在上面的引用被解除后，我们预期这两个对象的内存应被回收，但这两个对象由于循环引用而导致其引用计数仍然为1，根据引用计数并不能对其内存进行释放。当这种循环引用的对象达到一定数量后，便会造成比较严重的内存泄露问题。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/wiki/5ed3c33509f75de107020262.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>另外一种常见的循环引用情况是一个序列对象包含自身的引用，比如下面这个例子。可以看到，在这种情况下，Python 会自动将循环引用部分打印为 <code>[...]</code>，从而避免严重的无限循环。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l<span class="token punctuation">.</span>append<span class="token punctuation">(</span>l<span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l
+<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="标记清除（mark-and-sweep）和分代回收（generational）">标记清除（Mark and Sweep）和分代回收（Generational）</h3>
+</div><div class="cl-preview-section"><p>为了解决引用计数在垃圾回收中无法处理循环引用的问题，Python 引入了标记清除和分代回收来检测和打破循环引用 。相对准确的说，标记清除是追踪回收（ Tracing garbage collection ）中的一种基础算法，其涉及到两个主要过程，即标记过程和清除过程，在标记过程中将所有可达（reachable）对象进行标记，在清除过程中将所有未标记的对象进行清除。分代回收则是基于标记清除基础上的，一种空间换时间的实现策略。</p>
+</div><div class="cl-preview-section"><h4 id="分代回收">分代回收</h4>
+</div><div class="cl-preview-section"><p>分代回收将 Python 对象划分成 3 代，包括 0、1、2 代。对于新创建的对象，会被放入 0 代。若一个对象在经过一次垃圾回收后没有被清除，则它会被放入下一代中。对于每一代对象来说，都具有触发垃圾回收的相关阈值（收集频率）。关于这个过程的细节，官方文档中给出了比较明确的描述：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>垃圾回收器把所有对象分类为三代，取决于对象幸存于多少次垃圾回收。新创建的对象会被放在最年轻代（第 <code>0</code> 代）。如果一个对象幸存于一次垃圾回收，则该对象会被放入下一代。第 <code>2</code> 代是最老的一代，因此这一代的对象幸存于垃圾回收后，仍会留在第 <code>2</code> 代。</p>
+<p>为了判定何时需要进行垃圾回收，垃圾回收器会跟踪上一次回收后，分配和释放的对象的数目。当分配对象的数量减去释放对象的数量大于阈值 <em>threshold0</em> 时，回收器开始进行垃圾回收。起初只有第 <code>0</code> 代会被检查。当上一次第 <code>1</code> 代被检查后，第 <code>0</code> 代被检查的次数多于阈值 <em>threshold1</em> 时，第 <code>1</code> 代也会被检查。相似的， <em>threshold2</em> 设置了触发第 <code>2</code> 代被垃圾回收的第 <code>1</code> 代被垃圾回收的次数。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>分代回收的主要目的是降低回收中需要处理的对象数量，提高垃圾回收效率。我们可以使用 <a href="https://docs.python.org/zh-cn/3/library/gc.html#module-gc"><code>gc</code></a> 模块来执行或优化垃圾回收的相关过程，并获取更多的调试信息，比如通过 <code>gc.get_threshold()</code> 来获取当前的回收阈值；通过 <code>gc.disable()</code> 关闭垃圾回收，这通常在程序中确定不存在循环引用时使用。</p>
+</div><div class="cl-preview-section"><p>另外，一个常见的问题是 CPython 在退出时一定会释放所有内存吗？答案是否定的，当 Python 解释器退出时，会进行内存清理，试图释放每个对象的内存，但不一定会释放所有内存，比如全局命名空间中引用的某些对象、循环引用下 C 扩展库中分配的某些内存都有可能不被释放（一部分相关细节可以通过 <a href="https://docs.python.org/zh-cn/3/library/gc.html#gc.garbage"><code>gc.garbage</code></a> 了解）。</p>
+</div><div class="cl-preview-section"><h2 id="总结">总结</h2>
+</div><div class="cl-preview-section"><p>在本小节中，我们从内存出发，对 Python 中的内存分配机制、垃圾回收机制这两个重要的话题进行了一定的讲解。在这两个话题中，涵盖的内容和细节非常多，它们也可能会随着 Python 版本进行变动。同时在小节中一些内容分支的描述上，在讲解内容的同时也想起到抛砖引玉的作用，感兴趣的读者可以阅读更多的资料，并结合源码去探究深层次的实现方式。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5ef94b0a00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/7060">
+						<img src="https://img3.mukewang.com/54586870000183e302200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕粉3135794</h4>
+						<div class="comment-text">“当上一次第 1 代被检查后，第 0 代被检查的次数多于阈值 threshold1 时，第 1 代也会被检查”，这句是写错了，还是我理解问题，读半天没读明白呢？</div>
+						<div>
+							
+								<div class="reply">讲师回复：你好，这句话应该没有写错，可能是官方文档的中文翻译有一些生硬。对于这句话的理解可以参考目前的翻译版本“初始时只有第 0 代会被检查。如果自第 1 代被检查后，第 0 代已被检查超过 threshold1 次，则第 1 代也会被检查。”，更详细的内容可以参考这里：https://docs.python.org/zh-cn/3/library/gc.html#gc.set_threshold。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-10-27</span>
+						<a href="/read/commentdetail/7060">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="7060" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6964">
+						<img src="https://img2.mukewang.com/5b8cea54000110bc02000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕尼黑6511306</h4>
+						<div class="comment-text">您好，我想问一下，为什么用IDE输出 和 终端输出的值不一样，终端输出是2 IDE上是4</div>
+						<div>
+							
+								<div class="reply">讲师回复：同学你好，在单独运行脚本时sys.getrefcount输出为4，这是因为Python的编译及内部优化导致的，由于REPL console中进行了相关的处理，所以我们不会看到这些临时的引用计数，如果想要在运行脚本中输出2，你可以这样编写 `exec(compile(&quot;a = 'Hello World!'&quot;, &quot;&lt;string&gt;&quot;, &quot;exec&quot;));print(sys.getrefcount(a))`。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-10-12</span>
+						<a href="/read/commentdetail/6964">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6964" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6870">
+						<img src="https://img3.mukewang.com/533e4d470001a00a02000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">code_bean</h4>
+						<div class="comment-text">很好的解释了计数原理，涨知识。</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-26</span>
+						<a href="/read/commentdetail/6870">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6870" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6243">
+						<img src="https://img2.mukewang.com/585ca24e0001fd8806400640-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">派森</h4>
+						<div class="comment-text">从来没考虑过内存问题，惭愧</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-21</span>
+						<a href="/read/commentdetail/6243">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6243" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥78.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=79">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '06 内存分配与垃圾回收：Python 在垃圾回收中如何解决循环引用问题？',
+					'CID': '2140',
+					'Teacher': '郭元锴'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "06 内存分配与垃圾回收：Python 在垃圾回收中如何解决循环引用问题？",
+                    desc: "揭开被“简单易学”掩盖的Python真相",
+                    imgUrl: 'https:https://img.mukewang.com/5ee98cca00018e2a05400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5ee98cca00018e2a05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/79',
+                    link: 'https://m.imooc.com/read/79'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

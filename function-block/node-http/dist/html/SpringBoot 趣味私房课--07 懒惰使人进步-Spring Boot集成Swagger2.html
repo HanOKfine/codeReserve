@@ -1,0 +1,967 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>07 懒惰使人进步-Spring Boot集成Swagger2</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="够吃管饱的SpringBoot大餐">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "12";
+	var chapter_id = "1803";
+	var chapter_title = "07 懒惰使人进步-Spring Boot集成Swagger2";
+	var aid = "75";
+	var a_name = "SpringBoot 趣味私房课";
+	var a_price = "58.00";
+	var a_pic = "https://img2.mukewang.com/5e9cfd1f0001ece605400720.jpg";
+	var userId = 0;
+
+	var column_id = '75';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-26&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			07 懒惰使人进步-Spring Boot集成Swagger2
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img1.mukewang.com/5e9cff400001256306400359.jpg')"></div>
+	
+	
+		<a href="/read/75">
+			<div class="course-entry">
+				<img src="https://img1.mukewang.com/5e776f3c000149fd10801080-40-40.jpg" alt="刘水镜">
+				<h3>SpringBoot 趣味私房课</h3>
+				<p>刘水镜 · 知名 A.I. 公司 Java 工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">学习这件事不在乎有没有人教你，最重要的是在于你自己有没有觉悟和恒心。 <p class="author">—— 法布尔</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="swagger诞生">1. Swagger诞生</h2>
+</div><div class="cl-preview-section"><p>Java Web 从最开始的 JSP 到后来加入 Ajax 异步交互，再到现在的前后端分离，后端人员从一开始包揽 HTML、JS、Java 代码到现在更加聚焦于后端业务逻辑。随着开发模式的演变，前后端人员的分工越来越精细，联系也越来越松散，接口文档成了前后端配合的一道关键桥梁。最初，通常的做法是将接口文档写在公司内部的 WIKI 上（如 Confluence ）。但这种做法的致命缺点就是接口文档几乎永远都会落后于实际代码实现。这让我们的开发工作不能顺畅的进行下去，于是我们今天的主角 Swagger 应运而生。</p>
+</div><div class="cl-preview-section"><h2 id="swagger是什么">2. Swagger是什么</h2>
+</div><div class="cl-preview-section"><p>Swagger 是一款用于生成、描述、调用和可视化  RESTful  风格的 Web 服务接口文档的框架。其最大的特点莫过于可以使接口文档与代码实时同步。</p>
+</div><div class="cl-preview-section"><h2 id="整合">3. 整合</h2>
+</div><div class="cl-preview-section"><p>要使用 Swagger ，首先我们需要添加 Swagger 对应的依赖：</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>io.springfox<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>springfox-swagger-ui<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">&gt;</span></span>2.8.0<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>io.springfox<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>springfox-swagger2<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">&gt;</span></span>2.8.0<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>接下来需要添加 Swagger 的基础配置：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Configuration</span>
+<span class="token annotation punctuation">@EnableSwagger2</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SwaggerConfig</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Bean</span>
+    <span class="token keyword">public</span> Docket <span class="token function">createRestApi</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Docket</span><span class="token punctuation">(</span>DocumentationType<span class="token punctuation">.</span>SWAGGER_2<span class="token punctuation">)</span>
+            <span class="token punctuation">.</span><span class="token function">apiInfo</span><span class="token punctuation">(</span><span class="token function">apiInfo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">select</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+            <span class="token punctuation">.</span><span class="token function">apis</span><span class="token punctuation">(</span>RequestHandlerSelectors<span class="token punctuation">.</span><span class="token function">withClassAnnotation</span><span class="token punctuation">(</span>Api<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token punctuation">.</span><span class="token function">paths</span><span class="token punctuation">(</span>PathSelectors<span class="token punctuation">.</span><span class="token function">any</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">private</span> ApiInfo <span class="token function">apiInfo</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">ApiInfoBuilder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">title</span><span class="token punctuation">(</span><span class="token string">"Spring Boot实战"</span><span class="token punctuation">)</span>
+            <span class="token punctuation">.</span><span class="token function">description</span><span class="token punctuation">(</span><span class="token string">"Spring Boot实战的RESTFul接口文档说明"</span><span class="token punctuation">)</span>
+            <span class="token punctuation">.</span><span class="token function">version</span><span class="token punctuation">(</span><span class="token string">"1.0"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>简单说一下第 8 行代码：apis(RequestHandlerSelectors.withClassAnnotation(Api.class)) 。这行代码是告诉 Swagger 要扫描有 <code>@Api</code> 注解的类，可以将 <code>Api.class</code> 替换成 <code>ApiOperation.class</code> 扫描带有 <code>@ApiOperation</code> 注解的方法。当然还可以使用 <code>basePackage()</code>  方法配置 Swagger 需要扫描的包路径。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>最后我们要完善一下之前的接口，加上一些 Swagger 的注解：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Api</span>
+<span class="token annotation punctuation">@RestController</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">HelloController</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@ApiOperation</span><span class="token punctuation">(</span><span class="token string">"Hello Spring Boot 方法"</span><span class="token punctuation">)</span>
+    <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> String <span class="token function">hello</span><span class="token punctuation">(</span><span class="token annotation punctuation">@RequestParam</span><span class="token punctuation">(</span>required <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">)</span> <span class="token annotation punctuation">@ApiParam</span><span class="token punctuation">(</span><span class="token string">"名字"</span><span class="token punctuation">)</span> String name<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>name <span class="token operator">!=</span> null <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span><span class="token string">""</span><span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> <span class="token string">"Hello "</span> <span class="token operator">+</span> name<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> <span class="token string">"Hello Spring Boot"</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="效果">4. 效果</h2>
+</div><div class="cl-preview-section"><p>经过以上三个步骤，我们的 Swagger 就已经集成到我们的工程里了，现在启动工程，然后访问：<a href="http://localhost:8080/swagger-ui.html%E3%80%82">http://localhost:8080/swagger-ui.html。</a> 如果看到如下效果，就说明我们的 Swagger 已经配置成功。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9abdb8000147b917661020.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><blockquote>
+<p>Swagger 的页面分为两部分，最上面是接口的基本信息，如上图所示，包含了项目名称、描述等信息 ：下面是每个接口的具体描述，如接口名字、参数名字、参数类型、是否必填等，还有返回的结果的示例。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>将 <code>Hello Spring Boot</code> 方法展开可以看到该方法的详细描述：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9abd990001e66017200620.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>我们可以看到，该方法有一个参数 <code>name</code> ，点击右上角的 <code>Try it out</code> 我们来测试一下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9abd84000109d117280716.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>在文本框内输入 <code>IMOOC</code> 点击下面的 <code>Execute</code> 按钮看一下调用结果：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ea454e90001ee9c17260972.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>我们看到接口返回状态码为 <code>200</code> ，Response body 中打印出我们刚刚输入的值，OK 接口测试成功！</p>
+</div><div class="cl-preview-section"><h2 id="常用注解">5. 常用注解</h2>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th align="left"><strong>注解</strong></th>
+<th align="left"><strong>作用域</strong></th>
+<th align="left"><strong>说明</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">@Api</td>
+<td align="left">类</td>
+<td align="left">标识类为Swagger资源（Controller）</td>
+</tr>
+<tr>
+<td align="left">@ApiModel</td>
+<td align="left">类</td>
+<td align="left">描述接口实体类（通常为参数或返回值）</td>
+</tr>
+<tr>
+<td align="left">@ApiOperation</td>
+<td align="left">方法</td>
+<td align="left">用于描述接口方法</td>
+</tr>
+<tr>
+<td align="left">@ApiModelProperty</td>
+<td align="left">属性/方法</td>
+<td align="left">描述接口实体属性</td>
+</tr>
+<tr>
+<td align="left">@ApiParam</td>
+<td align="left">参数</td>
+<td align="left">描述接口参数</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>以上为我们最常用的五个注解。在上面的例子中，我们使用了 <code>@Api</code> <code>@ApiOperation</code> <code>@ApiParam</code> 三个注解，另外两个我们会在后面的学习中使用到。</p>
+</div><div class="cl-preview-section"><h2 id="坑">6. 坑</h2>
+</div><div class="cl-preview-section"><p>在 Swagger 的使用过程中，你可能会遇到了一些 “坑”，在这里把出现频率比较高的坑分享出来，提前有个准备，免得到时候掉到坑里上不来。</p>
+</div><div class="cl-preview-section"><h3 id="接口404">6.1 接口404</h3>
+</div><div class="cl-preview-section"><h4 id="现象">现象</h4>
+</div><div class="cl-preview-section"><p>在 Swagger 页面调用接口（在 <code>Try it out</code> 中进行 <code>Execute</code>），返回 404，Request URL 中的地址中间莫名的多了一段路径：<code>/v2/api-docs</code> 例如：</p>
+</div><div class="cl-preview-section"><pre class="  language-http"><code class="prism  language-http"><span class="token header-name keyword">http:</span>//localhost:8080/v2/api-docs/springboot/hello
+</code></pre>
+</div><div class="cl-preview-section"><h4 id="原因">原因</h4>
+</div><div class="cl-preview-section"><p>开始遇到这个问题的时候，百思不得其解，完全没有思路，网上寻找解决方案，根本找不到。升级版本、换浏览器、重启大法��统无效。最后，经过不懈努力与钻研（其实就是多看了浏览器地址栏一眼），发现原来是 Swagger 地址中端口号后面多了一个 <code>/</code> 。</p>
+</div><div class="cl-preview-section"><h4 id="解决方案">解决方案</h4>
+</div><div class="cl-preview-section"><p>检查 Swagger 地址栏中是否多了一个 <code>/</code> ，去掉即可。</p>
+</div><div class="cl-preview-section"><h3 id="unable-to-infer-base-url">6.2 Unable to infer base url</h3>
+</div><div class="cl-preview-section"><h4 id="现象-1">现象</h4>
+</div><div class="cl-preview-section"><p>浏览器中打开 Swagger 的地址，弹出错误提示框，错误信息如下：</p>
+</div><div class="cl-preview-section"><pre><code>Unable to infer base url. This is common when using dynamic servlet registration or when the API is behind an API Gateway. The base url is the root of where all the swagger resources are served. For e.g. if the api is available at http://example.org/api/v2/api-docs then the base url is http://example.org/api/. Please enter the location manually:
+</code></pre>
+</div><div class="cl-preview-section"><h4 id="原因-1">原因</h4>
+</div><div class="cl-preview-section"><p>项目中有使用 <code>@RestControllerAdvice</code> 注解进行全局异常处理，导致 Swagger 失效。</p>
+</div><div class="cl-preview-section"><h4 id="解决方案-1">解决方案</h4>
+</div><div class="cl-preview-section"><p>在全局异常处理类的  <code>@RestControllerAdvice</code>  注解中指定 Controller 的包名即可：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@RestControllerAdvice</span><span class="token punctuation">(</span>basePackages <span class="token operator">=</span> <span class="token string">"com.imooc.springboot.controller"</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="采坑总结">6.3 采坑总结</h3>
+</div><div class="cl-preview-section"><p>在 Swagger 的使用中，如果遇到问题，可以安以下思路去排查：</p>
+</div><div class="cl-preview-section"><p>如果你的 Swagger 地址为：</p>
+</div><div class="cl-preview-section"><pre class="  language-http"><code class="prism  language-http"><span class="token header-name keyword">http:</span>//localhost:8080/swagger-ui.html
+</code></pre>
+</div><div class="cl-preview-section"><p>那么你先访问：</p>
+</div><div class="cl-preview-section"><pre class="  language-http"><code class="prism  language-http"><span class="token header-name keyword">http:</span>//localhost:8080/v2/api-docs
+</code></pre>
+</div><div class="cl-preview-section"><p>看返回的结果是否类似下面的结构：</p>
+</div><div class="cl-preview-section"><pre class="  language-json"><code class="prism  language-json"><span class="token punctuation">{</span>
+  <span class="token string">"swagger"</span><span class="token punctuation">:</span> <span class="token string">"2.0"</span><span class="token punctuation">,</span>
+  <span class="token string">"info"</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+    <span class="token string">"description"</span><span class="token punctuation">:</span> <span class="token string">"Spring Boot实战的RESTFul接口文档说明"</span><span class="token punctuation">,</span>
+    <span class="token string">"version"</span><span class="token punctuation">:</span> <span class="token string">"1.0"</span><span class="token punctuation">,</span>
+    <span class="token string">"title"</span><span class="token punctuation">:</span> <span class="token string">"Spring Boot实战"</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token string">"host"</span><span class="token punctuation">:</span> <span class="token string">"localhost:8080"</span><span class="token punctuation">,</span>
+  <span class="token string">"basePath"</span><span class="token punctuation">:</span> <span class="token string">"/"</span>
+  <span class="token operator">...</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如果这个接口返回的数据格式不对，或者此接口无法访问，那么说明 Swagger 可能根本没有与 Spring Boot 集成到一起；如果是类似的结构，说明你的 Swagger 与 Spring Boot 已经成功集成，再去根据具体的错误提示去分析。</p>
+</div><div class="cl-preview-section"><p>我们日常的工作学习中，会遇到各种各样、大大小小的坑。有些坑可以通过错误信息一步步找到原因并解决；而有些坑则无迹可循，只能凭着 “经验” 和运气摸着石头排错；有些坑更加复杂，一坑套一坑，可谓是大坑套小坑，小坑套老坑，坑中还有水，水中还有钉，下去就没影儿了。希望每个程序员在工作和学习中都能化坑为夷，一马平川。</p>
+</div><div class="cl-preview-section"><h2 id="总结">7. 总结</h2>
+</div><div class="cl-preview-section"><p>OK，本小节我们一起了解 Swagger ，并学习了如何将 Swagger 与 Spring Boot 进行整合，还有一些常规的使用，最后介绍了一下 Swagger 的常用注解。学完本小节后，我们就具备了在日常开发中使用 Swagger 的能力。后续的章节中我们还会经常借助 Swagger 来完成对于 Spring Boot 的学习，让我们一起期待吧！</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5e99653f00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6629">
+						<img src="https://img1.mukewang.com/533e4d5b0001d57502200203-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">java菜鸟</h4>
+						<div class="comment-text">接口其实挺复杂的，包括参数说明，返回值说明，然后单个参数的说明和实体对象参数说明的区别，实际开发中，如果不能把api的描述说的很明白，会被前端的人骂死最好能前后端一肩挑，免得被人嫌弃</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-25</span>
+						<a href="/read/commentdetail/6629">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6629" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6297">
+						<img src="https://img1.mukewang.com/5333a2b70001a5a802000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">心纯净</h4>
+						<div class="comment-text">不知道为什么，新手按照这个教程，然后出现了
+Whitelabel Error Page，感觉不是很友好。</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-25</span>
+						<a href="/read/commentdetail/6297">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6297" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6230">
+						<img src="https://img1.mukewang.com/564415a90001e27606400640-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕用1494877</h4>
+						<div class="comment-text">Startetr不应该集成好吗 还要再自己写一下？</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-20</span>
+						<a href="/read/commentdetail/6230">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6230" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6185">
+						<img src="https://img4.mukewang.com/5333a08f0001700202000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕移动0446252</h4>
+						<div class="comment-text">按照教程手动搭建成功，但是用源码没跑起来。
+报了这个错：
+Caused by: java.lang.IllegalStateException: Failed to introspect Class [springfox.documentation.schema.XmlModelPlugin] from ClassLoader [jdk.internal.loader.ClassLoaders$AppClassLoader@78308db1]
+Caused by: java.lang.NoClassDefFoundError: javax/xml/bind/annotation/XmlType
+Caused by: java.lang.ClassNotFoundException: javax.xml.bind.annotation.XmlType
+望解答</div>
+						<div>
+							
+								<div class="reply">讲师回复：发现不能回复 xml，pom 文件添加 jaxb-api 这个jar的依赖吧。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-17</span>
+						<a href="/read/commentdetail/6185">
+							<span class="icon r"><i class="imwap-comment"></i><em>3</em></span>
+						</a>
+						<span data-cid="6185" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6179">
+						<img src="https://img3.mukewang.com/54584d1d00015c0b02200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_浮云_44</h4>
+						<div class="comment-text">这个Swagger2感觉没多大用啊， 接口文档里入参是个大的JSON，字段很多，一个个入参去注释好麻烦，还不如直接写文档</div>
+						<div>
+							
+								<div class="reply">讲师回复：哈哈，是这样的。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-17</span>
+						<a href="/read/commentdetail/6179">
+							<span class="icon r"><i class="imwap-comment"></i><em>3</em></span>
+						</a>
+						<span data-cid="6179" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6157">
+						<img src="https://img2.mukewang.com/5458508600019e2602200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕少4329084</h4>
+						<div class="comment-text">用github下载的代码，但是访问http://localhost:8080/v2/api-docs，显示http status 404</div>
+						<div>
+							
+								<div class="reply">讲师回复：加微信帮你看下吧，liushuijinger</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-15</span>
+						<a href="/read/commentdetail/6157">
+							<span class="icon r"><i class="imwap-comment"></i><em>3</em></span>
+						</a>
+						<span data-cid="6157" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6149">
+						<img src="https://img.mukewang.com/58c16e8a0001710709960996-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">白刃先生</h4>
+						<div class="comment-text">我用的是
+        io.springfoxspringfox-swagger22.8.0com.github.xiaoyminswagger-bootstrap-ui1.9.6</div>
+						<div>
+							
+								<div class="reply">讲师回复：嗯，这个 UI 更加友好一些。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-15</span>
+						<a href="/read/commentdetail/6149">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6149" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5977">
+						<img src="https://img.mukewang.com/545846230001832502200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕尼黑4165573</h4>
+						<div class="comment-text">springboot需要配置
+@Configuration
+public class WebMvcConfig extends WebMvcConfigurerAdapter {
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        super.addResourceHandlers(registry);
+        registry.addResourceHandler("swagger-ui.html")
+                .addResourceLocations("classpath:/META-INF/resources/");
+
+        registry.addResourceHandler("/webjars/**")
+                .addResourceLocations("classpath:/META-INF/resources/webjars/");
+    }
+}
+否则就会404
+另外，您说的配置类把Api.class可以换成ApiOpreation.class,我试了一下，不行，页面会报
+No operations defined in spec!
+不知道是我哪里没配对</div>
+						<div>
+							
+								<div class="reply">讲师回复：你用的 Spring Boot 和 Swagger 是什么版本？可以加我微信，给你看下：liushuijinger</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-30</span>
+						<a href="/read/commentdetail/5977">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5977" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5973">
+						<img src="https://img2.mukewang.com/5612770c0001b46001000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">反物</h4>
+						<div class="comment-text">老师，swagger2的配置类是写在哪一层目录里的？springboot是怎么确定配置类所在的位置的呢？</div>
+						<div>
+							
+								<div class="reply">讲师回复：配置类的位置可以参考一下源码：https://github.com/liushuijinger/springboot
+
+Spring Boot 是通过 @Configuration 注解识别配置类的。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-30</span>
+						<a href="/read/commentdetail/5973">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5973" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5880">
+						<img src="https://img4.mukewang.com/5a2cef030001da1301000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_Sophia_20</h4>
+						<div class="comment-text">如何才能遇到这个坑，我怎们尝试也尝试不出这个坑的由来。我想深深的记住这个坑长什么样子
+
+
+遇不到这个坑</div>
+						<div>
+							
+								<div class="reply">讲师回复：世界上本没有坑？那不过是你走得路还不够多罢了。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-20</span>
+						<a href="/read/commentdetail/5880">
+							<span class="icon r"><i class="imwap-comment"></i><em>2</em></span>
+						</a>
+						<span data-cid="5880" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5879">
+						<img src="https://img1.mukewang.com/5a2cef030001da1301000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_Sophia_20</h4>
+						<div class="comment-text">有些坑更加复杂，一坑套一坑，可谓是大坑套小坑，小坑套老坑，坑中还有水，水中还有钉，下去就没影儿了</div>
+						<div>
+							
+								<div class="reply">讲师回复：不断掉坑里，不断爬出来，就是胜利。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-20</span>
+						<a href="/read/commentdetail/5879">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5879" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5509">
+						<img src="https://img4.mukewang.com/5dcd65a60001a64a01080108-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">小熊二喵</h4>
+						<div class="comment-text">Error starting ApplicationContext. To display the conditions report re-run your application with 'debug' enabled.
+2020-05-18 21:53:01.244 ERROR 17788 --- [           main] o.s.boot.SpringApplication               : Application run failed
+
+org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'xmlModelPlugin': Lookup method resolution failed;</div>
+						<div>
+							
+								<div class="reply">讲师回复：楼上这位同学好像没有加我，你可以加一下，我帮你看看：liushuijinger</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-18</span>
+						<a href="/read/commentdetail/5509">
+							<span class="icon r"><i class="imwap-comment"></i><em>5</em></span>
+						</a>
+						<span data-cid="5509" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=75">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '07 懒惰使人进步-Spring Boot集成Swagger2',
+					'CID': '1803',
+					'Teacher': '刘水镜'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "07 懒惰使人进步-Spring Boot集成Swagger2",
+                    desc: "够吃管饱的SpringBoot大餐",
+                    imgUrl: 'https:https://img2.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/75',
+                    link: 'https://m.imooc.com/read/75'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

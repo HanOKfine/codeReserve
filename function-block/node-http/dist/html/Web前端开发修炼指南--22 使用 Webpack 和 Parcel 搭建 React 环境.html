@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>22 使用 Webpack 和 Parcel 搭建 React 环境</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="前端进阶必备，未来少走弯路">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "1673";
+	var chapter_title = "22 使用 Webpack 和 Parcel 搭建 React 环境";
+	var aid = "72";
+	var a_name = "Web前端开发修炼指南";
+	var a_price = "58.00";
+	var a_pic = "https://img4.mukewang.com/5e6af0f50001b61d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '72';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-04-27&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			22 使用 Webpack 和 Parcel 搭建 React 环境
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img.mukewang.com/5ea63a0e0001ab4406400359.jpg')"></div>
+	
+	
+		<a href="/read/72">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/5e6c7ecc00012eaa10000884-40-40.jpg" alt="sh22n">
+				<h3>Web前端开发修炼指南</h3>
+				<p>sh22n · 前携程高级前端工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">我们有力的道德就是通过奋斗取得物质上的成功；这种道德既适用于国家，也适用于个人。<p class="author">——罗素</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="前言">1. 前言</h2>
+</div><div class="cl-preview-section"><p>从这篇开始，将会带大家一起来学习 React 的相关知识。React 是当前最火的前端框架之一，但它本身的语法不可以直接在浏览器端运行，所以在正式开始学习 React 之前，我想带领大家先学习一下如何搭建 React 环境。</p>
+</div><div class="cl-preview-section"><h2 id="打包工具">2. 打包工具</h2>
+</div><div class="cl-preview-section"><p>随着前端的迅速发展，ECMAScript 语法也变得越来越完善，NodeJS 诞生后各种自动化的工具像雨后春笋一样冒出来。</p>
+</div><div class="cl-preview-section"><p>前端的需求也越来越多，比如我们要将 ES6、JSX 等语法转成浏览器可以识别的，于是 Babel 诞生了。我们需要对代码进行压缩、编译、单元测试等等，之前流行的是 Grunt，后来是 Gulp，现在则是 webpack，前端工具处于不断发展完善之中。</p>
+</div><div class="cl-preview-section"><p>今天，我们将会用 webpack 和 Parcel 来搭建 React 环境。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>本文不会对两者语法和用处进行详细地讲解，有需要的同学可以自行查阅资料。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="webpack">3. webpack</h2>
+</div><div class="cl-preview-section"><p>webpack 是一个前端资源加载/打包工具。它将根据模块的依赖关系进行静态分析，然后将这些模块按照指定的规则生成对应的静态资源。</p>
+</div><div class="cl-preview-section"><p>webpack 会分析项目结构，找到 JavaScript 模块以及一些不能直接运行的语言（Sass、TypeScript等），将其转换供浏览器使用。</p>
+</div><div class="cl-preview-section"><h3 id="安装">3.1 安装</h3>
+</div><div class="cl-preview-section"><p>在安装 webpack 之前，需要先安装 NodeJS 和 npm 环境，这里不作讲解，可以参考廖雪峰的这篇文章：<a href="https://www.liaoxuefeng.com/wiki/1022910821149312/1023025597810528">安装Node.js和npm</a><br>
+首先，我们先创建一个项目，安装 webpack 依赖。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js">mkdir webpack<span class="token operator">-</span>react
+cd webpack<span class="token operator">-</span>react
+npm init <span class="token comment">// 初始化</span>
+npm i webpack webpack<span class="token operator">-</span>cli <span class="token operator">-</span>D <span class="token comment">// 安装相关包</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>npm i 就是 npm install，-D 就是 -dev.</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>我们先来写个简单的 <code>hello, world</code>，在 <code>package.json</code> 的 <code>scripts</code> 里面配置一下。在 webpack4 里面，允许我们不写 <code>webpack.config.js</code>。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token comment">// index.js</span>
+console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">"hello, world"</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>当然，只是简单地使用，这样就够了，更多情况下我们还是要手写配置文件。</p>
+</div><div class="cl-preview-section"><h3 id="loader-和-plugin">3.2 loader 和 plugin</h3>
+</div><div class="cl-preview-section"><p>在 webpack 中，有 loader 和 plugin 两个概念。</p>
+</div><div class="cl-preview-section"><p>loader 是一个转换器，它描述了怎么处理模块，比如将 TypeScript 转换为 JavaScript，将内联的图像转换为 data url 等等。</p>
+</div><div class="cl-preview-section"><p>而 plugin 则是解决一些 loader 无法实现的其他事情，比如代码压缩、去除 <code>console.log</code>等等，可以用来处理各种各样的任务。</p>
+</div><div class="cl-preview-section"><h3 id="配置文件">3.3 配置文件</h3>
+</div><div class="cl-preview-section"><p>我们来创建一个 webpack 配置文件，在根目录下新建一个 <code>webpack.config.js</code> 文件。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token keyword">const</span> path <span class="token operator">=</span> <span class="token function">require</span><span class="token punctuation">(</span><span class="token string">'path'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+module<span class="token punctuation">.</span>exports <span class="token operator">=</span> <span class="token punctuation">{</span>
+    mode<span class="token punctuation">:</span> <span class="token string">'development'</span><span class="token punctuation">,</span> <span class="token comment">// 开发模式</span>
+    entry<span class="token punctuation">:</span> path<span class="token punctuation">.</span><span class="token function">resolve</span><span class="token punctuation">(</span>__dirname<span class="token punctuation">,</span><span class="token string">'./src/index.js'</span><span class="token punctuation">)</span><span class="token punctuation">,</span>    <span class="token comment">// 入口文件</span>
+    output<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        filename<span class="token punctuation">:</span> <span class="token string">'build.js'</span><span class="token punctuation">,</span>      <span class="token comment">// 打包后的文件名称</span>
+        path<span class="token punctuation">:</span> path<span class="token punctuation">.</span><span class="token function">resolve</span><span class="token punctuation">(</span>__dirname<span class="token punctuation">,</span><span class="token string">'./dist'</span><span class="token punctuation">)</span>  <span class="token comment">// 打包后的目录</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>然后修改 <code>package.json</code> 里面的 <code>build</code> 命令，设置为从配置文件读取。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token string">"build"</span><span class="token punctuation">:</span> <span class="token string">"webpack --config webpack.config.js"</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="配置模板">3.4 配置模板</h3>
+</div><div class="cl-preview-section"><p>我们在打包 webpack 文件的时候，经常会给文件名加哈希后缀，这是为什么呢？</p>
+</div><div class="cl-preview-section"><p>因为浏览器会对上一次的文件做缓存，如果文件名一样的话就会被缓存，然而我们希望打包之后发到线上的文件不要使用缓存，所以就要加上哈希值，保证每次生成的文件名不一样。</p>
+</div><div class="cl-preview-section"><p><img src="http://static.zybuluo.com/gyyin/yugaolombyjc2qyumvqee1f8/image_1e4jff5h41fva1q6l1h5vikd4p51q.png" alt="image_1e4jff5h41fva1q6l1h5vikd4p51q.png-349.8kB"></p>
+</div><div class="cl-preview-section"><p>也是这个原因，如果我们每次都要在 HTML 文件里面手动引入打包后的 JS 文件，这该多么麻烦。因此，有个叫 html-webpack-plugin 的插件帮我们完美解决这个问题。</p>
+</div><div class="cl-preview-section"><p>我们在 public 文件夹下新建一个 index.html 文件，然后修改 webpack 配置，引入 html-webpack-plugin 插件。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token keyword">const</span> path <span class="token operator">=</span> <span class="token function">require</span><span class="token punctuation">(</span><span class="token string">'path'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> HtmlWebpackPlugin <span class="token operator">=</span> <span class="token function">require</span><span class="token punctuation">(</span><span class="token string">'html-webpack-plugin'</span><span class="token punctuation">)</span>
+module<span class="token punctuation">.</span>exports <span class="token operator">=</span> <span class="token punctuation">{</span>
+    mode<span class="token punctuation">:</span><span class="token string">'development'</span><span class="token punctuation">,</span> 
+    entry<span class="token punctuation">:</span> path<span class="token punctuation">.</span><span class="token function">resolve</span><span class="token punctuation">(</span>__dirname<span class="token punctuation">,</span><span class="token string">'./src/index.js'</span><span class="token punctuation">)</span><span class="token punctuation">,</span>    <span class="token comment">// 入口文件</span>
+    output<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+      filename<span class="token punctuation">:</span> <span class="token string">'[name].[hash:8].js'</span><span class="token punctuation">,</span>      <span class="token comment">// 打包后的文件名称</span>
+      path<span class="token punctuation">:</span> path<span class="token punctuation">.</span><span class="token function">resolve</span><span class="token punctuation">(</span>__dirname<span class="token punctuation">,</span><span class="token string">'./dist'</span><span class="token punctuation">)</span>  <span class="token comment">// 打包后的目录</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    plugins<span class="token punctuation">:</span><span class="token punctuation">[</span>
+      <span class="token keyword">new</span> <span class="token class-name">HtmlWebpackPlugin</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+        template<span class="token punctuation">:</span>path<span class="token punctuation">.</span><span class="token function">resolve</span><span class="token punctuation">(</span>__dirname<span class="token punctuation">,</span><span class="token string">'./public/index.html'</span><span class="token punctuation">)</span>
+      <span class="token punctuation">}</span><span class="token punctuation">)</span>
+    <span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="清理上一次打包文件">3.5 清理上一次打包文件</h3>
+</div><div class="cl-preview-section"><p>我们已经可以看到生成的文件后面带上了哈希，index.html 也自动引入了这个 JS 文件，但发现每次 build 之后，上次打包的文件还在 dist 文件夹下面。</p>
+</div><div class="cl-preview-section"><p>这样很明显不符合我们的需求，赶紧去找了找。刚好找到一个 <code>clean-webpack-plugin</code> 插件，可以完美解决我们的需求。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token keyword">const</span> <span class="token punctuation">{</span> CleanWebpackPlugin <span class="token punctuation">}</span> <span class="token operator">=</span> <span class="token function">require</span><span class="token punctuation">(</span><span class="token string">'clean-webpack-plugin'</span><span class="token punctuation">)</span>
+module<span class="token punctuation">.</span>exports <span class="token operator">=</span> <span class="token punctuation">{</span>
+    plugins<span class="token punctuation">:</span><span class="token punctuation">[</span><span class="token keyword">new</span> <span class="token class-name">CleanWebpackPlugin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">]</span> <span class="token comment">// 引入 CleanWebpackPlugin 插件</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>再执行一次 <code>npm run build</code>，可以看到前几次生成的文件被清除了。</p>
+</div><div class="cl-preview-section"><h3 id="css">3.6 css</h3>
+</div><div class="cl-preview-section"><p>我们已经可以成功打包 JS 文件，但如果想对 css 文件做解析该怎么办？这里涉及到两个 loader 和一个插件。<br>
+<code>css-loader</code> 是将引入的 css 文件打包到 JS 文件里面。</p>
+</div><div class="cl-preview-section"><p><code>style-loader</code> 是将打包到 JS 文件中的 css 代码解析到 HTML 的 style 标签里面。</p>
+</div><div class="cl-preview-section"><p><code>mini-css-extract-plugin</code> 是将 css 文件单独打包成 css 文件的一个插件。</p>
+</div><div class="cl-preview-section"><p>我们直接在配置里面增加这些：</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js">module<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+    rules<span class="token punctuation">:</span> <span class="token punctuation">[</span>
+        <span class="token punctuation">{</span>
+            test<span class="token punctuation">:</span><span class="token regex">/\.css$/</span><span class="token punctuation">,</span>
+            use<span class="token punctuation">:</span><span class="token punctuation">[</span><span class="token string">'style-loader'</span><span class="token punctuation">,</span><span class="token string">'css-loader'</span><span class="token punctuation">]</span> <span class="token comment">// 从右往左解析</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">]</span>
+<span class="token punctuation">}</span><span class="token punctuation">,</span>
+plugins<span class="token punctuation">:</span> <span class="token punctuation">[</span>
+    <span class="token keyword">new</span> <span class="token class-name">MiniCssExtractPlugin</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+        filename<span class="token punctuation">:</span> <span class="token string">"[name].[hash].css"</span><span class="token punctuation">,</span>
+        chunkFilename<span class="token punctuation">:</span> <span class="token string">"[id].css"</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token punctuation">]</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="babel">3.7 Babel</h3>
+</div><div class="cl-preview-section"><p>在我们写代码中，经常会用到一些浏览器暂时还不支持的新 ES 语法，为了支持这些新语法，我们需要来配置 Babel。</p>
+</div><div class="cl-preview-section"><p>我们可以添加 <code>babel-loader</code> 和 <code>@babel/preset-env</code> 来支持 ES6/ES7/ES8 等语法。</p>
+</div><div class="cl-preview-section"><pre><code>npm i babel-loader @babel/preset-env @babel/core -D
+</code></pre>
+</div><div class="cl-preview-section"><p>我们在根目录下创建 <code>.babelrc</code> 文件来编写 babel 的相关配置。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token comment">// .babelrc</span>
+<span class="token punctuation">{</span>
+   <span class="token string">"presets"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"@babel/env"</span><span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>但是这个只会将我们的 ES6 代码转成 ES5 代码，如果是 ES5 中本来就不支持的 API，比如 Promise、Map 等等，那就没办法转了。</p>
+</div><div class="cl-preview-section"><p>所以是时候使用 polyfill 了，可以使用 <code>babel-plugin-transform-runtime</code> 这个插件来 polyfill 一些新的 API。</p>
+</div><div class="cl-preview-section"><p>安装插件：</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js">npm i @babel<span class="token operator">/</span>plugin<span class="token operator">-</span>transform<span class="token operator">-</span>runtime @babel<span class="token operator">/</span>runtime <span class="token operator">-</span>D
+</code></pre>
+</div><div class="cl-preview-section"><p>修改 .babelrc 配置文件：</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token punctuation">{</span>
+    <span class="token string">"plugins"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span>
+        <span class="token string">"@babel/plugin-transform-runtime"</span>
+    <span class="token punctuation">]</span><span class="token punctuation">,</span>
+    <span class="token string">"presets"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"@babel/env"</span><span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="react">3.8 React</h3>
+</div><div class="cl-preview-section"><p>终于说到了本文的重点了，前面的铺垫工作都已经完成了，那么我们该如何配置 React 的环境呢？</p>
+</div><div class="cl-preview-section"><p>这里依然需要一个 babel 的插件来支持，安装 <code>@babel/preset-react</code> 就可以转换 JSX 语法。</p>
+</div><div class="cl-preview-section"><p>.babelrc 配置文件：</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token punctuation">{</span>
+    <span class="token string">"plugins"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span>
+        <span class="token string">"@babel/plugin-transform-runtime"</span>
+    <span class="token punctuation">]</span><span class="token punctuation">,</span>
+    <span class="token string">"presets"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"@babel/env"</span><span class="token punctuation">,</span> <span class="token string">"@babel/preset-react"</span><span class="token punctuation">]</span>
+ <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>我们将入口的 index.js 换成 index.jsx，写两行 React 代码试试。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token keyword">import</span> React <span class="token keyword">from</span> <span class="token string">'react'</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> ReactDOM <span class="token keyword">from</span> <span class="token string">'react-dom'</span>
+
+<span class="token keyword">function</span> <span class="token function">App</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>
+        <span class="token operator">&lt;</span>div<span class="token operator">&gt;</span>hello<span class="token punctuation">,</span> world<span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>
+    <span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+ReactDOM<span class="token punctuation">.</span><span class="token function">render</span><span class="token punctuation">(</span>
+    <span class="token operator">&lt;</span>App <span class="token operator">/</span><span class="token operator">&gt;</span><span class="token punctuation">,</span>
+    document<span class="token punctuation">.</span><span class="token function">getElementById</span><span class="token punctuation">(</span><span class="token string">"app"</span><span class="token punctuation">)</span>
+<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>执行一下 <code>npm run build</code>，很完美。</p>
+</div><div class="cl-preview-section"><h3 id="webpack-dev-server-热更新">3.9 webpack-dev-server 热更新</h3>
+</div><div class="cl-preview-section"><p>我们现在每次 build 生成文件，然后手动在本地运行 HTML 文件。如果之后用到 <code>react-router</code>，本地打开 HTML 文件就只能用 <code>HashRouter</code> 了，而且我希望能本地启一个服务器，支持热更新。</p>
+</div><div class="cl-preview-section"><p>首先，我们来安装 <code>webpack-dev-server</code>，它会在本地启动一个服务，将你的文件放到内存里面，也会响应你的修改来做热更新。</p>
+</div><div class="cl-preview-section"><pre><code>npm i webpack-dev-server -D
+</code></pre>
+</div><div class="cl-preview-section"><p>接着，我们来修改 webpack 的配置，增加热更新配置，这里设置监听 3000 端口。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token keyword">const</span> webpack <span class="token operator">=</span> <span class="token function">require</span><span class="token punctuation">(</span><span class="token string">'webpack'</span><span class="token punctuation">)</span>
+<span class="token comment">// webpack.config.js</span>
+devServer<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+    port<span class="token punctuation">:</span> <span class="token number">3000</span><span class="token punctuation">,</span>
+    hot<span class="token punctuation">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+    contentBase<span class="token punctuation">:</span> <span class="token string">'./dist'</span>
+<span class="token punctuation">}</span><span class="token punctuation">,</span>
+plugins<span class="token punctuation">:</span> <span class="token punctuation">[</span>
+    <span class="token keyword">new</span> <span class="token class-name">Webpack<span class="token punctuation">.</span>HotModuleReplacementPlugin</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">]</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>然后，我们再来修改 package.json 文件，增加 <code>dev</code> 的 script。</p>
+</div><div class="cl-preview-section"><pre><code>"dev": "webpack-dev-server --config webpack.config.js --open"
+</code></pre>
+</div><div class="cl-preview-section"><p>我们运行一下 <code>npm run dev</code>，发现会自动打开一个窗口，我们的页面已经跑在了 <code>localhost:3000</code> 上面。<br>
+至此，一个完整的 React 环境配置就已经搞定了，我把它放到了 GitHub 上面：<a href="https://github.com/yinguangyao/webpack-react">webpack-react</a></p>
+</div><div class="cl-preview-section"><h3 id="create-react-app">3.10 create-react-app</h3>
+</div><div class="cl-preview-section"><p>当然，如果你不想手动操作那么繁琐的配置，你也可以试试 <code>create-react-app</code>，这是生成 React 项目配置的一个脚手架。</p>
+</div><div class="cl-preview-section"><p>快速开始：</p>
+</div><div class="cl-preview-section"><pre class=" language-bash"><code class="prism  language-bash">npx create-react-app my-app
+<span class="token function">cd</span> my-app
+<span class="token function">npm</span> start
+</code></pre>
+</div><div class="cl-preview-section"><p>当你准备部署到生产环境的时候，你可以执行 <code>npm run build</code>。</p>
+</div><div class="cl-preview-section"><p>如果你想自定义 webpack 的配置，那么可以使用 <code>ejecting</code> 来暴露出 webpack 的配置。</p>
+</div><div class="cl-preview-section"><pre><code>npm run eject
+</code></pre>
+</div><div class="cl-preview-section"><p>如果你想使用 <code>css-modules</code>、<code>TypeScript</code> 等等，可以去看官方的详细文档：<a href="https://www.html.cn/create-react-app/docs/getting-started/">Create React App 官方文档</a></p>
+</div><div class="cl-preview-section"><h2 id="parcel">4. Parcel</h2>
+</div><div class="cl-preview-section"><p>由于 Webpack 的繁琐配置，很多开发者都希望有一个配置更简单的打包工具出来，Parcel 就因此诞生了。它利用多核处理提供了极快的速度，并且不需要任何配置。</p>
+</div><div class="cl-preview-section"><h3 id="安装-1">4.1 安装</h3>
+</div><div class="cl-preview-section"><p>首先我们来创建一个新的项目：</p>
+</div><div class="cl-preview-section"><pre class=" language-bash"><code class="prism  language-bash"><span class="token function">mkdir</span> parcel-react
+<span class="token function">cd</span> parcel-react
+<span class="token function">npm</span> init
+</code></pre>
+</div><div class="cl-preview-section"><p>然后我们通过 Yarn 或者 npm 来安装 Parcel：</p>
+</div><div class="cl-preview-section"><pre class=" language-bash"><code class="prism  language-bash">// yarn
+yarn global add parcel-bundler
+// <span class="token function">npm</span>
+<span class="token function">npm</span> <span class="token function">install</span> -g parcel-bundler
+</code></pre>
+</div><div class="cl-preview-section"><p>当然你也可以安装到项目里面：</p>
+</div><div class="cl-preview-section"><pre class=" language-bash"><code class="prism  language-bash"><span class="token function">npm</span> <span class="token function">install</span> parcel-bundler -D
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>-D 相当于 -dev，-S 相当于 --save</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>Parcel 一般需要一个入口文件，一般是 HTML 或者 JavaScript 文件，我们这里以 HTML 文件为入口。<br>
+接下来安装 React 相关依赖包：</p>
+</div><div class="cl-preview-section"><pre class=" language-bash"><code class="prism  language-bash"><span class="token function">npm</span> <span class="token function">install</span> -S react
+<span class="token function">npm</span> <span class="token function">install</span> -S react-dom
+<span class="token function">npm</span> <span class="token function">install</span> -D parcel-bundler
+</code></pre>
+</div><div class="cl-preview-section"><p>此时 Parcel 相关的依赖已经安装好了。可能你会好奇为什么没有安装 Babel 相关的包呢？这样可以支持 ES6 以及 JSX 的语法吗？</p>
+</div><div class="cl-preview-section"><p>Parcel 里面已经默认安装了 <code>@babel/core</code>、<code>@babel/preset-env</code>、<code>@babel/plugin-transform-react-jsx</code> 等包，我们不需要再额外安装。</p>
+</div><div class="cl-preview-section"><h3 id="入口文件">4.2 入口文件</h3>
+</div><div class="cl-preview-section"><p>接下来，我们需要创建一个入口的 HTML 文件，然后在 <code>package.json</code> 的 <code>scripts</code> 里面添加这么一句。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token comment">// package.json</span>
+<span class="token string">"scripts"</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+  <span class="token string">"start"</span><span class="token punctuation">:</span> <span class="token string">"parcel index.html"</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>然后需要在你的 HTML 文件里面引入你的 <code>.jsx</code> 入口文件，Parcel 会从这个入口文件开始解析。</p>
+</div><div class="cl-preview-section"><p><img src="http://static.zybuluo.com/gyyin/ai4uzjtgc7buakd82ikt725k/code.png" alt="code.png-126.2kB"></p>
+</div><div class="cl-preview-section"><p>这样我们就可以用 <code>npm start</code> 的形式来启动项目了。启动项目的时候，Parcel 会默认监听 1234 这个端口号，启动一个类似 webpack-dev-server 的服务。</p>
+</div><div class="cl-preview-section"><p><img src="http://static.zybuluo.com/gyyin/s7tmdbscyzxcarc603l3p49v/image_1e4iptk1610bjn485gd88bemb11.png" alt="image_1e4iptk1610bjn485gd88bemb11.png-34.1kB"></p>
+</div><div class="cl-preview-section"><p>添加 <code>--open</code> 的参数，会在服务启动后自动帮你打开对应的地址。</p>
+</div><div class="cl-preview-section"><pre class=" language-bash"><code class="prism  language-bash">parcel index.html --open
+</code></pre>
+</div><div class="cl-preview-section"><p>如果你想换其他端口，可以在 scripts 里面修改。</p>
+</div><div class="cl-preview-section"><pre class=" language-bash"><code class="prism  language-bash">parcel index.html --port 3000
+</code></pre>
+</div><div class="cl-preview-section"><p>当然，Parcel 的配置也许不能满足你的要求，比如我想使用装饰器该怎么办？我想使用类属性怎么办？</p>
+</div><div class="cl-preview-section"><p>Parcel 也允许你手动添加一个 <code>.babelrc</code> 文件，在这个文件里面写上你的配置。</p>
+</div><div class="cl-preview-section"><p><img src="http://static.zybuluo.com/gyyin/l3i5vk0rhjxokowqzrph729f/code.png" alt="code.png-54.1kB"></p>
+</div><div class="cl-preview-section"><p>这样一个简单的基于 Parcel 的 React 环境就搭建好了。为了方便大家参考，我这里把配置了 React/Redux 和 React/Mobx 的项目放到了 GitHub。</p>
+</div><div class="cl-preview-section"><p>Parcel-React 项目地址：<a href="https://github.com/yinguangyao/parcel-react-templates">Parcel-React-Templates</a></p>
+</div><div class="cl-preview-section"><h2 id="总结">5. 总结</h2>
+</div><div class="cl-preview-section"><p>随着前端工程化这一概念深入人心，学会配置 webpack 打包、优化文件是非常重要的，这也是每个前端工程师都应该掌握的知识。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img2.mukewang.com/5ea63a1200011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=72">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '22 使用 Webpack 和 Parcel 搭建 React 环境',
+					'CID': '1673',
+					'Teacher': 'sh22n'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "22 使用 Webpack 和 Parcel 搭建 React 环境",
+                    desc: "前端进阶必备，未来少走弯路",
+                    imgUrl: 'https:https://img4.mukewang.com/5e6af0f50001b61d05400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5e6af0f50001b61d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/72',
+                    link: 'https://m.imooc.com/read/72'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

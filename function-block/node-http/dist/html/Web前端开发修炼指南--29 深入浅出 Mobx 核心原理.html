@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>29 深入浅出 Mobx 核心原理</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="前端进阶必备，未来少走弯路">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "1680";
+	var chapter_title = "29 深入浅出 Mobx 核心原理";
+	var aid = "72";
+	var a_name = "Web前端开发修炼指南";
+	var a_price = "58.00";
+	var a_pic = "https://img2.mukewang.com/5e6af0f50001b61d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '72';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-15&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			29 深入浅出 Mobx 核心原理
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img4.mukewang.com/5ebe146c0001918106400360.jpg')"></div>
+	
+	
+		<a href="/read/72">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5e6c7ecc00012eaa10000884-40-40.jpg" alt="sh22n">
+				<h3>Web前端开发修炼指南</h3>
+				<p>sh22n · 前携程高级前端工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">人不可有傲气，但不可无傲骨。<p class="author">——徐悲鸿</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="前言">1. 前言</h2>
+</div><div class="cl-preview-section"><p>Mobx 是 React 的另一种经过战火洗礼的状态管理方案，和 Redux 不同的地方是 Mobx 是一个响应式编程（<code>Reactive Programming</code>）库，在一定程度上可以看做没有模板的 Vue，基本原理和 Vue 一致。</p>
+</div><div class="cl-preview-section"><p>Mobx 借助于装饰器的实现，使得代码更加简洁易懂。由于使用了可观察对象，所以 Mobx 可以做到直接修改状态，而不必像 Redux 一样编写繁琐的 actions 和 reducers。</p>
+</div><div class="cl-preview-section"><p><img src="http://static.zybuluo.com/gyyin/9cn8sjizzgsuu8nhga60r8om/code.png" alt="code.png-50.7kB"></p>
+</div><div class="cl-preview-section"><p>Mobx 的执行流程和 Redux 有一些相似。这里借用 Mobx 官网的一张图：</p>
+</div><div class="cl-preview-section"><p><img src="http://static.zybuluo.com/gyyin/ewidvcp69m5sc65ch22e8iz5/image.png" alt="image.png-238kB"></p>
+</div><div class="cl-preview-section"><p>简单的概括一下，一共有这么几个步骤：</p>
+</div><div class="cl-preview-section"><ol>
+<li>页面事件（生命周期、点击事件等等）触发 action 的执行；</li>
+<li>通过 action 来修改状态；</li>
+<li>状态更新后，<code>computed</code> 计算属性也会根据依赖的状态重新计算属性值；</li>
+<li>状态更新后会触发 <code>reaction</code>，从而响应这次状态变化来进行一些操作（渲染组件、打印日志等等）。</li>
+</ol>
+</div><div class="cl-preview-section"><h2 id="mobx-核心概念">2. Mobx 核心概念</h2>
+</div><div class="cl-preview-section"><p>Mobx 的概念没有 Redux 那么多，学习和上手成本也更低。以下介绍全部基于 ES 装饰器来讲解，更多细节可以参考 Mobx 中文文档：<a href="https://cn.mobx.js.org/">Mobx 中文文档</a><br>
+对于一些实践的用法，也可以参考我一年前写的文章：<a href="https://juejin.im/post/5c1478dd6fb9a049f361fe35">Mobx 实践</a><br>
+本文涉及到的代码都放到了我的 GitHub 上面：<a href="https://github.com/yinguangyao/simple-mobx">simple-mobx</a></p>
+</div><div class="cl-preview-section"><h3 id="observable">2.1 observable</h3>
+</div><div class="cl-preview-section"><p>observable 可以将接收到的值包装成可观察对象，这个值可以是 JS 基本数据类型、引用类型、普通对象、类实例、数组和映射等等等。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> list <span class="token operator">=</span> <span class="token function">observable</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+list<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">3</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> person <span class="token operator">=</span> <span class="token function">observable</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+    firstName<span class="token punctuation">:</span> <span class="token string">"Clive Staples"</span><span class="token punctuation">,</span>
+    lastName<span class="token punctuation">:</span> <span class="token string">"Lewis"</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+person<span class="token punctuation">.</span>firstName <span class="token operator">=</span> <span class="token string">"C.S."</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如果在对象里面使用 get，那就是计算属性了。计算属性一般使用 <code>get</code> 来实现，当依赖的属性发生变化的时候，就会重新计算出新的值，常用于一些计算衍生状态。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> todoStore <span class="token operator">=</span> <span class="token function">observable</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+    <span class="token comment">// observable 属性:</span>
+    todos<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+
+    <span class="token comment">// 计算属性:</span>
+    <span class="token keyword">get</span> <span class="token function">completedCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>todos<span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span>todo <span class="token operator">=&gt;</span> todo<span class="token punctuation">.</span>isCompleted<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">.</span>length
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>更多时候，我们会配合装饰器一起使用来使用 <code>observable</code> 方法。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">Store</span> <span class="token punctuation">{</span>
+    @observable count <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="computed">2.2 computed</h3>
+</div><div class="cl-preview-section"><p>想像一下，在 Redux 中，如果一个值 A 是由另外几个值 B、C、D 计算出来的，在 store 中该怎么实现？<br>
+如果要实现这么一个功能，最麻烦的做法是在所有 B、C、D 变化的地方重新计算得出 A，最后存入 store。<br>
+当然我也可以在组件渲染 A 的地方根据 B、C、D 计算出 A，但是这样会把逻辑和组件耦合到一起，如果我需要在</p>
+</div><div class="cl-preview-section"><p>其他地方用到 A 怎么办？</p>
+</div><div class="cl-preview-section"><p>我甚至还可以在所有 <code>connect</code> 的地方计算 A，最后传入组件。但由于 Redux 监听的是整个 <code>store</code> 的变化，所以无法准确的监听到 B、C、D 变化后才重新计算 A。</p>
+</div><div class="cl-preview-section"><p>但是 Mobx 中提供了 <code>computed</code> 来解决这个问题。正如 Mobx 官方介绍的一样，<code>computed</code> 是基于现有状态或计算值衍生出的值，如下面 todoList 的例子，一旦已完成事项数量改变，那么 <code>completedCount</code> 会自动更新。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">TodoStore</span> <span class="token punctuation">{</span>
+    @observable todos <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    @computed <span class="token keyword">get</span> <span class="token function">completedCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		<span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>todos<span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span>todo <span class="token operator">=&gt;</span> todo<span class="token punctuation">.</span>isCompleted<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">.</span>length
+	<span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="reaction--autorun">2.3 reaction &amp; autorun</h3>
+</div><div class="cl-preview-section"><p><code>autorun</code> 接收一个函数，当这个函数中依赖的可观察属性发生变化的时候，<code>autorun</code> 里面的函数就会被触发。除此之外，<code>autorun</code> 里面的函数在第一次会立即执行一次。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> person <span class="token operator">=</span> <span class="token function">observable</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+    age<span class="token punctuation">:</span> <span class="token number">20</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span> 
+<span class="token comment">// autorun 里面的函数会立即执行一次，当 age 变化的时候会再次执行一次</span>
+<span class="token function">autorun</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">"age"</span><span class="token punctuation">,</span> person<span class="token punctuation">.</span>age<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+person<span class="token punctuation">.</span>age <span class="token operator">=</span> <span class="token number">21</span><span class="token punctuation">;</span>
+<span class="token comment">// 输出：</span>
+<span class="token comment">// age 20</span>
+<span class="token comment">// age 21</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>但是很多人经常会用错 autorun，导致属性修改了也没有触发重新执行。<br>
+常见的几种错误用法如下：</p>
+</div><div class="cl-preview-section"><ol>
+<li>错误的修改了可观察对象的引用</li>
+</ol>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">let</span> person <span class="token operator">=</span> <span class="token function">observable</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+    age<span class="token punctuation">:</span> <span class="token number">20</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token comment">// 不会起作用</span>
+<span class="token function">autorun</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">"age"</span><span class="token punctuation">,</span> person<span class="token punctuation">.</span>age<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+person <span class="token operator">=</span> <span class="token function">observable</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+    age<span class="token punctuation">:</span> <span class="token number">21</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><ol start="2">
+<li>在追踪函数外进行间接引用</li>
+</ol>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> age <span class="token operator">=</span> person<span class="token punctuation">.</span>age<span class="token punctuation">;</span>
+<span class="token comment">// 不会起作用</span>
+<span class="token function">autorun</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'age'</span><span class="token punctuation">,</span> age<span class="token punctuation">)</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+person<span class="token punctuation">.</span>age <span class="token operator">=</span> <span class="token number">21</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><code>reaction</code> 则是和 <code>autorun</code> 功能类似，但是 <code>autorun</code> 会立即执行一次，而 <code>reaction</code> 不会，使用 reaction 可以在监听到指定数据变化的时候执行一些操作，有利于和副作用代码解耦。reaction 和 Vue 中的 <code>watch</code> 非常像。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token comment">// 当todos改变的时候将其存入缓存</span>
+<span class="token function">reaction</span><span class="token punctuation">(</span>
+    <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token function">toJS</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>todos<span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token punctuation">(</span>todos<span class="token punctuation">)</span> <span class="token operator">=&gt;</span>  localStorage<span class="token punctuation">.</span><span class="token function">setItem</span><span class="token punctuation">(</span><span class="token string">'mobx-react-todomvc-todos'</span><span class="token punctuation">,</span> JSON<span class="token punctuation">.</span><span class="token function">stringify</span><span class="token punctuation">(</span><span class="token punctuation">{</span> todos <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>看到 autorun 和 reaction 的用法后，也许你会想到，如果将其和 React 组件结合到一起，那不就可以实现很细粒度的更新了吗？<br>
+没错，Mobx-React 就是来解决这个问题的。</p>
+</div><div class="cl-preview-section"><h3 id="observer">2.4 observer</h3>
+</div><div class="cl-preview-section"><p>Mobx-React 中提供了一个 <code>observer</code> 方法，这个方法主要是改写了 React 的 <code>render</code> 函数，当监听到 <code>render</code> 中依赖属性变化的时候就会重新渲染组件，这样就可以做到高性能更新。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js">@observer
+<span class="token keyword">class</span> <span class="token class-name">App</span> <span class="token keyword">extends</span> <span class="token class-name">Component</span> <span class="token punctuation">{</span>
+    @observable count <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    @action 
+    <span class="token function-variable function">increment</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>count<span class="token operator">++</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token operator">&lt;</span>h1 onClick<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>increment<span class="token punctuation">}</span><span class="token operator">&gt;</span><span class="token punctuation">{</span> <span class="token keyword">this</span><span class="token punctuation">.</span>count <span class="token punctuation">}</span><span class="token operator">&lt;</span><span class="token operator">/</span>h1<span class="token operator">&gt;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="mobx-原理">3. mobx 原理</h2>
+</div><div class="cl-preview-section"><p>从上面的一些用法来看，很明显实现上用到了 <code>Object.defineProperty</code> 或者 <code>Proxy</code>。当 autorun 第一次执行的时候会触发依赖属性的 <code>getter</code>，从而收集当前函数的依赖。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> person <span class="token operator">=</span> <span class="token function">observable</span><span class="token punctuation">(</span><span class="token punctuation">{</span> name<span class="token punctuation">:</span> <span class="token string">'tom'</span> <span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token function">autorun</span><span class="token punctuation">(</span><span class="token keyword">function</span> <span class="token function">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>person<span class="token punctuation">.</span>name<span class="token punctuation">)</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+
+</code></pre>
+</div><div class="cl-preview-section"><p>在 autorun 里面相当于做了这么一件事情。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js">person<span class="token punctuation">.</span>watches<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>func<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>当依赖属性触发 <code>setter</code> 的时候，就会将所有订阅了变化的函数都执行一遍，从而实现了数据响应式。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js">person<span class="token punctuation">.</span>watches<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>watch <span class="token operator">=&gt;</span> <span class="token function">watch</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="http://static.zybuluo.com/gyyin/n1xdxztuu6gnpjbo5221og4q/image.png" alt="image.png-101.5kB"></p>
+</div><div class="cl-preview-section"><p>知道原理之后，那我们就可以来一步步去实现这个 Mobx，这里将会以装饰器写法为例子。</p>
+</div><div class="cl-preview-section"><h3 id="observable-1">3.1 observable</h3>
+</div><div class="cl-preview-section"><p>前面在讲解装饰器的时候说过，装饰器函数一般接收三个参数，分别是目标对象、属性、属性描述符。<br>
+我们都知道，被 observable 包装过的对象，其属性也是可观察的，也就是说需要递归处理其属性。<br>
+其次，由于需要收集依赖的方法，某个方法可能依赖了多个可观察属性，相当于这些可观察属性都有自己的订阅方法数组。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> cat <span class="token operator">=</span> <span class="token function">observable</span><span class="token punctuation">(</span><span class="token punctuation">{</span>name<span class="token punctuation">:</span> <span class="token string">"tom"</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token keyword">const</span> mice <span class="token operator">=</span> <span class="token function">observable</span><span class="token punctuation">(</span><span class="token punctuation">{</span>name<span class="token punctuation">:</span> <span class="token string">"jerry"</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token function">autorun</span><span class="token punctuation">(</span><span class="token keyword">function</span> <span class="token function">func1</span> <span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token template-string"><span class="token string">`</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>cat<span class="token punctuation">.</span>name<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string"> and </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>mice<span class="token punctuation">.</span>name<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">`</span></span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token function">autorun</span><span class="token punctuation">(</span><span class="token keyword">function</span> <span class="token function">func2</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>mice<span class="token punctuation">.</span>name<span class="token punctuation">)</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>以上面这段代码为例，可观察对象 <code>cat</code> 只有 <code>func1</code> 一个订阅方法，而 <code>mice</code> 则有 <code>func1</code> 和 <code>func2</code> 两个方法。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js">cat<span class="token punctuation">.</span>watches <span class="token operator">=</span> <span class="token punctuation">[</span>func1<span class="token punctuation">]</span>
+mice<span class="token punctuation">.</span>watches <span class="token operator">=</span> <span class="token punctuation">[</span>func1<span class="token punctuation">,</span> func2<span class="token punctuation">]</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可见 <code>observable</code> 在调用的时候，使用了类似 <code>id</code> 之类的来对不同调用做区分。<br>
+我们可以先简单地实现一下 observable 方法。首先，实现一个可以根据 id 来区分的类。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">let</span> observableId <span class="token operator">=</span> <span class="token number">0</span>
+<span class="token keyword">class</span> <span class="token class-name">Observable</span> <span class="token punctuation">{</span>
+    id <span class="token operator">=</span> <span class="token number">0</span>
+    <span class="token function">constructor</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>id <span class="token operator">=</span> observableId<span class="token operator">++</span><span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>value <span class="token operator">=</span> v<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>然后我们要实现一个装饰器，这个方法支持拦截属性的 <code>get/set</code>。这个 <code>observable</code> 装饰器其实就是利用了 <code>Observable</code> 这个类。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">function</span> <span class="token function">observable</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> name<span class="token punctuation">,</span> descriptor<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> v <span class="token operator">=</span> descriptor<span class="token punctuation">.</span>initializer<span class="token punctuation">.</span><span class="token function">call</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">const</span> o <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Observable</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token punctuation">{</span>
+        enumerable<span class="token punctuation">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+        configurable<span class="token punctuation">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+        <span class="token keyword">get</span><span class="token punctuation">:</span> <span class="token keyword">function</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> o<span class="token punctuation">.</span><span class="token keyword">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token keyword">set</span><span class="token punctuation">:</span> <span class="token keyword">function</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> o<span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>然后我们要来实现 <code>Observable</code> 类里面的 <code>get/set</code>，但这个 <code>get/set</code> 和 <code>autorun</code> 也是密切相关的。<br>
+<code>get/set</code> 做了什么呢？<code>get</code> 会在 <code>autorun</code> 执行的时候，将传给 <code>autorun</code> 的函数依赖收集到 <code>id</code> 相关的数组里面。<br>
+而 <code>set</code> 则是会触发数组中相关函数的执行。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">let</span> observableId <span class="token operator">=</span> <span class="token number">0</span>
+<span class="token keyword">class</span> <span class="token class-name">Observable</span> <span class="token punctuation">{</span>
+    id <span class="token operator">=</span> <span class="token number">0</span>
+    <span class="token function">constructor</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>id <span class="token operator">=</span> observableId<span class="token operator">++</span><span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>value <span class="token operator">=</span> v<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">set</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>value <span class="token operator">=</span> v<span class="token punctuation">;</span>
+        dependenceManager<span class="token punctuation">.</span><span class="token function">trigger</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>id<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        dependenceManager<span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>id<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>value<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="依赖收集autorun">3.2 依赖收集autorun</h3>
+</div><div class="cl-preview-section"><p>前面讲了，<code>autorun</code> 会立即执行一次，并且会将其函数收集起来，存到和 <code>observable. id</code> 相关的数组中去。那么 <code>autorun</code> 就是一个收集依赖、执行函数的过程。实际上，在执行函数的时候，就已经触发了 <code>get</code> 来做了收集。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">import</span> dependenceManager <span class="token keyword">from</span> <span class="token string">'./dependenceManager'</span>
+
+<span class="token keyword">export</span> <span class="token keyword">default</span> <span class="token keyword">function</span> <span class="token function">autorun</span><span class="token punctuation">(</span>handler<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    dependenceManager<span class="token punctuation">.</span><span class="token function">beginCollect</span><span class="token punctuation">(</span>handler<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">handler</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 触发 get，执行了 dependenceManager.collect()</span>
+    dependenceManager<span class="token punctuation">.</span><span class="token function">endCollect</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>接着我们来实现一下 <code>dependenceManager</code> 的几个方法，首先定义一个 <code>DependenceManager</code> 类。<br>
+再来拆解一下 <code>DependenceManager</code> 中的方法，如下：</p>
+</div><div class="cl-preview-section"><ol>
+<li><strong>beginCollect：</strong> 用一个全局变量保存着函数依赖；</li>
+<li><strong>collect：</strong> 当执行 <code>get</code> 的时候，根据传入的 <code>id</code>，将函数依赖放入数组中；</li>
+<li><strong>endCollect：</strong> 清除刚开始的函数依赖，以便于下一次收集；</li>
+<li><strong>trigger：</strong> 当执行 <code>set</code> 的时候，根据 <code>id</code> 来执行数组中的函数依赖。</li>
+</ol>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">DependenceManager</span> <span class="token punctuation">{</span>
+    Dep <span class="token operator">=</span> <span class="token keyword">null</span><span class="token punctuation">;</span>
+    _store <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">;</span>
+    <span class="token function">beginCollect</span><span class="token punctuation">(</span>handler<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        DependenceManager<span class="token punctuation">.</span>Dep <span class="token operator">=</span> handler
+    <span class="token punctuation">}</span>
+    <span class="token function">collect</span><span class="token punctuation">(</span>id<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>DependenceManager<span class="token punctuation">.</span>Dep<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span>_store<span class="token punctuation">[</span>id<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>_store<span class="token punctuation">[</span>id<span class="token punctuation">]</span> <span class="token operator">||</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span>_store<span class="token punctuation">[</span>id<span class="token punctuation">]</span><span class="token punctuation">.</span>watchers <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>_store<span class="token punctuation">[</span>id<span class="token punctuation">]</span><span class="token punctuation">.</span>watchers <span class="token operator">||</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span>_store<span class="token punctuation">[</span>id<span class="token punctuation">]</span><span class="token punctuation">.</span>watchers<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>DependenceManager<span class="token punctuation">.</span>Dep<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">endCollect</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        DependenceManager<span class="token punctuation">.</span>Dep <span class="token operator">=</span> <span class="token keyword">null</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">trigger</span><span class="token punctuation">(</span>id<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">const</span> store <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>_store<span class="token punctuation">[</span>id<span class="token punctuation">]</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span>store <span class="token operator">&amp;&amp;</span> store<span class="token punctuation">.</span>watchers<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            store<span class="token punctuation">.</span>watchers<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>s <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+                s<span class="token punctuation">.</span><span class="token function">call</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">export</span> <span class="token keyword">default</span> <span class="token keyword">new</span> <span class="token class-name">DependenceManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>至此，我们已经完成了一个完整的 Mobx 骨架，可以做一些有意思的事情了。写个简单的例子来试试：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">Counter</span> <span class="token punctuation">{</span>
+    @observable count <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token function">increment</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>count<span class="token operator">++</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">const</span> counter <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Counter</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token function">autorun</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token template-string"><span class="token string">`count=</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>counter<span class="token punctuation">.</span>count<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">`</span></span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+
+counter<span class="token punctuation">.</span><span class="token function">increment</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以看到 <code>autorun</code> 里面的函数被执行了两次，说明我们已经实现了一个简单的 Mobx。但这个 Mobx 还有很多问题，比如不支持更深层的对象，也监听不到数组等等。</p>
+</div><div class="cl-preview-section"><h3 id="对深层对象和数组的处理">3.3 对深层对象和数组的处理</h3>
+</div><div class="cl-preview-section"><p>在前面我们讲解 <code>Proxy</code> 和 <code>Object.defineProperty</code> 的时候就已经说过，由于 <code>Object.defineProperty</code> 的问题，无法监听到新增加的项，因此对于动态添加的属性或者下标就无法进行监听。<br>
+据尤雨溪所讲，在 Vue 里面由于考虑性能就放弃了监听数组的下标变化。而在 Mobx4 中使用了比较极端的方式，那就是不管数组中有多少项，都是用一个长度 1000 的数组来存放，去监听这 1000 个下标变化，可以满足大多数场景。<br>
+但是在未来的 Vue3 和已面世的 Mobx5 中，都已经使用 Proxy 来实现对数组的拦截了。这里我们使用 Proxy 来增加对数组的监听。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">Observable</span> <span class="token punctuation">{</span>
+    <span class="token keyword">set</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 如果是数组，那么就对数组做特殊的处理</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span>Array<span class="token punctuation">.</span><span class="token function">isArray</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">_wrapArray</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span>value <span class="token operator">=</span> v<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        dependenceManager<span class="token punctuation">.</span><span class="token function">trigger</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>id<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">_wrapArray</span><span class="token punctuation">(</span>arr<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>value <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>arr<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+            <span class="token keyword">set</span><span class="token punctuation">(</span>obj<span class="token punctuation">,</span> key<span class="token punctuation">,</span> value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                obj<span class="token punctuation">[</span>key<span class="token punctuation">]</span> <span class="token operator">=</span> value<span class="token punctuation">;</span>
+                <span class="token comment">// 如果是修改数组项的值，那么就触发通知</span>
+                <span class="token keyword">if</span><span class="token punctuation">(</span>key <span class="token operator">!==</span> <span class="token string">'length'</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    dependenceManager<span class="token punctuation">.</span><span class="token function">trigger</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>id<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+</code></pre>
+</div><div class="cl-preview-section"><p>现在已经可以监听到数组的变化了，那么用一个例子试试吧。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">Store</span> <span class="token punctuation">{</span>
+    @observable list <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token function">increment</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>list<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">++</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">const</span> store <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Store</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token function">autorun</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>store<span class="token punctuation">.</span>list<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+store<span class="token punctuation">.</span>list<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">++</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>原本预想中会打印两次，结果却只打印了一个1，这是为什么？来翻查一下前面 <code>Observable.set</code> 的代码会发现，我们只拦截了对象最外层属性的变化，如果有更深层的就拦截不到了。如果对 <code>list</code> 重新赋值就会生效，但修改 <code>list</code> 中第一项就不会生效。</p>
+</div><div class="cl-preview-section"><p>所以我们还需要对对象深层属性做个递归包装，这也是 Mobx 中 <code>observable</code> 的功能之一。</p>
+</div><div class="cl-preview-section"><ol>
+<li>首先，我们来判断包裹的属性是否为对象；</li>
+<li>如果是个对象，那么就遍历其属性，对属性值创建新的 <code>Observable</code> 实例；</li>
+<li>如果属性也是个对象，那么就进行递归，重复步骤1、2。</li>
+</ol>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">function</span> <span class="token function">createObservable</span><span class="token punctuation">(</span>target<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">typeof</span> target <span class="token operator">===</span> <span class="token string">"object"</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">let</span> property <span class="token keyword">in</span> target<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">if</span><span class="token punctuation">(</span>target<span class="token punctuation">.</span><span class="token function">hasOwnProperty</span><span class="token punctuation">(</span>property<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">const</span> observable <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Observable</span><span class="token punctuation">(</span>target<span class="token punctuation">[</span>property<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                Object<span class="token punctuation">.</span><span class="token function">defineProperty</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> property<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        <span class="token keyword">return</span> observable<span class="token punctuation">.</span><span class="token keyword">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+                    <span class="token keyword">set</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                        <span class="token keyword">return</span> observable<span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">}</span>
+                <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token function">createObservable</span><span class="token punctuation">(</span>target<span class="token punctuation">[</span>property<span class="token punctuation">]</span><span class="token punctuation">)</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这个 <code>createObservable</code> 方法，我们只需要在 <code>observable</code> 装饰器里面执行就行了。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">function</span> <span class="token function">observable</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> name<span class="token punctuation">,</span> descriptor<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> v <span class="token operator">=</span> descriptor<span class="token punctuation">.</span>initializer<span class="token punctuation">.</span><span class="token function">call</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">createObservable</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span>
+    <span class="token keyword">const</span> o <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Observable</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token punctuation">{</span>
+        enumerable<span class="token punctuation">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+        configurable<span class="token punctuation">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+        <span class="token keyword">get</span><span class="token punctuation">:</span> <span class="token keyword">function</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> o<span class="token punctuation">.</span><span class="token keyword">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token keyword">set</span><span class="token punctuation">:</span> <span class="token keyword">function</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token function">createObservable</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span>
+            <span class="token keyword">return</span> o<span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>继续使用上面那个例子，会发现成功打印出来了1、2，说明我们实现的这个简单的 Mobx 即支持拦截数组，又支持拦截深层属性。</p>
+</div><div class="cl-preview-section"><h3 id="computed-1">3.4 computed</h3>
+</div><div class="cl-preview-section"><p>我们都知道 <code>computed</code> 有 3 个特点，分别是：</p>
+</div><div class="cl-preview-section"><ol>
+<li><code>computed</code> 是个 get 方法，会缓存上一次的值</li>
+<li><code>computed</code> 会根据依赖的可观察属性重新计算</li>
+<li>依赖了 <code>computed</code> 的函数也会被重新执行</li>
+</ol>
+</div><div class="cl-preview-section"><p>其实 <code>computed</code> 和 <code>observable</code> 的实现思路类似，区别在于 <code>computed</code> 需要收集两次依赖，一次是 <code>computed</code> 依赖的可观察属性，一次是依赖了 <code>computed</code> 的方法。<br>
+首先，我们来定义一个 <code>computed</code> 的，这个方法依然是个装饰器。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">function</span> <span class="token function">computed</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> name<span class="token punctuation">,</span> descriptor<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> getter <span class="token operator">=</span> descriptor<span class="token punctuation">.</span><span class="token keyword">get</span><span class="token punctuation">;</span> <span class="token comment">// get 函数</span>
+    <span class="token keyword">const</span> computed <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Computed</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> getter<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">return</span> <span class="token punctuation">{</span>
+        enumerable<span class="token punctuation">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+        configurable<span class="token punctuation">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+        <span class="token keyword">get</span><span class="token punctuation">:</span> <span class="token keyword">function</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> computed<span class="token punctuation">.</span><span class="token keyword">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>接下来实现这个 <code>Computed</code> 类，这个类的实现方式和 <code>Observable</code> 差不多。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">let</span> id <span class="token operator">=</span> <span class="token number">0</span>
+<span class="token keyword">class</span> <span class="token class-name">Computed</span> <span class="token punctuation">{</span>
+    <span class="token function">constructor</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> getter<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>id <span class="token operator">=</span> id<span class="token operator">++</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>target <span class="token operator">=</span> target
+        <span class="token keyword">this</span><span class="token punctuation">.</span>getter <span class="token operator">=</span> getter
+    <span class="token punctuation">}</span>
+    <span class="token keyword">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        dependenceManager<span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>id<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在执行 get 方法的时候，就会去收集依赖了当前 <code>computed</code> 的方法。我们还需要去收集当前 <code>computed</code> 依赖的属性。<br>
+这里是不是可以利用前面的 <code>dependenceManager.beginCollect</code> 呢？没错，我们可以用 <code>dependenceManager.beginCollect</code> 来收集到重新计算的 <code>get</code> 函数，并且通知依赖了 <code>computed</code> 的方法。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js">    <span class="token function">registerReComputed</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span><span class="token keyword">this</span><span class="token punctuation">.</span>hasBindAutoReCompute<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span>hasBindAutoReCompute <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+            dependenceManager<span class="token punctuation">.</span><span class="token function">beginCollect</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>_reCompute<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">_reCompute</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            dependenceManager<span class="token punctuation">.</span><span class="token function">endCollect</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">reComputed</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>value <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>getter<span class="token punctuation">.</span><span class="token function">call</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>target<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        dependenceManager<span class="token punctuation">.</span><span class="token function">trigger</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>id<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>最终，我们的实现是这样的：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">let</span> id <span class="token operator">=</span> <span class="token number">0</span>
+<span class="token keyword">class</span> <span class="token class-name">Computed</span> <span class="token punctuation">{</span>
+    <span class="token function">constructor</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> getter<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>id <span class="token operator">=</span> id<span class="token operator">++</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>target <span class="token operator">=</span> target
+        <span class="token keyword">this</span><span class="token punctuation">.</span>getter <span class="token operator">=</span> getter
+    <span class="token punctuation">}</span>
+    <span class="token function">registerReComputed</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">!</span><span class="token keyword">this</span><span class="token punctuation">.</span>hasBindAutoReCompute<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span>hasBindAutoReCompute <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+            dependenceManager<span class="token punctuation">.</span><span class="token function">beginCollect</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>_reCompute<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">_reCompute</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            dependenceManager<span class="token punctuation">.</span><span class="token function">endCollect</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">reComputed</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>value <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>getter<span class="token punctuation">.</span><span class="token function">call</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>target<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        dependenceManager<span class="token punctuation">.</span><span class="token function">trigger</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>id<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">registerReComputed</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        dependenceManager<span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>id<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>value<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="observer-1">3.5 observer</h3>
+</div><div class="cl-preview-section"><p>而 observer 的实现比较简单，就是利用了 React 的 <code>render</code> 方法执行进行依赖收集，我们可以在 <code>componentWillMount</code> 里面注册 <code>autorun</code>。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">function</span> <span class="token function">observer</span><span class="token punctuation">(</span>target<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> componentWillMount <span class="token operator">=</span> target<span class="token punctuation">.</span>prototype<span class="token punctuation">.</span>componentWillMount<span class="token punctuation">;</span>
+    target<span class="token punctuation">.</span>prototype<span class="token punctuation">.</span><span class="token function-variable function">componentWillMount</span> <span class="token operator">=</span> <span class="token keyword">function</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        componentWillMount <span class="token operator">&amp;&amp;</span> componentWillMount<span class="token punctuation">.</span><span class="token function">call</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">autorun</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">forceUpdate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>至此，我们已经实现了一个完整的 <code>Mobx</code> 库，可以看到 <code>Mobx</code> 的实现原理比较简单，使用起来也没有 Redux 那么繁琐。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img2.mukewang.com/5ebe5d0d00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=72">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '29 深入浅出 Mobx 核心原理',
+					'CID': '1680',
+					'Teacher': 'sh22n'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "29 深入浅出 Mobx 核心原理",
+                    desc: "前端进阶必备，未来少走弯路",
+                    imgUrl: 'https:https://img2.mukewang.com/5e6af0f50001b61d05400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5e6af0f50001b61d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/72',
+                    link: 'https://m.imooc.com/read/72'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

@@ -1,0 +1,1041 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>19 深入 JavaScript 装饰器</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="前端进阶必备，未来少走弯路">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "2";
+	var chapter_id = "1671";
+	var chapter_title = "19 深入 JavaScript 装饰器";
+	var aid = "72";
+	var a_name = "Web前端开发修炼指南";
+	var a_price = "58.00";
+	var a_pic = "https://img3.mukewang.com/5e6af0f50001b61d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '72';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-04-23&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			19 深入 JavaScript 装饰器
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5e6edf950001caea06400359.jpg')"></div>
+	
+	
+		<a href="/read/72">
+			<div class="course-entry">
+				<img src="https://img1.mukewang.com/5e6c7ecc00012eaa10000884-40-40.jpg" alt="sh22n">
+				<h3>Web前端开发修炼指南</h3>
+				<p>sh22n · 前携程高级前端工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">人生的价值，并不是用时间，而是用深度去衡量的。<p class="author">——列夫·托尔斯泰</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><blockquote>
+<p>俗话说，人靠衣装，佛靠金装。大街上的小姐姐都喜欢把自己打扮得美美的，让你忍不住多看几眼，这就是装饰的作用。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="前言">1. 前言</h2>
+</div><div class="cl-preview-section"><p>装饰器是最新的 ECMA 中的一个提案，是一种与类（class）相关的语法，用来注释或修改类和类方法。装饰器在 Python 和 Java 等语言中也被大量使用。装饰器是实现 AOP（面向切面）编程的一种重要方式。</p>
+</div><div class="cl-preview-section"><p>下面是一个使用装饰器的简单例子，这个 <code>@readonly</code> 可以将 <code>count</code> 属性设置为只读。可以看出来，装饰器大大提高了代码的简洁性和可读性。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">Person</span> <span class="token punctuation">{</span>
+    @readonly count <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>由于浏览器还未支持装饰器，为了让大家能够正常看到效果，这里我使用 Parcel 进行了一下简单的配置，可以去 clone 这个仓库后再来运行本文涉及到的所有例子，仓库地址：<a href="https://github.com/yinguangyao/ES6">learn es6</a></p>
+</div><div class="cl-preview-section"><blockquote>
+<p>本文涉及到 <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty">Object.defineProperty</a>、高阶函数等知识，如果之前没有了解过相关概念，建议先了解后再来阅读本文。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="装饰器模式">2. 装饰器模式</h2>
+</div><div class="cl-preview-section"><p>在开始讲解装饰器之前，先从经典的装饰器模式说起。装饰器模式是一种结构型设计模式，它允许向一个现有的对象添加新的功能，同时又不改变其结构，是作为对现有类的一个包装。<br>
+一般来说，在代码设计中，我们应当遵循「多用组合，少用继承」的原则。通过装饰器模式动态地给一个对象添加一些额外的职责。就增加功能来说，装饰器模式相比生成子类更为灵活。</p>
+</div><div class="cl-preview-section"><h3 id="一个英雄联盟的例子">2.1 一个英雄联盟的例子</h3>
+</div><div class="cl-preview-section"><p>下班回去和朋友愉快地开黑，当我正在用亚索「面对疾风吧」的时候，突然想到，如果让我设计亚索英雄，我该怎么实现呢？<br>
+我想了想，肯定会先设计一个英雄的类。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">Hero</span> <span class="token punctuation">{</span>
+    <span class="token function">attack</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>然后，再实现一个 Yasuo 的类来继承这个 <code>Hero</code> 类。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">Yasuo</span> <span class="token keyword">extends</span> <span class="token class-name">Hero</span> <span class="token punctuation">{</span>
+    <span class="token function">attack</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">"斩钢闪"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>我还在想这个问题的时候，队友已经打了大龙，我的亚索身上就出现了大龙 buff 的印记。我突然想到，那该怎么给英雄增加大龙 buff 呢？那增加个大龙 buff 的属性不行吗？<br>
+当然不太行，要知道，英雄联盟里面的大龙 buff 是会增加收益的。<br>
+嗯，聪明的我已经想到办法了，再继承一次不就好了吗？</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">BaronYasuo</span> <span class="token keyword">extends</span> <span class="token class-name">Yasuo</span> <span class="token punctuation">{</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>厉害了，但是如果亚索身上还有其他 buff 呢？毕竟 LOL 里面是有红 buff、蓝 buff、大龙 buff等等存在，那岂不是有多少种就要增加多少个类吗？</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e70454f000184f007810541.png" alt="图片描述"><br>
+可以换种思路来思考这个问题，如果把 buff 当做我们身上的衣服。在不同的季节，我们会换上不同的衣服，到了冬天，甚至还会叠加多件衣服。当 buff 消失了，就相当于把这件衣服脱了下来。如下图所示：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e70455c0001978b09640684.png" alt="图片描述"><br>
+衣服对人来说起到装饰的作用，buff 对于亚索来说也只是增强效果。那么，你是不是有思路了呢？<br>
+没错，可以创建 Buff 类，传入英雄类后获得一个新的增强后的英雄类。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">RedBuff</span> <span class="token keyword">extends</span> <span class="token class-name">Buff</span> <span class="token punctuation">{</span>
+    <span class="token function">constructor</span><span class="token punctuation">(</span>hero<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>hero <span class="token operator">=</span> hero<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 红buff造成额外伤害</span>
+    <span class="token function">extraDamage</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">attack</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>hero<span class="token punctuation">.</span><span class="token function">attack</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">extraDamage</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">class</span> <span class="token class-name">BlueBuff</span> <span class="token keyword">extends</span> <span class="token class-name">Buff</span> <span class="token punctuation">{</span>
+    <span class="token function">constructor</span><span class="token punctuation">(</span>hero<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>hero <span class="token operator">=</span> hero<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 技能CD（减10%）</span>
+    <span class="token function">CDR</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>hero<span class="token punctuation">.</span><span class="token function">CDR</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">0.9</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">class</span> <span class="token class-name">BaronBuff</span> <span class="token keyword">extends</span> <span class="token class-name">Buff</span> <span class="token punctuation">{</span>
+    <span class="token function">constructor</span><span class="token punctuation">(</span>hero<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>hero <span class="token operator">=</span> hero<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 回城速度缩短一半</span>
+    <span class="token function">backSpeed</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>hero<span class="token punctuation">.</span>backSpeed <span class="token operator">*</span> <span class="token number">0.5</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>定义好所有的 buff 类之后，就可以直接套用到英雄身上，这样看起来是不是清爽了很多呢？这种写法看起来很像函数组合。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> yasuo <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Yasuo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> redYasuo <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">RedBuff</span><span class="token punctuation">(</span>yasuo<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 红buff亚索</span>
+<span class="token keyword">const</span> blueYasuo <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BlueBuff</span><span class="token punctuation">(</span>yasuo<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 蓝buff亚索</span>
+<span class="token keyword">const</span> redBlueYasuo <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BlueBuff</span><span class="token punctuation">(</span>redYasuo<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 红蓝buff亚索</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="es7-装饰器">3. ES7 装饰器</h2>
+</div><div class="cl-preview-section"><p>decorator（装饰器）是 ES7 中的一个提案，目前处于 stage-2 阶段，提案地址：<a href="https://github.com/tc39/proposal-decorators">JavaScript Decorators</a>。<br>
+装饰器与之前讲过的函数组合（compose）以及高阶函数很相似。装饰器使用 <code>@</code> 作为标识符，放置在被装饰代码前面。在其他语言中，早就已经有了比较成熟的装饰器方案。</p>
+</div><div class="cl-preview-section"><h3 id="python-中的装饰器">3.1 Python 中的装饰器</h3>
+</div><div class="cl-preview-section"><p>先来看一下 Python 中的一个装饰器的例子：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js">def <span class="token function">auth</span><span class="token punctuation">(</span>func<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    def <span class="token function">inner</span><span class="token punctuation">(</span>request<span class="token punctuation">,</span><span class="token operator">*</span>args<span class="token punctuation">,</span><span class="token operator">**</span>kwargs<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        v <span class="token operator">=</span> request<span class="token punctuation">.</span>COOKIES<span class="token punctuation">.</span><span class="token keyword">get</span><span class="token punctuation">(</span><span class="token string">'user'</span><span class="token punctuation">)</span>
+        <span class="token keyword">if</span> not v<span class="token punctuation">:</span>
+            <span class="token keyword">return</span> <span class="token function">redirect</span><span class="token punctuation">(</span><span class="token string">'/login'</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token function">func</span><span class="token punctuation">(</span>request<span class="token punctuation">,</span> <span class="token operator">*</span>args<span class="token punctuation">,</span><span class="token operator">**</span>kwargs<span class="token punctuation">)</span>
+    <span class="token keyword">return</span> inner
+
+@auth
+def <span class="token function">index</span><span class="token punctuation">(</span>request<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    v <span class="token operator">=</span> request<span class="token punctuation">.</span>COOKIES<span class="token punctuation">.</span><span class="token keyword">get</span><span class="token punctuation">(</span><span class="token string">"user"</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> <span class="token function">render</span><span class="token punctuation">(</span>request<span class="token punctuation">,</span><span class="token string">"index.html"</span><span class="token punctuation">,</span><span class="token punctuation">{</span><span class="token string">"current_user"</span><span class="token punctuation">:</span>v<span class="token punctuation">}</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e70459a0001b5d607910438.png" alt="图片描述"><br>
+这个 <code>auth</code> 装饰器是通过检查 <code>cookie</code> 来判断用户是否登录的。<code>auth</code> 函数是一个高阶函数，它接收了一个 <code>func</code> 函数作为参数，返回了一个新的 <code>inner</code> 函数。<br>
+在 <code>inner</code> 函数中进行 <code>cookie</code> 的检查，由此来判断是跳回登录页面还是继续执行 <code>func</code> 函数。<br>
+在所有需要权限验证的函数上，都可以使用这个 <code>auth</code> 装饰器，很简洁明了且无侵入。</p>
+</div><div class="cl-preview-section"><h3 id="javascript-装饰器">3.2 JavaScript 装饰器</h3>
+</div><div class="cl-preview-section"><p>JavaScript 中的装饰器和 Python 的装饰器类似，依赖于 <code>Object.defineProperty</code>，一般是用来装饰类、类属性、类方法。<br>
+使用装饰器可以做到不直接修改代码，就实现某些功能，做到真正的面向切面编程。这在一定程度上和 Proxy 很相似，但使用起来比 Proxy 会更加简洁。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>注意：装饰器目前还处于 stage-2，意味着语法之后也许会有变动。装饰器用于函数、对象等等已经有一些规划，请看：<a href="https://github.com/tc39/proposal-decorators/blob/master/NEXTBUILTINS.md#applying-built-in-decorators-to-other-syntactic-forms">Future built-in decorators</a></p>
+</blockquote>
+</div><div class="cl-preview-section"><h3 id="类装饰器">3.3 类装饰器</h3>
+</div><div class="cl-preview-section"><p>装饰类的时候，装饰器方法一般会接收一个目标类作为参数。下面是一个给目标类增加静态属性 <code>test</code> 的例子：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> <span class="token function-variable function">decoratorClass</span> <span class="token operator">=</span> <span class="token punctuation">(</span>targetClass<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    targetClass<span class="token punctuation">.</span>test <span class="token operator">=</span> <span class="token string">'123'</span>
+<span class="token punctuation">}</span>
+@decoratorClass
+<span class="token keyword">class</span> <span class="token class-name">Test</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+Test<span class="token punctuation">.</span>test<span class="token punctuation">;</span> <span class="token comment">// '123'</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>除了可以修改类本身，还可以通过修改原型，给实例增加新属性。下面是给目标类增加 <code>speak</code> 方法的例子：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> <span class="token function-variable function">withSpeak</span> <span class="token operator">=</span> <span class="token punctuation">(</span>targetClass<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> prototype <span class="token operator">=</span> targetClass<span class="token punctuation">.</span>prototype<span class="token punctuation">;</span>
+    prototype<span class="token punctuation">.</span><span class="token function-variable function">speak</span> <span class="token operator">=</span> <span class="token keyword">function</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'I can speak '</span><span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>language<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+@withSpeak
+<span class="token keyword">class</span> <span class="token class-name">Student</span> <span class="token punctuation">{</span>
+    <span class="token function">constructor</span><span class="token punctuation">(</span>language<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>language <span class="token operator">=</span> language<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">const</span> student1 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Student</span><span class="token punctuation">(</span><span class="token string">'Chinese'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> student2 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Student</span><span class="token punctuation">(</span><span class="token string">'English'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+student1<span class="token punctuation">.</span><span class="token function">speak</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// I can speak  Chinese</span>
+
+student2<span class="token punctuation">.</span><span class="token function">speak</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// I can speak  English</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>利用高阶函数的属性，还可以给装饰器传参，通过参数来判断对类进行什么处理。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> <span class="token function-variable function">withLanguage</span> <span class="token operator">=</span> <span class="token punctuation">(</span>language<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">(</span>targetClass<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    targetClass<span class="token punctuation">.</span>prototype<span class="token punctuation">.</span>language <span class="token operator">=</span> language<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+@<span class="token function">withLanguage</span><span class="token punctuation">(</span><span class="token string">'Chinese'</span><span class="token punctuation">)</span>
+<span class="token keyword">class</span> <span class="token class-name">Student</span> <span class="token punctuation">{</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">const</span> student <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Student</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+student<span class="token punctuation">.</span>language<span class="token punctuation">;</span> <span class="token comment">// 'Chinese'</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如果你经常编写 react-redux 的代码，那么也会遇到需要将 store 中的数据映射到组件中的情况。connect 是一个高阶组件，它接收了两个函数 <code>mapStateToProps</code> 和 <code>mapDispatchToProps</code> 以及一个组件 <code>App</code>，最终返回了一个增强版的组件。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">App</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span> <span class="token punctuation">{</span>
+<span class="token punctuation">}</span>
+<span class="token function">connect</span><span class="token punctuation">(</span>mapStateToProps<span class="token punctuation">,</span> mapDispatchToProps<span class="token punctuation">)</span><span class="token punctuation">(</span>App<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>有了装饰器之后，connect 的写法可以变得更加优雅。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js">@<span class="token function">connect</span><span class="token punctuation">(</span>mapStateToProps<span class="token punctuation">,</span> mapDispatchToProps<span class="token punctuation">)</span>
+<span class="token keyword">class</span> <span class="token class-name">App</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span> <span class="token punctuation">{</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="类属性装饰器">3.4 类属性装饰器</h3>
+</div><div class="cl-preview-section"><p>类属性装饰器可以用在类的属性、方法、get/set 函数中，一般会接收三个参数：</p>
+</div><div class="cl-preview-section"><ol>
+<li><em><strong>target</strong></em>：被修饰的类</li>
+<li><em><strong>name</strong></em>：类成员的名字</li>
+<li><em><strong>descriptor</strong></em>：属性描述符，对象会将这个参数传给 <code>Object.defineProperty</code><br>
+使用类属性装饰器可以做到很多有意思的事情，比如最开始举的那个 <code>readonly</code> 的例子：</li>
+</ol>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">function</span> <span class="token function">readonly</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> name<span class="token punctuation">,</span> descriptor<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  descriptor<span class="token punctuation">.</span>writable <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> descriptor<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">class</span> <span class="token class-name">Person</span> <span class="token punctuation">{</span>
+    @readonly name <span class="token operator">=</span> <span class="token string">'person'</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">const</span> person <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Person</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+person<span class="token punctuation">.</span>name <span class="token operator">=</span> <span class="token string">'tom'</span><span class="token punctuation">;</span> 
+</code></pre>
+</div><div class="cl-preview-section"><p>还可以用来统计一个函数的执行时间，以便于后期做一些性能优化。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">function</span> <span class="token function">time</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> name<span class="token punctuation">,</span> descriptor<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> func <span class="token operator">=</span> descriptor<span class="token punctuation">.</span>value<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">typeof</span> func <span class="token operator">===</span> <span class="token string">'function'</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        descriptor<span class="token punctuation">.</span><span class="token function-variable function">value</span> <span class="token operator">=</span> <span class="token keyword">function</span><span class="token punctuation">(</span><span class="token operator">...</span>args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            console<span class="token punctuation">.</span><span class="token function">time</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">const</span> results <span class="token operator">=</span> func<span class="token punctuation">.</span><span class="token function">apply</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            console<span class="token punctuation">.</span><span class="token function">timeEnd</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> results<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">class</span> <span class="token class-name">Person</span> <span class="token punctuation">{</span>
+    @time
+    <span class="token function">say</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'hello'</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">const</span> person <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Person</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+person<span class="token punctuation">.</span><span class="token function">say</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在 react 知名的状态管理库 mobx 中，也通过装饰器来将类属性置为可观察属性，以此来实现响应式编程。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">import</span> <span class="token punctuation">{</span>
+    observable<span class="token punctuation">,</span>
+    action<span class="token punctuation">,</span>
+    autorun
+<span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">'mobx'</span>
+
+<span class="token keyword">class</span> <span class="token class-name">Store</span> <span class="token punctuation">{</span>
+    @observable count <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    @action
+    <span class="token function">changeCount</span><span class="token punctuation">(</span>count<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>count <span class="token operator">=</span> count<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">const</span> store <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Store</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">autorun</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'count is '</span><span class="token punctuation">,</span> store<span class="token punctuation">.</span>count<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+store<span class="token punctuation">.</span><span class="token function">changeCount</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 修改 count 的值，会引起 autorun 中的函数自动执行。</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="装饰器组合">3.5 装饰器组合</h3>
+</div><div class="cl-preview-section"><p>如果你想要使用多个装饰器，那么该怎么办呢？装饰器是可以叠加的，根据离被装饰类/属性的距离来依次执行。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">Person</span> <span class="token punctuation">{</span>
+    @time
+    @log
+    <span class="token function">say</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>除此之外，在装饰器的提案中，还出现了一种组合了多种装饰器的装饰器例子。目前还没见到被使用。<br>
+通过使用 <code>decorator</code> 来声明一个组合装饰器 <code>xyz</code>，这个装饰器组合了多种装饰器。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js">decorator @<span class="token function">xyz</span><span class="token punctuation">(</span>arg<span class="token punctuation">,</span> arg2 <span class="token punctuation">{</span>
+  @foo @<span class="token function">bar</span><span class="token punctuation">(</span>arg<span class="token punctuation">)</span> @<span class="token function">baz</span><span class="token punctuation">(</span>arg2<span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+@<span class="token function">xyz</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span> <span class="token keyword">class</span> <span class="token class-name">C</span> <span class="token punctuation">{</span> <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>和下面这种写法是一样的。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js">@foo @<span class="token function">bar</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span> @<span class="token function">baz</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span>
+<span class="token keyword">class</span> <span class="token class-name">C</span> <span class="token punctuation">{</span> <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="装饰器可以做哪些有意思的事情？">4. 装饰器可以做哪些有意思的事情？</h2>
+</div><div class="cl-preview-section"><h3 id="多重继承">4.1 多重继承</h3>
+</div><div class="cl-preview-section"><p>之前我们在讲解 JavaScript 多重继承的时候，使用过 <code>mixin</code> 的方式，这里结合装饰器甚至还能更进一步简化 <code>mixin</code> 的使用。<br>
+<code>mixin</code> 方法将会接收一个父类列表，用其装饰目标类。我们理想中的用法应该是这样：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js">@<span class="token function">mixin</span><span class="token punctuation">(</span>Parent1<span class="token punctuation">,</span> Parent2<span class="token punctuation">,</span> Parent3<span class="token punctuation">)</span>
+<span class="token keyword">class</span> <span class="token class-name">Child</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>和之前实现多重继承的时候实现原理一致，只需要拷贝父类的原型属性和实例属性就可以实现了。<br>
+这里创建了一个新的 <code>Mixin</code> 类，来将 <code>mixins</code> 和 <code>targetClass</code> 上面的所有属性都拷贝过去。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> <span class="token function-variable function">mixin</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token operator">...</span>mixins<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">(</span>targetClass<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+  mixins <span class="token operator">=</span> <span class="token punctuation">[</span>targetClass<span class="token punctuation">,</span> <span class="token operator">...</span>mixins<span class="token punctuation">]</span><span class="token punctuation">;</span>
+  <span class="token keyword">function</span> <span class="token function">copyProperties</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> source<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">let</span> key <span class="token keyword">of</span> Reflect<span class="token punctuation">.</span><span class="token function">ownKeys</span><span class="token punctuation">(</span>source<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>key <span class="token operator">!==</span> <span class="token string">'constructor'</span>
+        <span class="token operator">&amp;&amp;</span> key <span class="token operator">!==</span> <span class="token string">'prototype'</span>
+        <span class="token operator">&amp;&amp;</span> key <span class="token operator">!==</span> <span class="token string">'name'</span>
+      <span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">let</span> desc <span class="token operator">=</span> Object<span class="token punctuation">.</span><span class="token function">getOwnPropertyDescriptor</span><span class="token punctuation">(</span>source<span class="token punctuation">,</span> key<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        Object<span class="token punctuation">.</span><span class="token function">defineProperty</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> desc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">class</span> <span class="token class-name">Mixin</span> <span class="token punctuation">{</span>
+    <span class="token function">constructor</span><span class="token punctuation">(</span><span class="token operator">...</span>args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">let</span> mixin <span class="token keyword">of</span> mixins<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token function">copyProperties</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">mixin</span><span class="token punctuation">(</span><span class="token operator">...</span>args<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 拷贝实例属性</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">let</span> mixin <span class="token keyword">of</span> mixins<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">copyProperties</span><span class="token punctuation">(</span>Mixin<span class="token punctuation">,</span> mixin<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 拷贝静态属性</span>
+    <span class="token function">copyProperties</span><span class="token punctuation">(</span>Mixin<span class="token punctuation">.</span>prototype<span class="token punctuation">,</span> mixin<span class="token punctuation">.</span>prototype<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 拷贝原型属性</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">return</span> Mixin<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">export</span> <span class="token keyword">default</span> mixin
+</code></pre>
+</div><div class="cl-preview-section"><p>我们来测试一下这个 <code>mixin</code> 方法是否能够正常工作吧。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">Parent1</span> <span class="token punctuation">{</span>
+    <span class="token function">p1</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'this is parent1'</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">class</span> <span class="token class-name">Parent2</span> <span class="token punctuation">{</span>
+    <span class="token function">p2</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'this is parent2'</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">class</span> <span class="token class-name">Parent3</span> <span class="token punctuation">{</span>
+    <span class="token function">p3</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'this is parent3'</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+@<span class="token function">mixin</span><span class="token punctuation">(</span>Parent1<span class="token punctuation">,</span> Parent2<span class="token punctuation">,</span> Parent3<span class="token punctuation">)</span>
+<span class="token keyword">class</span> <span class="token class-name">Child</span> <span class="token punctuation">{</span>
+    <span class="token function-variable function">c1</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+        console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'this is child'</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">const</span> child <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Child</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>child<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>最终在浏览器中打印出来的 <code>child</code> 对象是这样的，证明了这个 <code>mixin</code> 是可以正常工作的。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>注意：这里的 <code>Child</code> 类就是前面的 <code>Mixin</code> 类。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p><img src="http://static.zybuluo.com/gyyin/e6urhq6orz2d6s9lwbl0q6lx/image.png" alt="image.png-69.4kB"><br>
+<img src="https://img.mukewang.com/5e7045ba0001bfac12360514.png" alt="图片描述"><br>
+也许你会问，为什么还要多创建一个多余的 <code>Mixin</code> 类呢？为什么不能直接修改 <code>targetClass</code> 的 <code>constructor</code> 呢？前面不是讲过 Proxy 可以拦截 constructor 吗？<br>
+恭喜你，你已经想到了 Proxy 的一种使用场景。没错，这里用 Proxy 的确会更加优雅。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> <span class="token function-variable function">mixin</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token operator">...</span>mixins<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">(</span>targetClass<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">function</span> <span class="token function">copyProperties</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> source<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">let</span> key <span class="token keyword">of</span> Reflect<span class="token punctuation">.</span><span class="token function">ownKeys</span><span class="token punctuation">(</span>source<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+          <span class="token keyword">if</span> <span class="token punctuation">(</span> key <span class="token operator">!==</span> <span class="token string">'constructor'</span>
+            <span class="token operator">&amp;&amp;</span> key <span class="token operator">!==</span> <span class="token string">'prototype'</span>
+            <span class="token operator">&amp;&amp;</span> key <span class="token operator">!==</span> <span class="token string">'name'</span>
+          <span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">let</span> desc <span class="token operator">=</span> Object<span class="token punctuation">.</span><span class="token function">getOwnPropertyDescriptor</span><span class="token punctuation">(</span>source<span class="token punctuation">,</span> key<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            Object<span class="token punctuation">.</span><span class="token function">defineProperty</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> desc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+      <span class="token punctuation">}</span>
+    
+      <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">let</span> mixin <span class="token keyword">of</span> mixins<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token function">copyProperties</span><span class="token punctuation">(</span>targetClass<span class="token punctuation">,</span> mixin<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 拷贝静态属性</span>
+        <span class="token function">copyProperties</span><span class="token punctuation">(</span>targetClass<span class="token punctuation">.</span>prototype<span class="token punctuation">,</span> mixin<span class="token punctuation">.</span>prototype<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 拷贝原型属性</span>
+      <span class="token punctuation">}</span>
+      <span class="token comment">// 拦截 construct 方法，进行实例属性的拷贝</span>
+      <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>targetClass<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+        <span class="token function">construct</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+          <span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">target</span><span class="token punctuation">(</span><span class="token operator">...</span>args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">let</span> mixin <span class="token keyword">of</span> mixins<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+              <span class="token function">copyProperties</span><span class="token punctuation">(</span>obj<span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">mixin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 拷贝实例属性</span>
+          <span class="token punctuation">}</span>
+          <span class="token keyword">return</span> obj<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+      <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="防抖和节流">4.2 防抖和节流</h3>
+</div><div class="cl-preview-section"><p>以往我们在频繁触发的场景下，为了优化性能，经常会使用到节流函数。下面以 React 组件绑定滚动事件为例子：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">App</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span> <span class="token punctuation">{</span>
+    <span class="token function">componentDidMount</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>   
+        <span class="token keyword">this</span><span class="token punctuation">.</span>handleScroll <span class="token operator">=</span> _<span class="token punctuation">.</span><span class="token function">throttle</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>scroll<span class="token punctuation">,</span> <span class="token number">500</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        window<span class="token punctuation">.</span><span class="token function">addEveneListener</span><span class="token punctuation">(</span><span class="token string">'scroll'</span><span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>handleScroll<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">componentWillUnmount</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        window<span class="token punctuation">.</span><span class="token function">removeEveneListener</span><span class="token punctuation">(</span><span class="token string">'scroll'</span><span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>handleScroll<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">scroll</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在组件中绑定事件需要注意应当在组件销毁的时候进行解绑。而由于节流函数返回了一个新的匿名函数，所以为了之后能够有效解绑，不得不将这个匿名函数存起来，以便于之后使用。<br>
+但是在有了装饰器之后，我们就不必在每个绑定事件的地方都手动设置 throttle 方法，只需要在 scroll 函数添加一个 throttle 的装饰器就行了。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> <span class="token function-variable function">throttle</span> <span class="token operator">=</span> <span class="token punctuation">(</span>time<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">let</span> prev <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Date</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>target<span class="token punctuation">,</span> name<span class="token punctuation">,</span> descriptor<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+        <span class="token keyword">const</span> func <span class="token operator">=</span> descriptor<span class="token punctuation">.</span>value<span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">typeof</span> func <span class="token operator">===</span> <span class="token string">'function'</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            descriptor<span class="token punctuation">.</span><span class="token function-variable function">value</span> <span class="token operator">=</span> <span class="token keyword">function</span><span class="token punctuation">(</span><span class="token operator">...</span>args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		        <span class="token keyword">const</span> now <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Date</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		        <span class="token keyword">if</span> <span class="token punctuation">(</span>now <span class="token operator">-</span> prev <span class="token operator">&gt;</span> wait<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+			        fn<span class="token punctuation">.</span><span class="token function">apply</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+			        prev <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Date</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		        <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>使用起来比原来要简洁很多。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">App</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span> <span class="token punctuation">{</span>
+    <span class="token function">componentDidMount</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        window<span class="token punctuation">.</span><span class="token function">addEveneListener</span><span class="token punctuation">(</span><span class="token string">'scroll'</span><span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>scroll<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">componentWillUnmount</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        window<span class="token punctuation">.</span><span class="token function">removeEveneListener</span><span class="token punctuation">(</span><span class="token string">'scroll'</span><span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>scroll<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    @<span class="token function">throttle</span><span class="token punctuation">(</span><span class="token number">50</span><span class="token punctuation">)</span>
+    <span class="token function">scroll</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>而实现防抖（debounce）函数装饰器和节流函数类似，这里也不再多说。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> <span class="token function-variable function">debounce</span> <span class="token operator">=</span> <span class="token punctuation">(</span>time<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">let</span> timer<span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>target<span class="token punctuation">,</span> name<span class="token punctuation">,</span> descriptor<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+        <span class="token keyword">const</span> func <span class="token operator">=</span> descriptor<span class="token punctuation">.</span>value<span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">typeof</span> func <span class="token operator">===</span> <span class="token string">'function'</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            descriptor<span class="token punctuation">.</span><span class="token function-variable function">value</span> <span class="token operator">=</span> <span class="token keyword">function</span><span class="token punctuation">(</span><span class="token operator">...</span>args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">if</span><span class="token punctuation">(</span>timer<span class="token punctuation">)</span> <span class="token function">clearTimeout</span><span class="token punctuation">(</span>timer<span class="token punctuation">)</span>
+                timer <span class="token operator">=</span> <span class="token function">setTimeout</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+                    fn<span class="token punctuation">.</span><span class="token function">apply</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> args<span class="token punctuation">)</span>
+                <span class="token punctuation">}</span><span class="token punctuation">,</span> wait<span class="token punctuation">)</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如果对节流和防抖函数比较感兴趣，那么可以去阅读一下这篇文章：<a href="https://juejin.im/entry/58c0379e44d9040068dc952f">函数节流与函数防抖</a></p>
+</div><div class="cl-preview-section"><h3 id="数据格式验证">4.3 数据格式验证</h3>
+</div><div class="cl-preview-section"><p>通过类属性装饰器来对类的属性进行类型的校验。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> <span class="token function-variable function">validate</span> <span class="token operator">=</span> <span class="token punctuation">(</span>type<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">(</span>target<span class="token punctuation">,</span> name<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">typeof</span> target<span class="token punctuation">[</span>name<span class="token punctuation">]</span> <span class="token operator">!==</span> type<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">Error</span><span class="token punctuation">(</span><span class="token template-string"><span class="token string">`attribute </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>name<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string"> must be </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>type<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string"> type`</span></span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">class</span> <span class="token class-name">Form</span> <span class="token punctuation">{</span>
+    @<span class="token function">validate</span><span class="token punctuation">(</span><span class="token string">'string'</span><span class="token punctuation">)</span>
+     <span class="token keyword">static</span> name <span class="token operator">=</span> <span class="token number">111</span> <span class="token comment">// Error: attribute name must be ${type} type</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如果你觉得对属性一个个手动去校验太过麻烦，也可以通过编写校验规则，来对整个类进行校验。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e7045cb0001b25907300491.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> rules <span class="token operator">=</span> <span class="token punctuation">{</span>
+    name<span class="token punctuation">:</span> <span class="token string">'string'</span><span class="token punctuation">,</span>
+    password<span class="token punctuation">:</span> <span class="token string">'string'</span><span class="token punctuation">,</span>
+    age<span class="token punctuation">:</span> <span class="token string">'number'</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">const</span> <span class="token function-variable function">validator</span> <span class="token operator">=</span> rules <span class="token operator">=&gt;</span> targetClass <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>targetClass<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+        <span class="token function">construct</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">target</span><span class="token punctuation">(</span><span class="token operator">...</span>args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">let</span> <span class="token punctuation">[</span>name<span class="token punctuation">,</span> type<span class="token punctuation">]</span> <span class="token keyword">of</span> Object<span class="token punctuation">.</span><span class="token function">entries</span><span class="token punctuation">(</span>rules<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">typeof</span> obj<span class="token punctuation">[</span>name<span class="token punctuation">]</span> <span class="token operator">!==</span> type<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">Error</span><span class="token punctuation">(</span><span class="token template-string"><span class="token string">`</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>name<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string"> must be </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>type<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">`</span></span><span class="token punctuation">)</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span>
+            <span class="token keyword">return</span> obj<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+
+@<span class="token function">validator</span><span class="token punctuation">(</span>rules<span class="token punctuation">)</span>
+<span class="token keyword">class</span> <span class="token class-name">Person</span> <span class="token punctuation">{</span>
+    name <span class="token operator">=</span> <span class="token string">'tom'</span>
+    password <span class="token operator">=</span> <span class="token string">'123'</span>
+    age <span class="token operator">=</span> <span class="token string">'21'</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">const</span> person <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Person</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="core-decorators.js">4.4 core-decorators.js</h3>
+</div><div class="cl-preview-section"><p>core-decorators 是一个封装了常用装饰器的 JS 库，它归纳了下面这些装饰器（只列举了部分）。</p>
+</div><div class="cl-preview-section"><ol>
+<li><em><strong>autobind</strong></em>：自动绑定 <code>this</code>，告别箭头函数和 <code>bind</code></li>
+<li><em><strong>readonly</strong></em>：将类属性设置为只读</li>
+<li><em><strong>override</strong></em>：检查子类的方法是否正确覆盖了父类的同名方法</li>
+<li><em><strong>debounce</strong></em>：防抖函数</li>
+<li><em><strong>throttle</strong></em>：节流函数</li>
+<li><em><strong>enumerable</strong></em>：让一个类方法变得可枚举</li>
+<li><em><strong>nonenumerable</strong></em>：让一个类属性变得不可枚举</li>
+<li><em><strong>time</strong></em>：打印函数执行耗时</li>
+<li><em><strong>mixin</strong></em>：将多个对象混入类（和我们上面的 mixin 不太一样）</li>
+</ol>
+</div><div class="cl-preview-section"><h2 id="推荐阅读：">5. 推荐阅读：</h2>
+</div><div class="cl-preview-section"><ol>
+<li><a href="https://es6.ruanyifeng.com/#docs/decorator">装饰器 —— 阮一峰</a></li>
+<li><a href="https://juejin.im/post/59f1c484f265da431c6f8940">JS 装饰器（Decorator）场景实战</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/26761381">探索JavaScript中的装饰器模式</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/29015181">王者荣耀之「装饰者模式</a></li>
+</ol>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img1.mukewang.com/5e6edf9b000158e806700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/4597">
+						<img src="https://img1.mukewang.com/5f2bcafc0001071f09600960-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">心有猛虎_细嗅蔷薇</h4>
+						<div class="comment-text">干货满满，下次一定</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-03-19</span>
+						<a href="/read/commentdetail/4597">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="4597" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/4568">
+						<img src="https://img3.mukewang.com/599d28bc0001134304400440-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">SHERlocked93</h4>
+						<div class="comment-text">看完了，对装饰器了解加深了，非常感谢作者，不错的专栏</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-03-18</span>
+						<a href="/read/commentdetail/4568">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="4568" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=72">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '19 深入 JavaScript 装饰器',
+					'CID': '1671',
+					'Teacher': 'sh22n'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "19 深入 JavaScript 装饰器",
+                    desc: "前端进阶必备，未来少走弯路",
+                    imgUrl: 'https:https://img3.mukewang.com/5e6af0f50001b61d05400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5e6af0f50001b61d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/72',
+                    link: 'https://m.imooc.com/read/72'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

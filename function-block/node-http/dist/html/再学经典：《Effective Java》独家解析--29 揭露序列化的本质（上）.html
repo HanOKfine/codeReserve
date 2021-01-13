@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>29 揭露序列化的本质（上）</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="学习Java很重要，学会怎么学习Java更重要">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2004";
+	var chapter_title = "29 揭露序列化的本质（上）";
+	var aid = "78";
+	var a_name = "再学经典：《Effective Java》独家解析";
+	var a_price = "68.00";
+	var a_pic = "https://img4.mukewang.com/5ecf522a00013a1d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '78';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-07-08&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			29 揭露序列化的本质（上）
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img4.mukewang.com/5ece31660001180306400359.jpg')"></div>
+	
+	
+		<a href="/read/78">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/54dc328d0001b75e04630463-40-40.jpg" alt="明明如月">
+				<h3>再学经典：《Effective Java》独家解析</h3>
+				<p>明明如月 · 高级JAVA开发工程师 </p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">今天应做的事没有做，明天再早也是耽误了。<p class="author">——裴斯泰洛齐</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">1.前言</h1>
+</div><div class="cl-preview-section"><p>《Effective Java》第 12 章重点讲序列化相关建议:</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5efad2120001c8b214360972.png" alt="图片描述"><br>
+那么你是否认真思考过下面几个问题：</p>
+</div><div class="cl-preview-section"><ul>
+<li>序列化本质是什么？</li>
+<li>为什么会有这么多序列化方式？</li>
+<li>序列化和对象克隆（拷贝）有什么关联？</li>
+<li>书中这些建议的核心目的是什么？实际开发中会用到吗？</li>
+</ul>
+</div><div class="cl-preview-section"><p>本文将结合相关理论、源码等重点为你解答这些问题。</p>
+</div><div class="cl-preview-section"><h1 id="知识储备">2.知识储备</h1>
+</div><div class="cl-preview-section"><h2 id="序列化的概念">2.1 序列化的概念</h2>
+</div><div class="cl-preview-section"><p><strong>序列化</strong>是指将对象的状态转为字节流的机制。</p>
+</div><div class="cl-preview-section"><p><strong>反序列化</strong>是指使用字节流在内存中重建 Java 对象的机制。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5efad2060001428d06760357.png" alt="图片描述"><br>
+创建的字节流和平台无关，因此在一个平台序列化的对象可以在另外一个平台进行反序列化。</p>
+</div><div class="cl-preview-section"><p>简而言之，序列化的主要目的是为了<strong>存储</strong>或者<strong>传输</strong>。</p>
+</div><div class="cl-preview-section"><p>序列化的目的是为了实现对象的传输，而目前的计算机都采用二进制方式处理数据，因此需要将对象最终转为字节流存储到文件中、数据库中或用于网络传输等。</p>
+</div><div class="cl-preview-section"><h2 id="序列化的方式">2.2 序列化的方式</h2>
+</div><div class="cl-preview-section"><p>通前面的讲解，相信很多朋友已经对序列化有个清晰地认识。</p>
+</div><div class="cl-preview-section"><p><strong>那么常见的序列化的方式有哪些呢</strong>？</p>
+</div><div class="cl-preview-section"><ul>
+<li>Java 原生序列化</li>
+<li>XML 序列化</li>
+<li>JSON 序列化（fastjson、Gson、jackson 等）</li>
+<li>其他（如 Protocol 、Hessian 等）</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>为什么会有这么多序列化方式？</strong></p>
+</div><div class="cl-preview-section"><p>因为<strong>技术是不断发展的，因此技术本身不断改进</strong>，在这个发展过程中会出现新的技术来适应当前技术发展的需要，比如从 JDBC 到 Hibernate 再到 MyBatis， 从 Servlet 到 Struts 再到 Spring 全家桶一统天下。</p>
+</div><div class="cl-preview-section"><p><strong>类似功能的不同技术侧重点不同</strong>，比如同样是数据库，有普通的关系型数据库 如 MySQL，还有图数据库如 Neo4J, 还有时间序列数据库 InfluxDB 等。</p>
+</div><div class="cl-preview-section"><p>Java 原生序列化不需要额外的依赖，语言本身就支持。但是序列化的效率不够高，字节数也较多，不支持跨语言。</p>
+</div><div class="cl-preview-section"><p>XML 序列化支持跨语言，XML 本身是文本化的，可以从中看到文本。但是 XML语法本身的限制，有大量重复的标签。</p>
+</div><div class="cl-preview-section"><p>JSON 序列化支持跨语言，不需要像 XML 存在大量的标签代码，结构清晰，但是丢失了类型，如看不出一个整数是 Integer 类型 还是 Long 类型。</p>
+</div><div class="cl-preview-section"><p>Protocol Buffers 协议是谷歌出品的跨语言、跨平台和可拓展的，数据的结构类似于  XML 但是更小、更快、更简单。</p>
+</div><div class="cl-preview-section"><p>示例类：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Data</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Address</span> <span class="token keyword">implements</span> <span class="token class-name">Serializable</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> Long id<span class="token punctuation">;</span>
+
+    <span class="token keyword">private</span> String detail<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>构造对象：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java">Address address <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Address</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+address<span class="token punctuation">.</span><span class="token function">setId</span><span class="token punctuation">(</span>1L<span class="token punctuation">)</span><span class="token punctuation">;</span>
+address<span class="token punctuation">.</span><span class="token function">setDetail</span><span class="token punctuation">(</span><span class="token string">"遥远的地方"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>单元测试对比原生序列化、JSON 序列化、 Hessian序列化和Hessian2 <strong>对序列化后的数据进行对比</strong>：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"> <span class="token annotation punctuation">@Test</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">serializeCompare</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> IOException <span class="token punctuation">{</span>
+        <span class="token function">doJdkSerialize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">doJsonSerialize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">doHessianSerialize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">doHessian2Serialize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">/**
+     * Java 序列化
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">doJdkSerialize</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> serialize <span class="token operator">=</span> SerializationUtils<span class="token punctuation">.</span><span class="token function">serialize</span><span class="token punctuation">(</span>address<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>serialize<span class="token punctuation">.</span>length <span class="token operator">+</span> <span class="token string">"字节"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">String</span><span class="token punctuation">(</span>serialize<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">/**
+     * JSON 序列化
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">doJsonSerialize</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        String jsonString <span class="token operator">=</span> JSON<span class="token punctuation">.</span><span class="token function">toJSONString</span><span class="token punctuation">(</span>address<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>jsonString<span class="token punctuation">.</span><span class="token function">getBytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>length <span class="token operator">+</span> <span class="token string">"字节"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>jsonString<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">/**
+     * Hessian 序列化
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">doHessianSerialize</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> IOException <span class="token punctuation">{</span>
+        ByteArrayOutputStream byteArrayOutputStream <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ByteArrayOutputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        HessianOutput hessianOutput <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HessianOutput</span><span class="token punctuation">(</span>byteArrayOutputStream<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        hessianOutput<span class="token punctuation">.</span><span class="token function">writeObject</span><span class="token punctuation">(</span>address<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> bytes <span class="token operator">=</span> byteArrayOutputStream<span class="token punctuation">.</span><span class="token function">toByteArray</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>bytes<span class="token punctuation">.</span>length <span class="token operator">+</span> <span class="token string">"字节"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">String</span><span class="token punctuation">(</span>bytes<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">/**
+     * Hessian2 序列化
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">doHessian2Serialize</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> IOException <span class="token punctuation">{</span>
+        ByteArrayOutputStream byteArrayOutputStream <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ByteArrayOutputStream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        Hessian2Output hessian2Output <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Hessian2Output</span><span class="token punctuation">(</span>byteArrayOutputStream<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        hessian2Output<span class="token punctuation">.</span><span class="token function">writeObject</span><span class="token punctuation">(</span>address<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        hessian2Output<span class="token punctuation">.</span><span class="token function">flushBuffer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> bytes <span class="token operator">=</span> byteArrayOutputStream<span class="token punctuation">.</span><span class="token function">toByteArray</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>bytes<span class="token punctuation">.</span>length <span class="token operator">+</span> <span class="token string">"字节"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">String</span><span class="token punctuation">(</span>bytes<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>转为字符串输出如下：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>1、Java 序列化的输出</p>
+<p>208字节</p>
+<p>��sr%com.imooc.effectivejava.clone.Address��Dm��LdetailtLjava/lang/String;LidtLjava/lang/Long;xpt遥远的地方srjava.lang.Long;��̏#�Jvaluexrjava.lang.Number������xp</p>
+<p>2、 JSON 序列化的输出</p>
+<p>35字节</p>
+<p>{“detail”:“遥远的地方”,“id”:1}</p>
+<p>3、Hession 序列化的输出</p>
+<p>83字节</p>
+<p>Mt%com.imooc.effectivejava.clone.AddressSidLSdetailS遥远的地方z</p>
+<p>4、Hession2 序列化输出</p>
+<p>69字节</p>
+<p>C0%com.imooc.effectivejava.clone.Address�iddetail`�遥远的地方</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>可以看出 Java 原生序列化保存了对象和属性的类型和数值信息，但是非常冗长。</p>
+</div><div class="cl-preview-section"><p>JSON 序列化虽然可以可读性很强，但是无法精确感知类型。</p>
+</div><div class="cl-preview-section"><p>Hessian 序列化既保留了类型信息，但是比 Java 原生序列化更简洁。</p>
+</div><div class="cl-preview-section"><p>Hessian2 序列化序列化后的字节长度更短。</p>
+</div><div class="cl-preview-section"><p><strong>接下来使用 junitperf 简单对比下性能</strong>：</p>
+</div><div class="cl-preview-section"><pre class=" language-xml"><code class="prism  language-xml"><span class="token comment">&lt;!-- https://mvnrepository.com/artifact/com.github.houbb/junitperf --&gt;</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>com.github.houbb<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>junitperf<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">&gt;</span></span>2.0.3<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>编写单测代码：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token annotation punctuation">@JunitPerfConfig</span><span class="token punctuation">(</span>threads <span class="token operator">=</span> <span class="token number">10</span><span class="token punctuation">,</span> warmUp <span class="token operator">=</span> 1_000<span class="token punctuation">,</span> duration <span class="token operator">=</span> 30_000
+        <span class="token punctuation">,</span> reporter <span class="token operator">=</span> <span class="token punctuation">{</span>HtmlReporter<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">jdkSerialize</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">doJdkSerialize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token annotation punctuation">@JunitPerfConfig</span><span class="token punctuation">(</span>threads <span class="token operator">=</span> <span class="token number">10</span><span class="token punctuation">,</span> warmUp <span class="token operator">=</span> 1_000<span class="token punctuation">,</span> duration <span class="token operator">=</span> 30_000
+        <span class="token punctuation">,</span> reporter <span class="token operator">=</span> <span class="token punctuation">{</span>HtmlReporter<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">jsonSerialize</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">doJsonSerialize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token annotation punctuation">@JunitPerfConfig</span><span class="token punctuation">(</span>threads <span class="token operator">=</span> <span class="token number">10</span><span class="token punctuation">,</span> warmUp <span class="token operator">=</span> 1_000<span class="token punctuation">,</span> duration <span class="token operator">=</span> 30_000
+        <span class="token punctuation">,</span> reporter <span class="token operator">=</span> <span class="token punctuation">{</span>HtmlReporter<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">hessianSerialize</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> IOException <span class="token punctuation">{</span>
+    <span class="token function">doHessianSerialize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>三种序列化方式，在预热 1 秒钟， 10个线程，持续执行 30 秒的情况下，性能表现如下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5efad1ed00010fc200010001.gif" alt="图片描述"><br>
+在相同时长情况下 Hessian2 调用数最多，吞吐量更大；JSON 序列化次之，并且差距很小。Java 原生序列化方式再次， Hession 调用数、吞吐量和平均延迟明显表现更差。</p>
+</div><div class="cl-preview-section"><p>注：上述性能数据仅针对特定的数据，由于对象的复杂性不同、电脑性能的差异，结果会有一些出入，</p>
+</div><div class="cl-preview-section"><h1 id="总结">3.总结</h1>
+</div><div class="cl-preview-section"><p>本文重点讲述了序列化的本质，即将对象转为字节流，目的是为了存储或传输。</p>
+</div><div class="cl-preview-section"><p>本文还分析了为什么会有这么多序列化方式，并通过实际的DEMO 验证了猜想。</p>
+</div><div class="cl-preview-section"><h1 id="思考和练习">4.思考和练习</h1>
+</div><div class="cl-preview-section"><p>1、分别使用  Java 原生序列化和 JSON 序列化方式序列化一个自定义对象，并以文本的方式打开序列化的文件，对比其中的异同。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img2.mukewang.com/5ece316b000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=78">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '29 揭露序列化的本质（上）',
+					'CID': '2004',
+					'Teacher': '明明如月'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "29 揭露序列化的本质（上）",
+                    desc: "学习Java很重要，学会怎么学习Java更重要",
+                    imgUrl: 'https:https://img4.mukewang.com/5ecf522a00013a1d05400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5ecf522a00013a1d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/78',
+                    link: 'https://m.imooc.com/read/78'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

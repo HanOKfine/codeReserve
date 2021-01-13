@@ -1,0 +1,792 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>43 全面解读 Python 垃圾回收机制</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="突破技术瓶颈，迈向更高岗位">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "2";
+	var chapter_id = "1939";
+	var chapter_title = "43 全面解读 Python 垃圾回收机制";
+	var aid = "76";
+	var a_name = "Python 源码深度剖析";
+	var a_price = "68.00";
+	var a_pic = "https://img4.mukewang.com/5eb68ab400017cda05400720.jpg";
+	var userId = 0;
+
+	var column_id = '76';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-10-21&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			43 全面解读 Python 垃圾回收机制
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5f617a40000192c006400359.jpg')"></div>
+	
+	
+		<a href="/read/76">
+			<div class="course-entry">
+				<img src="https://img2.mukewang.com/5e4a3ec90001ef8d04000400-40-40.jpg" alt="fasionchan">
+				<h3>Python 源码深度剖析</h3>
+				<p>fasionchan · 资深 Python 研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">智慧，不是死的默念，而是生的沉思。<p class="author">——斯宾诺莎</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p><em>Python</em> 内部采用 <strong>引用计数法</strong> ，为每个对象维护引用次数，并据此回收不再需要的垃圾对象。由于引用计数法存在重大缺陷，循环引用时有内存泄露风险，因此 <em>Python</em> 还采用 <strong>标记清除法</strong> 来回收存在循环引用的垃圾对象。此外，为了提高垃圾回收( <em>GC</em> )效率，<em>Python</em> 还引入了 <strong>分代回收机制</strong> 。</p>
+</div><div class="cl-preview-section"><h2 id="对象跟踪">对象跟踪</h2>
+</div><div class="cl-preview-section"><p>将程序内部对象跟踪起来，是实现垃圾回收的第一步。那么，是不是程序创建的所有对象都需要跟踪呢？</p>
+</div><div class="cl-preview-section"><p>一个对象是否需要跟踪，取决于它会不会形成循环引用。按照引用特征，<em>Python</em> 对象可以分为两类：</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>内向型对象</strong> ，例如 <em>int</em> 、<em>float</em> 、 <em>str</em> 等，这类对象不会引用其他对象，因此无法形成循环引用��无须跟踪；</li>
+<li><strong>外向型对象</strong> ，例如 <em>tuple</em> 、 <em>list</em> 、 <em>dict</em> 等容器对象，以及函数、类实例等复杂对象，这类对象一般都会引用其他对象，存在形成循环引用的风险，因此是垃圾回收算法关注的重点；</li>
+</ul>
+</div><div class="cl-preview-section"><p>这是一个典型的例子，橘红色外向型对象存在循环引用的可能性，需要跟踪；而绿色内向型对象在引用关系图中只能作为叶子节点存在，无法形成任何环状，因此无需跟踪：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f617a620001d2cf15710353.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><em>Python</em> 为外向型对象分配内存时，调用位于 <em>Modules/gcmodule.c</em> 源文件的 <em>_PyObject_GC_Alloc</em> 函数。该函数在对象头部之前预留了一些内存空间，以便垃圾回收模块用 <strong>链表</strong> 将它们跟踪起来。预留的内存空间是一个 <em>_gc_head</em> 结构体，它定义于 <em>Include/objimpl.h</em> 头文件：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token keyword">typedef</span> <span class="token keyword">union</span> _gc_head <span class="token punctuation">{</span>
+    <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+        <span class="token keyword">union</span> _gc_head <span class="token operator">*</span>gc_next<span class="token punctuation">;</span>
+        <span class="token keyword">union</span> _gc_head <span class="token operator">*</span>gc_prev<span class="token punctuation">;</span>
+        Py_ssize_t gc_refs<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> gc<span class="token punctuation">;</span>
+    <span class="token keyword">long</span> <span class="token keyword">double</span> dummy<span class="token punctuation">;</span>  <span class="token comment">/* force worst-case alignment */</span>
+    <span class="token comment">// malloc returns memory block aligned for any built-in types and</span>
+    <span class="token comment">// long double is the largest standard C type.</span>
+    <span class="token comment">// On amd64 linux, long double requires 16 byte alignment.</span>
+    <span class="token comment">// See bpo-27987 for more discussion.</span>
+<span class="token punctuation">}</span> PyGC_Head<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li><em>gc_next</em> ，链表后向指针，指向后一个被跟踪的对象；</li>
+<li><em>gc_prev</em> ，链表前向指针，指向前一个被跟踪的对象；</li>
+<li><em>gc_refs</em> ，对象引用计数副本，在标记清除算法中使用；</li>
+<li><em>dummy</em> ，内存对齐用，以 64 位系统为例，确保 _gc_head 结构体大小是 16 字节的整数倍，结构体地址以 16 字节为单位对齐；</li>
+</ul>
+</div><div class="cl-preview-section"><p>以 <em>list</em> 对象为例，<em>_PyObject_GC_Alloc</em> 函数在 <em>PyListObject</em> 结构体基础上加上 <em>_gc_head</em> 结构体来申请内存，但只返回 <em>PyListObject</em> 的地址作为对象地址，而不是整块内存的首地址：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f8fecb30001fd3808340779.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>就这样，借助 <em>gc_next</em> 和 <em>gc_prev</em> 指针，<em>Python</em> 将需要跟踪的对象一个接一个组织成 <strong>双向链表</strong> ：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f8fecbb0001cb8617950458.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>这个链表也被称为 <strong>可收集</strong> ( <em>collectable</em> )对象链表，<em>Python</em> 将从这个链表中收集并回收垃圾对象。</p>
+</div><div class="cl-preview-section"><h2 id="分代回收机制">分代回收机制</h2>
+</div><div class="cl-preview-section"><p><em>Python</em> 程序启动后，内部可能会创建大量对象。如果每次执行标记清除法时，都需要遍历所有对象，多半会影响程序性能。为此，<em>Python</em> 引入分代回收机制——将对象分为若干“<strong>代</strong>”( <em>generation</em> )，每次只处理某个代中的对象，因此 <em>GC</em> 卡顿时间更短。</p>
+</div><div class="cl-preview-section"><p>那么，按什么标准划分对象呢？是否随机将一个对象划分到某个代即可呢？答案是否定的。实际上，对象分代里头也是有不少学问的，好的划分标准可显著提升垃圾回收的效率。</p>
+</div><div class="cl-preview-section"><p>考察对象的生命周期，可以发现一个显著特征：一个对象存活的时间越长，它下一刻被释放的概率就越低。我们应该也有这样的亲身体会：经常在程序中创建一些临时对象，用完即刻释放；而定义为全局变量的对象则极少释放。</p>
+</div><div class="cl-preview-section"><p>因此，根据对象存活时间，对它们进行划分就是一个不错的选择。对象存活时间越长，它们被释放的概率越低，可以适当降低回收频率；相反，对象存活时间越短，它们被释放的概率越高，可以适当提高回收频率。</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th><strong>对象存活时间</strong></th>
+<th><strong>释放概率</strong></th>
+<th><strong>回收频率</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>长</td>
+<td>低</td>
+<td>低</td>
+</tr>
+<tr>
+<td>短</td>
+<td>高</td>
+<td>高</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p><em>Python</em> 内部根据对象存活时间，将对象分为 <em>3</em> 代(见 <em>Include/internal/mem.h</em> )：</p>
+</div><div class="cl-preview-section"><pre><code>#define NUM_GENERATIONS 3
+</code></pre>
+</div><div class="cl-preview-section"><p>每个代都由一个 <em>gc_generation</em> 结构体来维护，它同样定义于 <em>Include/internal/mem.h</em> 头文件：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token keyword">struct</span> gc_generation <span class="token punctuation">{</span>
+    PyGC_Head head<span class="token punctuation">;</span>
+    <span class="token keyword">int</span> threshold<span class="token punctuation">;</span> <span class="token comment">/* collection threshold */</span>
+    <span class="token keyword">int</span> count<span class="token punctuation">;</span> <span class="token comment">/* count of allocations or collections of younger
+                  generations */</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li><em>head</em> ，可收集对象链表头部，代中的对象通过该链表维护；</li>
+<li><em>threshold</em> ，仅当 <em>count</em> 超过本阀值时，<em>Python</em> 垃圾回收操作才会扫描本代对象；</li>
+<li><em>count</em> ，计数器，不同代统计项目不一样；</li>
+</ul>
+</div><div class="cl-preview-section"><p><em>Python</em> 虚拟机运行时状态由 <em>Include/internal/pystate.h</em> 中的 <em>pyruntimestate</em> 结构体表示，它内部有一个 <em>_gc_runtime_state</em> ( <em>Include/internal/mem.h</em> )结构体，保存 <em>GC</em> 状态信息，包括 <em>3</em> 个对象代。这 <em>3</em> 个代，在 <em>GC</em> 模块( <em>Modules/gcmodule.c</em> ) <em>_PyGC_Initialize</em> 函数中初始化：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c">    <span class="token keyword">struct</span> gc_generation generations<span class="token punctuation">[</span>NUM_GENERATIONS<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">{</span>
+        <span class="token comment">/* PyGC_Head,                                 threshold,      count */</span>
+        <span class="token punctuation">{</span><span class="token punctuation">{</span><span class="token punctuation">{</span><span class="token function">_GEN_HEAD</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">_GEN_HEAD</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">}</span><span class="token punctuation">,</span>           <span class="token number">700</span><span class="token punctuation">,</span>            <span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token punctuation">{</span><span class="token punctuation">{</span><span class="token punctuation">{</span><span class="token function">_GEN_HEAD</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">_GEN_HEAD</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">}</span><span class="token punctuation">,</span>           <span class="token number">10</span><span class="token punctuation">,</span>             <span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token punctuation">{</span><span class="token punctuation">{</span><span class="token punctuation">{</span><span class="token function">_GEN_HEAD</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">_GEN_HEAD</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">}</span><span class="token punctuation">,</span>           <span class="token number">10</span><span class="token punctuation">,</span>             <span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>为方便讨论，我们将这 <em>3</em> 个代分别称为：<strong>初生代</strong>、<strong>中生代</strong> 以及 <strong>老生代</strong>。当这 <em>3</em> 个代初始化完毕后，对应的 <em>gc_generation</em> 数组大概是这样的：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f617a9400016b4103520920.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>每个 <em>gc_generation</em> 结构体链表头节点都指向自己，换句话说每个可收集对象链表一开始都是空的；计数器字段 <em>count</em> 都被初始化为 <em>0</em> ；而阀值字段 <em>threshold</em> 则有各自的策略。这些策略如何理解呢？</p>
+</div><div class="cl-preview-section"><p><em>Python</em> 调用 <em>_PyObject_GC_Alloc</em> 为需要跟踪的对象分配内存时，该函数将初生代 <em>count</em> 计数器加一，随后对象将接入初生代对象链表；当 <em>Python</em> 调用 <em>PyObject_GC_Del</em> 释放垃圾对象内存时，该函数将初生代 <em>count</em> 计数器减一；<em>_PyObject_GC_Alloc</em> 自增 <em>count</em> 后如果超过阀值( <em>700</em> )，将调用 <em>collect_generations</em> 执行一次垃圾回收( <em>GC</em> )。</p>
+</div><div class="cl-preview-section"><p><em>collect_generations</em> 函数从老生代开始，逐个遍历每个生代，找出需要执行回收操作( <em>count&gt;threshold</em> )的最老生代。随后调用 <em>collect_with_callback</em> 函数开始回收该生代，而该函数最终调用 <em>collect</em> 函数。</p>
+</div><div class="cl-preview-section"><p><em>collect</em> 函数处理某个生代时，先将比它年轻的生代计数器 count 重置为 <em>0</em> ；然后将它们的对象链表移除，与自己的拼接在一起后执行 <em>GC</em> 算法(本文后半部分介绍)；最后，将下一个生代计数器加一。</p>
+</div><div class="cl-preview-section"><ul>
+<li>系统每新增 <em>701</em> 个需要 <em>GC</em> 的对象，<em>Python</em> 就执行一次 <em>GC</em> 操作；</li>
+<li>每次 <em>GC</em> 操作需要处理的生代可能是不同的，由 <em>count</em> 和 <em>threshold</em> 共同决定；</li>
+<li>某个生代需要执行 <em>GC</em> ( <em>count&gt;threshold</em> )，在它前面的所有年轻生代也同时执行 <em>GC</em> ；</li>
+<li>对多个代执行 <em>GC</em> ，<em>Python</em> 将它们的对象链表拼接在一起，一次性处理；</li>
+<li><em>GC</em> 执行完毕后，<em>count</em> 清零，而后一个生代 <em>count</em> 加一；</li>
+</ul>
+</div><div class="cl-preview-section"><p>下面是一个简单的例子：初生代触发 <em>GC</em> 操作，<em>Python</em> 执行 <em>collect_generations</em> 函数。它找出了达到阀值的最老生代是中生代，因此调用 <em>collection_with_callback(1)</em> ，<em>1</em> 是中生代在数组中的下标。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f617a9f0001ca3311250924.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><em>collection_with_callback(1)</em> 最终执调用 <em>collect(1)</em> ，它先将后一个生代计数器加一；然后将本生代以及前面所有年轻生代计数器重置为零；最后调用 <em>gc_list_merge</em> 将这几个可回收对象链表合并在一起：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f617aaa0001e0b617110922.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>最后，<em>collect</em> 函数执行标记清除算法，对合并后的链表进行垃圾回收，具体细节在本文后半部分展开介绍。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f617ab30001952717110919.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>这就是分代回收机制的全部秘密，它看似复杂，但只需略加总结就可以得到几条直白的策略：</p>
+</div><div class="cl-preview-section"><ul>
+<li>每新增 <em>701</em> 个需要 <em>GC</em> 的对象，触发一次新生代 <em>GC</em> ；</li>
+<li>每执行 <em>11</em> 次新生代 <em>GC</em> ，触发一次中生代 <em>GC</em> ；</li>
+<li>每执行 <em>11</em> 次中生代 <em>GC</em> ，触发一次老生代 <em>GC</em> (老生代 <em>GC</em> 还受其他策略影响，频率更低)；</li>
+<li>执行某个生代 <em>GC</em> 前，年轻生代对象链表也移入该代，一起 <em>GC</em> ；</li>
+<li>一个对象创建后，随着时间推移将被逐步移入老生代，回收频率逐渐降低；</li>
+</ul>
+</div><div class="cl-preview-section"><p>由于篇幅关系，分代回收部分代码无法逐行解释，请对照图示阅读相关重点函数，应该不难理解。</p>
+</div><div class="cl-preview-section"><h2 id="标记清除法">标记清除法</h2>
+</div><div class="cl-preview-section"><p>现在，我们对 <em>Python</em> 垃圾回收机制有了框架上的把握，但对检测垃圾对象的方法还知之甚少。垃圾对象识别是垃圾回收工作的重中之重，<em>Python</em> 是如何解决这一关键问题的呢？</p>
+</div><div class="cl-preview-section"><p>前面已经提过，<em>Python</em> 采用标记清除法识别垃圾对象。该算法的输入是可收集对象链表，链表给出所有需要检测的对象；算法的输出是两个链表，其中一个包含 <strong>可达</strong> ( <em>reachable</em> )对象，另一个包含 <strong>不可达</strong> ( <em>unreachable</em> )对象。</p>
+</div><div class="cl-preview-section"><p>标记清除算法在 <em>collect</em> 函数中实现，它位于 <em>Modules/gcmodule.c</em> ，步骤并不复杂。为避免深陷源码细节，我们先抽出身来进行一次直观考察。假设待检测可收集对象链表中的对象引用关系如下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f617abc00018f3e14280381.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>其中，数字表示引用计数，箭头表示引用关系，虚线表示链表外对象(来自其他年代)，而链表结构被省略了。</p>
+</div><div class="cl-preview-section"><p>首先，我们需要找出根对象。这里根对象是指被本链表以外的对象引用或被 <em>Python</em> 虚拟机直接引用的对象，与上一小节讨论的略有不同。由于根对象存在来自外部的引用，不能安全释放，应该标记为 <strong>可达</strong> ( <em>reachable</em> )。</p>
+</div><div class="cl-preview-section"><p>根对象集合不难确定：我们只需遍历每个对象引用的对象，将它们的引用计数减一，最后计数不为零的就是根对象。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f617ac50001d5bf14320384.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>请注意，虚线表示外部对象，它既不会被遍历到，引用计数也不会被减一。接着，从深色的根对象出发，��历引用关系，将可以访问到的对象同样标为深色。标色完毕后，对象将分成有色和无色两种：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f617acf0001e42f15360598.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>这样一来，无色部分就是只存在循环引用的垃圾对象，可以被安全释放。</p>
+</div><div class="cl-preview-section"><p>回过头来研究位于 <em>collect</em> 函数的算法处理逻辑，它先将对象引用计数拷贝到 <em>gc_refs</em> 字段：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c">    <span class="token function">update_refs</span><span class="token punctuation">(</span>young<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这是因为直接操作 <em>ob_refcnt</em> 字段的话，对象的引用计数就被破坏了，而且无法复原。操作 <em>gc_refs</em> 副本字段，就不存在这个问题。</p>
+</div><div class="cl-preview-section"><p>接着，<em>collect</em> 函数调用 <em>subtract_refs</em> 遍历链表中每个对象，将它们引用的对象引用计数( <em>gc_refs</em> )减一。注意到，<em>subtract_refs</em> 函数调用 <em>tp_traverse</em> 函数，来遍历被一个对象引用的对象：</p>
+</div><div class="cl-preview-section"><pre class=" language-c"><code class="prism  language-c"><span class="token function">subtract_refs</span><span class="token punctuation">(</span>young<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><pre class=" language-c"><code class="prism  language-c"><span class="token keyword">static</span> <span class="token keyword">int</span>
+<span class="token function">visit_decref</span><span class="token punctuation">(</span>PyObject <span class="token operator">*</span>op<span class="token punctuation">,</span> <span class="token keyword">void</span> <span class="token operator">*</span>data<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token function">assert</span><span class="token punctuation">(</span>op <span class="token operator">!=</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">PyObject_IS_GC</span><span class="token punctuation">(</span>op<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        PyGC_Head <span class="token operator">*</span>gc <span class="token operator">=</span> <span class="token function">AS_GC</span><span class="token punctuation">(</span>op<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">assert</span><span class="token punctuation">(</span><span class="token function">_PyGCHead_REFS</span><span class="token punctuation">(</span>gc<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">/* else refcount was too small */</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">_PyGCHead_REFS</span><span class="token punctuation">(</span>gc<span class="token punctuation">)</span> <span class="token operator">&gt;</span> <span class="token number">0</span><span class="token punctuation">)</span>
+            <span class="token comment">// 将对象引用计数减一(gc_refs)</span>
+            <span class="token function">_PyGCHead_DECREF</span><span class="token punctuation">(</span>gc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">static</span> <span class="token keyword">void</span>
+<span class="token function">subtract_refs</span><span class="token punctuation">(</span>PyGC_Head <span class="token operator">*</span>containers<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    traverseproc traverse<span class="token punctuation">;</span>
+    PyGC_Head <span class="token operator">*</span>gc <span class="token operator">=</span> containers<span class="token operator">-&gt;</span>gc<span class="token punctuation">.</span>gc_next<span class="token punctuation">;</span>
+    <span class="token comment">// 遍历链表每一个对象</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token punctuation">;</span> gc <span class="token operator">!=</span> containers<span class="token punctuation">;</span> gc<span class="token operator">=</span>gc<span class="token operator">-&gt;</span>gc<span class="token punctuation">.</span>gc_next<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 遍历当前对象所引用的对象，调用visit_decref将它们的引用计数减一</span>
+        traverse <span class="token operator">=</span> <span class="token function">Py_TYPE</span><span class="token punctuation">(</span><span class="token function">FROM_GC</span><span class="token punctuation">(</span>gc<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token operator">-&gt;</span>tp_traverse<span class="token punctuation">;</span>
+        <span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span> <span class="token function">traverse</span><span class="token punctuation">(</span><span class="token function">FROM_GC</span><span class="token punctuation">(</span>gc<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                       <span class="token punctuation">(</span>visitproc<span class="token punctuation">)</span>visit_decref<span class="token punctuation">,</span>
+                       <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>经过这个步骤之后，根对象就被找出来了，它们的引用计数( <em>gc_refs</em> )不为零。</p>
+</div><div class="cl-preview-section"><p>最后，<em>collect</em> 函数初始化一个链表 <em>unreachable</em> 来保存不可达对象，调用 <em>move_unreachable</em> 标记可达对象，并将不可达对象移入 <em>unreachable</em> 链表：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c">    <span class="token function">gc_list_init</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>unreachable<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">move_unreachable</span><span class="token punctuation">(</span>young<span class="token punctuation">,</span> <span class="token operator">&amp;</span>unreachable<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><em>move_unreachable</em> 遍历给定对象链表，如果一个对象的引用计数不为 <em>0</em> ，就将它标记为可达( <em>GC_REACHABLE</em> )；否则将它标记为临时不可达，移入不可达链表。</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c">    <span class="token comment">// 遍历链表每个对象</span>
+    <span class="token keyword">while</span> <span class="token punctuation">(</span>gc <span class="token operator">!=</span> young<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        PyGC_Head <span class="token operator">*</span>next<span class="token punctuation">;</span>
+
+        <span class="token comment">// 如果引用计数不为0，说明它可达</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">_PyGCHead_REFS</span><span class="token punctuation">(</span>gc<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            PyObject <span class="token operator">*</span>op <span class="token operator">=</span> <span class="token function">FROM_GC</span><span class="token punctuation">(</span>gc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            traverseproc traverse <span class="token operator">=</span> <span class="token function">Py_TYPE</span><span class="token punctuation">(</span>op<span class="token punctuation">)</span><span class="token operator">-&gt;</span>tp_traverse<span class="token punctuation">;</span>
+            <span class="token function">assert</span><span class="token punctuation">(</span><span class="token function">_PyGCHead_REFS</span><span class="token punctuation">(</span>gc<span class="token punctuation">)</span> <span class="token operator">&gt;</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">// 将它标记为可达</span>
+            <span class="token function">_PyGCHead_SET_REFS</span><span class="token punctuation">(</span>gc<span class="token punctuation">,</span> GC_REACHABLE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">// 遍历被它引用的对象，调用visit_reachable将被引用对象标记为可达</span>
+            <span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span> <span class="token function">traverse</span><span class="token punctuation">(</span>op<span class="token punctuation">,</span>
+                            <span class="token punctuation">(</span>visitproc<span class="token punctuation">)</span>visit_reachable<span class="token punctuation">,</span>
+                            <span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span>young<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            next <span class="token operator">=</span> gc<span class="token operator">-&gt;</span>gc<span class="token punctuation">.</span>gc_next<span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">PyTuple_CheckExact</span><span class="token punctuation">(</span>op<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token function">_PyTuple_MaybeUntrack</span><span class="token punctuation">(</span>op<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">else</span> <span class="token punctuation">{</span>
+            next <span class="token operator">=</span> gc<span class="token operator">-&gt;</span>gc<span class="token punctuation">.</span>gc_next<span class="token punctuation">;</span>
+            <span class="token comment">// 暂时移入不可达链表</span>
+            <span class="token function">gc_list_move</span><span class="token punctuation">(</span>gc<span class="token punctuation">,</span> unreachable<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token function">_PyGCHead_SET_REFS</span><span class="token punctuation">(</span>gc<span class="token punctuation">,</span> GC_TENTATIVELY_UNREACHABLE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        gc <span class="token operator">=</span> next<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如果一个对象可达，<em>Python</em> 还通过 <em>tp_traverse</em> 逐个遍历它引用的对象，并调用 <em>visit_reachable</em> 函数进行标记：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token keyword">static</span> <span class="token keyword">int</span>
+<span class="token function">visit_reachable</span><span class="token punctuation">(</span>PyObject <span class="token operator">*</span>op<span class="token punctuation">,</span> PyGC_Head <span class="token operator">*</span>reachable<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">PyObject_IS_GC</span><span class="token punctuation">(</span>op<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        PyGC_Head <span class="token operator">*</span>gc <span class="token operator">=</span> <span class="token function">AS_GC</span><span class="token punctuation">(</span>op<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">const</span> Py_ssize_t gc_refs <span class="token operator">=</span> <span class="token function">_PyGCHead_REFS</span><span class="token punctuation">(</span>gc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>gc_refs <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 引用计数为零，将计数设置为1，表明它是可达的</span>
+            <span class="token function">_PyGCHead_SET_REFS</span><span class="token punctuation">(</span>gc<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>gc_refs <span class="token operator">==</span> GC_TENTATIVELY_UNREACHABLE<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 如果对象被临时标记为不可达，将引用计数设置为1表明它是可达的</span>
+            <span class="token comment">// 并移回原链表继续处理</span>
+            <span class="token function">gc_list_move</span><span class="token punctuation">(</span>gc<span class="token punctuation">,</span> reachable<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token function">_PyGCHead_SET_REFS</span><span class="token punctuation">(</span>gc<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+         <span class="token keyword">else</span> <span class="token punctuation">{</span>
+            <span class="token function">assert</span><span class="token punctuation">(</span>gc_refs <span class="token operator">&gt;</span> <span class="token number">0</span>
+                   <span class="token operator">||</span> gc_refs <span class="token operator">==</span> GC_REACHABLE
+                   <span class="token operator">||</span> gc_refs <span class="token operator">==</span> GC_UNTRACKED<span class="token punctuation">)</span><span class="token punctuation">;</span>
+         <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如果被引用的对象引用计数为 <em>0</em> ，将它的引用计数设为 <em>1</em> ，之后它将被 <em>move_unreachable</em> 遍历到并设为可达；如果被引用的对象被临时移入 <em>unreachable</em> 链表，同样将它的引用计数设为 <em>1</em> ，并从 <em>unreachable</em> 链表移回原链表尾部，之后它将被 <em>move_unreachable</em> 遍历到并设为可达。</p>
+</div><div class="cl-preview-section"><p>当 <em>move_unreachable</em> 函数执行完毕，<em>unreachable</em> 链表中的对象就是不可达对象，可被安全回收。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5f617a4600011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6831">
+						<img src="https://img2.mukewang.com/5f3dd00b0001ad3625601600-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">纪老猴子_2020</h4>
+						<div class="comment-text">本节的算法，可以以42节老师举得Car类和CarFactory类构成的循环引用为例来理解，考虑一下算法是如何将CarFactory和Car类的引用计数减成0的，这样算法运行过程中哪部分对于循环引用探测起了关键作用一目了然。</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-21</span>
+						<a href="/read/commentdetail/6831">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6831" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=76">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '43 全面解读 Python 垃圾回收机制',
+					'CID': '1939',
+					'Teacher': 'fasionchan'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "43 全面解读 Python 垃圾回收机制",
+                    desc: "突破技术瓶颈，迈向更高岗位",
+                    imgUrl: 'https:https://img4.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/76',
+                    link: 'https://m.imooc.com/read/76'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

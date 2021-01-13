@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>19 React 路由工作原理</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="基础+源码+实战三管齐下的 React 全解读">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2219";
+	var chapter_title = "19 React 路由工作原理";
+	var aid = "83";
+	var a_name = "专业技术团队出品：React深度剖析+实战";
+	var a_price = "58.00";
+	var a_pic = "https://img.mukewang.com/5f0d82e10001220c05400720.jpg";
+	var userId = 0;
+
+	var column_id = '83';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-07-21&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			19 React 路由工作原理
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5f0fbd2c0001a3bf06400359.jpg')"></div>
+	
+	
+		<a href="/read/83">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5f16532e00018d6b10061006-40-40.jpg" alt="BetterFE">
+				<h3>专业技术团队出品：React深度剖析+实战</h3>
+				<p>BetterFE · 业务中台前端组</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">人要有毅力，否则将一事无成。<p class="author">——居里夫人</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>[TOC]</p>
+</div><div class="cl-preview-section"><h1 id="第二阶段-2-5">第二阶段 2-5</h1>
+</div><div class="cl-preview-section"><h2 id="react-路由器工作原理">React 路由器工作原理</h2>
+</div><div class="cl-preview-section"><h2 id="引导语">引导语</h2>
+</div><div class="cl-preview-section"><p>路由可以实现页面无刷新条件下切换、显示不同的页面，因而可以通过控制 URL 来实现 SPA（single-page-applicat，单页面应用）。其实不论是 react-router 还是 vue-router（vue.js 的路由），前端路由的原理大致是相同的。第一阶段中我们讲解了 react-router 的使用，本小节会通过讲解 react-router 的核心源码对 react 路由工作原理做进一步的剖析。</p>
+</div><div class="cl-preview-section"><h2 id="react-router-知识回顾">React router 知识回顾</h2>
+</div><div class="cl-preview-section"><p>react-router4 将路由拆分成了一下四个 packages 包：</p>
+</div><div class="cl-preview-section"><ol>
+<li><strong>react-router-config</strong>：配置静态路由；</li>
+<li><strong>react-router-dom</strong>：负责浏览器路由；</li>
+<li><strong>react-router-native</strong>：负责 react-native 路由；</li>
+<li><strong>react-router</strong>：提供核心路由方法，不需要单独直接引入，它会作为 react-router-native 和 react-router-dom 的依赖被引用。</li>
+</ol>
+</div><div class="cl-preview-section"><p>在前面小节中，主要讲解了 react-router-dom 的使用，本小节会从 react-router-dom 的源码出发，探究其更深层次的原理。</p>
+</div><div class="cl-preview-section"><h2 id="预备知识">预备知识</h2>
+</div><div class="cl-preview-section"><p>history 是 react-router4 基于 HTML5 history API 进行了一次封装的核心库。虽然 react-router 历经了多次大版本更新迭代，功能越来越完善和丰富，但它的核心依赖 history 库却一直没变。<br>
+history 库主要做了以下几件事情：</p>
+</div><div class="cl-preview-section"><ol>
+<li>在 HTML5 history API 基础上扩展了一些功能；</li>
+<li>history 库提供 3 种类型的 history: <code>browserHistory</code>，<code>hashHistory</code> 和 <code>memoryHistory</code> ；</li>
+<li>支持观察者模式（发布-订阅模式），监听 history 的变化。</li>
+</ol>
+</div><div class="cl-preview-section"><p>history包含以下属性和方法：</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript">  length<span class="token punctuation">,</span>    <span class="token comment">// 属性 history 记录数量</span>
+  action<span class="token punctuation">,</span>    <span class="token comment">// 属性 导航动作类型：'PUSH' | 'POP' | 'REPLACE'</span>
+  location<span class="token punctuation">,</span>  <span class="token comment">// 属性 location 对象，反应当前应用所在的位置，包含 pathname，search，hash等属性</span>
+  push<span class="token punctuation">,</span>      <span class="token comment">// 方法 跳转新路由，并记录到 history 栈中</span>
+  replace<span class="token punctuation">,</span>   <span class="token comment">// 方法 替换当前记录</span>
+  go<span class="token punctuation">,</span>        <span class="token comment">// 方法 跳转</span>
+  goBack<span class="token punctuation">,</span>    <span class="token comment">// 方法 后退</span>
+  goForward<span class="token punctuation">,</span> <span class="token comment">// 方法 前进</span>
+  block<span class="token punctuation">,</span>     <span class="token comment">// 方法 跳转前的确认</span>
+  listen<span class="token punctuation">,</span>    <span class="token comment">// 方法 监听 history 改变</span>
+  createHref <span class="token comment">// 方法 根据 location 对象输��� URL</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="browserrouter--hashrouter">BrowserRouter &amp; HashRouter</h2>
+</div><div class="cl-preview-section"><p>react-router-dom 提供了 BrowserRouter 和 HashRouter 两个组件来实现应用的 UI 和 URL 同步，我们先来看 BrowserRoute 组件。</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token comment">// react-router-dom/modules/BrowserRouter.js</span>
+
+<span class="token comment">// ...</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> Router <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">"react-router"</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> createBrowserHistory <span class="token keyword">as</span> createHistory <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">"history"</span>
+
+<span class="token keyword">class</span> <span class="token class-name">BrowserRouter</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span> <span class="token punctuation">{</span>
+  history <span class="token operator">=</span> <span class="token function">createHistory</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">)</span> <span class="token comment">// 创建一个 history 对象</span>
+
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Router</span> <span class="token attr-name">history</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>history<span class="token punctuation">}</span></span> <span class="token attr-name">children</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>children<span class="token punctuation">}</span></span> <span class="token punctuation">/&gt;</span></span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// ...</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>以上是 BrowserRouter 的核心源码，看完我们应该能大致猜到 HashRouter 的源码。</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token comment">// react-router-dom/modules/HashRouter.js</span>
+
+<span class="token comment">// 最主要的区别就是引用了 history 的不同函数，其他核心代码都是完全一致的。</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> createHashHistory <span class="token keyword">as</span> createHistory <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">"history"</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以看出，Router 组件是 BrowserRoute 与 HashRouter 的底层组件，将 history 作为 props 传递给 Router 组件（后面我们会发现 Router 组件又会将这个属性作为 context 传递给子组件或后代组件）。<br>
+我们接着看底层组件 Router。</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token comment">// react-router/modules/Router.js</span>
+<span class="token comment">// ...</span>
+<span class="token keyword">import</span> RouterContext <span class="token keyword">from</span> <span class="token string">"./RouterContext.js"</span>
+
+<span class="token keyword">class</span> <span class="token class-name">Router</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span> <span class="token punctuation">{</span>
+    <span class="token comment">// ...</span>
+    <span class="token function">constructor</span><span class="token punctuation">(</span>props<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// ...</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>props<span class="token punctuation">.</span>staticContext<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+          <span class="token keyword">this</span><span class="token punctuation">.</span>unlisten <span class="token operator">=</span> props<span class="token punctuation">.</span>history<span class="token punctuation">.</span><span class="token function">listen</span><span class="token punctuation">(</span>location <span class="token operator">=&gt;</span> <span class="token punctuation">{</span> <span class="token comment">// ... &lt;1&gt;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>_isMounted<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+              <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">setState</span><span class="token punctuation">(</span><span class="token punctuation">{</span> location <span class="token punctuation">}</span><span class="token punctuation">)</span>
+            <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+              <span class="token keyword">this</span><span class="token punctuation">.</span>_pendingLocation <span class="token operator">=</span> location
+            <span class="token punctuation">}</span>
+          <span class="token punctuation">}</span><span class="token punctuation">)</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    
+    <span class="token function">componentWillUnmount</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>unlisten<span class="token punctuation">)</span> <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">unlisten</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token comment">// ... &lt;2&gt;</span>
+    <span class="token punctuation">}</span>
+    
+    <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token punctuation">(</span>
+          <span class="token operator">&lt;</span>RouterContext<span class="token punctuation">.</span>Provider
+            children<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>children <span class="token operator">||</span> <span class="token keyword">null</span><span class="token punctuation">}</span>
+            value<span class="token operator">=</span><span class="token punctuation">{</span><span class="token punctuation">{</span> <span class="token comment">// ... &lt;3&gt;</span>
+              history<span class="token punctuation">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>history<span class="token punctuation">,</span>
+              location<span class="token punctuation">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>location<span class="token punctuation">,</span>
+              match<span class="token punctuation">:</span> Router<span class="token punctuation">.</span><span class="token function">computeRootMatch</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>location<span class="token punctuation">.</span>pathname<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token comment">// 用于判断当前路由是否匹配</span>
+              staticContext<span class="token punctuation">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>staticContext
+            <span class="token punctuation">}</span><span class="token punctuation">}</span>
+          <span class="token operator">/</span><span class="token operator">&gt;</span>
+        <span class="token punctuation">)</span>
+     <span class="token punctuation">}</span>
+     <span class="token comment">// ...</span>
+  <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ol>
+<li>在组件创建前使用 history 库的 listen 函数注册监听 history 的改变。当切换路由时会更新 <code>location</code> 的值，我们知道 <code>setState</code> 方法的调用会触发 <code>render</code> 重新渲染，Router 会向下传递 <code>nextContext</code> ，下层组件获取最新的 <code>context</code> 判断是否渲染；</li>
+<li>在组件卸载时，也就是在 <code>componentWillUnmount</code> 生命周期里注销监听；</li>
+<li>将 <code>history</code> 、<code>location</code> 、<code>match</code> 和 <code>staticContext</code> 属性以 <code>context</code> 上下文方式传给后代组件。</li>
+</ol>
+</div><div class="cl-preview-section"><p>看到这里，我们应该可以知道 Switch 和 Route 组件会接收这个 <code>context</code> 上下文并做相应处理。趁热打铁，接下来看 Route 是不是与我们设想的一样。</p>
+</div><div class="cl-preview-section"><h2 id="route">Route</h2>
+</div><div class="cl-preview-section"><p>一句话概括 Route 的作用是：匹配路由并将 props 传递给要渲染的组件。</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token comment">// react-router/modules/Route.js</span>
+<span class="token comment">// ...</span>
+<span class="token keyword">import</span> RouterContext <span class="token keyword">from</span> <span class="token string">"./RouterContext.js"</span>
+<span class="token keyword">import</span> matchPath <span class="token keyword">from</span> <span class="token string">"./matchPath.js"</span>
+
+<span class="token keyword">function</span> <span class="token function">evalChildrenDev</span><span class="token punctuation">(</span>children<span class="token punctuation">,</span> props<span class="token punctuation">,</span> path<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">return</span> <span class="token function">children</span><span class="token punctuation">(</span>props<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token keyword">null</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">class</span> <span class="token class-name">Route</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span> <span class="token punctuation">{</span>
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>RouterContext.Consumer</span><span class="token punctuation">&gt;</span></span>
+        <span class="token punctuation">{</span>context <span class="token operator">=&gt;</span> <span class="token punctuation">{</span> <span class="token comment">// 上层组件传递的上下文</span>
+
+          <span class="token keyword">const</span> location <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>location <span class="token operator">||</span> context<span class="token punctuation">.</span>location
+          <span class="token keyword">const</span> match <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>computedMatch
+            <span class="token operator">?</span> <span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>computedMatch <span class="token comment">// &lt;Switch&gt; already computed the match for us</span>
+            <span class="token punctuation">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>path
+
+            <span class="token operator">?</span> <span class="token function">matchPath</span><span class="token punctuation">(</span>location<span class="token punctuation">.</span>pathname<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">)</span> <span class="token comment">// 用于计算是否匹配成功的方法</span>
+            <span class="token punctuation">:</span> context<span class="token punctuation">.</span>match
+
+          <span class="token keyword">const</span> props <span class="token operator">=</span> <span class="token punctuation">{</span> <span class="token operator">...</span>context<span class="token punctuation">,</span> location<span class="token punctuation">,</span> match <span class="token punctuation">}</span> <span class="token comment">// ... 1</span>
+
+          <span class="token keyword">let</span> <span class="token punctuation">{</span> children<span class="token punctuation">,</span> component<span class="token punctuation">,</span> render <span class="token punctuation">}</span> <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>props
+
+          <span class="token keyword">return</span> <span class="token punctuation">(</span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>RouterContext.Provider</span> <span class="token attr-name">value</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>props<span class="token punctuation">}</span></span><span class="token punctuation">&gt;</span></span>
+              <span class="token punctuation">{</span>props<span class="token punctuation">.</span>match <span class="token comment">// ... 2</span>
+                <span class="token operator">?</span> children
+                  <span class="token operator">?</span> <span class="token keyword">typeof</span> children <span class="token operator">===</span> <span class="token string">"function"</span>
+                    <span class="token operator">?</span> __DEV__ <span class="token comment">// 这里就是一个环境变量的判断，可以理解都是返回 children(props)。</span>
+                      <span class="token operator">?</span> <span class="token function">evalChildrenDev</span><span class="token punctuation">(</span>children<span class="token punctuation">,</span> props<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>path<span class="token punctuation">)</span>
+                      <span class="token punctuation">:</span> <span class="token function">children</span><span class="token punctuation">(</span>props<span class="token punctuation">)</span>
+                    <span class="token punctuation">:</span> children
+                  <span class="token punctuation">:</span> component
+
+                  <span class="token operator">?</span> React<span class="token punctuation">.</span><span class="token function">createElement</span><span class="token punctuation">(</span>component<span class="token punctuation">,</span> props<span class="token punctuation">)</span>
+                  <span class="token punctuation">:</span> render
+
+                  <span class="token operator">?</span> <span class="token function">render</span><span class="token punctuation">(</span>props<span class="token punctuation">)</span>
+                  <span class="token punctuation">:</span> <span class="token keyword">null</span>
+                <span class="token punctuation">:</span> <span class="token keyword">typeof</span> children <span class="token operator">===</span> <span class="token string">"function"</span>
+
+                <span class="token operator">?</span> __DEV__ <span class="token comment">// 这里就是一个环境变量的判断，可以理解都是返回 children(props)。</span>
+                  <span class="token operator">?</span> <span class="token function">evalChildrenDev</span><span class="token punctuation">(</span>children<span class="token punctuation">,</span> props<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>path<span class="token punctuation">)</span>
+                  <span class="token punctuation">:</span> <span class="token function">children</span><span class="token punctuation">(</span>props<span class="token punctuation">)</span>
+                <span class="token punctuation">:</span> <span class="token keyword">null</span><span class="token punctuation">}</span>
+
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>RouterContext.Provider</span><span class="token punctuation">&gt;</span></span>
+          <span class="token punctuation">)</span>
+
+          
+        <span class="token punctuation">}</span><span class="token punctuation">}</span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>RouterContext.Consumer</span><span class="token punctuation">&gt;</span></span>
+    <span class="token punctuation">)</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ol>
+<li>结合 <code>&lt;Route /&gt;</code> 的使用我们也能知道，该组件有三个重要的 props：<code>children</code> 、<code>component</code> 和 <code>render</code>；</li>
+<li>这段是最核心的代码，决定 Route 渲染组件的方式，这段庞大的三目运算符读起来比较费劲，我们用 <code>if/else</code> 简写一下：</li>
+</ol>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>props<span class="token punctuation">.</span>match<span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token comment">// 没有匹配上</span>
+   <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">typeof</span> children <span class="token operator">===</span> <span class="token string">"function"</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+       <span class="token keyword">return</span> <span class="token function">children</span><span class="token punctuation">(</span>props<span class="token punctuation">)</span>
+   <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+       <span class="token keyword">return</span> <span class="token keyword">null</span>
+   <span class="token punctuation">}</span>
+<span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span> <span class="token comment">// 匹配上了</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>children<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">typeof</span> children <span class="token operator">===</span> <span class="token string">"function"</span> <span class="token operator">?</span> <span class="token function">children</span><span class="token punctuation">(</span>props<span class="token punctuation">)</span> <span class="token punctuation">:</span> children
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>component<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> React<span class="token punctuation">.</span><span class="token function">createElement</span><span class="token punctuation">(</span>component<span class="token punctuation">,</span> props<span class="token punctuation">)</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>render<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token function">render</span><span class="token punctuation">(</span>props<span class="token punctuation">)</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">null</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>由上可以看出，无论是否匹配成功，children 都会被渲染，而 <code>component</code> 与 <code>render</code> 只有匹配成功时才会渲染，并且渲染的优先级是：children  &gt; component &gt; render。</p>
+</div><div class="cl-preview-section"><p>由源码可以看出 component 是通过 <code>React.createElement</code> 来创建新的元素，所以如果按如下方式给 component 传入一个内联函数的话：</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token keyword">const</span> <span class="token function-variable function">User</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">{</span> match <span class="token punctuation">}</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+  <span class="token keyword">return</span> <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>h1</span><span class="token punctuation">&gt;</span></span>Hello <span class="token punctuation">{</span>match<span class="token punctuation">.</span>params<span class="token punctuation">.</span>username<span class="token punctuation">}</span><span class="token operator">!</span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>h1</span><span class="token punctuation">&gt;</span></span>
+<span class="token punctuation">}</span>
+
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Route</span> <span class="token attr-name">path</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>/user/:username<span class="token punctuation">"</span></span> <span class="token attr-name">component</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>User<span class="token punctuation">}</span></span><span class="token punctuation">/&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这样的话，每次 render 都会创建一个新组件，这将导致旧组件的销毁和新组件的创建，而不是仅仅去更新已有的组件。所以如果要使用内联函数方式渲染，请使用 render 或者 children 属性。</p>
+</div><div class="cl-preview-section"><h2 id="switch">Switch</h2>
+</div><div class="cl-preview-section"><p>Switch 用于渲染与路径匹配的第一个子组件，子组件只能是 <code>&lt;Route /&gt;</code> 或者<code>&lt;Redirect /&gt;</code> 。</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token keyword">import</span> matchPath <span class="token keyword">from</span> <span class="token string">"./matchPath.js"</span>
+
+<span class="token keyword">class</span> <span class="token class-name">Switch</span> <span class="token keyword">extends</span> <span class="token class-name">React<span class="token punctuation">.</span>Component</span> <span class="token punctuation">{</span>
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>RouterContext.Consumer</span><span class="token punctuation">&gt;</span></span>
+        <span class="token punctuation">{</span>context <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+          <span class="token keyword">const</span> location <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>location <span class="token operator">||</span> context<span class="token punctuation">.</span>location
+          
+          <span class="token keyword">let</span> element<span class="token punctuation">,</span> match
+          
+          React<span class="token punctuation">.</span>Children<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>children<span class="token punctuation">,</span> child <span class="token operator">=&gt;</span> <span class="token punctuation">{</span> <span class="token comment">// We use React.Children.forEach instead of React.Children.toArray().find() here because toArray adds keys to all child elements and we do not want to trigger an unmount/remount for two &lt;Route&gt;s that render the same component at different URLs.</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>match <span class="token operator">==</span> <span class="token keyword">null</span> <span class="token operator">&amp;&amp;</span> React<span class="token punctuation">.</span><span class="token function">isValidElement</span><span class="token punctuation">(</span>child<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token comment">// 这里的 child 就是每个嵌入 Switch 组件中的子元素，比如 Route 或 Redirect。</span>
+              element <span class="token operator">=</span> child
+
+              <span class="token keyword">const</span> path <span class="token operator">=</span> child<span class="token punctuation">.</span>props<span class="token punctuation">.</span>path <span class="token operator">||</span> child<span class="token punctuation">.</span>props<span class="token punctuation">.</span><span class="token keyword">from</span>
+
+              match <span class="token operator">=</span> path
+                <span class="token operator">?</span> <span class="token function">matchPath</span><span class="token punctuation">(</span>location<span class="token punctuation">.</span>pathname<span class="token punctuation">,</span> <span class="token punctuation">{</span> <span class="token operator">...</span>child<span class="token punctuation">.</span>props<span class="token punctuation">,</span> path <span class="token punctuation">}</span><span class="token punctuation">)</span>
+                <span class="token punctuation">:</span> context<span class="token punctuation">.</span>match
+            <span class="token punctuation">}</span>
+          <span class="token punctuation">}</span><span class="token punctuation">)</span>
+
+          <span class="token keyword">return</span> match
+            <span class="token operator">?</span> React<span class="token punctuation">.</span><span class="token function">cloneElement</span><span class="token punctuation">(</span>element<span class="token punctuation">,</span> <span class="token punctuation">{</span> location<span class="token punctuation">,</span> computedMatch<span class="token punctuation">:</span> match <span class="token punctuation">}</span><span class="token punctuation">)</span>
+            <span class="token punctuation">:</span> <span class="token keyword">null</span>
+        <span class="token punctuation">}</span><span class="token punctuation">}</span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>RouterContext.Consumer</span><span class="token punctuation">&gt;</span></span>
+    <span class="token punctuation">)</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>Switch 也是通过 <code>matchPath</code> 方法来判断是否匹配成功。依次遍历子元素，如果匹配成功则使用 <code>React.cloneElement</code> 来创建元素，否则就返回 null。当匹配上一个子元素之后 match 就不为 null 了，此时遍历就相当于就结束了。所以说 Switch 只会渲染与路径匹配的第一个子组件。</p>
+</div><div class="cl-preview-section"><h2 id="link">Link</h2>
+</div><div class="cl-preview-section"><p>Link 组件为我们的应用提供一个声明式的、可访问的导航链接。Link 组件最后渲染出来的就是 a 标签，但是 a 标签的默认点击行为是跳转页面，会执行页面刷新。这显然不对，所以需要适时的阻止浏览器的默认行为。仔细阅读以下源码中的注释一定会豁然开朗。</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token keyword">function</span> <span class="token function">isModifiedEvent</span><span class="token punctuation">(</span>event<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">return</span> <span class="token operator">!</span><span class="token operator">!</span><span class="token punctuation">(</span>event<span class="token punctuation">.</span>metaKey <span class="token operator">||</span> event<span class="token punctuation">.</span>altKey <span class="token operator">||</span> event<span class="token punctuation">.</span>ctrlKey <span class="token operator">||</span> event<span class="token punctuation">.</span>shiftKey<span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">let</span> <span class="token punctuation">{</span> forwardRef <span class="token punctuation">}</span> <span class="token operator">=</span> React
+
+<span class="token keyword">const</span> LinkAnchor <span class="token operator">=</span> <span class="token function">forwardRef</span><span class="token punctuation">(</span>
+  <span class="token punctuation">(</span>
+    <span class="token punctuation">{</span>
+      innerRef<span class="token punctuation">,</span>
+      navigate<span class="token punctuation">,</span>
+      onClick<span class="token punctuation">,</span>
+      <span class="token operator">...</span>rest <span class="token comment">// ES6 语法：剩余的 props</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> <span class="token punctuation">{</span> target <span class="token punctuation">}</span> <span class="token operator">=</span> rest
+
+    <span class="token keyword">let</span> props <span class="token operator">=</span> <span class="token punctuation">{</span>
+      <span class="token operator">...</span>rest<span class="token punctuation">,</span>
+      onClick<span class="token punctuation">:</span> event <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+          <span class="token keyword">if</span> <span class="token punctuation">(</span>onClick<span class="token punctuation">)</span> <span class="token function">onClick</span><span class="token punctuation">(</span>event<span class="token punctuation">)</span> <span class="token comment">// 执行绑定的点击事件</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">ex</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+          event<span class="token punctuation">.</span><span class="token function">preventDefault</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token comment">// 阻止浏览器默认行为</span>
+          <span class="token keyword">throw</span> ex<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>event<span class="token punctuation">.</span>defaultPrevented <span class="token operator">&amp;&amp;</span> <span class="token comment">// onClick prevented default</span>
+          event<span class="token punctuation">.</span>button <span class="token operator">===</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span>        <span class="token comment">// 鼠标单击</span>
+          <span class="token punctuation">(</span><span class="token operator">!</span>target <span class="token operator">||</span> target <span class="token operator">===</span> <span class="token string">"_self"</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> <span class="token comment">// target 的默认值是 "_self"，让浏览器去处理 target="_self" 跳转新页面</span>
+          <span class="token operator">!</span><span class="token function">isModifiedEvent</span><span class="token punctuation">(</span>event<span class="token punctuation">)</span> <span class="token comment">// 忽略一些键盘按钮 </span>
+        <span class="token punctuation">)</span> <span class="token punctuation">{</span>
+          event<span class="token punctuation">.</span><span class="token function">preventDefault</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token comment">// 阻止浏览器默认行为</span>
+          <span class="token function">navigate</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token comment">// push 或者 replace 进 hisory</span>
+        <span class="token punctuation">}</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>a</span> <span class="token spread"><span class="token punctuation">{</span><span class="token punctuation">...</span><span class="token attr-value">props</span><span class="token punctuation">}</span></span> <span class="token punctuation">/&gt;</span></span> <span class="token comment">// Link 最后解析出来的还是我们熟悉的 a 标签</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">//  The public API for rendering a history-aware &lt;a&gt;</span>
+<span class="token keyword">const</span> Link <span class="token operator">=</span> <span class="token function">forwardRef</span><span class="token punctuation">(</span>
+  <span class="token punctuation">(</span>
+    <span class="token punctuation">{</span>
+      component <span class="token operator">=</span> LinkAnchor<span class="token punctuation">,</span>
+      replace<span class="token punctuation">,</span>
+      to<span class="token punctuation">,</span>
+      <span class="token operator">...</span>rest <span class="token comment">// ES6 语法：剩余的 props</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>RouterContext.Consumer</span><span class="token punctuation">&gt;</span></span>
+        <span class="token punctuation">{</span>context <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+          <span class="token comment">// ...</span>
+          <span class="token keyword">const</span> props <span class="token operator">=</span> <span class="token punctuation">{</span>
+            <span class="token operator">...</span>rest<span class="token punctuation">,</span>
+            href<span class="token punctuation">,</span>
+            <span class="token function">navigate</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+              <span class="token keyword">const</span> location <span class="token operator">=</span> <span class="token function">resolveToLocation</span><span class="token punctuation">(</span>to<span class="token punctuation">,</span> context<span class="token punctuation">.</span>location<span class="token punctuation">)</span>
+              <span class="token keyword">const</span> method <span class="token operator">=</span> replace <span class="token operator">?</span> history<span class="token punctuation">.</span>replace <span class="token punctuation">:</span> history<span class="token punctuation">.</span>push
+
+              <span class="token function">method</span><span class="token punctuation">(</span>location<span class="token punctuation">)</span> 
+            <span class="token comment">// push 或者 replace 新的 location 到 history 中，</span>
+            <span class="token comment">// 从而触发前面的 history.listen() 监听事件，</span>
+            <span class="token comment">// 通过 context 上下文更新 props 和 nextContext，</span>
+            <span class="token comment">// 使得下层 Route 组件重新判断是否匹配重新更新需要渲染的部分。</span>
+            <span class="token punctuation">}</span>
+          <span class="token punctuation">}</span><span class="token punctuation">;</span>
+          <span class="token keyword">return</span> React<span class="token punctuation">.</span><span class="token function">createElement</span><span class="token punctuation">(</span>component<span class="token punctuation">,</span> props<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span><span class="token punctuation">}</span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>RouterContext.Consumer</span><span class="token punctuation">&gt;</span></span>
+    <span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="小结">小结</h2>
+</div><div class="cl-preview-section"><p>综上所述，react-router 主要是利用底层 history 模块，再结合 react 框架自身的特性进行了一次封装。react-router 的 API 都是组件形式，因此也继承了 React 属性和方法。其中 Router 是其他路由组件的最外层组件，通过 <code>Context.Provider</code> 提供上下文给子组件。通过 history 模块中的 <code>history.listen((location) =&gt; {})</code> 对 <code>location</code> 进行监听，点击 Link 触发监听函数，外层组件传递 <code>nextContext</code>，内层组件根据最新的 <code>location</code> 重新渲染组件。</p>
+</div><div class="cl-preview-section"><h2 id="扩展阅读">扩展阅读</h2>
+</div><div class="cl-preview-section"><p><a href="https://github.com/ReactTraining/react-router">react-router github</a></p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5f0fbd32000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=83">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '19 React 路由工作原理',
+					'CID': '2219',
+					'Teacher': 'BetterFE'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "19 React 路由工作原理",
+                    desc: "基础+源码+实战三管齐下的 React 全解读",
+                    imgUrl: 'https:https://img.mukewang.com/5f0d82e10001220c05400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5f0d82e10001220c05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/83',
+                    link: 'https://m.imooc.com/read/83'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

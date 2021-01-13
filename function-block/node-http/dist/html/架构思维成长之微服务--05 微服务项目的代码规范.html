@@ -1,0 +1,961 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>05 微服务项目的代码规范</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="轻量级项目，系统化经验">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "5";
+	var chapter_id = "1716";
+	var chapter_title = "05 微服务项目的代码规范";
+	var aid = "73";
+	var a_name = "架构思维成长之微服务";
+	var a_price = "68.00";
+	var a_pic = "https://img1.mukewang.com/5e86b0220001a99d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '73';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-04-13&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			05 微服务项目的代码规范
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5e86c7600001601106400359.jpg')"></div>
+	
+	
+		<a href="/read/73">
+			<div class="course-entry">
+				<img src="https://img3.mukewang.com/5e6eebd60001a49207000933-40-40.jpg" alt="曼巴out">
+				<h3>架构思维成长之微服务</h3>
+				<p>曼巴out · 上市公司资深架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">世界上最宽阔的是海洋，比海洋更宽阔的是天空，比天空更宽阔的是人的胸怀。<p class="author">——雨果</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="、前言">1、前言</h1>
+</div><div class="cl-preview-section"><p>通常情况下，每个公司都会有自己的代码规范，通过这样的一套规范去约束开发人员的代码标准，保证项目不至于太乱。很多大公司每周都会有代码 review，大家一起研究代码是否存在问题；还有就是开源项目的作者也会审核别人提交的代码是否符合标准再去选择是否合并代码；这些做法的目的其实都是是保证代码的质量和项目的质量。据我了解，目前好多公司的好多业务系统都是非常的乱，特别是经过好多波开发人员的手之后，一个项目往往会有好几种风格。在维护一个老项目时，我们通常都不愿意去捋别人的逻辑，改别人的代码，都喜欢自己重新去新建类，相信很多人都是这样的想法，为什么会这样呢？说白了，很多人写代码的时候脑洞大开，思路新奇，阅读起来着实费劲。</p>
+</div><div class="cl-preview-section"><p>很多小公司通常是缺乏代码管理意识，他们的项目经理往往也都不会去把控，因为都是追求速度，只要能快速开发完成上线交付就 ok，导致项目越来越臃肿，扩展性差，相信做不少开发人员都会碰到过类似的公司和项目。随着阿里的 p3c 标准出来之后，好多公司都以它作为项目开发的标准，但是我想说的是，光靠阿里的 p3c 是不行的，我们要深挖它的根源是什么，据我了解，目前很多项目存在的问题如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>公司往往都是一个老员工带领 n 个新手去做项目，新手也没啥经验，一个方法一撸到底。</p>
+</li>
+<li>
+<p>缺乏设置模式的思想，整个项目都不涉及到任何涉及模式，一个方法里面大量的 if else 判断，代码也不抽取，代码实在不美观。</p>
+</li>
+<li>
+<p>还有一些是老项目，里面各种版本的技术，servlet、struct1、struct2、spring mvc 等，更加让人受不了的是自己去封装框架，各种 bug。</p>
+</li>
+<li>
+<p>写代码的时候，不去考虑后面的扩展性问题，不考虑是否还有更好的解决方案。</p>
+</li>
+<li>
+<p>代码随心所欲，看心情写代码，有把大量业务逻辑放在 Controller 层去做，甚至在 jsp 里写后台逻辑。</p>
+</li>
+<li>
+<p>数据库设计的不合理，如果数据库设计合理完全可以节省很多代码，硬是通过业务代码去各种拼接数据。</p>
+</li>
+<li>
+<p>涉及到流程的业务，不使用工作流框架，而是自己搞好多的状态去判断，到最后都不懂哪跟哪</p>
+</li>
+<li>
+<p>搞好多的硬编码，把好多上线需要修改的配置信息，硬生生的放在业务代码里面（我曾经就碰到过类似项目）。</p>
+</li>
+<li>
+<p>类似的代码不抽取，明明可以抽取成共用方法，但是选择的是把相同的代码再 Copy 一份。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>好了，通过以上的讲解，主要目的是让大家明白一个项目它的规范到底有多重要，接下来将以网盘的规范带大家思考为什么要这样去设计标准，好处是什么。</p>
+</div><div class="cl-preview-section"><h1 id="、如何制定标准">2、如何制定标准</h1>
+</div><div class="cl-preview-section"><p>首先，我们需要了解一个项目哪些方面需要制定标准，总结如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>基本规范，包名类名、代码注释等就不多说了，参考 p3c 就好</p>
+</li>
+<li>
+<p>分包规范，什么样的代码放在什么包里面，比如：Model 存放实体、Service 存放业务接口、dao 存放持久化等等；除此之外，业务逻辑统一放在 Service 来实现，Controller 制作基本的数据校验等。按照这个标准的话，整个项目就会比较清晰</p>
+</li>
+<li>
+<p>公司内部规范，以上两种规范一般来说是行业常见的规范，但是企业内部也需要自己的规范，这就好比一种企业文化，它需要不断的技术积累而形成（本节主要讲解这种模式的规范）</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>①复杂的业务逻辑</strong><br>
+<img src="https://img.mukewang.com/5e871921000161bb10680693.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>问题：如果一个方案的业务非常的复杂，那么代码量将会非常的多，非常的难以阅读和维护；一般这种情况，绝大部分的企业做法都是把公共部分的代码抽取成一个通用的方法。</li>
+<li>解决：使用责任链的模式，把复杂的业务逻辑拆分成各个独立的 Handler 去实现</li>
+<li>优点：业务逻辑非常的清晰，并且对应主业务来说代码很少，非常的易于维护</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>②大量的 if else 判断</strong></p>
+</div><div class="cl-preview-section"><ul>
+<li>问题：特别是对应新手或者对设计模式不熟悉的同学，经常犯的错误，在代码里面大量的 if else 进行判断，导致最后代码变的非常的难阅读和维护</li>
+<li>解决：多态 + 策略模式，就是面向接口编程，一个接口对应多个实现类</li>
+<li>优点：非常的灵活，适合后期代码的扩展</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>③接口幂等性</strong></p>
+</div><div class="cl-preview-section"><ul>
+<li>问题：很多同学在做一些核心业务（比如：支付）的时候，最容易忽略的就是重复提交，之所以把它当做一种规范，主要是我觉得它应该属于架构的一部分，在项目架构之初就应该考虑的问题，而不是由开发人员去考虑的。</li>
+<li>解决：一般使用分布式全局 ID + 注解 + AOP 的方式去实现</li>
+<li>优点：对于业务代码基本上是零污染，非常的方便使用</li>
+</ul>
+</div><div class="cl-preview-section"><p>以上只是比较典型且有用的例子，当然还有很多其他的规范，大家可以在平时的工作和学习中慢慢总结，从而形成自己的东西。以下讲详细介绍以上三种规范</p>
+</div><div class="cl-preview-section"><h1 id="、责任链模式">3、责任链模式</h1>
+</div><div class="cl-preview-section"><p>责任链模式很多人都能都听说过，起码在学 Spring 的时候，Spring 的拦截器就是基于责任链模式去实现的，学过 Spring 的同学应该都是了解的，但是真实项目里面，我们到底如何去实现责任链模式呢？具体的业务场景是什么呢？</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>面试题：说出几个使用责任链的场景吗？</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>第一：SpringMVC 的拦截器</li>
+<li>第二：Spring Cloud Zuul 的网关</li>
+<li>第三：Netty</li>
+</ul>
+</div><div class="cl-preview-section"><p>责任链的业务特性：把多个业务拼接成一个链条一样，一直往下执行，或者这样解析大家都能理解，但是脱离实际业务场景显的还是有点抽象，下面主要以真实案例里进行深入分析。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>思考：平时业务场景，什么样的业务适合使用责任链模式呢？</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>模式一：业务之间没有条件，把所有的业务按顺序拼接成一条链条，按顺序执行
+<ul>
+<li>适合复杂的业务，比如：上面提到的复杂业务场景，把每个业务封装成一个节点</li>
+<li>适合需求变更的业务，比如：后期新增一个业务，只需要新增一个节点即可；删除一个业务，只需要删除一个节点即可。</li>
+</ul>
+</li>
+<li>模式二：业务之间有条件，把所有的业务拼接成一条链条，但是执行的时候，只有其中一个节点生效（举例说明）</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>案例：</strong> 请假流程，如果请假一天则需要小组组长批准即可，1-2 天项目经理，2 以上部门经理审批。</p>
+</div><div class="cl-preview-section"><p><strong>方案一：</strong></p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>思路：看到这个需求，也许你想到的是 if 判断</p>
+</li>
+<li>
+<p>缺点：扩展性问题，比如后期项目经理的审批权限变成 1-3 天了，或者新增董事长审批，因为写的是硬编码所以还得大改。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>方案二：</strong></p>
+</div><div class="cl-preview-section"><ul>
+<li>思路：把组长审批、项目经理审批、部分经理审批封装成独立节点，把它们拼接成链条，执行的时候，传递条件（请假天数），每个节点判断是否是自己的权限。</li>
+<li>优点：后期需求变更只需要新增或者删除节点即可。</li>
+</ul>
+</div><div class="cl-preview-section"><p>由于篇幅有限，就不粘贴源码了，大家可以自己去看网盘系统的源码实现。</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java">netdisk<span class="token operator">-</span>service<span class="token operator">-</span>provider
+	<span class="token operator">|</span><span class="token operator">--</span> src<span class="token operator">/</span>main<span class="token operator">/</span>java
+	<span class="token operator">|</span>  <span class="token operator">|</span><span class="token operator">--</span> com<span class="token punctuation">.</span>micro<span class="token punctuation">.</span>chain<span class="token punctuation">.</span>core		（责任链封装）
+</code></pre>
+</div><div class="cl-preview-section"><h1 id="、策略模式">4、策略模式</h1>
+</div><div class="cl-preview-section"><p>策略模式特性：策略，顾名思义，就是解决方案，如果实现某个功能有很多的方案，那么就需要去做选择，既然要做选择肯定需要一定的条件才能做选择，这就是所谓的策略模式。其实就是面向对象的多态，一个接口对应多个实现类，具体哪个实现类生效。也可以是 if else 判断，到底满足哪个条件。策略模式在业务的业务系统里面其实是非常的有用的，但是大部分人却很少去使用，下面就带领大家去体会一下策略模式的使用。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>思考：平时业务场景，什么样的业务适合使用策略模式呢？</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>第一：它可以代替 if else 判断，并且可能还会增加新类型的，有些情况就不合适：比如性别，无非男女，就不必使用策略模式了。</li>
+<li>第二：比如我们做电商项目的支付功能的时候，底层需要对接很多的支付渠道，比如：支付宝、微信、银联等等，支付的时候，我们系统需要判断其支付渠道，然后做具体业务处理</li>
+<li>第三：网盘系统集成全文检索框架，而全文检索框架有 Solr 和 ElasticSearch，考虑灵活切换底层框架</li>
+<li>第四：网盘系统集成分布式文件系统，而分布式文件系统常用的有 FastDFS、HDFS 等，考虑灵活切换底层框架<br>
+<img src="https://img.mukewang.com/5e87197e00019c8f07400304.png" alt="图片描述"></li>
+</ul>
+</div><div class="cl-preview-section"><p>上面这张图就是策略模式的核心思想，大家只要牢牢记住即可，策略类 + 面向对象的多态就是策略模式的精髓，下面通过一个常见的笔试题来讲解策略模式的使用。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>笔试题：请使用 Java 编写一个简单的计算器功能</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>最简单，也是不被录用的写法：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">counter</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">,</span><span class="token keyword">int</span> b<span class="token punctuation">,</span>String type<span class="token punctuation">)</span><span class="token punctuation">{</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token string">"+"</span><span class="token punctuation">.</span><span class="token function">equal</span><span class="token punctuation">(</span>type<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token keyword">return</span> a<span class="token operator">+</span>b<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span><span class="token keyword">else</span> <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token string">"-"</span><span class="token punctuation">.</span><span class="token function">equal</span><span class="token punctuation">(</span>type<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token keyword">return</span> a<span class="token operator">-</span>b<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span><span class="token keyword">else</span> <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token string">"*"</span><span class="token punctuation">.</span><span class="token function">eqaul</span><span class="token punctuation">(</span>type<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token keyword">return</span> a<span class="token operator">*</span>b<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span><span class="token keyword">else</span> <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token string">"/"</span><span class="token punctuation">.</span><span class="token function">equal</span><span class="token punctuation">(</span>type<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token keyword">return</span> a<span class="token operator">/</span>b<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span><span class="token keyword">else</span><span class="token punctuation">{</span>
+        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">RuntimeException</span><span class="token punctuation">(</span><span class="token string">"不存在该计算类型"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>策略模式的写法：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">//接口</span>
+<span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">ICount</span><span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">counter</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">,</span><span class="token keyword">int</span> b<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">//加法</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">AddCount</span> <span class="token keyword">implements</span> <span class="token class-name">ICount</span><span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">counter</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">,</span><span class="token keyword">int</span> b<span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token keyword">return</span> a<span class="token operator">+</span>b<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">//减法</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SubCount</span> <span class="token keyword">implements</span> <span class="token class-name">ICount</span><span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">counter</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">,</span><span class="token keyword">int</span> b<span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token keyword">return</span> a<span class="token operator">-</span>b<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">//乘法</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MulCount</span> <span class="token keyword">implements</span> <span class="token class-name">ICount</span><span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">counter</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">,</span><span class="token keyword">int</span> b<span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token keyword">return</span> a<span class="token operator">*</span>b<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">//除法</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">DivCount</span> <span class="token keyword">implements</span> <span class="token class-name">ICount</span><span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">counter</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">,</span><span class="token keyword">int</span> b<span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token keyword">return</span> a<span class="token operator">/</span>b<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">//策略类</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Context</span><span class="token punctuation">{</span>
+    <span class="token keyword">private</span> ICount count<span class="token punctuation">;</span>    
+    <span class="token keyword">public</span> <span class="token function">Context</span><span class="token punctuation">(</span>ICount count<span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>count<span class="token operator">=</span>count<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">exec</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">,</span><span class="token keyword">int</span> b<span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token keyword">return</span> count<span class="token punctuation">.</span><span class="token function">counter</span><span class="token punctuation">(</span>a<span class="token punctuation">,</span>b<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">//调用</span>
+<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span><span class="token punctuation">{</span>
+    Context count<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">Context</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">AddCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">int</span> a<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token keyword">int</span> b<span class="token operator">=</span><span class="token number">2</span><span class="token punctuation">;</span>
+    count<span class="token punctuation">.</span><span class="token function">exec</span><span class="token punctuation">(</span>a<span class="token punctuation">,</span>b<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：策略类开发当中一般是和 Spring 容器一起结合使用的，后面实战部分很多地方都有介绍策略模式的使用，大家也可以自己去看源码（utils-filesearch、utils-filestore）</p>
+</blockquote>
+</div><div class="cl-preview-section"><h1 id="、接口设计">5、接口设计</h1>
+</div><div class="cl-preview-section"><p>这里主要讲解接口的两个方面的问题</p>
+</div><div class="cl-preview-section"><ul>
+<li>接口管理的规范问题</li>
+<li>接口的重复调用问题</li>
+</ul>
+</div><div class="cl-preview-section"><p>** 接口管理：** 以前企业内部管理接口，一般都是通过接口文档来进行管理，前端和后端人员通过接口文档来沟通。</p>
+</div><div class="cl-preview-section"><ul>
+<li>手工编写接口问题，浪费大量的时间</li>
+<li>需求不断变更，导致接口的版本非常的多</li>
+<li>接口文档更新即时性问题，导致接口改了，但是文档没有改，如果沟通不到位，会给前端带来很多的麻烦</li>
+<li>因此，一般来说不推荐接口文档的方式去管理接口，而是推荐使用 Swagger 框架去管理接口
+<ul>
+<li>对于程序员来说，就跟注释一样，每次改动接口，修改一下 Swagger 代码，接口立即生效</li>
+<li>可以代替 postman 来测试接口</li>
+<li>对于前端来说，只需要浏览器打开地址即可，再也不用保存一堆接口文档</li>
+</ul>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>幂等性：</strong> 接口幂等性问题，其实就是接口的重复调用，导致数据错乱，由于网上的博客文章往往都比较片面，这里给大家系统性的讲解接口幂等性问题。</p>
+</div><div class="cl-preview-section"><h2 id="、接口幂等性问题">5.1、接口幂等性问题</h2>
+</div><div class="cl-preview-section"><p>一般来说存在接口幂等性主要是以下几个方面引起的</p>
+</div><div class="cl-preview-section"><ul>
+<li>①用户多次点击提交按钮（Ajax），导致提交多次请求，每次请求的数据都是一样，导致重复操作</li>
+<li>②使用的是传统的提交模式（非 Ajax），提交成功之后，跳转到成功页面，此时再刷新浏览器会导致重复提交。这种情况一般是 jsp 页面开发才会引起的，主要是 forward 和 redirect 的原理导致的，一个是跳转页面但是地址栏不改变；一个是跳转页面地址栏改变。（大家可以了解一下 Servlet 的 HttpServletRequest）</li>
+<li>③由于网络延迟或者服务器内部卡顿导致的重试，比如说：Dubbo 接口的调用，提供方内部卡顿了，消费方此时认为执行出错了，再次发起请求，但是提供方其实真实执行了两次。</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="、幂等性解决思路">5.2、幂等性解决思路</h2>
+</div><div class="cl-preview-section"><p>根据上面的分析，大家应该了解幂等性发生的原因了，或许你会说，那岂不是很容易解决</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>如果是 Ajax 提交时，页面弹出浮层并转圈，等到结束时，才能点击按钮。</p>
+<ul>
+<li>虽然说前端 Ajax 提交弹出浮层并转圈，但是它只是一种用户体验，实际上是起不到安全的作用的，黑客可以绕过浏览器发起请求。</li>
+</ul>
+</li>
+<li>
+<p>如果是非 Ajax 提交，那么使用重定向跳转而不是转发跳转</p>
+<ul>
+<li>由于目前主流是前后端分离，并且基于 Ajax 发起异步请求，所以 jsp 模式就不展开细说。</li>
+</ul>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>一般来说，目前主流的做法是通过全局 ID 来实现，每次发起请求都会携带一个全局 ID，常见的具体解决方案如下：</p>
+</div><div class="cl-preview-section"><p><strong>方案一：</strong> 自动生成全局 ID，核心思路如下</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>第一步：标注幂等性接口，如果需要做幂等性的接口，在接口上加上自定义注解</p>
+<pre class=" language-java"><code class="prism  language-java"><span class="token annotation punctuation">@RestController</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TestContrller</span><span class="token punctuation">{</span>
+    
+    <span class="token annotation punctuation">@RequestMapping</span><span class="token punctuation">(</span><span class="token string">"/createGlobalID"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> String <span class="token function">createGlobalID</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token keyword">return</span> UUID<span class="token punctuation">.</span><span class="token function">randomUUID</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    
+    <span class="token annotation punctuation">@NoRepeat</span> <span class="token comment">//自定义注解</span>
+    <span class="token annotation punctuation">@RequestMapping</span><span class="token punctuation">(</span><span class="token string">"/save"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">save</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token comment">//业务处理</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</li>
+<li>
+<p>第二步：需要做幂等性的接口，在每次提交之前都发起 Ajax 去后台获取最新全局 ID（uuid），并且在把返回的全局 ID 作为参数提交。注意的是生成的全局 ID 可以存储在本地的 Map 或者 Redis 里面。key=${globalID} ，value= ${globalID}</p>
+</li>
+<li>
+<p>第三步：Aop（或者拦截器）前置方法，判断该次请求是否含有 @NoRepeat 注解</p>
+<ul>
+<li>如果没有 @NoRepeat 注解，则跳过</li>
+<li>如果含有 @NoRepeat 注解，则判断前端提交的全局 ID 在 Map 或者 Redis 是否存在，如果存在则证明上次处理还未完成，无法再次处理。如果不存在，则可以继续执行。</li>
+</ul>
+</li>
+<li>
+<p>第四步：Aop（或者拦截器）后置方法，处理完成业务方法之后，去 Map 或者 Redis 删除对应的 key</p>
+</li>
+<li>
+<p>缺点：①比较麻烦，每次提交之前都得发起 Ajax 获取全局 ID；②存在漏洞，前端每次提交传递的全局 ID 可以是随便生成一个数，这样 Aop 每次查询都不存在，都可以正常执行。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>方案二：</strong> 方案一的改进，具体思路如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>第一：Aop 前置方法判断是否含有 @NoRepeat 注解</p>
+<ul>
+<li>如果没有 @NoRepeat 注解，则跳过</li>
+<li>如果含有 @NoRepeat 注解，往下看</li>
+</ul>
+</li>
+<li>
+<p>第二：自定义生成 key=<span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mrow><mi>m</mi><mi>e</mi><mi>t</mi><mi>h</mi><mi>o</mi><mi>d</mi><mi>n</mi><mi>a</mi><mi>m</mi><mi>e</mi></mrow><mo>+</mo><mi mathvariant="normal">"</mi><mo>−</mo><mi mathvariant="normal">"</mi><mo>+</mo></mrow><annotation encoding="application/x-tex">{methodname}+"-"+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.69444em;"></span><span class="strut bottom" style="height: 0.77777em; vertical-align: -0.08333em;"></span><span class="base"><span class="mord"><span class="mord mathit">m</span><span class="mord mathit">e</span><span class="mord mathit">t</span><span class="mord mathit">h</span><span class="mord mathit">o</span><span class="mord mathit">d</span><span class="mord mathit">n</span><span class="mord mathit">a</span><span class="mord mathit">m</span><span class="mord mathit">e</span></span><span class="mbin">+</span><span class="mord mathrm">"</span><span class="mbin">−</span><span class="mord mathrm">"</span><span class="mord">+</span></span></span></span></span>{userid}，比如：com.micro.TestController.save-123，并且根据 key 去 Redis 判断是否存在，如果存在则证明上次执行尚未完成，无法再处理。</p>
+<ul>
+<li>${userid} 怎么获取呢？参考上面一节，根据 token 获取 userid</li>
+</ul>
+</li>
+<li>
+<p>第三：Aop 后置方法，处理完成业务方法之后，去 Redis 删除对应的 key，为了防止删除失败情况，给 key 设置一个合理的过期时间。</p>
+</li>
+<li>
+<p>优点：①无需每次都手工获取全局 ID；②不存在漏洞，前端无法模拟全局 ID</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>由于篇幅有限，就不粘贴源码了，大家可以自己去看网盘系统的源码实现。</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java">netdisk<span class="token operator">-</span>web<span class="token operator">-</span>perpc
+	<span class="token operator">|</span><span class="token operator">--</span> src<span class="token operator">/</span>main<span class="token operator">/</span>java
+	<span class="token operator">|</span>  <span class="token operator">|</span><span class="token operator">--</span> com<span class="token punctuation">.</span>micro<span class="token punctuation">.</span>idempotence
+</code></pre>
+</div><div class="cl-preview-section"><h1 id="、小结">6、小结</h1>
+</div><div class="cl-preview-section"><p>本章内容的核心目的是让大家重视业务代码的规范，这样才能提高代码质量、保证项目质量，同时也提高个人能力。主要核心是讲解责任链模式、策略模式、接口幂等性三个问题。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5e86d6f5000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6288">
+						<img src="https://img2.mukewang.com/5458659400017f0802190220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕前端9459495</h4>
+						<div class="comment-text">您好，接口幂等性这里，我看gitee上的源码是直接aop拦截所有的controller类了，并没有基于注解扫描拦截；另外您这边的gitee源码已经有两个月未更新了且提示说资料已过时以网上的为准，这个网上是指哪里？</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-24</span>
+						<a href="/read/commentdetail/6288">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6288" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5566">
+						<img src="https://img2.mukewang.com/5333a1660001394602000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕标3246374</h4>
+						<div class="comment-text">幂等性讲的很清楚谢谢老师</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-22</span>
+						<a href="/read/commentdetail/5566">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5566" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/4929">
+						<img src="https://img3.mukewang.com/5d667e0d000114f901320132-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">starswzhang</h4>
+						<div class="comment-text">幂等性问题，应该是前端先从后��申请的全局ID，后台存redis；前端下次请求带上全局ID，如果后台redis有全局ID说明可以请求，反之，重复请求。而文中是不是表述反了……</div>
+						<div>
+							
+								<div class="reply">讲师回复：首先，接口幂等性跟用户有关的，不同用户之间不能有影响；其次，如果是前端每次都传递的话，一个比较麻烦，第二可以伪造。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-04-10</span>
+						<a href="/read/commentdetail/4929">
+							<span class="icon r"><i class="imwap-comment"></i><em>7</em></span>
+						</a>
+						<span data-cid="4929" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/4916">
+						<img src="https://img1.mukewang.com/533e4cc800016ffd02200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕勒4569886</h4>
+						<div class="comment-text">还有个问题就是 provider这个module service上使用@service声明了dubbo的service服务 为啥还要使用@componet声明到IOC容器呢？</div>
+						<div>
+							
+								<div class="reply">讲师回复：你可以把代码发一下，我看看是哪里，好给你解答一下</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-04-09</span>
+						<a href="/read/commentdetail/4916">
+							<span class="icon r"><i class="imwap-comment"></i><em>7</em></span>
+						</a>
+						<span data-cid="4916" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/4915">
+						<img src="https://img1.mukewang.com/533e4cc800016ffd02200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕勒4569886</h4>
+						<div class="comment-text">老师 代码这里是不是有点问题
+public static void main(String[] args){
+    ICount count=new ICount(new AddCount()); // new Context（(new AddCount()）
+    int a=1;
+    int b=2;
+    count.exec(a,b);
+}</div>
+						<div>
+							
+								<div class="reply">讲师回复：实在不好意思，这里确实写错了，我联系后台改正过来</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-04-09</span>
+						<a href="/read/commentdetail/4915">
+							<span class="icon r"><i class="imwap-comment"></i><em>2</em></span>
+						</a>
+						<span data-cid="4915" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=73">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '05 微服务项目的代码规范',
+					'CID': '1716',
+					'Teacher': '曼巴out'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "05 微服务项目的代码规范",
+                    desc: "轻量级项目，系统化经验",
+                    imgUrl: 'https:https://img1.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    otherImgUrl: 'https://img1.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/73',
+                    link: 'https://m.imooc.com/read/73'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

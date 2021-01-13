@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>02 Netty是如何发迹的</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="全面掌握迈向高级工程师的必备技能">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2161";
+	var chapter_title = "02 Netty是如何发迹的";
+	var aid = "82";
+	var a_name = "网络编程之Netty一站式精讲";
+	var a_price = "68.00";
+	var a_pic = "https://img4.mukewang.com/5f052aa90001f15b05400720.jpg";
+	var userId = 0;
+
+	var column_id = '82';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-07-13&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			02 Netty是如何发迹的
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5f0594ef00010bec06400359.jpg')"></div>
+	
+	
+		<a href="/read/82">
+			<div class="course-entry">
+				<img src="https://img3.mukewang.com/5d9c91f40001dcac05000500-40-40.jpg" alt="彤哥读源码">
+				<h3>网络编程之Netty一站式精讲</h3>
+				<p>彤哥读源码 · 互联网大厂项目经理</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">完成工作的方法，是爱惜每一分钟。<p class="author">——达尔文</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">前言</h1>
+</div><div class="cl-preview-section"><p>你好，我是彤哥。</p>
+</div><div class="cl-preview-section"><p>话说天下大势，分久必合，合久必分：网络协议早期便衍生出了 OSI 七层协议，后归于 TCP/IP 协议（最火）；IO 模型早期便衍生出了五种 IO 模型，后归于 NIO 模型（最热）；自 NIO 模型诞生以后，各种基于 NIO 的网络框架群雄并起、割据分争，最后归于 Netty（最闪）。</p>
+</div><div class="cl-preview-section"><h1 id="java-nio时代">Java NIO 时代</h1>
+</div><div class="cl-preview-section"><p>溥天之下，莫非王土；网络编程，莫非 Java NIO！</p>
+</div><div class="cl-preview-section"><p>2002 年，注定是一个伟大的年代，JDK1.4 版本在这年发布，并加入了对于 NIO 的支持，它虽然不算很强大的框架，但是早期在没有框架可用的情况下也必须使用它来进行网络编程，即使偶然还搞出个空轮询的 bug，这就是属于 Java NIO 的时代 —— 难用也必须得用。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>NIO 模型中的 <code>N</code> 一般指代 <code>Non-blocking</code>，即非阻塞的意思，NIO 即非阻塞 IO 的意思。<br>
+广义上来说，NIO 包括 Non-blocking IO（非阻塞 IO）、IO Multiplexing（IO 多路复用）、Signal-Driven IO（信号驱动 IO）。<br>
+狭义上来说，NIO 仅指 Non-blocking IO。</p>
+<p>Java NIO 中的 <code>N</code> 是指 <code>New</code>，即新的意思，Java NIO 即新的 IO，是相对于 OIO (Old IO) 或者 BIO (Blocking IO) 来说的，在 Java 的实现中是基于 IO Multiplexing 模型实现的。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>说起 Java 对于 NIO 的支持，我们有必要揭起那道伤疤，看看使用 Java NIO 编程曾经给大家带来了 “多么痛的领悟”：</p>
+</div><div class="cl-preview-section"><ul>
+<li>API 复杂难用，尤其是 Buffer 的指针切来切去的，反人类设计</li>
+<li>需要掌握丰富的知识，比如多线程和网络编程</li>
+<li>可靠性无法保证，断线重连、半包粘包、网络拥塞统统需要自己考虑</li>
+<li>空轮询 bug，CPU 又 100% 了，一直未根除此问题</li>
+</ul>
+</div><div class="cl-preview-section"><p>所以，在 Java NIO 末期进入了群雄并起的时代，各种框架层出不穷，都想在 NIO 的热潮中分一杯羹。</p>
+</div><div class="cl-preview-section"><h1 id="群雄并起">群雄并起</h1>
+</div><div class="cl-preview-section"><h2 id="netty2">Netty2</h2>
+</div><div class="cl-preview-section"><p>2004 年，一个棒子国的游戏浪子 Trustin Lee，怀揣着梦想，站在了 BIO 和 NIO 的十字路口，左顾右盼，最终走向了 NIO。那年，他带着自己最闪亮的作品 <code>Netty2</code> 敲响了棒子国最大的移动通信商 ——Arreo 通信公司 —— 的大门，毫无��问，他被成功录取了。</p>
+</div><div class="cl-preview-section"><p>彼时，Netty2 号称是 Java 社区中第一个基于事件驱动的网络应用框架，它的梦想是做夜空中最闪亮的一颗星：</p>
+</div><div class="cl-preview-section"><pre class=" language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>net.gleamynode<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>netty2<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">&gt;</span></span>1.9.2<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>gleamy node，夜空中最闪亮的那一颗。</p>
+<p>启示，梦想还是要有的，万一实现了呢。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="grizzly">Grizzly</h2>
+</div><div class="cl-preview-section"><p>同样是 2004 年，一款叫作玻璃鱼（Sun 公司开发的 GlassFish）的应用服务器诞生了，它是为了打败 Tomcat 而生的。使用了最新的 NIO 技术，并封装成了完整的框架 ——Grizzly，专门解决编写成千上万用户访问服务器时候产生的各种问题。</p>
+</div><div class="cl-preview-section"><p>Grizzly 使用 Java NIO 作为基础，提供了高性能的 API，并隐藏了编程的复杂性，使得它一出世就很火。比如，我们熟知的 Jetty、Comet 等都是基于 Grizzly 构建的。</p>
+</div><div class="cl-preview-section"><p>但是，光顾着沉浸在欢乐喜悦之中，却忘了三件非常重要的事：</p>
+</div><div class="cl-preview-section"><ul>
+<li>文档少，几乎没什么可用的文档</li>
+<li>更新慢，好几个月才一次提交</li>
+<li>用户少，社区没做好，用户不多</li>
+</ul>
+</div><div class="cl-preview-section"><p>基于以上三点原因，使得它被 Netty 甩了一条街，不管是社区活跃度还是流行度：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f0bd182000141a611010825.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><blockquote>
+<p>启示，东西好，还要用心经营。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="tomcat">Tomcat</h2>
+</div><div class="cl-preview-section"><p>2005 年前后，BIO 时代的霸者 ——Tomcat，意识到了 Grizzly 带来的危机，逆势发布了 6.0 版本，它也开始支持 NIO 了，同样使得它的性能有了质的飞跃。</p>
+</div><div class="cl-preview-section"><p>但是，Tomcat 的 NIO 通信层并没有从它本身的代码中解耦出来，形成了一种 “老奶奶裹脚，又臭又长” 的代码，这也使得它在 NIO 的浪潮中只能保住自己的一亩三分地，并不具有进攻他人的属性。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>启示，代码解耦真的很重要。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="mina">MINA</h2>
+</div><div class="cl-preview-section"><p>2005 年，另一个年轻人 Alex，他当时正在为 Apache Directory 开发网络框架，但是他自己怎么写都感觉不好，一次偶然的机会，它瞅见了 Netty2，被它的闪亮所折服，就找到了当时还在 Arreo 通信公司的 Trustin Lee，邀请他一起来开发网络框架，后面就诞生了一个伟大的网络通信框架 ——MINA，并把它贡献给了 Apache。</p>
+</div><div class="cl-preview-section"><p>MINA 可帮助用户轻松开发高性能和高可伸缩性的网络应用程序，支持各种传输协议，比如 TCP 和 UDP 等。</p>
+</div><div class="cl-preview-section"><p>这可能是 Trustin Lee 一生的痛，所以后来他一再强调 MINA 没有 Netty 好用：<br>
+<img src="https://img.mukewang.com/5f0bd18f0001df3c09500433.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>大致意思就是说：</p>
+</div><div class="cl-preview-section"><ul>
+<li>MINA 的功能繁杂，复杂性高，性能差</li>
+<li> MINA 的功能过于耦合</li>
+<li> Netty 的 API 更整洁、更文档化</li>
+<li> Netty 的更新周期短</li>
+<li> MINA3 会破坏 API 的兼容性</li>
+</ul>
+</div><div class="cl-preview-section"><p>说白了，MINA 虽然是 Trustin Lee 主导开发的，但是它已经贡献给了 Apache，自己不再参与其中了，而且还是自己的亲儿子 Netty 的强力对手，不抨击它抨击谁。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>启示，千万不要轻易给自己制造竟然对手。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="netty3">Netty3</h2>
+</div><div class="cl-preview-section"><p>2008 年，Trustin Lee 裹挟着迷茫和彷徨加入了 JBoss，并在同年发布了 Netty3。</p>
+</div><div class="cl-preview-section"><p>这是一个全新的 Netty，背靠大厂 JBoss，并借鉴了 MINA 中很多优秀的设计，使得它一发布就引起了社会各界人士的关注，更新频繁，社区也异常活跃，占领了网络通信的半壁江山。</p>
+</div><div class="cl-preview-section"><p>那时，Netty 只想安安稳稳地待在 JBoss 这个大厂中，稳定至上：</p>
+</div><div class="cl-preview-section"><pre class=" language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>org.jboss.netty<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>netty<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">&gt;</span></span>3.0.0.Final<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>启示，背景很重要，你懂得。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="netty4">Netty4</h2>
+</div><div class="cl-preview-section"><p>2012 年，内心中的那份不安和执念终于爆发，Trustin Lee 决定了要想随心所欲地做自己想做的事，还是得出来单干。</p>
+</div><div class="cl-preview-section"><p>那年，他带着 Netty4 又一次出现在了大家的面前，相对于 Netty3，他做了很多改进，比如线程模型、池化的 Buffer 等，性能提升到了极致。</p>
+</div><div class="cl-preview-section"><p>此时，Netty 才算彻底独立，当然，它也终于成为了那颗最闪亮的星：</p>
+</div><div class="cl-preview-section"><pre class=" language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>io.netty<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>netty-all<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">&gt;</span></span>4.0.0.Final<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>启示，追寻自己的内心，随心所欲，为所欲为！</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="netty5">Netty5</h2>
+</div><div class="cl-preview-section"><p>2013 年，出来单干的 Trustin Lee 是有野心的，很多 JDK 的新特性他也想去尝试，比如 ForkJoinPool，所以这一年有了 Netty5。</p>
+</div><div class="cl-preview-section"><p>但是，好景并不长，在 Netty5 发布了两个 Alpha 版本，被一个叫 <code>Norman Maurer</code>（《Netty in Action》的作者）的家伙在 2015 年双 11 这天提议给废弃了，他的理由很简单也很任性：<br>
+<img src="https://img.mukewang.com/5f0bd1a400017a3409450541.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>使用 ForkJoinPool 提升了复杂性</li>
+<li>没有带来明显的性能提升</li>
+<li>同时维护太多分支太耗费精力</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>启示 1，做自己能力范围内的事。</p>
+<p>启示 2，千万不要使用 Alpha、Beta 等非稳定版本。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h1 id="netty时代">Netty 时代</h1>
+</div><div class="cl-preview-section"><p>现在这个时代是属于 Netty 的，大家越来越喜欢 Netty，以前使用 MINA 等其它通信框架的也在逐步转换为 Netty，说 Netty 统一了 Java 领域中的网络通信一点也不为过，在很多领域都能见到它的身影：</p>
+</div><div class="cl-preview-section"><ul>
+<li>框架，gRPC、Dubbo、Spring WebFlux、Spring Cloud Gateway</li>
+<li> 大数据，Spark、Hadoop、Flink</li>
+<li> 消息队列，RocketMQ、ActiveMQ</li>
+<li> 搜索引擎，Elasticsearch</li>
+<li> 分布式协调器，Zookeeper</li>
+<li> 数据库，Cassandra、Neo4j</li>
+<li> 工具类，async-http-client</li>
+<li> 日志，Graylog</li>
+<li> 负载均衡，Ribbon</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="后记">后记</h1>
+</div><div class="cl-preview-section"><p>Netty 从最初梦想着成为最闪亮的星，经历了群雄割据奋战，现在已经被广大框架所运用，它无疑已经成为 Java 网络通信领域的事实标准，所以我们有必要学好 Netty，并熟练掌握如何在实战中使用 Netty。</p>
+</div><div class="cl-preview-section"><h1 id="思维导图">思维导图</h1>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f0bd1b30001c8e419581097.png" alt="图片描述"></p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5f0541b500011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=82">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '02 Netty是如何发迹的',
+					'CID': '2161',
+					'Teacher': '彤哥读源码'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "02 Netty是如何发迹的",
+                    desc: "全面掌握迈向高级工程师的必备技能",
+                    imgUrl: 'https:https://img4.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/82',
+                    link: 'https://m.imooc.com/read/82'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

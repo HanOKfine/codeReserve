@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>02 JavaWeb进化论</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="够吃管饱的SpringBoot大餐">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "8";
+	var chapter_id = "1798";
+	var chapter_title = "02 JavaWeb进化论";
+	var aid = "75";
+	var a_name = "SpringBoot 趣味私房课";
+	var a_price = "58.00";
+	var a_pic = "https://img3.mukewang.com/5e9cfd1f0001ece605400720.jpg";
+	var userId = 0;
+
+	var column_id = '75';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-26&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			02 JavaWeb进化论
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5e9cfedc0001d32506400359.jpg')"></div>
+	
+	
+		<a href="/read/75">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/5e776f3c000149fd10801080-40-40.jpg" alt="刘水镜">
+				<h3>SpringBoot 趣味私房课</h3>
+				<p>刘水镜 · 知名 A.I. 公司 Java 工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">知识犹如人体的血液一样宝贵。<p class="author">——高士其</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="cs-与-bs">1. C/S 与 B/S</h2>
+</div><div class="cl-preview-section"><blockquote>
+<p>C/S：客户端/服务器模式</p>
+<p>B/S：浏览器/服务器模式</p>
+</blockquote>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9ab7770001a75408000531.jpg" alt="图片描述">图片来自于网络，版权归原作者所有</p>
+</div><div class="cl-preview-section"><p>我们知道，网络的诞生要比计算机晚了大概二十年的时间。在网络诞生之前，计算机上的应用都是单机应用（没有服务端，所以也称不上是客户端了）。后来，到了一九六九年网络才慢慢出现，最开始只是局域网，只能在有限的几台主机间进行通信。但这足以载入史册，它为后面互联网的发展奠定了坚实的基础。局域网的出现，为 C/S 结构的软件提供了基础条件。C/S 结构从那时起开始慢慢崭露头角。再后来，到了九十年代，互联网开始从学术研究领域走向商用。C/S 结构从原来的局域网走向了互联网。直到现在 C/S 结构的软件依然在我们的工作生活中扮演着重要的角色。</p>
+</div><div class="cl-preview-section"><p>但 C/S 结构有其局限性，会有诸多限制。比如发布了新功能，只有用户更新软件才能体验到。于是一种新型的软件模式就出现了—— B/S。互联网诞生不久，第一个 Web 浏览器就出现了。它由伯纳斯-李开发，最开始叫做<code>WorldWideWeb</code> （后来更名为 <code>Nexus</code>） 。再后来有了<code>Netscape</code> 、<code>IE</code> 、<code>Phonix（Firefox前身）</code>、<code>Opera</code> 等众多浏览器。B/S 模式的软件发展也越来越繁荣，这种模式的软件，用户只需要一个浏览器就能够随时随地的（当然，还需要网络和电）使用软件（网站）的全部最新功能，摆脱了客户端的束缚。</p>
+</div><div class="cl-preview-section"><p>正是有了 B/S 的模式，才有了我们今天要说的 Java Web 。下面我们就一起来看一下 Java 以及 Java Web 的发展过程吧。</p>
+</div><div class="cl-preview-section"><h2 id="呱呱坠地">2. 呱呱坠地</h2>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9ab75a0001383f08000533.jpg" alt="图片描述">图片来自于网络，版权归原作者所有</p>
+</div><div class="cl-preview-section"><p>自盘古开天辟地…啊呸。</p>
+</div><div class="cl-preview-section"><p>自 1969 年互联网在美国诞生至今，每天与我们相伴的互联网已经到了知天命的年纪。而中国到了 1994 年才与国际互联网打通，那个时候带宽只有 64K。这样的网速看 <code>.txt</code> 都费劲，更别说看 <code>.jpg</code> 和 <code>.avi</code> 了（我知道你怀疑我在开车，但是你没有证据?）。</p>
+</div><div class="cl-preview-section"><p>今天我们的带宽已经是当初的千倍万倍了，我们的日常工作与生活已经不可一日无网了（疫情期间能够愉快的远程办公也是托了互联网的福）。而我们的女朋友 Java 小姐姐马上要迎来她 25 岁的生日，你有没有给女朋友准备礼物呀！</p>
+</div><div class="cl-preview-section"><h2 id="茁壮成长">3. 茁壮成长</h2>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9ab7020001171708000533.jpg" alt="图片描述">图片来自于网络，版权归原作者所有</p>
+</div><div class="cl-preview-section"><p>1995 年 5 月 23 日，Oak 语言改名为 Java，然后有了那句著名的口号——“Write Once，Run Anywhere”。</p>
+</div><div class="cl-preview-section"><p>1996 年 JDK1.0发布了，标志着一个新的时代已经到来。</p>
+</div><div class="cl-preview-section"><p>1998 年 Java 迎来 1.2 版本，有此诞生了我熟知的 J2ME、J2SE 以及 J2EE。ME 主要用于移动端（还记得大明湖畔诺基亚 S40 吗？不小心暴露了年龄），而 SE 做为标准版主要用于桌面程序，EE 则主要针对企业应用所打造，也是我们主要的研究对象。1.2 的发布标志着Java开始普及。</p>
+</div><div class="cl-preview-section"><p>2000 年 1.3 发布，并得到了 Mac OS X 工业标准的支持。</p>
+</div><div class="cl-preview-section"><p>2002 年，也就是中国首次进入世界杯（也是至今唯一的一次，扎铁了老心）的那年。这一年 1.4 问世，这一版本极大的丰富了 Java 的类库，如：XML、Socket、全新的 I/O API、正则、日志、断言等如今我们耳熟能详的功能。</p>
+</div><div class="cl-preview-section"><p>2004 年，我们刚刚经历完非典，Java 也迎来了重要更新，为了突出这次更新的重要性，命名方式从原来的 J2XE 1.X 变成了现在的 JavaXE X，于是有了 JavaSE 5。这一版本增加了泛型、自动拆装箱、循环增强（foreach）、枚举、注解、可变参数等，堪称有史以来最重大的更新，Java 5 应该有姓名！</p>
+</div><div class="cl-preview-section"><p>接下来（2006年）又发布了 Java 6 ，据说这个版本在国内很流行（不要告诉我你们公司还在用 JDK1.6 ）。同年，发生了一件大事——Java 开源了！我爱开源！</p>
+</div><div class="cl-preview-section"><p>2009 年 Oracle（就是前段时间裁员 N+6 的那家公司）收购了 Sun ， Java 从此跟了后妈，过着寄人篱下的日子。</p>
+</div><div class="cl-preview-section"><p>后来，在 2011 年发布了 Java 7 。</p>
+</div><div class="cl-preview-section"><p>三年后发布了 Java 8 ，为我们带来了 Lambda 表达式、Stream 以及新的日期时间 API 。Java 8 应该也是目前被使用最多的版本。</p>
+</div><div class="cl-preview-section"><p>后来相继发布了 9、10、11、12、13，今年（2020 年）3 月 17 日 Oracle 发布了 JDK 14。</p>
+</div><div class="cl-preview-section"><h2 id="如日中天">4. 如日中天</h2>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9ab6e6000138dc08000450.jpg" alt="图片描述">图片来自于网络，版权归原作者所有</p>
+</div><div class="cl-preview-section"><p>随着科技的发展，WEB 应用飞速发展，Java 凭借其强大的特性，迅速成为了互联网业务开发语言的一哥（一姐？）。如今像 BAT、TMD 等各互联网大厂的核心业务系统也都是用的 Java 。Java 的强大以及其开放的姿态，使其生态得到了很好的发展，Java 第三方资源如雨后春笋般涌现。</p>
+</div><div class="cl-preview-section"><p>Java WEB 从最初的 Servlet 到 JSP，到手工 MVC 组合—— JSP + JavaBean + Servlet。再到后来，进入框架阶段。当年 Struts 可谓风靡一时，再到后来基于 WebWork 的 Struts2 。而如今已经很少有人提及 Struts ，可当年的 SSH 是多么火，完全不亚于今天的分布式、微服务。逝者如斯，回首怅然！</p>
+</div><div class="cl-preview-section"><p>互联网的迅速发展，使得为复杂业务系统设计的 SSH 三人组跟不上这个变化的时代。取而代之的是我们现在所熟悉的 SSM 组合，虽然只有一字之差，但第一个 <code>S</code> 已经不是当年的 Struts 了，变成了 Spring MVC 。好在第二个 <code>S</code> 还是当年的 Spring（自行脑补赵本山：你大妈已经不是你大妈了，你大爷还是你大爷！）。最后的 <code>H</code> 也有当年的持久化翘楚 Hibernate 换成了新晋小生 MyBatis 。</p>
+</div><div class="cl-preview-section"><p>而这几年又杀出一个小鲜肉，叫什么 Spring Boot（简称SB？），那么这个 SB 究竟是什么来路，跟 Spring 和 Spring MVC 又有什么关系呢？哈哈，不急，后面我们会慢慢解开他神秘的面纱，一探究竟。</p>
+</div><div class="cl-preview-section"><h2 id="总结">5. 总结</h2>
+</div><div class="cl-preview-section"><p>OK，在这一小节中，我们知道了 C/S 和 B/S 软件架构的发展，知道了 Java 的整个成长历程，并一起回顾了 Java Web 一路走来的进化过程。算是一节关于软件发展的历史课吧，中学时代我是非常反感上历史课的，觉得历史是如此的枯燥无味。后来在网上看到了很多可以把历史讲的非常有趣的视频，才明白，原来枯燥无味的并不是历史，而是讲历史的人。看多了也体会到了学习历史的意义，以史为镜，可以知兴替。了解历史，才能预见未来。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5e9963d400011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6643">
+						<img src="https://img2.mukewang.com/54584cfb0001308402200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕粉1035354180</h4>
+						<div class="comment-text">博主，搞笑啊，牛逼</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-26</span>
+						<a href="/read/commentdetail/6643">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6643" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6237">
+						<img src="https://img1.mukewang.com/58c54b2b0001cdf201000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_孤独沉寂_0</h4>
+						<div class="comment-text">楼主nb</div>
+						<div>
+							
+								<div class="reply">讲师回复：感谢支持！</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-21</span>
+						<a href="/read/commentdetail/6237">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6237" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6222">
+						<img src="https://img4.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">光之</h4>
+						<div class="comment-text">bs架构大多应用在日常用的各种浏览器中、cs则是各种客户端和app——这个理解对吗？<br />一直搞不懂cs和bs的具体区别<br />老师可以举几个例子说明一下吗？</div>
+						<div>
+							
+								<div class="reply">讲师回复：你的理解是正确的。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-20</span>
+						<a href="/read/commentdetail/6222">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6222" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6174">
+						<img src="https://img.mukewang.com/5f97f9f40001647509600960-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕勒2532021</h4>
+						<div class="comment-text">坐看大餐</div>
+						<div>
+							
+								<div class="reply">讲师回复：大餐马上就来了</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-17</span>
+						<a href="/read/commentdetail/6174">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6174" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5877">
+						<img src="https://img2.mukewang.com/5a2cef030001da1301000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_Sophia_20</h4>
+						<div class="comment-text">这语言表达的真的让在下佩服佩服，跟着刘老师学习就对了</div>
+						<div>
+							
+								<div class="reply">讲师回复：是文字形式的专栏。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-20</span>
+						<a href="/read/commentdetail/5877">
+							<span class="icon r"><i class="imwap-comment"></i><em>3</em></span>
+						</a>
+						<span data-cid="5877" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5204">
+						<img src="https://img3.mukewang.com/54584f7b0001559202200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕神4103587</h4>
+						<div class="comment-text">前戏结束 准备大餐</div>
+						<div>
+							
+								<div class="reply">讲师回复：大餐 coming</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-04-27</span>
+						<a href="/read/commentdetail/5204">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5204" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>3</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5166">
+						<img src="https://img3.mukewang.com/54584dd900014f6c02200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕用4018787</h4>
+						<div class="comment-text">火钳刘明</div>
+						<div>
+							
+								<div class="reply">讲师回复：恭喜你，成功啦！</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-04-25</span>
+						<a href="/read/commentdetail/5166">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5166" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5158">
+						<img src="https://img1.mukewang.com/5b8cd73f0001a01d02000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕神5089572</h4>
+						<div class="comment-text">顶楼主</div>
+						<div>
+							
+								<div class="reply">讲师回复：感谢支持！</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-04-24</span>
+						<a href="/read/commentdetail/5158">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5158" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=75">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '02 JavaWeb进化论',
+					'CID': '1798',
+					'Teacher': '刘水镜'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "02 JavaWeb进化论",
+                    desc: "够吃管饱的SpringBoot大餐",
+                    imgUrl: 'https:https://img3.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/75',
+                    link: 'https://m.imooc.com/read/75'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

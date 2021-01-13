@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>13 从头做起：实现最简单的 UDP 客户端和服务器</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="学好通用知识，提升技术竞争力">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2102";
+	var chapter_title = "13 从头做起：实现最简单的 UDP 客户端和服务器";
+	var aid = "80";
+	var a_name = "零基础学透网络编程";
+	var a_price = "58.00";
+	var a_pic = "https://img3.mukewang.com/5ed8c1c600015fc805400720.jpg";
+	var userId = 0;
+
+	var column_id = '80';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-06-09&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			13 从头做起：实现最简单的 UDP 客户端和服务器
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img1.mukewang.com/5ed9fcbd0001e12606400359.jpg')"></div>
+	
+	
+		<a href="/read/80">
+			<div class="course-entry">
+				<img src="https://img2.mukewang.com/5458620000018a2602200220-40-40.jpg" alt="陈子兴">
+				<h3>零基础学透网络编程</h3>
+				<p>陈子兴 · 资深软件架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">虚心使人进步，骄傲使人落后。<p class="author">——毛泽东</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="前言">前言</h2>
+</div><div class="cl-preview-section"><p><strong>用户数据报协议</strong>（UDP，User Datagram Protocol）是一个无连接的、不可靠的传输层协议。由于 UDP 是无连接的传输层协议，UDP 的客户端（Client）和服务器（Server）之间没有类似 TCP 协议的<strong>三次握手</strong>过程，这样在 UDP 的 Client 和 Server 之间是没有专属<strong>虚拟链路</strong>的。UDP 是一个不可靠的传输层协议，一端发送的消息在网络中丢失以后，另一端是不知道的，也没有重传保证机制。UDP 也没有流控机制，如果应用程序不做相应控制，而是尽最大能力向网络发送消息，可能会造成消息批量丢失。</p>
+</div><div class="cl-preview-section"><p>为此，关于 UDP 应用问题更多表现在设计方面，本文尝试从如下几个方面展开讨论 UDP 编程中的常见设计问题。</p>
+</div><div class="cl-preview-section"><ul>
+<li>UDP API 介绍</li>
+<li>nwc udp Client/Server 程序编写</li>
+<li>UDP 的 connect 机制</li>
+<li>UDP 服务不存在的情况</li>
+<li>UDP 丢包问题探讨</li>
+<li>UDP 的流控问题</li>
+<li>UDP 多客户端支持</li>
+</ul>
+</div><div class="cl-preview-section"><p>本文会开发一个 nwc udp Client/Server 程序，基本功能还是客户端每隔 5 秒向服务器发送一个 “ping” 消息，服务器收到 “ping” 以后回应一个 “pong” 响应。代码保存在“imooc-sock-core-tech\03-12_最简单的UDP客户端服务器”目录下面。</p>
+</div><div class="cl-preview-section"><p>如果要构建一个 nwc udp Client/Server 网络应用程序，所依赖的Socket API 的调用流程是什么样子呢？</p>
+</div><div class="cl-preview-section"><h2 id="udp-api-介绍">UDP API 介绍</h2>
+</div><div class="cl-preview-section"><p>在学习 TCP 的时候，我们展示了 API 调用结构图。同样，学习 UDP 也需要一张结构图，如下所示：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed9a6c200016cce06450635.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>请仔细观察上图，你会发现 nwc udp Client/Server 调用的 API 和 之前 nwchecker Client/Server 调用的 API 有很多相同之处，主要表现在以下三方面：</p>
+</div><div class="cl-preview-section"><ul>
+<li>构建客户端都需要调用 socket、connect、close 三个 API；</li>
+<li>构建服务器都需要调用 socket、bind、close 三个 API，不同之处在于 TCP 需要调用 listen 和 accept 两个 API，而 UDP 不需要调用这两 API；</li>
+<li>在收发数据上，TCP 调用的是 recv 和 send 两 API，而 UDP 调用的是 recvfrom 和  sendto 两 API。</li>
+</ul>
+</div><div class="cl-preview-section"><p>我们在分析 TCP API 的时候，已经介绍了 socket 、connect、close 三个 API 的具体细节。本节我们只是介绍一下 sendto 和 recvfrom 两个 API。</p>
+</div><div class="cl-preview-section"><p>先看下面的代码片段。</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token comment">/* Socket API 所依赖头文件 */</span>
+<span class="token macro property">#<span class="token directive keyword">include</span> <span class="token string">&lt;sys/types.h&gt;</span></span>
+<span class="token macro property">#<span class="token directive keyword">include</span> <span class="token string">&lt;sys/socket.h&gt;</span></span>
+
+<span class="token comment">// 接收函数</span>
+ssize_t <span class="token function">recvfrom</span><span class="token punctuation">(</span><span class="token keyword">int</span> sockfd<span class="token punctuation">,</span> <span class="token keyword">void</span> <span class="token operator">*</span>buf<span class="token punctuation">,</span> size_t len<span class="token punctuation">,</span> <span class="token keyword">int</span> flags<span class="token punctuation">,</span> <span class="token keyword">struct</span> sockaddr <span class="token operator">*</span>src_addr<span class="token punctuation">,</span> socklen_t <span class="token operator">*</span>addrlen<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// 接收函数</span>
+​```c
+ssize_t <span class="token function">recv</span><span class="token punctuation">(</span><span class="token keyword">int</span> sockfd<span class="token punctuation">,</span> <span class="token keyword">void</span> <span class="token operator">*</span>buf<span class="token punctuation">,</span> size_t len<span class="token punctuation">,</span> <span class="token keyword">int</span> flags<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 发送函数</span>
+ssize_t <span class="token function">sendto</span><span class="token punctuation">(</span><span class="token keyword">int</span> sockfd<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">void</span> <span class="token operator">*</span>buf<span class="token punctuation">,</span> size_t len<span class="token punctuation">,</span> <span class="token keyword">int</span> flags<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">struct</span> sockaddr <span class="token operator">*</span>dest_addr<span class="token punctuation">,</span> socklen_t addrlen<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// 发送函数</span>
+ssize_t <span class="token function">send</span><span class="token punctuation">(</span><span class="token keyword">int</span> sockfd<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">void</span> <span class="token operator">*</span>buf<span class="token punctuation">,</span> size_t len<span class="token punctuation">,</span> <span class="token keyword">int</span> flags<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>现在我们把 recv、recvfrom，send、sendto 四个函数做个对比分析，你会发现 recvfrom 和 sendto 比 recv 和 send 多了两个参数，即 struct sockaddr 类型和 socklen_t 类型的参数。</p>
+</div><div class="cl-preview-section"><p>对于 recvfrom 来说，多出的第五个参数和第六个参数是 src_addr 和 addrlen。src_addr 表示源 Socket 地址，addrlen 表示源 Socket 地址的长度。src_addr 和 addrlen 都是“输入输出参数”，其含义是由调用者对这两个参数进行初始化，由内核协议栈来填写具体取值，二者的取值分别是数据包的源 Socket 地址和 Socket 地址长度。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：调用 recvfrom 之前，src_addr 和 addrlen 一定要初始化，否则函数会出现莫名其妙的情况。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>对于 sendto 来说，多出的第五个参数和第六个参数是 dest_addr 和 addrlen。dest_addr 表示目标 Socket 地址，addrlen 表示目标 Socket 地址的长度。dest_addr 和 addrlen 都是“输入参数”。</p>
+</div><div class="cl-preview-section"><p>为什么每发送一个消息都要输入对方的 Socket 地址呢？为什么每接收一个数据包又要提供一个保存源 Socket 地址的内存空间呢？</p>
+</div><div class="cl-preview-section"><p>现在你回想一下打电话的场景，你打开手机输入对方电话号码，当对方接通后就可以互相交流了，而你向对方讲的每一句话并不需要携带对方的电话号码吧？知道为什么吗？因为电话拨号成功以后，会在两人之间建立专用的通信链路。</p>
+</div><div class="cl-preview-section"><p>接着你再回想一下给某个要好的朋友发送电子邮件的场景，你可能一个礼拜发送一次电子邮件，而你向对方发送的每一份电子邮件是不是都要输入收件人的邮箱地址呢？知道为什么吗？因为发送电子邮件并不会建立专用通信链路，需要每次发送邮件的时候都要输入对方邮箱地址。</p>
+</div><div class="cl-preview-section"><p>再回到我们的 TCP 和 UDP 的问题来。TCP 就像是打电话，你只需要在调用 connect 函数的时候输入对方的 Socket 地址，之后在 recv、send 过程中是不需要输入对方 Socket 地址的，因为双方建立了一条专用的虚拟链路。</p>
+</div><div class="cl-preview-section"><p>UDP 就像是发送电子邮件，双方并没有建立连接的过程，每次收发数据的时候都需要带上对方的 Socket 地址，所以 recvfrom 多出了 src_addr 和 addrlen 两个参数，而 sendto 多出了 dest_addr 和 addrlen 两个参数。</p>
+</div><div class="cl-preview-section"><p>现在我们就尝试实现一下 nwc udp Server/Client 程序。实现思路就是基于 TCP 的程序进行修改，毕竟 UDP 和 TCP 有很多相似之处，对吗？</p>
+</div><div class="cl-preview-section"><h2 id="nwc-udp-clientserver-程序编写">nwc udp Client/Server 程序编写</h2>
+</div><div class="cl-preview-section"><p>客户端代码保存在“03-12_最简单的UDP客户端服务器\nwc_udp_client.c”文件，服务器端代码保存在“03-12_最简单的UDP客户端服务器\nwc_udp_server.c”文件。</p>
+</div><div class="cl-preview-section"><p>为了节省篇幅，粘贴的代码片段中删除了 log 打印部分。另外，我们仅仅分析和 TCP 有差异的部分。客户端和服务器端调用 socket 函数的方式是相同的，代码片段如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"> <span class="token number">27</span>     sock_fd <span class="token operator">=</span> <span class="token function">socket</span><span class="token punctuation">(</span>AF_INET<span class="token punctuation">,</span> SOCK_DGRAM<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">28</span>     <span class="token keyword">if</span> <span class="token punctuation">(</span>sock_fd <span class="token operator">==</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">30</span>         <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+ <span class="token number">31</span>     <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>相比创建 TCP socket，创建 UDP socket 需要向 socket() 函数的第二个参数传入枚举值 SOCK_DGRAM，其他参数都不需要修改。</p>
+</div><div class="cl-preview-section"><p>客户端数据收发的代码片段：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"> <span class="token number">69</span>     <span class="token keyword">while</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">70</span>         rc <span class="token operator">=</span> <span class="token function">sendto</span><span class="token punctuation">(</span>sock_fd<span class="token punctuation">,</span> send_msg<span class="token punctuation">,</span> send_msg_len<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> destaddr<span class="token punctuation">,</span> destaddrlen<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">71</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">==</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">73</span>             <span class="token keyword">break</span><span class="token punctuation">;</span>
+ <span class="token number">74</span>         <span class="token punctuation">}</span>
+ <span class="token number">81</span>
+ <span class="token number">82</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span>echo_mode <span class="token operator">!=</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">83</span>             rc <span class="token operator">=</span> <span class="token function">recvfrom</span><span class="token punctuation">(</span>sock_fd<span class="token punctuation">,</span> recv_buffer<span class="token punctuation">,</span> <span class="token number">7</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> destaddr<span class="token punctuation">,</span> <span class="token operator">&amp;</span>destaddrlen<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">84</span>             <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">86</span>                 <span class="token keyword">break</span><span class="token punctuation">;</span>
+ <span class="token number">87</span>             <span class="token punctuation">}</span>
+ <span class="token number">88</span>
+ <span class="token number">89</span>             <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">==</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">91</span>                 <span class="token keyword">break</span><span class="token punctuation">;</span>
+ <span class="token number">92</span>             <span class="token punctuation">}</span>
+ <span class="token number">95</span>         <span class="token punctuation">}</span>
+ <span class="token number">96</span>
+ <span class="token number">97</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>infinit<span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">98</span>             loop_count<span class="token operator">--</span><span class="token punctuation">;</span>
+ <span class="token number">99</span>             <span class="token keyword">if</span> <span class="token punctuation">(</span>loop_count <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+<span class="token number">100</span>                 <span class="token keyword">break</span><span class="token punctuation">;</span><span class="token comment">// exit loop</span>
+<span class="token number">101</span>             <span class="token punctuation">}</span>
+<span class="token number">102</span>         <span class="token punctuation">}</span>
+<span class="token number">103</span>
+<span class="token number">104</span>         <span class="token comment">// Sleep 3 seconds</span>
+<span class="token number">105</span>         <span class="token comment">//sleep(3);</span>
+<span class="token number">106</span>         cur_slot_sent<span class="token operator">--</span><span class="token punctuation">;</span>
+<span class="token number">107</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span>cur_slot_sent <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+<span class="token number">108</span>             <span class="token function">usleep</span><span class="token punctuation">(</span>sleep_time <span class="token operator">*</span> <span class="token number">1000</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">109</span>             cur_slot_sent <span class="token operator">=</span> slot_send_count<span class="token punctuation">;</span>
+<span class="token number">110</span>         <span class="token punctuation">}</span>
+<span class="token number">111</span>     <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>在 70 行，调用 sendto() 函数向服务器发送数据，并且给函数的第五个和第六个参数传入了对方的 Socket 地址和 Socket 地址长度，这是相比 send() 函数的唯一区别；</p>
+</li>
+<li>
+<p>在 83 行，调用 recvfrom() 函数从服务器接收数据，并且给函数的第五个和第六个参数传入了对方的 Socket 地址和 Socket 地址长度，这是相比 recv() 函数的唯一区别；</p>
+</li>
+<li>
+<p>剩下的代码都是我们在 TCP 代码中增加的用于收发控制的逻辑。这些逻辑在 UDP 中同样适用，所以我们选择保留。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>服务端数据收发的代码片段：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"> <span class="token number">60</span>     <span class="token keyword">while</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">61</span>         client_addr_len <span class="token operator">=</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>client_addr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">62</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span>echo_mode <span class="token operator">!=</span> <span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">63</span>             rc <span class="token operator">=</span> <span class="token function">recvfrom</span><span class="token punctuation">(</span>sock_fd<span class="token punctuation">,</span> recv_buffer<span class="token punctuation">,</span> RECV_BUFF_LEN<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">struct</span> sockaddr<span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>client_addr<span class="token punctuation">,</span> <span class="token operator">&amp;</span>client_addr_len<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">64</span>             <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">==</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">66</span>                 <span class="token keyword">continue</span><span class="token punctuation">;</span>
+ <span class="token number">67</span>             <span class="token punctuation">}</span>
+ <span class="token number">74</span>         <span class="token punctuation">}</span>
+ <span class="token number">75</span>
+ <span class="token number">76</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span>sleep_time <span class="token operator">&gt;</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">77</span>             <span class="token function">usleep</span><span class="token punctuation">(</span>sleep_time <span class="token operator">*</span> <span class="token number">1000</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">78</span>         <span class="token punctuation">}</span>
+ <span class="token number">79</span>
+ <span class="token number">80</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span>echo_mode <span class="token operator">!=</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">81</span>             rc <span class="token operator">=</span> <span class="token function">sendto</span><span class="token punctuation">(</span>sock_fd<span class="token punctuation">,</span> pong<span class="token punctuation">,</span> pong_len<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">struct</span> sockaddr<span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>client_addr<span class="token punctuation">,</span> client_addr_len<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">82</span>             <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">==</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">84</span>                 <span class="token keyword">continue</span><span class="token punctuation">;</span>
+ <span class="token number">85</span>             <span class="token punctuation">}</span>
+ <span class="token number">91</span>         <span class="token punctuation">}</span>
+ <span class="token number">92</span>     <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>第 60 行，让 UDP 服务器进入循环逻辑，提供持续服务；</li>
+<li>第 61 ~ 74 行，是接收数据的逻辑。recvfrom() 函数的第五个参数和第六个参数是“输入输出参数”，调用者必须对这两个参数进行初始化，在 61 行中对 client_addr_len 参数进行初始化。当然，client_addr 参数我们也通过 memset 进行了初始化；</li>
+<li>第 76 ~ 78 行表示服务器收到客户端请求消息后，要等待 sleep_time 毫秒的时长再向客户端发送响应消息；</li>
+<li>第 81 ~ 85 行是服务器向客户端发送数据的逻辑。向 sendto() 函数第五个参数和第六个参数传入的是客户端的 Socket 地址和 Socket 地址长度。</li>
+</ul>
+</div><div class="cl-preview-section"><p>在第 66 行接收出错和第 84 行发送出错的情况下，我们用了“continue” 语句，而并不是 “break” 语句。你可以仔细想想我们之前说过的 UDP 传输类似发送电子邮件的事情。对于 UDP 服务器来说，在接收客户端发送的数据之前，他是不知道本次会接收到哪个客户端的数据包，只有 recvfrom() 函数返回以后，查看客户端的 Socket 地址才能识别对方的身份。那么对于服务器来说，如果某一次数据的收发出现了错误，还需要继续去接收下一个数据包，因为你并不知道下一个数据包是哪个客户端的，对吗？</p>
+</div><div class="cl-preview-section"><p>我们在 TCP 服务器中通过 fork 创建子进程的方式提供多客户端支持，那么 UDP 不需要 fork 吗？在 UDP 中可以 fork 子进程，也可以不 fork 子进程，具体选择需要根据业务的繁忙程度来考虑。总之你要记住 UDP 是无连接的，对于 UDP 服务器来说只能通过一个绑定的 Socket 文件描述符来接收所有客户端的请求。</p>
+</div><div class="cl-preview-section"><p>那如果让我们的 nwc udp Client 也调用一下 connect() 函数需要做哪些事情呢？</p>
+</div><div class="cl-preview-section"><h2 id="udp-的-connect-机制">UDP 的 connect 机制</h2>
+</div><div class="cl-preview-section"><p>UDP 客户端调用 connect() 函数的代码片段如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"> <span class="token number">42</span>     <span class="token keyword">if</span> <span class="token punctuation">(</span>na<span class="token operator">-&gt;</span>is_udp_connect<span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">43</span>         rc <span class="token operator">=</span> <span class="token function">connect</span><span class="token punctuation">(</span>sock_fd<span class="token punctuation">,</span> destaddr<span class="token punctuation">,</span> destaddrlen<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">44</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">==</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">46</span>             <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+ <span class="token number">47</span>         <span class="token punctuation">}</span>
+ <span class="token number">48</span>         destaddr <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+ <span class="token number">49</span>         destaddrlen <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+ <span class="token number">50</span>     <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>UDP 客户端调用 connect() 函数的方式和 TCP 客户端没有区别。但是当 UDP 客户端调用了 connect() 函数以后，需要注意如下几点：</p>
+</div><div class="cl-preview-section"><ul>
+<li>对于 UDP Socket 来说，调用 connect() 函数并不会有类似 TCP Socket 的<strong>三次握手</strong>过程，仅仅是做两件事情：一是分配一个本地端口，并且选择一个本地网络接口卡，从而分配本地 IP 地址；二是将 &lt;本地 IP 地址，本地端口号&gt; 和 &lt;目的 IP 地址，目的端口号&gt; 做一个绑定；</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：UDP Socket 调用 connect() 函数，不会向对端发送任何数据包！！！！！！！</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>对于调用了 connect() 函数的 UDP Socket 来说，可以选择调用 send() 函数和 sendto() 函数发送数据包。如果选择 sendto() 函数，第五个参数“目的地址指针”必须传入 NULL，第六个参数“目的地址长度”必须传入 0；</p>
+</li>
+<li>
+<p>对于调用了 connect() 函数的 UDP Socket 来说，可以选择调用 recv() 函数和 recvfrom() 函数来接收数据包。如果选择了recvfrom() 函数，第五个参数“源地址指针”必须传入 NULL，第六个参数“源地址长度”必须传入 0；</p>
+</li>
+<li>
+<p>对于调用了 connect() 函数的 UDP Socket 来说，只有当数据包的&lt;源 IP 地址, 源端口号&gt;与调用 connect() 函数时绑定的 &lt;IP 地址，端口号&gt;相匹配，才能被接收。例如，UDP 客户端 Socket 调用了 connect() 函数绑定了服务端 Socket &lt;117.0.1.82，80&gt;，那么此 UDP 客户端只能收到&lt;源 IP 地址, 源端口号&gt;是 &lt;117.0.1.82，80&gt; 的数据包；</p>
+</li>
+<li>
+<p>对于已经调用了 connect() 函数的 UDP Socket 来说，在以下两种情况下可以继续调用 connect() 函数：</p>
+<ol>
+<li>绑定一个新的 &lt;IP地址，端口号&gt; ；</li>
+<li>取消已有的连接。可以通过把 Socket 地址结构的 sin_family 字段值设为 AF_UNSPEC 来实现。</li>
+</ol>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>如果 UDP 客户端所请求的服务不存在，会出现什么现象呢？</p>
+</div><div class="cl-preview-section"><h2 id="udp-服务不存在的情况">UDP 服务不存在的情况</h2>
+</div><div class="cl-preview-section"><p>如果你访问的服务不存在，可能存在两种情况：</p>
+</div><div class="cl-preview-section"><ul>
+<li>第一种情况，是你访问的目标主机不存在。意味着网络中并不存某个主机分配了你输入的目标 IP 地址；</li>
+<li>第二种情况，是你访问的目标主机是存在的，但是目标主机上没有启动你所访问的服务。意味着目标主机中不存在服务的端口号是你输入的目标端口号。</li>
+</ul>
+</div><div class="cl-preview-section"><p>对于以上两种情况，UDP 客户端调用 sendto() 函数发送数据包都会成功，看一下我们的实际测试情况。</p>
+</div><div class="cl-preview-section"><p>目标主机 IP 地址不存在的情况，访问的目标 IP 地址 11.50.1.178 是不存在的，至少我们不能证明它的存在，但是发送消息是成功的。</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"> <span class="token punctuation">.</span><span class="token operator">/</span>nwc<span class="token punctuation">.</span>exe <span class="token operator">-</span>c <span class="token operator">-</span>a <span class="token number">11.50</span><span class="token punctuation">.</span><span class="token number">1.178</span> <span class="token operator">-</span>p <span class="token number">80</span> <span class="token operator">-</span>u <span class="token operator">--</span>connect
+<span class="token number">1577102851</span> Send ping to server<span class="token operator">!</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>目标主机的 IP 地址 117.50.1.178 是存在的，这是我的一台云主机，但是主机上并没有启动 80 服务，但是发送消息也是成功的。</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"> <span class="token punctuation">.</span><span class="token operator">/</span>nwc<span class="token punctuation">.</span>exe <span class="token operator">-</span>c <span class="token operator">-</span>a <span class="token number">117.50</span><span class="token punctuation">.</span><span class="token number">1.178</span> <span class="token operator">-</span>p <span class="token number">80</span> <span class="token operator">-</span>u <span class="token operator">--</span>connect
+<span class="token number">1577102851</span> Send ping to server<span class="token operator">!</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>对于目标主机不存在的情况，路由器可能会产生 ICMP 消息“目标主机不可达（Destination Host Unreachable）”的错误。对于目标服务不存在的情况，目标主机会产生“目标端口不可达（Destination Port Unreachable）”的错误。</p>
+</div><div class="cl-preview-section"><p>这个错误是协议栈内部处理的错误，应用程序是无法感知这个错误的。通过 tcpdump 或 Wireshark 抓包可以看到这样的 ICMP 报文。但不是总能抓到这样的数据包，因为互联网中的路由器和防火墙可能屏蔽了此类报文。</p>
+</div><div class="cl-preview-section"><p>如果你通过 UDP 客户端访问“不存在的目标服务”，sendto() 函数调用是成功的，但是在<strong>阻塞式</strong>模式下调用 recvfrom() 函数会出现什么情况呢？那就进入下一个小节继续探讨。</p>
+</div><div class="cl-preview-section"><h2 id="udp-丢包问题探讨">UDP 丢包问题探讨</h2>
+</div><div class="cl-preview-section"><p>拿我们的 nwc udp Client/Server 来说，不管是 Client 发送的数据包丢了，还是 Server 响应的数据包丢了，如果 Client 调用 recvfrom() 函数都会导致线程阻塞，和访问“不存在的目标服务”是一个道理。</p>
+</div><div class="cl-preview-section"><p>关于 UDP 丢包的解决办法在 TCP 中已经学习过了，核心思想就是客户端发送的每一个消息，服务器要发送响应确认，如果在特定的时间内没有收到服务器的响应，客户端就认为消息丢失（不管是请求丢失还是响应丢失），然后进行重传。</p>
+</div><div class="cl-preview-section"><p>对于具体实现来说，<strong>阻塞式 Socket</strong> 和<strong>非阻塞式 Socket</strong>是有区别的。<strong>非阻塞式 Socket</strong> 的实现方式我们在后续的专栏介绍。下来我们介绍一下<strong>阻塞式 Socket</strong>的实现。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed9a6e0000157de11280691.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>从图中可以看出，左边代表客户端，右边代表服务器端，每一端都包含了一个<strong>发送线程</strong>和一个<strong>接收线程</strong>。我们发现客户端的实现和服务器的实现是对称的，其实对于一个完整的网络层来说，接收和发送逻辑不应该区分客户端和服务器端的。</p>
+</div><div class="cl-preview-section"><p>在<strong>阻塞式 Socket</strong>模式下，如果收发数据包都用同一个线程，调用 recvfrom() 函数会阻塞线程，从而会影响数据发送。为了避免此问题，需要开启一个独立的线程接收数据，当然也需要开启一个独立的线程发送数据。所谓<strong>接收线程</strong>和<strong>发送线程</strong>分离，这也是非常传统的一种设计思路。</p>
+</div><div class="cl-preview-section"><p>发送端逻辑一般会包含<strong>发送模块</strong>、<strong>发送队列</strong>、<strong>重发模块</strong>。当发送端要发送一个“请求消息”时，在成功调用 sendto() 函数后，要将发送的消息保存到<strong>发送队列中</strong>。如果在特定的时间内没有收到对端的响应，<strong>重发模块</strong>会从<strong>发送队列</strong>中取出超时的消息再发送一遍。一般来说，发送端除了发送“请求消息”外，还会发送“响应消息”，“响应消息”是不需要保存到<strong>发送队列</strong>中的。</p>
+</div><div class="cl-preview-section"><p>接收端逻辑一般包含<strong>接收模块</strong>、<strong>接收队列</strong>。当接收端通过 recvfrom() 函数接收到一个消息以后，需要区分是“请求消息”还是“响应��息”，如果是“请求消息”需要保存到<strong>接收队列</strong>中，然后请求发送端发送一个“响应消息”；如果是“响应消息”，需要通知发送端的<strong>重发模块</strong>从<strong>发送队列</strong>中将消息删除掉。</p>
+</div><div class="cl-preview-section"><p>图中用序号 (1) 到 (11) 标出了消息从发送到最终被对方确认，然后从<strong>发送队列</strong>删除的完整过程，你可以仔细分析一下。</p>
+</div><div class="cl-preview-section"><p>虽然我们介绍的是阻塞式 Socket 的常规设计架构，但结构还是稍微有点复杂，需要多多思考，并且通过一定的练习才能掌握。我们这里就不提供具体代码实现了，希望你能够自己实现啊。</p>
+</div><div class="cl-preview-section"><p>下来我们继续探讨一下 UDP 流控的相关问题。</p>
+</div><div class="cl-preview-section"><h2 id="udp-的流控问题">UDP 的流控问题</h2>
+</div><div class="cl-preview-section"><p>UDP 是没有流控逻辑的，向网络发送多少数据包完全是由应用程序自己决定的。根据应用场景的不同，有简单的控制机制，也有复杂的控制机制，无论如何都不能随意发送，而不加以任何控制，否则批量丢包会导致应用无法正常工作。</p>
+</div><div class="cl-preview-section"><p>我们在 nwc udp Client/Server 提供了 -i 选项可以选择每隔一个“时间间隔”去发送数据包，这也算是最简单的流控机制了。</p>
+</div><div class="cl-preview-section"><p>著名的 SNMP 协议采用 UDP 作为传输层，每一个请求的消息会带有一个“请求消息 ID”，服务器必须对“请求消息”进行响应。客户端如果在特定的时间内没有收到“响应消息”会选择重发超时的“请求消息”。超时重传时间和重发次数都是可以��置的。</p>
+</div><div class="cl-preview-section"><p>在音视频实时通信领域，普遍采用 RTP/RTCP 协议进行数据传输，RTCP 协议提供了复杂的流控、可靠性保证机制。在 WebRTC 中除了完整的实现了 RTP/RTCP 协议外，还引入了很多<strong>流控算法</strong>和<strong>拥塞控制算法</strong>，目的都是对 UDP 进行流控。</p>
+</div><div class="cl-preview-section"><p>因为流控是非常复杂的一个领域，我们不再赘述，有兴趣可以参考相关资料继续学习。WebRTC 的 RTP/RTCP 模块就是一个不错的选择啊。</p>
+</div><div class="cl-preview-section"><h2 id="udp-多客户端支持">UDP 多客户端支持</h2>
+</div><div class="cl-preview-section"><p>现在你想想，UDP 是无连接的，所以天然是可以接收多客户端请求的，多吗？我们的 nwc udp Server 已经支持了多客户端的请求，由于是简单的 echo Server，服务器的处理逻辑很简单，代码行不到 100 行。但是对于复杂的应用来说，我们必须为每一个 UDP 客户端抽象“逻辑连接”的概念，把客户端相关的上下文信息都存储到“逻辑连接”中。下来我们就尝试设计一个逻辑连接。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed9a6ef000180ba09560693.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>从图中可以看出，一个支持多 UDP 客户端的 UDP 服务器大概包含以下几个部分:</p>
+</div><div class="cl-preview-section"><ul>
+<li>UDP 数据接收模块，主要逻辑是开启一个独立的线程去接收客户端的数据包；</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：UDP Server 是用一个 socket 接收所有客户端的数据包。</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>UDP 虚拟连接管理模块，主要逻辑是对客户端的虚拟连接进行管理，根据客户端的&lt;IP 地址，端口号&gt;来唯一标识一个虚拟连接。如果第一次收到某个客户端的数据包就创建一个新连接，如果虚拟连接已经存在，那么直接把数据包交给这个虚拟连接来处理；</p>
+</li>
+<li>
+<p>UDP 虚拟连接模块，由于 UDP 本身是无连接的，我们为每一个 UDP 客户端设计了一个 udp 虚拟连接，我们把它叫做“nwc connection”，这个虚拟连接是由 <strong>nwc connection mangaer</strong> 模块创建的。一般来说，每一个虚拟 UDP 连接会维护一个接收队列和一个发送队列；</p>
+</li>
+<li>
+<p>线程池模块，在业务逻辑比较复杂的场景下，设计一组线程池去处理每一个虚拟 UDP 连接的逻辑，可以最大化利用多核 CPU 的优势，从而提高系统的吞吐量。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>由于 UDP 的多线程架构实现起来相对复杂，需要很大工作量，只有在商业级产品才需要这样设计，本文不再提供具体实现，有兴趣可以自行尝试一下。本文只提供 nwc_connection 的简单实现，采用双向链表来管理多个连接。</p>
+</div><div class="cl-preview-section"><p>代码片段如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"> <span class="token number">93</span>         <span class="token keyword">struct</span> nwc_connection <span class="token operator">*</span>nwc <span class="token operator">=</span> <span class="token function">get_nwc_connection</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>nwc_hdr<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">struct</span> sockaddr<span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>client_addr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">94</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>nwc<span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">99</span>             nwc <span class="token operator">=</span> <span class="token function">alloc_nwc_conn_arg0</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">100</span>             nwc<span class="token operator">-&gt;</span>addr<span class="token punctuation">.</span>sin_port <span class="token operator">=</span> client_addr<span class="token punctuation">.</span>sin_port<span class="token punctuation">;</span>
+<span class="token number">101</span>             nwc<span class="token operator">-&gt;</span>addr<span class="token punctuation">.</span>sin_addr <span class="token operator">=</span> client_addr<span class="token punctuation">.</span>sin_addr<span class="token punctuation">;</span>
+<span class="token number">102</span>             <span class="token function">add_nwc_tail</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>nwc_hdr<span class="token punctuation">,</span> nwc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">103</span>         <span class="token punctuation">}</span><span class="token keyword">else</span><span class="token punctuation">{</span>
+<span class="token number">104</span>             <span class="token comment">// The connection exists, use it.</span>
+<span class="token number">105</span>         <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>93 行，调用 get_nwc_connection 函数获取一下 nwc_connection，我们是用客户端的 Socket 地址最为查询条件的。这里只是支持了 IPv4 的 struct sockaddr_in 地址结构；</li>
+<li>94 ~ 102 行，nwc_connection 连接不存在，表示客户端第一次交互，所以我们创建一个新连接，并且保存在队列里；</li>
+<li>103 ~ 105 行，表示连接已经存在了，我们直接用连接即可。</li>
+</ul>
+</div><div class="cl-preview-section"><p>我们这里是演示代码实现，所以采用了最简单的双向链表。在商业产品中，往往需要采用查询性能更好的哈希表、红黑树等数据结构。</p>
+</div><div class="cl-preview-section"><p>另外如果是采用多线程架构，那么设计会更复杂，需要做好多线程同步的工作。</p>
+</div><div class="cl-preview-section"><h2 id="总结">总结</h2>
+</div><div class="cl-preview-section"><p>本文首先介绍了 UDP 的 recvfrom() 函数和 sendto() 函数的用法，随后开发了简单的 nwc udp Client/Server 程序，通过这个简单程序，我相信你已经体会到了 UDP 和 TCP 在 API 调用上差异不大，但是理念上差异很大。</p>
+</div><div class="cl-preview-section"><p>UDP 也可以调用 connect() 函数，但是相比 TCP，概念完全不同，我相信你理解了吧。</p>
+</div><div class="cl-preview-section"><p>由于 UDP 在协议栈实现简单，这也为应用程序提供了很大的灵活性。所以 UDP 的相关问题主要是设计层面的问题，要根据业务领域的不同做出相应的设计。</p>
+</div><div class="cl-preview-section"><p>我们在文中重点探讨了阻塞式 UDP Socket 的常规设计思路，以及如何来解决丢包问题。同时也介绍了 UDP Server 支持多客户端的设计思路。</p>
+</div><div class="cl-preview-section"><p>由于 UDP 的流控在不同领域设计思路有很大差异，实现算法也非常复杂，我们没有展开详细介绍，需要你结合具体工作再去深入学习。</p>
+</div><div class="cl-preview-section"><h2 id="思考时间">思考时间</h2>
+</div><div class="cl-preview-section"><ol>
+<li>
+<p>尝试实现接收线程和发送线程分离的 UDP Client/Server 程序，要求支持超时重传的功能。</p>
+</li>
+<li>
+<p>尝试实现一个简单的 UDP 流控算法。（提示：可以给出一个最大发送带宽，通过统计发送流量来限制发送速率，如果有丢包出现，可以尝试降低发送带宽）。</p>
+</li>
+</ol>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5ed9fcc2000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=80">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '13 从头做起：实现最简单的 UDP 客户端和服务器',
+					'CID': '2102',
+					'Teacher': '陈子兴'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "13 从头做起：实现最简单的 UDP 客户端和服务器",
+                    desc: "学好通用知识，提升技术竞争力",
+                    imgUrl: 'https:https://img3.mukewang.com/5ed8c1c600015fc805400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5ed8c1c600015fc805400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/80',
+                    link: 'https://m.imooc.com/read/80'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

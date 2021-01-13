@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>35 奇门武动：如何实现代码热更新</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="突破技术瓶颈，迈向更高岗位">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "2";
+	var chapter_id = "1932";
+	var chapter_title = "35 奇门武动：如何实现代码热更新";
+	var aid = "76";
+	var a_name = "Python 源码深度剖析";
+	var a_price = "68.00";
+	var a_pic = "https://img.mukewang.com/5eb68ab400017cda05400720.jpg";
+	var userId = 0;
+
+	var column_id = '76';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-26&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			35 奇门武动：如何实现代码热更新
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5f3c852f0001e69b06400426.jpg')"></div>
+	
+	
+		<a href="/read/76">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5e4a3ec90001ef8d04000400-40-40.jpg" alt="fasionchan">
+				<h3>Python 源码深度剖析</h3>
+				<p>fasionchan · 资深 Python 研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">智慧，不是死的默念，而是生的沉思。<p class="author">——斯宾诺莎</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>经过 <em>Python</em> 虚拟机、函数机制和类机制的学习，我们对 <em>Python</em> 程序执行过程的动态性已经了如指掌：</p>
+</div><div class="cl-preview-section"><ul>
+<li>在运行时，<em>Python</em> 可以动态创建 <strong>函数</strong> 对象；</li>
+<li>在运行时，<em>Python</em> 可以动态创建 <strong>类</strong> 对象；</li>
+<li>在运行时，<em>Python</em> 可以修改 <strong>函数</strong> 对象，改变它的行为；</li>
+<li>在运行时，<em>Python</em> 可以修改 <strong>类</strong> 对象，改变它的行为；</li>
+<li>在运行时，<em>Python</em> 可以动态编译代码并加入到虚拟机中执行；</li>
+</ul>
+</div><div class="cl-preview-section"><p>借助这些特性，我们可以实现程序运行时动态更新代码，也就是 <strong>代码热更新</strong> ！</p>
+</div><div class="cl-preview-section"><p>对于一般程序而言，想要更新代码只有重启一条路。因此，拥有热更新能力的 <em>Python</em> 可以实现很不可思议的功能，具体如何进行呢？——我们从猴子补丁说起。</p>
+</div><div class="cl-preview-section"><h2 id="猴子补���">猴子补丁</h2>
+</div><div class="cl-preview-section"><p><strong>猴子补丁</strong> ( <em>monkey patch</em> )大家应该都听说过，这是一种在运行时添加、修改代码的技术，而无需修改源码。</p>
+</div><div class="cl-preview-section"><p>json 序列化是一个很常见的操作，在 <em>Python</em> 可以这样进行：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">import</span> json
+json<span class="token punctuation">.</span>dumps<span class="token punctuation">(</span>some_data<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><em>ujson</em> 是另一个 <em>json</em> 序列化实现，由纯 <em>C</em> 语言编写，效率比标准库中的 <em>json</em> 模块更高，用法一样：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">import</span> ujson
+ujson<span class="token punctuation">.</span>dumps<span class="token punctuation">(</span>some_data<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>那么，如果想把整个程序中的 <em>json</em> 操作都换成 <em>ujson</em> ，该怎么办呢？</p>
+</div><div class="cl-preview-section"><p>直接引用 <em>ujson</em> 肯定是不行的，因为程序可能会引用第三方类库，我们肯定不想也不好改动第三方代码。以一个由 <em>flask</em> 框架实现的 <em>api</em> 为例，</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">from</span> flask <span class="token keyword">import</span> Flask<span class="token punctuation">,</span> jsonify
+
+app <span class="token operator">=</span> Flask<span class="token punctuation">(</span>__name__<span class="token punctuation">)</span>
+
+@app<span class="token punctuation">.</span>route<span class="token punctuation">(</span><span class="token string">'/'</span><span class="token punctuation">)</span>
+<span class="token keyword">def</span> <span class="token function">some_api</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">return</span> jsonify<span class="token punctuation">(</span>some_data<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>jsonify 函数用于响应 <em>json</em> 数据，它调用标准库 <em>json</em> 模块对数据进行 <em>json</em> 序列化，可 <em>flask</em> 并不是我们开发的。</p>
+</div><div class="cl-preview-section"><p>好在，利用 <em>Python</em> 执行过程的动态特性，我们可以在运行时替换 <em>json</em> 模块的相关函数实现。下面，我们编写 <em>patch_json</em> 函数，实现 <em>dumps</em> 和 <em>loads</em> 函数的替换：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">import</span> json
+<span class="token keyword">import</span> ujson
+
+<span class="token keyword">def</span> <span class="token function">patch_json</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    json<span class="token punctuation">.</span>dumps <span class="token operator">=</span> ujson<span class="token punctuation">.</span>dumps
+    json<span class="token punctuation">.</span>loads <span class="token operator">=</span> ujson<span class="token punctuation">.</span>loads
+
+patch_json<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这样一来，只要 <em>patch_json</em> 函数成功执行，<em>json</em> 模块中的 <em>dumps</em> 、<em>loads</em> 函数就被换成了 <em>ujson</em> 版本。后续就算从 <em>json</em> 模块导入，最终得到的也是 <em>ujson</em> 版本！</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f3c86ab0001aa3311870478.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>需要特别注意，<em>json</em> 模块属性在 <em>patch_json</em> 调用前就被直接引入，将不受 <em>patch_json</em> 控制：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">import</span> json
+<span class="token keyword">from</span> json <span class="token keyword">import</span> dumps
+
+patch_json<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment"># 执行 json 模块原来的版本，而不是 ujson 版本</span>
+dumps<span class="token punctuation">(</span>some_data<span class="token punctuation">)</span>
+<span class="token comment"># 执行 ujson 版本</span>
+json<span class="token punctuation">.</span>dumps<span class="token punctuation">(</span>some_data<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f3c86b80001fb7411770634.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>因此，许多应用猴子补丁的程序，在开头处便要执行替换逻辑，确保类似的现象不会发生。</p>
+</div><div class="cl-preview-section"><p>猴子补丁的应用范围很广，一般用来特换类库实现或者在单元测试中进行 <em>mock</em> 。诸如 <em>greenlet</em> 采用猴子补丁将阻塞的库函数替换成非阻塞的版本：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">import</span> gevent<span class="token punctuation">.</span>monkey
+gevent<span class="token punctuation">.</span>monkey<span class="token punctuation">.</span>patch_all<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>由于猴子补丁可能会影响代码的可读性，应用不当可能导致一些奇怪的问题，因此不能滥用。</p>
+</div><div class="cl-preview-section"><h2 id="reload">reload</h2>
+</div><div class="cl-preview-section"><p><em>reload</em> 函数相信大部分读者也有所耳闻了，它用于重新加载模块。与 <em>Python 2</em> 时代不同，<em>reload</em> 在最新的 <em>Python</em> 中不再作为内建函数存在了，而被移入标准库 <em>importlib</em> 模块中。</p>
+</div><div class="cl-preview-section"><p>假设我们有一个配置模块 <em><a href="http://config.py">config.py</a></em> ，以变量形式定义着一些配置项：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python">wx <span class="token operator">=</span> <span class="token string">'coding-fan'</span>
+title <span class="token operator">=</span> <span class="token string">'小菜学编程'</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在程序中，我们只需将 <em>config</em> 模块导入，即可访问里面定义的每个配置项：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">import</span> config
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">print</span><span class="token punctuation">(</span>config<span class="token punctuation">.</span>title<span class="token punctuation">)</span>
+小菜学编程
+</code></pre>
+</div><div class="cl-preview-section"><p>现在，我们编辑 <em><a href="http://config.py">config.py</a></em> 文件，将配置进行调整：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python">wx <span class="token operator">=</span> <span class="token string">'fasionchan'</span>
+title <span class="token operator">=</span> <span class="token string">'Python开发工程师'</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如不做任何处理，程序无法获得调整后的配置，这一点都不意外：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">print</span><span class="token punctuation">(</span>config<span class="token punctuation">.</span>title<span class="token punctuation">)</span>
+小菜学编程
+</code></pre>
+</div><div class="cl-preview-section"><p>想要获取最新的配置，我们只能让 <em>Python</em> 重新加载 <em>config</em> 。操作也不复杂，调用 <em>reload</em> 函数即可：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">import</span> importlib
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> importlib<span class="token punctuation">.</span><span class="token builtin">reload</span><span class="token punctuation">(</span>config<span class="token punctuation">)</span>
+<span class="token operator">&lt;</span>module <span class="token string">'config'</span> <span class="token keyword">from</span> <span class="token string">'/Users/fasion/config.py'</span><span class="token operator">&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>重新加载 <em>config</em> 模块后，我们成功获得最新配置，而程序完全无须重启！</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">print</span><span class="token punctuation">(</span>config<span class="token punctuation">.</span>title<span class="token punctuation">)</span>
+Python开发工程师
+</code></pre>
+</div><div class="cl-preview-section"><p>借助 <em>reload</em> 函数，我们成功实现了一定程度的 <strong>代码热更新</strong> 能力！</p>
+</div><div class="cl-preview-section"><p>利用操作系统文件事件通知机制，我们还可以让 <em>Python</em> 在代码文件发生变化时自动加载新代码！</p>
+</div><div class="cl-preview-section"><p>有个坏消息，不同操作系统实现文件事件通知机制的方式完全不同，因此需要对主流操作系统进行适配。幸好，已经有先行者为此开发了 <em>watchdog</em> 包。我们只需用 <em>pip</em> 安装 <em>watchdog</em> ，即可站在巨人肩膀上开发。</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">import</span> importlib
+<span class="token keyword">import</span> time
+<span class="token keyword">import</span> os<span class="token punctuation">.</span>path
+
+<span class="token keyword">from</span> watchdog<span class="token punctuation">.</span>observers <span class="token keyword">import</span> Observer
+<span class="token keyword">from</span> watchdog<span class="token punctuation">.</span>events <span class="token keyword">import</span> FileSystemEventHandler<span class="token punctuation">,</span> LoggingEventHandler
+
+<span class="token keyword">import</span> config
+
+<span class="token keyword">class</span> <span class="token class-name">CodeEventHandler</span><span class="token punctuation">(</span>FileSystemEventHandler<span class="token punctuation">)</span><span class="token punctuation">:</span>
+
+    <span class="token keyword">def</span> <span class="token function">on_modified</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> event<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span> event<span class="token punctuation">.</span>src_path <span class="token operator">==</span> config<span class="token punctuation">.</span>__file__<span class="token punctuation">:</span>
+            <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'reloading config'</span><span class="token punctuation">)</span>
+            importlib<span class="token punctuation">.</span><span class="token builtin">reload</span><span class="token punctuation">(</span>config<span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    observer <span class="token operator">=</span> Observer<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    observer<span class="token punctuation">.</span>schedule<span class="token punctuation">(</span>CodeEventHandler<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> os<span class="token punctuation">.</span>path<span class="token punctuation">.</span>dirname<span class="token punctuation">(</span>config<span class="token punctuation">.</span>__file__<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">True</span><span class="token punctuation">)</span>
+    observer<span class="token punctuation">.</span>start<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">while</span> <span class="token boolean">True</span><span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'title:'</span><span class="token punctuation">,</span> config<span class="token punctuation">.</span>title<span class="token punctuation">)</span>
+        time<span class="token punctuation">.</span>sleep<span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span>
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">'__main__'</span><span class="token punctuation">:</span>
+    main<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这个例子先实现文件事件处理类 <em>CodeEventHandler</em> ，<em>on_modified</em> 方法接收修改事件。如果被修改文件刚好是 <em>config</em> 模块源码文件，我们调用 <em>importlib.reload</em> 重新加载 <em>config</em> 模块。</p>
+</div><div class="cl-preview-section"><p>接着在 <em>main</em> 函数，我们先初始化 <em>watchdog</em> 观测器 <em>Observer</em> ，然后启动它。这样一来，只要被观测路径上发生修改事件，<em>watchdog</em> 将调用 <em>CodeEventHandler</em> 对象的 <em>on_modified</em> 。</p>
+</div><div class="cl-preview-section"><p>注意到，我们不是直接观测 <em><a href="http://config.py">config.py</a></em> 文件，而是递归观测其所在目录。如果直接观测目标文件，当它被删掉重建，便失去跟踪；相反，观测目标文件所在目录，重新创建的新文件也会得到跟踪。</p>
+</div><div class="cl-preview-section"><p>最后，程序进入主题逻辑，例子用一个周期性输出配置值 <em>title</em> 的循环来充当这个角色。</p>
+</div><div class="cl-preview-section"><p>把这个程序跑起来后，它将不断输出 <em>config.title</em> 的值；当 <em><a href="http://config.py">config.py</a></em> 被修改后，它将输出 <em>reloading config</em> ，并重新加载 config 模块。</p>
+</div><div class="cl-preview-section"><p>现在，试着修改 <em><a href="http://config.py">config.py</a></em> 中的 <em>title</em> 变量，程序将自动生效，无须重启：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python">title<span class="token punctuation">:</span> Python开发工程师
+reloading config
+title<span class="token punctuation">:</span> 小菜学编程
+</code></pre>
+</div><div class="cl-preview-section"><p>虽然例子中只涉及到一些简单的变量，但这种机制对诸如 <strong>函数</strong> 以及 <strong>类</strong> 等复杂对象也是支持的。接下来，我们将更进一步，充分认识 <em>reload</em> 机制的局限性，并探索破解局限性的方案。</p>
+</div><div class="cl-preview-section"><h2 id="reload-局限性">reload 局限性</h2>
+</div><div class="cl-preview-section"><p>通过 <em>reload</em> 函数重新加载模块，<em>Python</em> 将以原模块对象属性空间为全局/局部名字空间，再次执行模块代码。这种行为将导致一些诡异的现象，我们接着讨论。</p>
+</div><div class="cl-preview-section"><p>首先，旧模块变量不会被删除，除非在新模块代码中显式删除，这很好理解。</p>
+</div><div class="cl-preview-section"><p>假设模块 <em><a href="http://mo.py">mo.py</a></em> 原来有两个变量 <em>a</em> 和 <em>b</em> ：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python">a <span class="token operator">=</span> <span class="token number">1</span>
+b <span class="token operator">=</span> <span class="token number">2</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>模块导入后删掉 <em>a</em> 、修改 <em>b</em> 并新增 <em>c</em> ：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python">b <span class="token operator">=</span> <span class="token number">22</span>
+c <span class="token operator">=</span> <span class="token number">3</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><em>Python</em> 重新加载模块 <em>mo</em> 时，以原模块对象属性空间为局部名字空间，执行新的模块代码。模块代码对 <em>b</em> 和 <em>c</em> 进行赋值，这样变引入的新变量 <em>c</em> ，变量 <em>a</em> 却被遗忘了，继续残留在模块中。关于模块加载以及模块代码执行过程，请参考虚拟机部分相关章节。</p>
+</div><div class="cl-preview-section"><p>不过，就算模块旧变量不删，最多也就是不够严谨而已，对于实现代码更新影响不大。</p>
+</div><div class="cl-preview-section"><p>另一个局限性影响就大了，<em>reload</em> 只会更新模块属性空间，对已暴露到外部的却无能为力。</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">from</span> mo <span class="token keyword">import</span> b
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">print</span><span class="token punctuation">(</span>b<span class="token punctuation">)</span>
+<span class="token number">2</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这段代码将 <em>b</em> 引入到当前局部名字空间，就不受模块 <em>mo</em> 约束了。当我们修改模块并重新加载后，<em>b</em> 保持不变：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> importlib<span class="token punctuation">.</span><span class="token builtin">reload</span><span class="token punctuation">(</span>mo<span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">print</span><span class="token punctuation">(</span>b<span class="token punctuation">)</span>
+<span class="token number">2</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f3c86c6000145bf09860289.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>如上图，我们可以清楚地看到，经过 <em>reload</em> 后，模块中的 <em>b</em> 得到了更新，但当前局部名字空间中的 <em>b</em> 保持不变。如果通过 <em>mo</em> 模块间接访问变量 <em>b</em> ，更新是可见的：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">print</span><span class="token punctuation">(</span>mo<span class="token punctuation">.</span>b<span class="token punctuation">)</span>
+<span class="token number">22</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>因此，想要通过 <em>reload</em> 实现热更新，最好通过模块对象引用模块属性，不要直接导入。</p>
+</div><div class="cl-preview-section"><p>最后一个问题，如果在模块 <em>mo</em> 中 <em>import</em> 其他模块，<em>reload</em> 模块 <em>mo</em> 时，其他模块不会 <em>reload</em> 。这是要么显式 <em>reload</em> 其他模块，还要特别注意顺序；要么将其他模块路径从 <em>sys.modules</em> 中剔除，之后 <em>Python</em> 将全新加载它。</p>
+</div><div class="cl-preview-section"><p>可以将 <em>sys.modules</em> 理解成模块对象运行时缓存，<em>Python</em> 导入一个模块后，将以模块路径为 <em>key</em> ，以模块对象为 <em>value</em> 保存在该字典中。当同一模块被二次 <em>import</em> 时，<em>Python</em> 直接从这取出已加载的模块对象，避免重复加载。</p>
+</div><div class="cl-preview-section"><p>因此，当我们将某个模块从 <em>sys.modules</em> 中剔除，<em>Python</em> 将创建新的模块对象并执行模块代码。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5f3c853400011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6667">
+						<img src="https://img3.mukewang.com/5b8cd6570001575102000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕UI0052680</h4>
+						<div class="comment-text">Python 可以动态编译代码并加入到虚拟机中执行，请问这句怎么理解？一直以为python解释器是先编译完代码再执行虚拟机，难道是编译完一个code字节码就加入虚拟机执行队列？</div>
+						<div>
+							
+								<div class="reply">讲师回复：意思是Python启动后还可以编译并执行代码，而大部分编程语言如C/C++都要求程序必须全部编译完才能启动，启动后就无法编译并执行新代码了。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-28</span>
+						<a href="/read/commentdetail/6667">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6667" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6666">
+						<img src="https://img2.mukewang.com/5b8cd6570001575102000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕UI0052680</h4>
+						<div class="comment-text">前两天刚在q群问了类似的问题，今天就看到了文章，这是穿越了吗😂</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-28</span>
+						<a href="/read/commentdetail/6666">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6666" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=76">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '35 奇门武动：如何实现代码热更新',
+					'CID': '1932',
+					'Teacher': 'fasionchan'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "35 奇门武动：如何实现代码热更新",
+                    desc: "突破技术瓶颈，迈向更高岗位",
+                    imgUrl: 'https:https://img.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/76',
+                    link: 'https://m.imooc.com/read/76'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

@@ -1,0 +1,1021 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>26 Netty的线程池有什么样的特性</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="全面掌握迈向高级工程师的必备技能">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2185";
+	var chapter_title = "26 Netty的线程池有什么样的特性";
+	var aid = "82";
+	var a_name = "网络编程之Netty一站式精讲";
+	var a_price = "68.00";
+	var a_pic = "https://img.mukewang.com/5f052aa90001f15b05400720.jpg";
+	var userId = 0;
+
+	var column_id = '82';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-14&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			26 Netty的线程池有什么样的特性
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5f0596700001ae4706400359.jpg')"></div>
+	
+	
+		<a href="/read/82">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/5d9c91f40001dcac05000500-40-40.jpg" alt="彤哥读源码">
+				<h3>网络编程之Netty一站式精讲</h3>
+				<p>彤哥读源码 · 互联网大厂项目经理</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">立志是事业的大门，工作是登堂入室的旅程。<p class="author">——巴斯德</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">前言</h1>
+</div><div class="cl-preview-section"><p>你好，我是彤哥。</p>
+</div><div class="cl-preview-section"><p>上一节，我们一起学习了 Netty 对 Java 原生 Future 的增强，并剖析了其中一个主要实现类 ——DefaultPromise，当时，我们说，Promise 主要是运用在线程池中，它必须绑定一个线程一起运行才有意义。</p>
+</div><div class="cl-preview-section"><p>那么，Netty 中的线程池又是怎样的呢？为什么 Java 原生线程池无法适用于 Netty 的使用场景呢？Netty 又对线程池做了哪些改进呢？</p>
+</div><div class="cl-preview-section"><p>让我们带着这些问题进入今天的学习吧。</p>
+</div><div class="cl-preview-section"><h1 id="java原生线程池">Java 原生线程池</h1>
+</div><div class="cl-preview-section"><p>在正式讲解 Netty 线程池之前，同样地，我们先回顾一下 Java 原生的线程池。<br>
+<img src="https://img.mukewang.com/5f35f17a0001c19506280487.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>Java 原生的线程池主要有三种：ThreadPoolExecutor、ScheduledThreadPoolExecutor、ForkJoinPool。</p>
+</div><div class="cl-preview-section"><p>ThreadPoolExecutor 是最古老的类，我们通常说的线程池，也是指这个类。</p>
+</div><div class="cl-preview-section"><p>ScheduledThreadPoolExecutor 是用来执行定时任务的线程池。</p>
+</div><div class="cl-preview-section"><p>ForkJoinPool 是 Java7 新增的类，它使用的是工作窃取的算法实现的一种高效的线程池，非常适合解决大任务不断地拆成小任务，小任务再最终合并成结果的场景，比如，归并排序，等等。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>对于这三种线程池的源码解析，可以参考文末的链接自行学习。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>Java 还提供了一个工具类 Executors 专门用于生成各种不同的线程池，不过阿里巴马开发者手册中，强制禁止使用此工具类创建线程池。</p>
+</div><div class="cl-preview-section"><p>你知道 Executors 可以创建哪些线程池吗？<br>
+<img src="https://img.mukewang.com/5f35f19a00011f9612750718.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>Executors 主要提供了这么六种方法用来创建线程池，当然，针对每个方法可能还有重载方法，但是，为什么阿里巴巴又禁止使用呢？看完下面的分析，你可以想想这个问题。</p>
+</div><div class="cl-preview-section"><h2 id="threadpoolexecutor">ThreadPoolExecutor</h2>
+</div><div class="cl-preview-section"><p>ThreadPoolExecutor，它是我们通常所说的线程池，也是我们拿来跟 Netty 进行对比的线程池，所以，我们今天主要讲一下这个线程池。</p>
+</div><div class="cl-preview-section"><h3 id="主要属性">主要属性</h3>
+</div><div class="cl-preview-section"><p>我们先来看一下 ThreadPoolExecutor 的主要属性：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">ThreadPoolExecutor</span> <span class="token keyword">extends</span> <span class="token class-name">AbstractExecutorService</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 控制变量</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> AtomicInteger ctl <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AtomicInteger</span><span class="token punctuation">(</span><span class="token function">ctlOf</span><span class="token punctuation">(</span>RUNNING<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 任务队列</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> BlockingQueue<span class="token operator">&lt;</span>Runnable<span class="token operator">&gt;</span> workQueue<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>ThreadPoolExecutor 的主要属性就是这么两个：</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>ctl，控制变量，高 3 位存储的是线程池的状态，这些状态有 RUNNING、SHUTDOWN、STOP、TIDYING、TERMINATED，代表了线程池的生命周期，低 29 位存储的是工作线程的数量。</p>
+<p><img src="https://img.mukewang.com/5f35f1bc000174a410270186.png" alt="图片描述"></p>
+</li>
+<li>
+<p>workQueue，任务队列，它是一个阻塞队列，即在多线程环境下是安全的，我认为叫作 <code>taskQueue</code> 可能更合适。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="构造方法">构造方法</h3>
+</div><div class="cl-preview-section"><p>我们再来看一看 ThreadPoolExecutor 的构造方法：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token function">ThreadPoolExecutor</span><span class="token punctuation">(</span><span class="token keyword">int</span> corePoolSize<span class="token punctuation">,</span>
+                          <span class="token keyword">int</span> maximumPoolSize<span class="token punctuation">,</span>
+                          <span class="token keyword">long</span> keepAliveTime<span class="token punctuation">,</span>
+                          TimeUnit unit<span class="token punctuation">,</span>
+                          BlockingQueue<span class="token operator">&lt;</span>Runnable<span class="token operator">&gt;</span> workQueue<span class="token punctuation">,</span>
+                          ThreadFactory threadFactory<span class="token punctuation">,</span>
+                          RejectedExecutionHandler handler<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>面试中也经常会问到：请你说一说线程池的参数？</p>
+</div><div class="cl-preview-section"><p>针对 ThreadPoolExecutor，它的构造方法一共有七个参数：</p>
+</div><div class="cl-preview-section"><ul>
+<li>corePoolSize，核心线程数，默认情况下，这部分线程不会被销毁</li>
+<li> maximumPoolSize，最大线程数，最大可以创建多少个线程</li>
+<li> keepAliveTime，线程保持时间，线程等待多长时间还没有任务就销毁</li>
+<li> unit，线程保持时间的单位</li>
+<li> workQueue，任务队列，存放任务的队列</li>
+<li> threadFactory，创建线程的工厂</li>
+<li> handler，拒绝策略，当线程池无法再承载更多的任务时如何拒绝</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="任务流转">任务流转</h3>
+</div><div class="cl-preview-section"><p>上面介绍了七个参数，那么，当我们提交一个任务到线程池的时候，这个任务又经历了怎样的历程呢？也就是任务的流转，这部分逻辑主要是在 execute () 方法中：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">execute</span><span class="token punctuation">(</span>Runnable command<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 判空</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>command <span class="token operator">==</span> null<span class="token punctuation">)</span>
+        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">NullPointerException</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token keyword">int</span> c <span class="token operator">=</span> ctl<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 工作线程的数量小于核心线程数时</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">workerCountOf</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span> <span class="token operator">&lt;</span> corePoolSize<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 添加一个工作线程</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">addWorker</span><span class="token punctuation">(</span>command<span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        c <span class="token operator">=</span> ctl<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 工作线程的数量达到核心线程数时，任务入队</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">isRunning</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> workQueue<span class="token punctuation">.</span><span class="token function">offer</span><span class="token punctuation">(</span>command<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">int</span> recheck <span class="token operator">=</span> ctl<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span> <span class="token function">isRunning</span><span class="token punctuation">(</span>recheck<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> <span class="token function">remove</span><span class="token punctuation">(</span>command<span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token function">reject</span><span class="token punctuation">(</span>command<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">workerCountOf</span><span class="token punctuation">(</span>recheck<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span>
+            <span class="token function">addWorker</span><span class="token punctuation">(</span>null<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 任务队列满了，添加一个工作线程</span>
+    <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">addWorker</span><span class="token punctuation">(</span>command<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token comment">// 添加工作线程失败（达到了最大线程数），执行拒绝策略</span>
+        <span class="token function">reject</span><span class="token punctuation">(</span>command<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>任务的流转主要分为五个阶段：</p>
+</div><div class="cl-preview-section"><ul>
+<li>当工作线程数小于核心线程数时，直接创建一个工作线程来执行任务；</li>
+<li>当工作线程数达到核心线程数时，尝试入队，入队成功则进入任务队列中，等待被执行；</li>
+<li>如果入队失败，表示队列满了，则尝试创建一个工作线程来执行任务；</li>
+<li>如果创建工作线程失败，则执行拒绝策略；</li>
+<li>对于在任务队列中等待的任务，待有空闲线程时，它们会从队列中被提取出来执行。</li>
+</ul>
+</div><div class="cl-preview-section"><p>让我们用一张图来描述这整个过程：<br>
+<img src="https://img.mukewang.com/5f35f1e20001f57607170776.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>通过代码，可以看到，在 execute () 的方法中，只涉及到了 3 个参数，另外四个是在哪里使用的呢？</p>
+</div><div class="cl-preview-section"><ul>
+<li>maximuPoolSize，最大线程数，这个是在 addWorker () 方法中使用到的，如果达到了最大线程数，则会创建失败；</li>
+<li>threadFactory，线程工厂，这个也是在 addWorker () 方法中，具体点是在 new Worker () 的构造方法中，用来创建一个线程与 Worker 对象进行绑定；</li>
+<li>keepAliveTime 和 unit，线程保持时间，这一对参数是在 getTask () 方法中，表示从任务队列中取任务时，阻塞多长时间没有取到任务则结束阻塞，此时返回的任务为 null，工作线程会自然消亡。</li>
+</ul>
+</div><div class="cl-preview-section"><p>从任务的流转过程来看，似乎很完美，但是，这个线程池有什么缺陷呢？</p>
+</div><div class="cl-preview-section"><h3 id="缺点">缺点</h3>
+</div><div class="cl-preview-section"><p>其实，对于我们日常的工作来说，Java 原生的线程池对于我们来说已经足够完美，但是，对于追求高性能的 Netty 看来，性能这块还是有点欠缺啊。</p>
+</div><div class="cl-preview-section"><p>这里说的性能主要体现在任务队列的设计上，我们想像一下，当线程数量特别多的时候，多个线程都去竞争这一个队列，势必会导致性能的下降。</p>
+</div><div class="cl-preview-section"><p>那么，有没有更好的设计呢？有，ForkJoinPool，它使用工作窃取的算法，将队列分成了全局队列和线程私有队列，总体性能有了很大的提高。</p>
+</div><div class="cl-preview-section"><p>但是，Netty 的场景似乎又不太一样，它特殊在哪里呢？让我们一起进入 Netty 的世界探寻它的线程池吧。</p>
+</div><div class="cl-preview-section"><h1 id="netty线程池">Netty 线程池</h1>
+</div><div class="cl-preview-section"><p>Netty 线程池，是对 Java 原生线程池的一种增强，它的实现方式与 Java 原生线程池完全不一样，它的实现方式更适用于 Netty 的场景 —— 事件循环机制，所以，它的线程池又叫作事件循环线程池，即 EventLoopGroup。</p>
+</div><div class="cl-preview-section"><p>同样地，对于 Netty 线程池的分析，我们也遵循从宏观到微观的分析方法。</p>
+</div><div class="cl-preview-section"><h2 id="继承体系">继承体系</h2>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f35f21400010b2d10550813.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>我们可以把这个图分为上下两部分，上半部分是 Java 原生的接口，包括线程池的接口以及迭代器的接口，下半部分是 Netty 扩展的接口。</p>
+</div><div class="cl-preview-section"><p>Netty 主要扩展了两层接口：</p>
+</div><div class="cl-preview-section"><ul>
+<li>第一层是 EventExecutorGroup，它扩展了 Java 原生的 ScheduledExecutorService 接口和 Iterable 接口，说明它同时具有定时执行任务的能力，以及迭代的能力，是不是很奇怪，它迭代的是什么？对于 EventExecutorGroup，目前，它只有一个纯的实现类 DefaultEventExecutorGroup，而且还没有被使用到。</li>
+<li>第二层是 EventLoopGroup，它扩展了 EventExecutorGroup，同时，它添加了一些跟 Channel 绑定的方法，说明它是一个跟网络请求息息相关的接口，目前，Netty 中使用的都是基于 EventLoopGroup 的线程池。</li>
+</ul>
+</div><div class="cl-preview-section"><p>既然，目前，Netty 都没有使用到只跟 EventExecutorGroup 相关的实现类，那么，把 EventExecutorGroup 和 EventLoopGroup 合并行不行呢？其实，也是可以的，不过，这样就破坏了接口隔离的原则，而且，对于以后的扩展也是不友好的，比如，在后面的版本中，就是需要某种线程池，它不是处理网络请求的，这时候我们只要实现 EventExecutorGroup 就可以了，而不再需要实现 EventLoopGroup。</p>
+</div><div class="cl-preview-section"><p>同样地，针对这两层线程池的接口，Netty 也扩展出了两个工作线程的接口：<br>
+<img src="https://img.mukewang.com/5f35f226000195c208750987.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>从图中可以看到，这两个工作线程的接口就是 EventExecutor 和 EventLoop，它们类似于 Java 原生线程池中的 Worker，它们本身不是线程，但是，它们维护了一个线程用来执行任务。</p>
+</div><div class="cl-preview-section"><p>不过，你可能也发现了，EventExecutor 竟然继承自 EventExecutorGroup，且 EventLoop 继承自 EventLoopGroup，为什么设计得如此复杂呢？</p>
+</div><div class="cl-preview-section"><p>那是因为，在 Netty 看来，EventExecutor 它就是一种特殊的 EventExecutorGroup，可以理解成，它是只包含一个线程的线程池，所以，在 Netty 中，你可以把任何 EventExecutor 的实现当作单线程的线程池使用，类似于 Executors 工具类提供 newSingleThreadExecutor () 方法，同样地，EventLoop 也是一样的道理。</p>
+</div><div class="cl-preview-section"><h2 id="调试用例">调试用例</h2>
+</div><div class="cl-preview-section"><p>从继承体系中，我们想找到蛛丝马迹来编写调试用例是不太容易的，此时，我们打开 EventLoop 和 EventLoopGroup 的实现类，会发现，除了 DefaultEventLoop 和 DefaultEventLoopGroup，其它的实现类都是跟 Channel 强相关的，里面都是为了处理 Channel 的 IO 事件，其实，它们也正是为了不同平台而编写的多路利用的事件处理器。如果一上来就看这些类，我们势必要迷失在 Netty 的线程池中而不能自拔，所以，我们选择足够简单的 DefaultEventLoop 和 DefaultEventLoopGroup 来作为我们的研究对象，编写调试用例。</p>
+</div><div class="cl-preview-section"><p>既然，它就是线程池，那我们就按线程池的写法来写调试用例就好了，下面是我写的调试用例：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">DefaultEventLoopGroupTest</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        DefaultEventLoopGroup eventLoopGroup <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">DefaultEventLoopGroup</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">10</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            eventLoopGroup<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+                System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"thread: "</span> <span class="token operator">+</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>是不是很简单？我们定义了固定数量为 5 的线程池，然后，用它执行 10 条任务。</p>
+</div><div class="cl-preview-section"><h2 id="源码剖析">源码剖析</h2>
+</div><div class="cl-preview-section"><h3 id="创建defaulteventloopgroup">创建 DefaultEventLoopGroup</h3>
+</div><div class="cl-preview-section"><p>让我们来看这段代码的运行逻辑，在创建 DefaultEventLoopGroup 的位置打一个断点，跟踪进去：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token function">DefaultEventLoopGroup</span><span class="token punctuation">(</span><span class="token keyword">int</span> nThreads<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">this</span><span class="token punctuation">(</span>nThreads<span class="token punctuation">,</span> <span class="token punctuation">(</span>ThreadFactory<span class="token punctuation">)</span> null<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 省略中间的构造方法</span>
+<span class="token keyword">protected</span> <span class="token function">MultithreadEventExecutorGroup</span><span class="token punctuation">(</span><span class="token keyword">int</span> nThreads<span class="token punctuation">,</span> Executor executor<span class="token punctuation">,</span>
+                                        EventExecutorChooserFactory chooserFactory<span class="token punctuation">,</span> Object<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>nThreads <span class="token operator">&lt;=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalArgumentException</span><span class="token punctuation">(</span>String<span class="token punctuation">.</span><span class="token function">format</span><span class="token punctuation">(</span><span class="token string">"nThreads: %d (expected: &gt; 0)"</span><span class="token punctuation">,</span> nThreads<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>executor <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// key1，使用了一个叫作ThreadPerTaskExecutor</span>
+        executor <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ThreadPerTaskExecutor</span><span class="token punctuation">(</span><span class="token function">newDefaultThreadFactory</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 初始化工作线程数组</span>
+    children <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">EventExecutor</span><span class="token punctuation">[</span>nThreads<span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> nThreads<span class="token punctuation">;</span> i <span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">boolean</span> success <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            <span class="token comment">// key2，创建工作线程</span>
+            children<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">newChild</span><span class="token punctuation">(</span>executor<span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            success <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalStateException</span><span class="token punctuation">(</span><span class="token string">"failed to create a child event loop"</span><span class="token punctuation">,</span> e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>success<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token comment">// 创建失败的处理，相当于回滚</span>
+                <span class="token comment">// 省略这部分代码</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// key3，创建选择器</span>
+    chooser <span class="token operator">=</span> chooserFactory<span class="token punctuation">.</span><span class="token function">newChooser</span><span class="token punctuation">(</span>children<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 省略其它代码</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在构造方法中，主要是初始化一些属性，这里有三个比较重要的点：</p>
+</div><div class="cl-preview-section"><ol>
+<li>在 key1 处创建一个 ThreadPerTaskExecutor，并在创建 key2 处创建工作线程的时候当作参数传进去了，这个 ThreadPerTaskExecutor 是什么，它的作用是什么？</li>
+<li>key2 处的 EventExecutor 是如何创建的？</li>
+<li>key3 处的选择器的作用是什么？</li>
+</ol>
+</div><div class="cl-preview-section"><p>我们先说第三点吧，这个选择器是什么呢？其实，它是 DefaultEventLoopGroup 用来选择哪一个 DefaultEventLoop 来执行任务时使用的，在 Netty 内部，有两种选择器，分别为 <code>PowerOfTwoEventExecutorChooser</code> 和 <code>GenericEventExecutorChooser</code>，它们本质上来说没有什么区别，主要的区别在于如果数量为 2 的 N 次方，会使用 PowerOfTwoEventExecutorChooser 按 <code>&amp;</code> 操作来计算下一个 EventExecutor，而 GenericEventExecutorChooser 则按 <code>%</code> 运算来计算下一个 EventExecutor，本质上都是取模运算，显然直接使用 <code>&amp;</code> 操作效率更高一些，这是 Netty 优化到极致的一个表现：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">class</span> <span class="token class-name">PowerOfTwoEventExecutorChooser</span> <span class="token keyword">implements</span> <span class="token class-name">EventExecutorChooser</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> AtomicInteger idx <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AtomicInteger</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> EventExecutor<span class="token punctuation">[</span><span class="token punctuation">]</span> executors<span class="token punctuation">;</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> EventExecutor <span class="token function">next</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// &amp;操作，减法操作优先级高于&amp;操作</span>
+        <span class="token comment">// 轮询地获取EventExecutor（DefaultEventLoop）</span>
+        <span class="token keyword">return</span> executors<span class="token punctuation">[</span>idx<span class="token punctuation">.</span><span class="token function">getAndIncrement</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> executors<span class="token punctuation">.</span>length <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">class</span> <span class="token class-name">GenericEventExecutorChooser</span> <span class="token keyword">implements</span> <span class="token class-name">EventExecutorChooser</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> AtomicInteger idx <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AtomicInteger</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> EventExecutor<span class="token punctuation">[</span><span class="token punctuation">]</span> executors<span class="token punctuation">;</span>
+    <span class="token comment">// &amp;操作</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> EventExecutor <span class="token function">next</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> executors<span class="token punctuation">[</span>Math<span class="token punctuation">.</span><span class="token function">abs</span><span class="token punctuation">(</span>idx<span class="token punctuation">.</span><span class="token function">getAndIncrement</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">%</span> executors<span class="token punctuation">.</span>length<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>好了，我们再回头看第一点，ThreadPerTaskExecutor，从名字看表示每个任务一个线程的执行器，请看它的真面目：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">final</span> <span class="token keyword">class</span> <span class="token class-name">ThreadPerTaskExecutor</span> <span class="token keyword">implements</span> <span class="token class-name">Executor</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> ThreadFactory threadFactory<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token function">ThreadPerTaskExecutor</span><span class="token punctuation">(</span>ThreadFactory threadFactory<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>threadFactory <span class="token operator">=</span> ObjectUtil<span class="token punctuation">.</span><span class="token function">checkNotNull</span><span class="token punctuation">(</span>threadFactory<span class="token punctuation">,</span> <span class="token string">"threadFactory"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">execute</span><span class="token punctuation">(</span>Runnable command<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 使用线程工厂创建一个线程并启动这个线程</span>
+        threadFactory<span class="token punctuation">.</span><span class="token function">newThread</span><span class="token punctuation">(</span>command<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这个类非常简单，只有一个 execute () 方法，在被调用的时候使用线程工厂创建一个线程并启动这个线程，所以，它有一个问题，就是 execute () 方法每被调用一次就创建一个线程，这也是它的名字的由来，来一个任务创建一个线程。</p>
+</div><div class="cl-preview-section"><p>好了，我们接着看第二点，EventExecutor 是如何被创建的，这里是调用了 newChild () 的方法，这个方法实际上是位于 DefaultEventLoopGroup 中：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// io.netty.channel.DefaultEventLoopGroup#newChild</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">protected</span> EventLoop <span class="token function">newChild</span><span class="token punctuation">(</span>Executor executor<span class="token punctuation">,</span> Object<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">DefaultEventLoop</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> executor<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 省略中间的构造方法</span>
+<span class="token keyword">protected</span> <span class="token function">SingleThreadEventExecutor</span><span class="token punctuation">(</span>EventExecutorGroup parent<span class="token punctuation">,</span> Executor executor<span class="token punctuation">,</span>
+                                    <span class="token keyword">boolean</span> addTaskWakesUp<span class="token punctuation">,</span> <span class="token keyword">int</span> maxPendingTasks<span class="token punctuation">,</span>
+                                    RejectedExecutionHandler rejectedHandler<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">super</span><span class="token punctuation">(</span>parent<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>addTaskWakesUp <span class="token operator">=</span> addTaskWakesUp<span class="token punctuation">;</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>maxPendingTasks <span class="token operator">=</span> Math<span class="token punctuation">.</span><span class="token function">max</span><span class="token punctuation">(</span><span class="token number">16</span><span class="token punctuation">,</span> maxPendingTasks<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// key1, 包装了一下传进来的ThreadPerTaskExecutor</span>
+    <span class="token comment">// 注意第二个参数</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>executor <span class="token operator">=</span> ThreadExecutorMap<span class="token punctuation">.</span><span class="token function">apply</span><span class="token punctuation">(</span>executor<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// key2, 任务队列，默认使用的是LinkedBlockingQueue</span>
+    taskQueue <span class="token operator">=</span> <span class="token function">newTaskQueue</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>maxPendingTasks<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 拒绝策略</span>
+    rejectedExecutionHandler <span class="token operator">=</span> ObjectUtil<span class="token punctuation">.</span><span class="token function">checkNotNull</span><span class="token punctuation">(</span>rejectedHandler<span class="token punctuation">,</span> <span class="token string">"rejectedHandler"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 创建任务队列（默认的），子类可重写此方法</span>
+<span class="token keyword">protected</span> Queue<span class="token operator">&lt;</span>Runnable<span class="token operator">&gt;</span> <span class="token function">newTaskQueue</span><span class="token punctuation">(</span><span class="token keyword">int</span> maxPendingTasks<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">LinkedBlockingQueue</span><span class="token operator">&lt;</span>Runnable<span class="token operator">&gt;</span><span class="token punctuation">(</span>maxPendingTasks<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这段代码，最终，创建了一个 DefaultEventLoop，且这个 DefaultEventLoop 绑定了一个 executor 和一个任务队列，请注意这里的包含的信息：</p>
+</div><div class="cl-preview-section"><ol>
+<li>executor，它是被包装之后的 ThreadPerTaskExecutor，如果被多次执行，那就会创建多个线程，所以，这个 executor 是不是只能执行一次 execute () 方法呢？</li>
+<li>taskQueue，这个 DefaultEventLoop 包含一个任务队列，如果上面的 1 成立，也就是说一个 DefaultEventLoop 只有一个线程，那这个任务队列就是这个线程独享的，所以，它的出队操作不存在竞争，还记得我们前面介绍的多生产者单消费者队列 ——MpscArrayQueue 吗？</li>
+</ol>
+</div><div class="cl-preview-section"><p>我们先卖个关子，直接看任务的执行流程。</p>
+</div><div class="cl-preview-section"><h3 id="任务的执行流程">任务的执行流程</h3>
+</div><div class="cl-preview-section"><p>待上面的 DefaultEventLoopGroup 创建完毕后，程序又回到的 main () 方法中，我们在任务执行的地方跟踪进去，请注意每个方法的类名：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// io.netty.util.concurrent.AbstractEventExecutorGroup#execute</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">execute</span><span class="token punctuation">(</span>Runnable command<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 调用选择器选择一个DefaultEventLoop</span>
+    <span class="token comment">// 根据上面选择器的源码，可知，使用的是轮询方式</span>
+    <span class="token function">next</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span>command<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// io.netty.util.concurrent.SingleThreadEventExecutor#execute</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">execute</span><span class="token punctuation">(</span>Runnable task<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    ObjectUtil<span class="token punctuation">.</span><span class="token function">checkNotNull</span><span class="token punctuation">(</span>task<span class="token punctuation">,</span> <span class="token string">"task"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 调用下面的私有方法</span>
+    <span class="token function">execute</span><span class="token punctuation">(</span>task<span class="token punctuation">,</span> <span class="token operator">!</span><span class="token punctuation">(</span>task <span class="token keyword">instanceof</span> <span class="token class-name">LazyRunnable</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> <span class="token function">wakesUpForTask</span><span class="token punctuation">(</span>task<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// io.netty.util.concurrent.SingleThreadEventExecutor#execute</span>
+<span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">execute</span><span class="token punctuation">(</span>Runnable task<span class="token punctuation">,</span> <span class="token keyword">boolean</span> immediate<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 当前线程是main，所以不在eventLoop中</span>
+    <span class="token keyword">boolean</span> inEventLoop <span class="token operator">=</span> <span class="token function">inEventLoop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 添加任务到当前这个DefaultEventLoop的任务队列中</span>
+    <span class="token comment">// 如果添加失败会执行拒绝策略</span>
+    <span class="token function">addTask</span><span class="token punctuation">(</span>task<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 非不在，所以进入条件</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>inEventLoop<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 启动线程</span>
+        <span class="token function">startThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 省略其它代码</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>到这里还很好理解，先把任务扔到一个队列中，再启动一个线程来运行它，关键是这个线程是如何启动的，继续跟踪到 startThread () 方法中：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// io.netty.util.concurrent.SingleThreadEventExecutor#startThread</span>
+<span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">startThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 如果当前DefaultEventLoop的状态是未启动，才执行下面的内容</span>
+    <span class="token comment">// 也就是说对于一个DefaultEventLoop来说，这个判断下方的内容只会执行一次</span>
+    <span class="token comment">// 也就是说一个DefaultEventLoop只会创建一个线程！</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>state <span class="token operator">==</span> ST_NOT_STARTED<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 原子更新状态变量，又使用到了前面介绍过的AtomicIntegerFieldUpdater这种方式</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>STATE_UPDATER<span class="token punctuation">.</span><span class="token function">compareAndSet</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> ST_NOT_STARTED<span class="token punctuation">,</span> ST_STARTED<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">boolean</span> success <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+            <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                <span class="token comment">// 又一层调用</span>
+                <span class="token function">doStartThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                success <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>success<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    STATE_UPDATER<span class="token punctuation">.</span><span class="token function">compareAndSet</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> ST_STARTED<span class="token punctuation">,</span> ST_NOT_STARTED<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>好了，到这里大致的逻辑已经很清晰了，通过上面的注释，一个 DefaultEventLoop 不管执行多少次任务，只会启动一个线程，我们再接着看 doStartThread () 的内部逻辑，这个方法有七八十行，我把干扰代码都删除了：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// io.netty.util.concurrent.SingleThreadEventExecutor#doStartThread</span>
+<span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">doStartThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">assert</span> thread <span class="token operator">==</span> null<span class="token punctuation">;</span>
+    <span class="token comment">// 这个executor是什么？</span>
+    <span class="token comment">// 它就是上面我们没介绍的被包装之后的ThreadPerTaskExecutor</span>
+    executor<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Runnable</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token annotation punctuation">@Override</span>
+        <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                <span class="token comment">// SingleThreadEventExecutor.this表示的是DefaultEventLoop对象</span>
+                <span class="token comment">// 所以，会调用到DefaultEventLoop的run()方法</span>
+                SingleThreadEventExecutor<span class="token punctuation">.</span><span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                success <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Throwable</span> t<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>好烦啊，这里又把任务包装了一层，然后，调用了被包装之后的 ThreadPerTaskExecutor 的 execute () 方法，好了，下面就是揭开这个包装类真面目的时候了，上面 execute () 方法指向的是下面我加了标记的那行：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">final</span> <span class="token keyword">class</span> <span class="token class-name">ThreadExecutorMap</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 一个FastThreadLocal，存储着一个EventExecutor</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> FastThreadLocal<span class="token operator">&lt;</span>EventExecutor<span class="token operator">&gt;</span> mappings <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">FastThreadLocal</span><span class="token operator">&lt;</span>EventExecutor<span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 第一个参数是ThreadPerTaskExecutor</span>
+    <span class="token comment">// 第二个参数是DefaultEventLoop</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> Executor <span class="token function">apply</span><span class="token punctuation">(</span><span class="token keyword">final</span> Executor executor<span class="token punctuation">,</span> <span class="token keyword">final</span> EventExecutor eventExecutor<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        ObjectUtil<span class="token punctuation">.</span><span class="token function">checkNotNull</span><span class="token punctuation">(</span>executor<span class="token punctuation">,</span> <span class="token string">"executor"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        ObjectUtil<span class="token punctuation">.</span><span class="token function">checkNotNull</span><span class="token punctuation">(</span>eventExecutor<span class="token punctuation">,</span> <span class="token string">"eventExecutor"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 返回一个Executor的匿名对象</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Executor</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token annotation punctuation">@Override</span>
+            <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">execute</span><span class="token punctuation">(</span><span class="token keyword">final</span> Runnable command<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token comment">// ***************这行****************</span>
+                <span class="token comment">// 调用下面的apply</span>
+                <span class="token comment">// 这个executor就是真正的ThreadPerTaskExecutor了</span>
+                executor<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token function">apply</span><span class="token punctuation">(</span>command<span class="token punctuation">,</span> eventExecutor<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 第一个参数是任务</span>
+    <span class="token comment">// 第二个参数是DefaultEventLoop</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> Runnable <span class="token function">apply</span><span class="token punctuation">(</span><span class="token keyword">final</span> Runnable command<span class="token punctuation">,</span> <span class="token keyword">final</span> EventExecutor eventExecutor<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        ObjectUtil<span class="token punctuation">.</span><span class="token function">checkNotNull</span><span class="token punctuation">(</span>command<span class="token punctuation">,</span> <span class="token string">"command"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        ObjectUtil<span class="token punctuation">.</span><span class="token function">checkNotNull</span><span class="token punctuation">(</span>eventExecutor<span class="token punctuation">,</span> <span class="token string">"eventExecutor"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Runnable</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token annotation punctuation">@Override</span>
+            <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token comment">// 设置DefaultEventLoop到FastThreadLocal中</span>
+                <span class="token comment">// 这样任务执行的过程中，都可以随时获取到这个DefaultEventLoop</span>
+                <span class="token function">setCurrentEventExecutor</span><span class="token punctuation">(</span>eventExecutor<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                    command<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+                    <span class="token comment">// 执行完了移除</span>
+                    <span class="token function">setCurrentEventExecutor</span><span class="token punctuation">(</span>null<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">setCurrentEventExecutor</span><span class="token punctuation">(</span>EventExecutor executor<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        mappings<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>executor<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这里不管是对 ThreadPerTaskExecutor 的包装还是对任务的包装，都是为了找个地方把 DefaultEventLoop 存储到线程本地变量中去，以便任务在执行的过程中随时可以使用 DefaultEventLoop。</p>
+</div><div class="cl-preview-section"><p>好了，程序接着走就到 ThreadPerTaskExecutor 的 execute () 方法中了：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// io.netty.util.concurrent.ThreadPerTaskExecutor#execute</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">execute</span><span class="token punctuation">(</span>Runnable command<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    threadFactory<span class="token punctuation">.</span><span class="token function">newThread</span><span class="token punctuation">(</span>command<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这里就调用线程工厂创建一个线程了，当然，这个线程自然是 FastThreadLocalThread，然后，启动这个线程。</p>
+</div><div class="cl-preview-section"><p>此时，这个任务已经被包装了 N 层了，所以，在跳过这行之前，先在 main () 方法中任务内部打一个断点，即下面的 System.out.println () 处：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">DefaultEventLoopGroupTest</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        DefaultEventLoopGroup eventLoopGroup <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">DefaultEventLoopGroup</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">10</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            eventLoopGroup<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+                System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"thread: "</span> <span class="token operator">+</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>然后，按 F9 就行了，因为到目前为止我们还在 main 线程中，而任务已经扔到队列中了，线程马上也要启动了，按完 F9，断点自然就停在了上面这个断点处，我们看看调用栈：<br>
+<img src="https://img.mukewang.com/5f35f2420001a6c208060171.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>图中，1 的位置即上面断点处，2 是没有分析到的地方，3、4 是已经分析过的地方，5 是在 FastTheadLocalThread 那章分析过的，6 是 Thread 的 run () 方法。好了，我们来看看 2 处的代码：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// io.netty.channel.DefaultEventLoop#run</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token punctuation">;</span><span class="token punctuation">;</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 从队列中取任务</span>
+        Runnable task <span class="token operator">=</span> <span class="token function">takeTask</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>task <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 执行任务</span>
+            task<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token function">updateLastExecutionTime</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">confirmShutdown</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">break</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这个 run () 方法位于 DefaultEventLoop 中，可以看到，这是一个死循环，不断地从任务队列中取任务，然后执行，一直重复着这个动作。</p>
+</div><div class="cl-preview-section"><p>结合我们前面的分析，一个 DefaultEventLoop 只会启动一个线程，而这个 DefaultEventLoop 又有自己专属的队列，所以，我们很容易就可以得出下面的线程模型：<br>
+<img src="https://img.mukewang.com/5f35f25500010ad710270584.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>在这个图中，我加入了 Provider 的概念，它就是任务的生产者，生产者可以有多个，所以，这就衍生出了一种多生产单消费者的任务队列，根据我们前面的学习，把这里的任务队列直接换成 MPSC 家族的队列是不是就能极大地提高效率呢？</p>
+</div><div class="cl-preview-section"><p>没错，你可以看看 NioEventLoop 中重写的 newTaskQueue () 方法：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// io.netty.channel.nio.NioEventLoop#newTaskQueue(int)</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">protected</span> Queue<span class="token operator">&lt;</span>Runnable<span class="token operator">&gt;</span> <span class="token function">newTaskQueue</span><span class="token punctuation">(</span><span class="token keyword">int</span> maxPendingTasks<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token function">newTaskQueue0</span><span class="token punctuation">(</span>maxPendingTasks<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">private</span> <span class="token keyword">static</span> Queue<span class="token operator">&lt;</span>Runnable<span class="token operator">&gt;</span> <span class="token function">newTaskQueue0</span><span class="token punctuation">(</span><span class="token keyword">int</span> maxPendingTasks<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> maxPendingTasks <span class="token operator">==</span> Integer<span class="token punctuation">.</span>MAX_VALUE <span class="token operator">?</span> PlatformDependent<span class="token punctuation">.</span>&lt;Runnable<span class="token operator">&gt;</span><span class="token function">newMpscQueue</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token operator">:</span> PlatformDependent<span class="token punctuation">.</span>&lt;Runnable<span class="token operator">&gt;</span><span class="token function">newMpscQueue</span><span class="token punctuation">(</span>maxPendingTasks<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>但是，这种线程模型有个致命的缺陷 —— 千万不要在任务中执行耗时的操作，否则这个线程对应的任务队列中的任务将全部都会处于排队状态，即使整个线程池中有其它空闲的线程，它们也不会从不是自己的任务队列中挪任务过来执行。关于这一点，你可以使用下面的例子证明：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">DefaultEventLoopGroupTest</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        DefaultEventLoopGroup eventLoopGroup <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">DefaultEventLoopGroup</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">10</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>i<span class="token operator">%</span><span class="token number">2</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                eventLoopGroup<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+                    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"thread: "</span> <span class="token operator">+</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+                eventLoopGroup<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+                    LockSupport<span class="token punctuation">.</span><span class="token function">parkNanos</span><span class="token punctuation">(</span>TimeUnit<span class="token punctuation">.</span>SECONDS<span class="token punctuation">.</span><span class="token function">toNanos</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"thread: "</span> <span class="token operator">+</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>运行此程序，你会发现，一号线程早早地就执行完毕了所有 5 个任务，而二号线程则是 1 秒执行一个任务，一号线程是不会借二号线程的任务执行的，这也是 Netty 线程池与 ForkJoinPool 线程池的最大区别。</p>
+</div><div class="cl-preview-section"><p>不过，这都不是个问题，Netty 线程池这样设计的目的也不是给我们的耗时业务使用的，如果有耗时的业务逻辑处理，请使用自定义的线程池进行处理，千万不要使用 Netty 的线程池。</p>
+</div><div class="cl-preview-section"><p>好了，到这里，关于 Netty 的线程基本上就分析完毕了，有了这节的基础，相信你去看 NioEventLoop 的代码一定也会非常轻松的 ^^</p>
+</div><div class="cl-preview-section"><h1 id="后记">后记</h1>
+</div><div class="cl-preview-section"><p>本节，我们从宏观和微观两个层面深入剖析了 Netty 的线程池，我们一定要记住一点：Netty 的线程池中坚决不允许执行耗时操作。</p>
+</div><div class="cl-preview-section"><p>随着本节内容的结束，所有源码的分析就到这里了，但是，这只是一个起点，有了关于 ByteBuf、内存池、对象池、FastThreadLocal、MpscArrayQueue、Future、线程池的这些源码分析，我希望你可以回过头再把服务启动过程、数据接收写出过程的源码再仔细分析一遍，这样才能真正地达到从源码级别理解 Netty。</p>
+</div><div class="cl-preview-section"><p>从下一节开始，我们将进入实战课程，在实战课程中，我将通过一个游戏项目，带你手把手地写一个服务端 Netty 应用程序，敬请期待。</p>
+</div><div class="cl-preview-section"><h1 id="思维导图">思维导图</h1>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f35f26a0001244018722028.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h1 id="参考链接">参考链接</h1>
+</div><div class="cl-preview-section"><p><a href="https://mp.weixin.qq.com/s/aXDXrHQDIC0afSC3vavYbg">死磕 java 线程系列之终结篇</a></p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img2.mukewang.com/5f05430d00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=82">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '26 Netty的线程池有什么样的特性',
+					'CID': '2185',
+					'Teacher': '彤哥读源码'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "26 Netty的线程池有什么样的特性",
+                    desc: "全面掌握迈向高级工程师的必备技��",
+                    imgUrl: 'https:https://img.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/82',
+                    link: 'https://m.imooc.com/read/82'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

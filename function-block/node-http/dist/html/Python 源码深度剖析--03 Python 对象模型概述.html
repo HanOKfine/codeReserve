@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>03 Python 对象模型概述</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="突破技术瓶颈，迈向更高岗位">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "3";
+	var chapter_id = "1899";
+	var chapter_title = "03 Python 对象模型概述";
+	var aid = "76";
+	var a_name = "Python 源码深度剖析";
+	var a_price = "68.00";
+	var a_pic = "https://img.mukewang.com/5eb68ab400017cda05400720.jpg";
+	var userId = 0;
+
+	var column_id = '76';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-06-19&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			03 Python 对象模型概述
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5eb6860c0001af0106400426.jpg')"></div>
+	
+	
+		<a href="/read/76">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5e4a3ec90001ef8d04000400-40-40.jpg" alt="fasionchan">
+				<h3>Python 源码深度剖析</h3>
+				<p>fasionchan · 资深 Python 研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">成功＝艰苦的劳动＋正确的方法＋少谈空话。<p class="author">——爱因斯坦</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p><em>Python</em> 是一门 <strong>面向对象</strong> 语言，实现了一个完整的面向对象体系，简洁而优雅。</p>
+</div><div class="cl-preview-section"><p>与其他面向对象编程语言相比， <em>Python</em> 有自己独特的一面。 这让很多开发人员在学习 <em>Python</em> 时，多少有些无所适从。 那么，<em>Python</em> 对象模型都有哪些特色呢？</p>
+</div><div class="cl-preview-section"><h2 id="一切皆对象">一切皆对象</h2>
+</div><div class="cl-preview-section"><p>首先，在 <em>Python</em> 世界， <strong>基本类型也是对象</strong> ，与通常意义的“对象”形成一个有机统一。 换句话讲， <em>Python</em> 不再区别对待基本类型和对象，所有基本类型内部均由对象实现。 一个整数是一个对象，一个字符串也是一个对象：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> a <span class="token operator">=</span> <span class="token number">1</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> b <span class="token operator">=</span> <span class="token string">'abc'</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>其次， <em>Python</em> 中的 <strong>类型也是一种对象</strong> ，称为 <strong>类型对象</strong> 。 整数类型是一个对象，字符串类型是一个对象，程序中通过 <em>class</em> 关键字定义的类也是一个对象。</p>
+</div><div class="cl-preview-section"><p>举个例子，整数类型在 <em>Python</em> 内部是一个对象，称为 <strong>类型对象</strong> ：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">int</span>
+<span class="token operator">&lt;</span><span class="token keyword">class</span> <span class="token string">'int'</span><span class="token operator">&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>通过整数类型 <strong>实例化</strong> 可以得到一个整数对象，称为 <strong>实例对象</strong> ：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">int</span><span class="token punctuation">(</span><span class="token string">'1024'</span><span class="token punctuation">)</span>
+<span class="token number">1024</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>面向对象理论中的“ <strong>类</strong> ”和“ <strong>对象</strong> ”这两个基本概念，在 <em>Python</em> 内部都是通过对象实现的，这是 <em>Python</em> 最大的特点。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eb905d50001f78f05540232.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="类型、对象体系">类型、对象体系</h2>
+</div><div class="cl-preview-section"><p><em>a</em> 是一个整数对象( <strong>实例对象</strong> )，其类型是整数类型( <strong>类型对象</strong> )：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> a <span class="token operator">=</span> <span class="token number">1</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">type</span><span class="token punctuation">(</span>a<span class="token punctuation">)</span>
+<span class="token operator">&lt;</span><span class="token keyword">class</span> <span class="token string">'int'</span><span class="token operator">&gt;</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">isinstance</span><span class="token punctuation">(</span>a<span class="token punctuation">,</span> <span class="token builtin">int</span><span class="token punctuation">)</span>
+<span class="token boolean">True</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>那么整数类型的类型又是什么呢？</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">type</span><span class="token punctuation">(</span><span class="token builtin">int</span><span class="token punctuation">)</span>
+<span class="token operator">&lt;</span><span class="token keyword">class</span> <span class="token string">'type'</span><span class="token operator">&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以看到，整数类型的类型还是一种类型，即 <strong>类型的类型</strong> 。 只是这个类型比较特殊，它的实例对象还是类型对象。</p>
+</div><div class="cl-preview-section"><p><em>Python</em> 中还有一个特殊类型 <em>object</em> ，所有其他类型均继承于 <em>object</em> ，换句话讲 <em>object</em> 是所有类型的基类：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">issubclass</span><span class="token punctuation">(</span><span class="token builtin">int</span><span class="token punctuation">,</span> <span class="token builtin">object</span><span class="token punctuation">)</span>
+<span class="token boolean">True</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>综合以上关系，得到以下关系图：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eb906470001efa107020273.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><center>Python类型系统-1</center>
+</div><div class="cl-preview-section"><p>内置类型已经搞清楚了，自定义类型及对象关系又如何呢？定义一个简单的类来实验：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">class</span> <span class="token class-name">Dog</span><span class="token punctuation">(</span><span class="token builtin">object</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+
+    <span class="token keyword">def</span> <span class="token function">yelp</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'woof'</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>创建一个 <em>Dog</em> 实例，毫无疑问，其类型是 <em>Dog</em> ：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> dog <span class="token operator">=</span> Dog<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> dog<span class="token punctuation">.</span>yelp<span class="token punctuation">(</span><span class="token punctuation">)</span>
+woof
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">type</span><span class="token punctuation">(</span>dog<span class="token punctuation">)</span>
+<span class="token operator">&lt;</span><span class="token keyword">class</span> <span class="token string">'__main__.Dog'</span><span class="token operator">&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><em>Dog</em> 类的类型自然也是 <em>type</em> ，其基类是 <em>object</em> (就算不显式继承也是如此)：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">type</span><span class="token punctuation">(</span>Dog<span class="token punctuation">)</span>
+<span class="token operator">&lt;</span><span class="token keyword">class</span> <span class="token string">'type'</span><span class="token operator">&gt;</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">issubclass</span><span class="token punctuation">(</span>Dog<span class="token punctuation">,</span> <span class="token builtin">object</span><span class="token punctuation">)</span>
+<span class="token boolean">True</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eb9068100010b3505790327.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><center>Python类型系统-2 </center>
+</div><div class="cl-preview-section"><p>自定义子类及实例对象在图中又处于什么位置？定义一个猎犬类进行实验：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">class</span> <span class="token class-name">Sleuth</span><span class="token punctuation">(</span>Dog<span class="token punctuation">)</span><span class="token punctuation">:</span>
+
+    <span class="token keyword">def</span> <span class="token function">hunt</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">pass</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以看到， 猎犬对象( <em>sleuth</em> )是猎犬类( <em>Sleuth</em> )的实例， <em>Sleuth</em> 的类型同样是 <em>type</em> ：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> sleuth <span class="token operator">=</span> Sleuth<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> sleuth<span class="token punctuation">.</span>hunt<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">type</span><span class="token punctuation">(</span>sleuth<span class="token punctuation">)</span>
+<span class="token operator">&lt;</span><span class="token keyword">class</span> <span class="token string">'__main__.Sleuth'</span><span class="token operator">&gt;</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">type</span><span class="token punctuation">(</span>Sleuth<span class="token punctuation">)</span>
+<span class="token operator">&lt;</span><span class="token keyword">class</span> <span class="token string">'type'</span><span class="token operator">&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>同时， <em>Sleuth</em> 类继承自 <em>Dog</em> 类，是 <em>Dog</em> 的子类，当然也是 <em>object</em> 的子类：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">issubclass</span><span class="token punctuation">(</span>Sleuth<span class="token punctuation">,</span> Dog<span class="token punctuation">)</span>
+<span class="token boolean">True</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">issubclass</span><span class="token punctuation">(</span>Sleuth<span class="token punctuation">,</span> <span class="token builtin">object</span><span class="token punctuation">)</span>
+<span class="token boolean">True</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eb906d10001d5c205930417.png" alt="图片描述"></p><center>Python类型系统-3</center><p></p>
+</div><div class="cl-preview-section"><p>现在不可避免需要讨论 <em>type</em> 以及 <em>object</em> 这两个特殊的类型。</p>
+</div><div class="cl-preview-section"><p>理论上， <em>object</em> 是所有类型的 <strong>基类</strong> ，本质上是一种类型，因此其类型必然是 <em>type</em> 。 而 <em>type</em> 是所有类型的类型，本质上也是一种类型，因此其类型必须是它自己！</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">type</span><span class="token punctuation">(</span><span class="token builtin">object</span><span class="token punctuation">)</span>
+<span class="token operator">&lt;</span><span class="token keyword">class</span> <span class="token string">'type'</span><span class="token operator">&gt;</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">type</span><span class="token punctuation">(</span><span class="token builtin">object</span><span class="token punctuation">)</span> <span class="token keyword">is</span> <span class="token builtin">type</span>
+<span class="token boolean">True</span>
+
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">type</span><span class="token punctuation">(</span><span class="token builtin">type</span><span class="token punctuation">)</span>
+<span class="token operator">&lt;</span><span class="token keyword">class</span> <span class="token string">'type'</span><span class="token operator">&gt;</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">type</span><span class="token punctuation">(</span><span class="token builtin">type</span><span class="token punctuation">)</span> <span class="token keyword">is</span> <span class="token builtin">type</span>
+<span class="token boolean">True</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>另外，由于 <em>object</em> 是所有类型的 <strong>基类</strong> ，理论上也是 <em>type</em> 的基类( <em>__base__</em> 属性)：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">issubclass</span><span class="token punctuation">(</span><span class="token builtin">type</span><span class="token punctuation">,</span> <span class="token builtin">object</span><span class="token punctuation">)</span>
+<span class="token boolean">True</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">type</span><span class="token punctuation">.</span>__base__
+<span class="token operator">&lt;</span><span class="token keyword">class</span> <span class="token string">'object'</span><span class="token operator">&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>但是 <em>object</em> 自身便不能有基类了。为什么呢？ 对于存在继承关系的类，成员属性和成员方法查找需要回溯继承链，不断查找基类。 因此，继承链必须有一个终点，不然就死循环了。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eb907270001a34e06200413.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><center>Python类型系统 (4)</center>
+</div><div class="cl-preview-section"><p>这就完整了！</p>
+</div><div class="cl-preview-section"><p>可以看到，所有类型的基类收敛于 <em>object</em> ，所有类型的类型都是 <em>type</em> ，包括它自己！ 这就是 <em>Python</em> 类型、对象体系全图，设计简洁、优雅、严谨。</p>
+</div><div class="cl-preview-section"><p>该图将成为后续阅读源码、探索 <em>Python</em> 对象模型的有力工具，像地图一样指明方向。 图中所有实体在 <em>Python</em> 内部均以对象形式存在，至于对象到底长啥样，相互关系如何描述，这些问题先按下不表，后续一起到源码中探寻答案。</p>
+</div><div class="cl-preview-section"><h2 id="变量只是名字">变量只是名字</h2>
+</div><div class="cl-preview-section"><p>先看一个例子，定义一个变量 <em>a</em> ，并通过 <em>id</em> 内建函数取出其“地址”：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> a <span class="token operator">=</span> <span class="token number">1</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">id</span><span class="token punctuation">(</span>a<span class="token punctuation">)</span>
+<span class="token number">4302704784</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>定义另一个变量 <em>b</em> ，以 <em>a</em> 赋值，并取出 <em>b</em> 的“地址”：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> b <span class="token operator">=</span> a
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">id</span><span class="token punctuation">(</span>b<span class="token punctuation">)</span>
+<span class="token number">4302704784</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>惊奇地看到， <em>a</em> 和 <em>b</em> 这两个变量的地址居然是相同的！这不合常理呀！</p>
+</div><div class="cl-preview-section"><p>对于大多数语言( <em>C</em> 语言为例)，定义变量 <em>a</em> 即为其分配内存并存储变量值：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eb9077f00012a6201980149.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>变量 <em>b</em> 内存空间与 <em>a</em> 独立，赋值时进行拷贝：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eb907a00001900603960222.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>在 <em>Python</em> 中，一切皆对象，整数也是如此， <strong>变量只是一个与对象关联的名字</strong> ：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eb907cb000145b502760202.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>而变量赋值，只是将当前对象与另一个名字进行关联，背后的对象是同一个：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec604ff0001bd9005280243.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>因此，在 <em>Python</em> 内部，变量只是一个名字，保存指向实际对象的指针，进而与其绑定。 变量赋值只拷贝指针，并不拷贝指针背后的对象。</p>
+</div><div class="cl-preview-section"><h2 id="可变对象-与-不可变对象">可变对象 与 不可变对象</h2>
+</div><div class="cl-preview-section"><p>定义一个整数变量：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> a <span class="token operator">=</span> <span class="token number">1</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">id</span><span class="token punctuation">(</span>a<span class="token punctuation">)</span>
+<span class="token number">4302704784</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>然后，对其自增 <em>1</em> ：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> a <span class="token operator">+=</span> <span class="token number">1</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> a
+<span class="token number">2</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">id</span><span class="token punctuation">(</span>a<span class="token punctuation">)</span>
+<span class="token number">4302704816</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>数值符合预期，但是对象变了！初学者一脸懵逼，这是什么鬼？</p>
+</div><div class="cl-preview-section"><p>一切要从 <strong>可变对象</strong> 和 <strong>不可变对象</strong> 说起。 <strong>可变对象</strong> 在对象创建后，其值可以进行修改； 而 <strong>不可变对象</strong> 在对象创建后的整个生命周期，其值都不可修改。</p>
+</div><div class="cl-preview-section"><p>在 <em>Python</em> 中，整数类型是不可变类型， 整数对象是不可变对象。 修改整数对象时， <em>Python</em> 将以新数值创建一个新对象，变量名与新对象进行绑定； 旧对象如无其他引用，将被释放。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eb907f3000158d515770254.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><blockquote>
+<p>每次修改整数对象都要创建新对象、回收旧对象，效率不是很低吗？ 确实是。 后续章节将从源码角度来解答： <em>Python</em> 如何通过 <strong>小整数池</strong> 等手段进行优化。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>可变对象是指创建后可以修改的对象，典型的例子是 <strong>列表</strong> ( <em>list</em> )：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l
+<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">id</span><span class="token punctuation">(</span>l<span class="token punctuation">)</span>
+<span class="token number">4385900424</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>往列表里头追加数据，发现列表对象还是原来那个，只不过多了一个元素了：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l
+<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">id</span><span class="token punctuation">(</span>l<span class="token punctuation">)</span>
+<span class="token number">4385900424</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>实际上，列表对象内部维护了一个 <strong>动态数组</strong> ，存储元素对象的指针：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eb9081500014c4106410445.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>列表对象增减元素，需要修改该数组。例如，追加元素 <em>3</em> ：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eb90831000191b206460508.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="定长对象-与-变长对象">定长对象 与 变长对象</h2>
+</div><div class="cl-preview-section"><p><em>Python</em> 一个对象多大呢？相同类型对象大小是否相同呢？ 想回答类似的问题，需要考察影响对象大小的因素。</p>
+</div><div class="cl-preview-section"><p>标准库 <em>sys</em> 模块提供了一个查看对象大小的函数 <em>getsizeof</em> ：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">import</span> sys
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> sys<span class="token punctuation">.</span>getsizeof<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+<span class="token number">28</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>先观察整数对象：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> sys<span class="token punctuation">.</span>getsizeof<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+<span class="token number">28</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> sys<span class="token punctuation">.</span>getsizeof<span class="token punctuation">(</span><span class="token number">100000000000000000</span><span class="token punctuation">)</span>
+<span class="token number">32</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> sys<span class="token punctuation">.</span>getsizeof<span class="token punctuation">(</span><span class="token number">100000000000000000000000000000000000000000000</span><span class="token punctuation">)</span>
+<span class="token number">44</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可见整数对象的大小跟其数值有关，像这样 <strong>大小不固定</strong> 的对象称为 <strong>变长对象</strong> 。</p>
+</div><div class="cl-preview-section"><p>我们知道，位数固定的整数能够表示的数值范围是有限的，可能导致 <strong>溢出</strong> 。 <em>Python</em> 为解决这个问题，采用类似 <em>C++</em> 中 <strong>大整数类</strong> 的思路实现整数对象—— 串联多个普通 <em>32</em> 位整数，以便支持更大的数值范围。 至于需要多少个 <em>32</em> 位整数，则视具体数值而定，数值不大的一个足矣，避免浪费。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eb9085700019c1604270215.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>这样一来，整数对象需要在头部额外存储一些信息，记录对象用了多少个 <em>32</em> 位整数。 这就是变长对象典型的结构，先有个大概印象即可，后续讲解整数对象源码时再展开。</p>
+</div><div class="cl-preview-section"><p>接着观察字符串对象：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> sys<span class="token punctuation">.</span>getsizeof<span class="token punctuation">(</span><span class="token string">'a'</span><span class="token punctuation">)</span>
+<span class="token number">50</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> sys<span class="token punctuation">.</span>getsizeof<span class="token punctuation">(</span><span class="token string">'abc'</span><span class="token punctuation">)</span>
+<span class="token number">52</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eb9087f0001314404180225.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>字符串对象也是变长对象，这个行为非常好理解，毕竟字符串长度不尽相同嘛。 此外，注意到字符串对象大小比字符串本身大，因为对象同样需要维护一些额外的信息。 至于具体需要维护哪些信息，同样留到源码剖析环节中详细介绍。</p>
+</div><div class="cl-preview-section"><p>那么，有啥对象是定长的呢？——浮点数对象 <em>float</em> ：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> sys<span class="token punctuation">.</span>getsizeof<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">.</span><span class="token punctuation">)</span>
+<span class="token number">24</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> sys<span class="token punctuation">.</span>getsizeof<span class="token punctuation">(</span><span class="token number">1000000000000000000000000000000000</span><span class="token punctuation">.</span><span class="token punctuation">)</span>
+<span class="token number">24</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>浮点数背后是由一个 <em>double</em> 实现，就算表示很大的数，浮点数对象的大小也不变。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eb9089d000172d804280177.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>为啥 <em>64</em> 位的 <em>double</em> 可以表示这么大的范围呢？答案是：牺牲了精度。</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">int</span><span class="token punctuation">(</span><span class="token number">1000000000000000000000000000000000</span><span class="token punctuation">.</span><span class="token punctuation">)</span>
+<span class="token number">999999999999999945575230987042816</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>由于浮点数存储位数是固定的，它能表示的数值范围也是有限的，超出便会抛锚：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token number">10</span><span class="token punctuation">.</span> <span class="token operator">**</span> <span class="token number">1000</span>
+Traceback <span class="token punctuation">(</span>most recent call last<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    File <span class="token string">"&lt;stdin&gt;"</span><span class="token punctuation">,</span> line <span class="token number">1</span><span class="token punctuation">,</span> <span class="token keyword">in</span> <span class="token operator">&lt;</span>module<span class="token operator">&gt;</span>
+OverflowError<span class="token punctuation">:</span> <span class="token punctuation">(</span><span class="token number">34</span><span class="token punctuation">,</span> <span class="token string">'Result too large'</span><span class="token punctuation">)</span>
+</code></pre>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img1.mukewang.com/5eb6861400011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6115">
+						<img src="https://img1.mukewang.com/545865c30001a2d802200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕标8056372</h4>
+						<div class="comment-text">老师请问python的变量名存储在哪呢？</div>
+						<div>
+							
+								<div class="reply">讲师回复：Python变量在运行时保存在名字空间中，总共有四个：局部名字空间、闭包名字空间、全局名字空间以及内建名字空间。名字空间又进一步分成静态和动态两种：函数局部变量个数在编译时就可以确定，因此函数局部名字空间可以通过一个数组来实现；模块全局变量在运行时可以会增减，因此需要用一个dict对象来保存。因此，动态名字空间是一个以变量名为key，以变量值为value的字典对象。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-13</span>
+						<a href="/read/commentdetail/6115">
+							<span class="icon r"><i class="imwap-comment"></i><em>3</em></span>
+						</a>
+						<span data-cid="6115" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>4</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5868">
+						<img src="https://img3.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">Kada8109531</h4>
+						<div class="comment-text">- object是所有类型的基类<br />- type是一个类<br />- type的基类也是object<br />- 所有类都是type类的实例，包括type类自己<br />- object也是type类的实例<br /><br />补充一下：<br /><br />type类是所有元类（例如abc.ABCMeta）的基类，元类从type这里继承了创建类的能力。</div>
+						<div>
+							
+								<div class="reply">讲师回复：亲总结得很到位，但因篇幅所限，元类被放在类机制中介绍，敬请期待~</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-19</span>
+						<a href="/read/commentdetail/5868">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5868" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>3</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5563">
+						<img src="https://img3.mukewang.com/56a34ce5000116bc01000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">妄言九天</h4>
+						<div class="comment-text">测试了浮点数的溢出情况，溢出后数值显示inf</div>
+						<div>
+							
+								<div class="reply">讲师回复：对的，浮点数也会溢出。实际上，任何存储位数固定的数值类型都会溢出。根据国际标准IEEE 754，浮点数位数是固定的。浮点数底层可以简单看成二进制的科学计数法，分为符号、有效数字和指数三部分。当有效数字和指数均取极值时，便是浮点数能表示的最大范围。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-21</span>
+						<a href="/read/commentdetail/5563">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5563" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>2</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=76">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '03 Python 对象模型概述',
+					'CID': '1899',
+					'Teacher': 'fasionchan'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "03 Python 对象模型概述",
+                    desc: "突破技术瓶颈，迈向更高岗位",
+                    imgUrl: 'https:https://img.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/76',
+                    link: 'https://m.imooc.com/read/76'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>31 领域模型实现，我又贫血了</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="全面掌握迈向高级工程师的必备技能">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2190";
+	var chapter_title = "31 领域模型实现，我又贫血了";
+	var aid = "82";
+	var a_name = "网络编程之Netty一站式精讲";
+	var a_price = "68.00";
+	var a_pic = "https://img2.mukewang.com/5f052aa90001f15b05400720.jpg";
+	var userId = 0;
+
+	var column_id = '82';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-21&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			31 领域模型实现，我又贫血了
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img.mukewang.com/5f0596df0001a35b06400359.jpg')"></div>
+	
+	
+		<a href="/read/82">
+			<div class="course-entry">
+				<img src="https://img2.mukewang.com/5d9c91f40001dcac05000500-40-40.jpg" alt="彤哥读源码">
+				<h3>网络编程之Netty一站式精讲</h3>
+				<p>彤哥读源码 · 互联网大厂项目经理</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">从不浪费时间的人，没有工夫抱怨时间不够。<p class="author">——杰弗逊</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">前言</h1>
+</div><div class="cl-preview-section"><p>你好，我是彤哥。</p>
+</div><div class="cl-preview-section"><p>上一节，我们一起把实战项目的协议给实现了，同时，通过 HelloRequest 和 HelloResponse 把客户端和服务端成功连接起来了。</p>
+</div><div class="cl-preview-section"><p>本节，我们将根据系统设计中领域模型设计的内容，把这些领域模型给实现了。</p>
+</div><div class="cl-preview-section"><p>下面就进入今天的学习吧。</p>
+</div><div class="cl-preview-section"><h1 id="领域模型实现">领域模型实现</h1>
+</div><div class="cl-preview-section"><p>根据系统设计一节的内容，我们归纳出来的领域模型有：玩家、房间、牌、各种消息。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>我这里把消息也看作是领域模型了，更确切地讲，消息属于接口设计的内容，不过为了方便讲解，我是把他们合并在一起了。怎么区分两者呢？看主体本身是不是一个纯粹的名词，比如，玩家就是一个纯粹的名词，所以，它是领域模型，而出牌请求就不是一个纯粹的名词，它包含动词含义，所以，它是接口。不过，总体来说，它们都是一个主体加上一些属性构成，所以，看成是一样的东西也是没问题的。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="玩家">玩家</h2>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f3dd5110001402310280401.png" alt="图片描述"><br>
+所谓实现，就是把设计的内容转换成代码，所以，编码是最简单的工作。当然了，在实现的时候可能也会扩充一些字段，比如，玩家应当具有唯一的 ID，所以，上面这张图转换成代码如下：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Data</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Player</span> <span class="token punctuation">{</span>
+    <span class="token comment">/**
+     * 唯一标识id
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">long</span> id<span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 用户名
+     */</span>
+    <span class="token keyword">private</span> String username<span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 密码
+     */</span>
+    <span class="token keyword">private</span> String password<span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 玩家的积分
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> score<span class="token punctuation">;</span>
+    
+    <span class="token comment">/**
+     * 玩家在房间的位置
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> pos<span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 手牌列表
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> cards<span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 打出的牌
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> chuCards<span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 碰的牌
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> pengList<span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 杠的牌
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> gangList<span class="token punctuation">;</span>
+
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>我这里做了一些调整，将玩家天然的属性移到了上面，将牌局相关的信息移到了下面。</p>
+</div><div class="cl-preview-section"><p>为什么要这么做呢？</p>
+</div><div class="cl-preview-section"><p>因为，牌局相关的信息在每一局都不一样，所以，需要在牌局结束时进行重置，把牌局相关的信息放在一起，到时候写重置方法的时候会比较简单清晰一些。</p>
+</div><div class="cl-preview-section"><h2 id="房间">房间</h2>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f3dd4fe0001fead10280407.png" alt="图片描述"><br>
+同样地，房间也会扩充一些属性：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Data</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Room</span> <span class="token punctuation">{</span>
+    <span class="token comment">/**
+     * 房间id
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">long</span> id<span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 房间最大的人数
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> maxPlayerNum<span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 底分
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> baseScore<span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 房间内的玩家列表
+     */</span>
+    <span class="token keyword">private</span> Player<span class="token punctuation">[</span><span class="token punctuation">]</span> players<span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 未摸的牌
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> remainCards<span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 出牌玩家的位置
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> chuPos<span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 状态
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> status<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>对于房间的状态，我们也是要定义的，这一块在系统设计的时候给遗漏了，在这里补上。</p>
+</div><div class="cl-preview-section"><p>首先，一个玩家创建了房间之后，房间的状态进入等待其他玩家进入的状态，当玩家满了的情况下，游戏开始了，记录一个游戏开始的状态，发完牌了，轮到庄家出牌，记录一个等待出牌的状态，出牌后如果有其它玩家可以操作，还需要记录一个等待操作的状态，最后，游戏结束了，记录一个结束的状态。</p>
+</div><div class="cl-preview-section"><p>所以，房间的状态一共有：等待玩家、游戏开始、等待出牌、等待操作、游戏结束，简单点，我们把这些常量也定义到房间这个类中：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Room</span> <span class="token punctuation">{</span>
+    <span class="token comment">/**
+     * 等待其他玩家进入房间
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> STATUS_WAITING_PLAYER <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 游戏开始
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> STATUS_GAME_STARTING <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 等待玩家出牌
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> STATUS_WAITING_CHU <span class="token operator">=</span> <span class="token number">3</span><span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 等待其他玩家操作（碰、杠、胡）
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> STATUS_WAITING_OPERATION <span class="token operator">=</span> <span class="token number">4</span><span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 游戏结束
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> STATUS_GAME_OVER <span class="token operator">=</span> <span class="token number">5</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="牌">牌</h2>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f3dd4e90001839d09540102.png" alt="图片描述"><br>
+按照系统设计的一节的内容，一张牌用一个 byte 表示就可以的，所以，牌不需要单独的类来表示，但是，需要一个工具类告诉我哪个 byte 表示哪张牌，因此，我们这里也定义一下牌的信息：<br>
+<img src="https://img.mukewang.com/5f3dd4d8000195b810250224.png" alt="图片描述"><br>
+这样设计的话，类型占 4 位，牌值点 4 位，各能代表 16 种不同的数值，是完全足够的，所以，我们的工具类看起来是这样的：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">CardUtils</span> <span class="token punctuation">{</span>
+    <span class="token comment">/**
+     * 万的掩码，一万到九万：0x11~0x19
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">byte</span> CARD_TYPE_WAN_MASK <span class="token operator">=</span> <span class="token number">0x10</span><span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 条的掩码，一条到九条：0x21~0x29
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">byte</span> CARD_TYPE_TIAO_MASK <span class="token operator">=</span> <span class="token number">0x20</span><span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 筒的掩码，一筒到九筒：0x31~0x39
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">byte</span> CARD_TYPE_TONG_MASK <span class="token operator">=</span> <span class="token number">0x30</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/**
+     * 类型的掩码
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">byte</span> CARD_TYPE_MASK <span class="token operator">=</span> <span class="token number">0x70</span><span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 值的掩码
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">byte</span> CARD_VALUE_MASK <span class="token operator">=</span> <span class="token number">0x0f</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/**
+     * 获取牌的类型
+     * @param card
+     * @return
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">byte</span> <span class="token function">cardType</span><span class="token punctuation">(</span><span class="token keyword">byte</span> card<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token keyword">byte</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>CARD_TYPE_MASK <span class="token operator">&amp;</span> card<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">/**
+     * 获取牌的数值
+     * @param card
+     * @return
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">byte</span> <span class="token function">cardValue</span><span class="token punctuation">(</span><span class="token keyword">byte</span> card<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token keyword">byte</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>CARD_VALUE_MASK <span class="token operator">&amp;</span> card<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这里使用 16 进制表示，正好一个数字表示 4 位，同学们好好体会一下。</p>
+</div><div class="cl-preview-section"><p>对于万牌来说，它的值为 0x11~0x19，分别表示一万到九万。</p>
+</div><div class="cl-preview-section"><h2 id="消息">消息</h2>
+</div><div class="cl-preview-section"><p>在系统设计一节中，我们归纳出来的消息一共有：登录、创建房间、加入房间、房间刷新通知、操作通知、操作请求、操作结果通知、结束通知、结算通知。</p>
+</div><div class="cl-preview-section"><p>它们都比较简单，我们快速的定义一下：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Data</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">LoginRequest</span> <span class="token keyword">implements</span> <span class="token class-name">MahjongMessage</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> String username<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> String password<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token annotation punctuation">@Data</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">LoginResponse</span> <span class="token keyword">implements</span> <span class="token class-name">MahjongMessage</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">boolean</span> result<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> Player player<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> String message<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token annotation punctuation">@Data</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">CreateRoomRequest</span> <span class="token keyword">implements</span> <span class="token class-name">MahjongMessage</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> playerNum<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> baseScore<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token annotation punctuation">@Data</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">CreateRoomResponse</span> <span class="token keyword">implements</span> <span class="token class-name">MahjongMessage</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">boolean</span> result<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> String message<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token annotation punctuation">@Data</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">EnterRoomRequest</span> <span class="token keyword">implements</span> <span class="token class-name">MahjongMessage</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">long</span> tableId<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token annotation punctuation">@Data</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">EnterRoomResponse</span> <span class="token keyword">implements</span> <span class="token class-name">MahjongMessage</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">boolean</span> result<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> String message<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token annotation punctuation">@Data</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">RoomRefreshNotification</span> <span class="token keyword">implements</span> <span class="token class-name">MahjongMessage</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> operation<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> Room room<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token annotation punctuation">@Data</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">OperationNotification</span> <span class="token keyword">implements</span> <span class="token class-name">MahjongMessage</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> operation<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> pos<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">byte</span> fireCard<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token annotation punctuation">@Data</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">OperationRequest</span> <span class="token keyword">implements</span> <span class="token class-name">MahjongMessage</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> operation<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> pos<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">byte</span> card<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token annotation punctuation">@Data</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">OperationResultNotification</span> <span class="token keyword">implements</span> <span class="token class-name">MahjongMessage</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> operation<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> pos<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">byte</span> card<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token annotation punctuation">@Data</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">GameOverNotificaion</span> <span class="token keyword">implements</span> <span class="token class-name">MahjongMessage</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> Room room<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token annotation punctuation">@Data</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SettlementNotification</span> <span class="token keyword">implements</span> <span class="token class-name">MahjongMessage</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span><span class="token punctuation">[</span><span class="token punctuation">]</span> scores<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>另外，要记得把它们都添加到 MessageManager 里面：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">enum</span> MessageManager <span class="token punctuation">{</span>
+    <span class="token function">HELLO_REQUEST</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> HelloRequest<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">HELLO_RESPONSE</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> HelloResponse<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">LOGIN_REQUEST</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">,</span> LoginRequest<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">LOGIN_RESPONSE</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">,</span> LoginResponse<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">CREATE_ROOM_REQUEST</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">,</span> CreateRoomRequest<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">CREATE_ROOM_RESPONSE</span><span class="token punctuation">(</span><span class="token number">6</span><span class="token punctuation">,</span> CreateRoomResponse<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">ENTER_ROOM_REQUEST</span><span class="token punctuation">(</span><span class="token number">7</span><span class="token punctuation">,</span> EnterRoomRequest<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">ENTER_ROOM_RESPONSE</span><span class="token punctuation">(</span><span class="token number">8</span><span class="token punctuation">,</span> EnterRoomResponse<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">ROOM_REFRESH_NOTIFICATION</span><span class="token punctuation">(</span><span class="token number">9</span><span class="token punctuation">,</span> RoomRefreshNotification<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">OPERATION_NOTIFICATION</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">,</span> OperationNotification<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">OPERATION_REQUEST</span><span class="token punctuation">(</span><span class="token number">11</span><span class="token punctuation">,</span> OperationRequest<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">OPERATION_RESULT_NOTIFICATION</span><span class="token punctuation">(</span><span class="token number">12</span><span class="token punctuation">,</span> OperationResultNotification<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">GAME_OVER_NOTIFICATION</span><span class="token punctuation">(</span><span class="token number">13</span><span class="token punctuation">,</span> GameOverNotification<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">SETTLEMENT_NOTIFICATION</span><span class="token punctuation">(</span><span class="token number">14</span><span class="token punctuation">,</span> SettlementNotification<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>关于操作相关的消息，我们还应该定义有哪些操作类型，所以，我们再新加一个工具类用来定义操作类型：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">OperationUtils</span> <span class="token punctuation">{</span>
+    <span class="token comment">/**
+     * 出
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> OPERATION_CHU <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 碰
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> OPERATION_PENG <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 杠
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> OPERATION_GANG <span class="token operator">=</span> <span class="token number">4</span><span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 胡
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> OPERATION_HU <span class="token operator">=</span> <span class="token number">8</span><span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 摸
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> OPERATION_GRAB <span class="token operator">=</span> <span class="token number">16</span><span class="token punctuation">;</span>
+    <span class="token comment">/**
+     * 过
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">int</span> OPERATION_GUO <span class="token operator">=</span> <span class="token number">32</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>细心的同学会发现，操作类型的这些数值转换成二进制正好是错开的，这也是为了能在一个 int 字段中表示多个操作类型，比如，玩家 A 出了一张牌，玩家 B 手中有三张，那么，他既可以选择碰，也可以选择杠，此时，我们只需要把 OPERATION_PENG 和 OPERATION_GANG 做一个 “或” 操作就可以了。<br>
+<img src="https://img.mukewang.com/5f3dd4c40001a38110300185.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>好了，所有的领域模型都实现了，细心的同学可能会发现，所有的领域模型中都没有行为，也就是方法，这也就是传说中的贫血模型，为什么要使用贫血模型呢？</p>
+</div><div class="cl-preview-section"><p>原因主要有以下几点：</p>
+</div><div class="cl-preview-section"><ol>
+<li>我们定义的这些领域模型是要给到客户端的，里面定义了方法，这些方法可能并不适用于客户端，造成冗余；</li>
+<li>目前这些领域模型是手动编写的，试想如果后期扩展为 protobuf，它们是通过文件生成的，这些生成的类中是不应该添加自己的方法的；</li>
+<li>如果后期要做持久化到数据库，这个持久化的动作放在哪里比较合适，放在领域模型中会很奇怪；</li>
+<li>充血模型很难定义业务逻辑的边界，也就是说哪些方法应该放在领域模型中，哪些应该放在 service 中，很难把控，所以，倒不如把这些业务逻辑全部放在 service 中，更加清晰；</li>
+<li>开发人员的技术水平参差不齐，使用充血模型会导致上面所说的业务边界的问题更加混乱；</li>
+</ol>
+</div><div class="cl-preview-section"><p>综上所述，虽然使用贫血模型不那么的面向对象（当然，一般程序员可能没有对象），但是，业务逻辑和领域模型的边界都足够清晰，更适合于团队开发，因此，我们这里也同样采用贫血模型来进行开发，这可能也是 Spring MVC 比较流行的主要原因。</p>
+</div><div class="cl-preview-section"><h1 id="后记">后记</h1>
+</div><div class="cl-preview-section"><p>本节，我们根据系统设计中领域模型设计以及接口设计的内容把所有的领域模型给实现了，并在最后，分析了我们使用贫血模型的主要原因。</p>
+</div><div class="cl-preview-section"><p>下一节，我们将给这些贫血的模型加上业务处理的逻辑，当然了，这些逻辑是剥离出去的，同时，会考虑使用什么样的线程池来承载我们的业务处理逻辑，敬请期待。</p>
+</div><div class="cl-preview-section"><h1 id="思维导图">思维导图</h1>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f3dd4b40001983412912501.png" alt="图片描述"></p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img.mukewang.com/5f05427d00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=82">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '31 领域模型实现，我又贫血了',
+					'CID': '2190',
+					'Teacher': '彤哥读源码'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "31 领域模型实现，我又贫血了",
+                    desc: "全面掌握迈向高级工程师的必备技能",
+                    imgUrl: 'https:https://img2.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/82',
+                    link: 'https://m.imooc.com/read/82'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

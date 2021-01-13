@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>33 ActiveMQ消息中间件</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="轻量级项目，系统化经验">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "1745";
+	var chapter_title = "33 ActiveMQ消息中间件";
+	var aid = "73";
+	var a_name = "架构思维成长之微服务";
+	var a_price = "68.00";
+	var a_pic = "https://img1.mukewang.com/5e86b0220001a99d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '73';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-20&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			33 ActiveMQ消息中间件
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img1.mukewang.com/5e8c3b290001299506400359.jpg')"></div>
+	
+	
+		<a href="/read/73">
+			<div class="course-entry">
+				<img src="https://img2.mukewang.com/5e6eebd60001a49207000933-40-40.jpg" alt="曼巴out">
+				<h3>架构思维成长之微服务</h3>
+				<p>曼巴out · 上市公司资深架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">耐心和恒心总会得到报酬的。<p class="author">——爱因斯坦</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">1 前言</h1>
+</div><div class="cl-preview-section"><p>前面实战部分我们提到使用消息队列的延迟队列来做过期数据的监听，其实那只是消息队列的一个基本特性而已。消息队列的性能非常的高，是大型互联网项目中必不可少的中间件，一般用消息队列来提高系统的吞吐量。消息队列常见的作用是异步解耦应用、流量削峰、限流等，本节主要跟大家详细介绍ActiveMQ。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>思考：为什么需要用到消息队列呢？它有什么好处呢？</p>
+</blockquote>
+</div><div class="cl-preview-section"><p><strong>传统模式</strong><br>
+<img src="https://img.mukewang.com/5ec3377e0001679f05400160.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>账号注册完成之后，发送短信，再发送邮件；整个流程都是主线程执行，一个花了150ms。</li>
+<li>缺点：代码臃肿、执行时间相对长、如果后期新增发微信，则不好扩展。</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>多线程模式</strong></p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec337720001a35b04390277.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>执行完成主业务（账号注册），则通过创建子线程来处理次要业务。它只需要花50ms即可给用户响应。</li>
+<li>优点：响应速度比较快</li>
+<li>缺点：1）代码还是臃肿；2）需要扩展性不好，比如后期新增发送微信功能还得改源代码；3）需要实现容错比较复杂，比如子线程处理错误，则怎么实现补偿机制；4）子线程和主业务代码在同一台服务器，如果并发量很高的情况，其实性能还是受限。</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>消息队列模式</strong><br>
+<img src="https://img.mukewang.com/5ec3371e00016b1b06510421.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>执行完成主业务（账号注册），则发送消息给消息队列，由消息队列的消费端监听并处理后续业务。它只需要花50ms即可给用户响应。</li>
+<li>优点：1）响应速度比较快；2）业务彻底解耦，编码变的更加简单；3）由于服务都是独立部署在不同服务器，所以性能更加的高。4）需求扩展性好，比如后期新增发送微信功能，则只需要创建一个微信服务监听消息队列即可。5）可以灵活的处理容错性。</li>
+<li>缺点：架构变的更加复杂了；服务数量比较多。</li>
+</ul>
+</div><div class="cl-preview-section"><p>总的来说，消息队列的提高系统的吞吐量，同时让系统变的更加的灵活；它适用于大型项目，并且需求变化比较大的项目。注意的是一般用于没有返回值的接口改造，什么意思呢？比如说，秒杀的时候<code>秒杀服务</code>调用<code>商品服务</code>扣减库存，则可以基于消息队列来改造。比如查询商品信息则就不适合使用消息队列了。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>那么常见的消息队列中间件有哪些呢？</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>主流的消息队列框架：ActiveMQ、RabbitMQ、RocketMQ、Kafka</li>
+</ul>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>特性</th>
+<th>ActiveMQ</th>
+<th>RabbitMQ</th>
+<th>RocketMQ</th>
+<th>Kafka</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>语言</td>
+<td>Java</td>
+<td>Erlang</td>
+<td>Java</td>
+<td>Scala</td>
+</tr>
+<tr>
+<td>吞吐量</td>
+<td>万级</td>
+<td>万级</td>
+<td>10万级</td>
+<td>10万级</td>
+</tr>
+<tr>
+<td>速度</td>
+<td>毫秒</td>
+<td>微秒</td>
+<td>毫秒</td>
+<td>毫秒</td>
+</tr>
+<tr>
+<td>集群</td>
+<td>主从架构</td>
+<td>主从架构</td>
+<td>分布式架构</td>
+<td>分布式架构</td>
+</tr>
+<tr>
+<td>场景</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>大数据实时处理</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><ul>
+<li>ActiveMQ是Apache里面的核心项目，是老牌消息队列中间件，完善的文档、活跃的社区。它是AMQP协议的标准实现，它是JMS规范的落地实现；无论安装和使用都是非常的简单；提供集群技术方案。</li>
+<li>RabbitMQ，是erlang语言开发，是AMQP（高级消息队列协议）的标准实现，功能比ActiveMQ更加的强大。</li>
+<li>RocketMQ是阿里开源的消息中间件，支撑了阿里多次双十一活动，可见其性能的优势</li>
+<li>Kafka一般用于大数据方案，如：实时处理、日志采集等</li>
+<li>性能排序：Kafka&gt;RocketMQ&gt;RabbitMQ&gt;ActiveMQ</li>
+<li>部署难度：ActiveMQ&lt;RabbitMQ&lt;Kafka&lt;RocketMQ</li>
+</ul>
+</div><div class="cl-preview-section"><p>总的来说，如果项目对性能要求非常的高那么Kafka和RocketMQ是最佳选择；否则ActiveMQ和RabbitMQ够用了。</p>
+</div><div class="cl-preview-section"><h1 id="activemq消息模型">2 ActiveMQ消息模型</h1>
+</div><div class="cl-preview-section"><p>ActiveMQ主要有两种模式的消息，分别是Queue（队列）和Topic（订阅）。</p>
+</div><div class="cl-preview-section"><p>什么是Queue？</p>
+</div><div class="cl-preview-section"><ul>
+<li>是点对点，好比两个人打电话，必须两个都在线才能完成流程。</li>
+<li>数据是安全的，如果消费者不在线，则数据被保存在消息队列里面，直到被消费之后才会被删除。</li>
+</ul>
+</div><div class="cl-preview-section"><p>什么是Topic？</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>是广播模式，好比听收音机，无论你开不开收音机，主播都会在线讲，但是错过就错过了。</p>
+</li>
+<li>
+<p>数据是不安全的，如果消费者宕机了则数据丢失，不可以执行以前的数据的。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec3375b00015a4009800574.png" alt="图片描述"><br>
+从上面的架构图，大家应该能发现规律</p>
+</div><div class="cl-preview-section"><ul>
+<li>Queue，每个消费者消费的数据不一样，一个消息只能被一个消费者消费</li>
+<li>Topic，每个消费者消费的数据是一样的</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="activemq安装及使用">3. ActiveMQ安装及使用</h1>
+</div><div class="cl-preview-section"><h2 id="activemq的安装">3.1 ActiveMQ的安装</h2>
+</div><div class="cl-preview-section"><pre class="  language-shell"><code class="prism  language-shell">#1.解压
+tar -zxvf apache-activemq-5.12.0-bin.tar.gz
+
+#2.启动
+cd apache-activemq-5.12/bin
+./activemq start
+
+#3.停止
+./activemq stop
+
+#4.查看状态
+./activemq status
+</code></pre>
+</div><div class="cl-preview-section"><p>ActiveMQ有两个核心端口分别是8161（后台系统的端口），61616（客户端通讯端口）</p>
+</div><div class="cl-preview-section"><p>启动完ActiveMQ之后，可以在浏览器登录后台系统：</p>
+</div><div class="cl-preview-section"><ul>
+<li><a href="http://xn--ip-im8ckc:8161">http://ip地址:8161</a>，账号和密码都是admin</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="消息提供者工程">3.2 消息提供者工程</h2>
+</div><div class="cl-preview-section"><p>第一步：导入坐标</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>spring-boot-starter-activemq<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>第二步：配置文件</p>
+</div><div class="cl-preview-section"><pre class="  language-properties"><code class="prism  language-properties"><span class="token attr-name">spring.activemq.broker-url</span><span class="token punctuation">=</span><span class="token attr-value">tcp://192.168.1.8:61616</span>
+<span class="token attr-name">spring.activemq.password</span><span class="token punctuation">=</span><span class="token attr-value">admin</span>
+<span class="token attr-name">spring.activemq.user</span><span class="token punctuation">=</span><span class="token attr-value">admin</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>第三步：发送Queue消息</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Component</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Producer</span> <span class="token punctuation">{</span>  
+	<span class="token annotation punctuation">@Autowired</span>
+	<span class="token keyword">private</span> JmsMessagingTemplate jmt<span class="token punctuation">;</span>
+   
+	<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">send</span><span class="token punctuation">(</span>String content<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">//注意：项目启动的时候，会在后台自动创建queue名称</span>
+		jmt<span class="token punctuation">.</span><span class="token function">convertAndSend</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">ActiveMQQueue</span><span class="token punctuation">(</span><span class="token string">"队列名称"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>content<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>   
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>第四步：发送Topic消息</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Component</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Producer</span> <span class="token punctuation">{</span>
+	<span class="token annotation punctuation">@Autowired</span>
+	<span class="token keyword">private</span> JmsMessagingTemplate jmt<span class="token punctuation">;</span>
+   
+	<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">send</span><span class="token punctuation">(</span>String content<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">//注意：项目启动的时候，会在后台自动创建topic名称</span>
+		jmt<span class="token punctuation">.</span><span class="token function">convertAndSend</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">ActiveMQTopic</span><span class="token punctuation">(</span><span class="token string">"sample.topic"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>content<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：SpringBoot默认无法发送Topic消息，只能发送Queue消息</p>
+</blockquote>
+</div><div class="cl-preview-section"><pre class="  language-properties"><code class="prism  language-properties"><span class="token comment">#如果为True，则是Topic；如果是false或者默认，则是queue</span>
+<span class="token attr-name">spring.jms.pub-sub-domain</span><span class="token punctuation">=</span><span class="token attr-value">true</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="消息消费者工程">3.3 消息消费者工程</h2>
+</div><div class="cl-preview-section"><p>第一步：导入坐标</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>org.springframework.boot<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>spring-boot-starter-activemq<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>第二步：配置文件</p>
+</div><div class="cl-preview-section"><pre class="  language-properties"><code class="prism  language-properties"><span class="token attr-name">spring.activemq.broker-url</span><span class="token punctuation">=</span><span class="token attr-value">tcp://192.168.1.8:61616</span>
+<span class="token attr-name">spring.activemq.password</span><span class="token punctuation">=</span><span class="token attr-value">admin</span>
+<span class="token attr-name">spring.activemq.user</span><span class="token punctuation">=</span><span class="token attr-value">admin</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>第三步：监听消息</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Component</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Consumer</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@JmsListener</span><span class="token punctuation">(</span>destination <span class="token operator">=</span> <span class="token string">"队列名称"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">receiveQueue</span><span class="token punctuation">(</span>String text<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>text<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：SpringBoot可以同时监听Queue和Topic消息，不需要任何配置</p>
+</blockquote>
+</div><div class="cl-preview-section"><h1 id="消息队列改造秒杀系统">4. 消息队列改造秒杀系统</h1>
+</div><div class="cl-preview-section"><p>基于消息队列对上节的秒杀架构进行改造，具体架构图如下所示：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec3370b000130e211730487.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>架构图核心说明（大家可以自己对比两种模式的区别）</p>
+</div><div class="cl-preview-section"><ul>
+<li>秒杀服务只需要扣减Redis的库存，如果扣减成功则表示还有库存，否则没有库存了。</li>
+<li>秒杀服务扣减完库存之后，只需要发送消息给消息队列，订单服务监听到消息，由订单服务去处理复杂的业务。好处是简化秒杀服务器的逻辑，提高秒杀服务的处理速度，让它的吞吐量更高。</li>
+<li>支付服务支付成功之后，只需要发送消息给消息队列，商品服务监听到消息，则扣减库存和去Redis删除订单记录。好处是把支付服务和商品服务进行解耦、同时也提高处理速度。</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="常见面试题">5. 常见面试题</h1>
+</div><div class="cl-preview-section"><p>下面的价格问题是面试经常提到的，同时也是工作中会遇到的问题。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>问题1：消费端处理失败了，导致数据不一致，如何去弥补？</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>解决方案1：设置手工确认机制，业务处理成功之后，手工确认；但是这种模式有弊端，如果处理失败，则连续发送6次还是处理失败的话，则加入死信队列。</p>
+</li>
+<li>
+<p>解决方案2：加一张中间表，提供者往消息队列发送消息队列的时候，往该表插入一条数据；消费者接受数据处理成功则删除对应的数据，否则不删除。采用定时器定时补偿处理失败的记录。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>问题2：消息队列中间件宕机了，重启之后会不会丢失数据呢？</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>首先，ActiveMQ默认有三种持久化方式，分别是内存持久化、日志持久化和JDBC持久化，内存持久化是不安全的；日志和JDBC则是安全的；ActiveMQ默认是日志持久化。</p>
+</li>
+<li>
+<p>Queue重启之后不会丢失数据，直到消费被消费成功才被删除；Topic无法再消费之前的消息，所以重启会丢失。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>问题3：消息队列会不会出现重复消息的问题？什么情况会导致重复消费？</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>正常情况下，多个消费端监听同一个queue，同一条消息不会被多个消费端同时消费，只有一个消费端能消费成功。</p>
+</li>
+<li>
+<p>但是，如果由于网络原因，消息队列可能无法及时收到消费端的应答，会重发消息，这样的话消费端相当于消费了两次。</p>
+</li>
+<li>
+<p>解决方案：消费端每次接受消息的时候，先根据msgId去Redis查询是否存在；如果存在则不处理；如果不存在，则把消息ID存储到Redis（key=<span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mrow><mi>m</mi><mi>s</mi><mi>g</mi><mi>I</mi><mi>d</mi></mrow><mo separator="true">,</mo><mi>v</mi><mi>a</mi><mi>l</mi><mi>u</mi><mi>e</mi><mo>=</mo></mrow><annotation encoding="application/x-tex">{msgId},value=</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.69444em;"></span><span class="strut bottom" style="height: 0.88888em; vertical-align: -0.19444em;"></span><span class="base"><span class="mord"><span class="mord mathit">m</span><span class="mord mathit">s</span><span class="mord mathit" style="margin-right: 0.03588em;">g</span><span class="mord mathit" style="margin-right: 0.07847em;">I</span><span class="mord mathit">d</span></span><span class="mpunct">,</span><span class="mord mathit" style="margin-right: 0.03588em;">v</span><span class="mord mathit">a</span><span class="mord mathit" style="margin-right: 0.01968em;">l</span><span class="mord mathit">u</span><span class="mord mathit">e</span><span class="mrel">=</span></span></span></span></span>{msgId}）。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>问题4：什么是死信队列？它有什么作用？</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>消息被消费失败的时候，则消息队列默认重发6次，如果还是失败则把该消息加入到死信队列里面；或者消息过期也会被加入死信队列。</li>
+<li>默认的私信队列是ActiveMQ.DLQ，一般为了方便管理，针对每个队列都创建一个相应的死信队列。</li>
+<li>为了数据的一致性，可以对死信队列进行监听，进行数据的补偿处理</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="小结">6. 小结</h1>
+</div><div class="cl-preview-section"><p>本节内容，主要介绍为什么使用消息队列它的好处是什么；常见的消息队列中间件对比；ActiveMQ的两种消息模式解析；ActiveMQ的安装及使用；如何基于ActiveMQ改造秒杀系统；以及最后ActiveMQ常见的几个问题。希望对大家有帮助。</p>
+</div><div class="cl-preview-section"><p>由于篇幅有限，大家可以根据以下的路线去深入学习ActiveMQ。</p>
+</div><div class="cl-preview-section"><ul>
+<li>第一：掌握ActiveMQ原生API的时候，SpringBoot集成ActiveMQ</li>
+<li>第二：掌握两种消息模式，Queue和Topic的区别及使用</li>
+<li>第三：ActiveMQ的几种消息格式（TextMessage、MapMessage、ObjectMessage、ByteMessage、StreamMessage）的使用</li>
+<li>第四：ActiveMQ的持久化到MySQL数据库</li>
+<li>第五：ActiveMQ的事务、手工确认机制</li>
+<li>第六：ActiveMQ的几种消息投递方式，分别是：同步、异步、延迟、定时</li>
+<li>第七：ActiveMQ的死信队列，什么情况进入死信队列，如何给每个队列创建对应的死信队列</li>
+<li>第八：ActiveMQ什么情况下会出现重复消费，如何避免重复消费</li>
+</ul>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img1.mukewang.com/5e8c3b33000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=73">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '33 ActiveMQ消息中间件',
+					'CID': '1745',
+					'Teacher': '曼巴out'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "33 ActiveMQ消息中间件",
+                    desc: "轻量级项目，系统化经验",
+                    imgUrl: 'https:https://img1.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    otherImgUrl: 'https://img1.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/73',
+                    link: 'https://m.imooc.com/read/73'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

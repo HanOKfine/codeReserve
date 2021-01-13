@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>34 metaclass 在程序开发中的妙用</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="突破技术瓶颈，迈向更高岗位">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "5";
+	var chapter_id = "1930";
+	var chapter_title = "34 metaclass 在程序开发中的妙用";
+	var aid = "76";
+	var a_name = "Python 源码深度剖析";
+	var a_price = "68.00";
+	var a_pic = "https://img.mukewang.com/5eb68ab400017cda05400720.jpg";
+	var userId = 0;
+
+	var column_id = '76';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-26&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			34 metaclass 在程序开发中的妙用
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5f39e7f90001861c06400426.jpg')"></div>
+	
+	
+		<a href="/read/76">
+			<div class="course-entry">
+				<img src="https://img3.mukewang.com/5e4a3ec90001ef8d04000400-40-40.jpg" alt="fasionchan">
+				<h3>Python 源码深度剖析</h3>
+				<p>fasionchan · 资深 Python 研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">每个人都是自己命运的主宰。<p class="author">——斯蒂尔斯</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>在 <em>Python</em> 类型系统中，<strong>元类</strong> ( <em>metaclass</em> )占据着至关重要的位置。它提供了制造新类型的能力，为程序设计带来更多可能性。不少功能强大的开发框架，内部实现离不开元类的强力加持。</p>
+</div><div class="cl-preview-section"><p>然而，元类由于天生的抽象性，让很多人望而却步。本节我们以若干应用场景抛砖引玉，带你拿下元类这个新技能。</p>
+</div><div class="cl-preview-section"><h2 id="new__-魔术方法">__new__ 魔术方法</h2>
+</div><div class="cl-preview-section"><p>我们先考察 <em>__new__</em> 魔术方法，它负责为类创建实例对象。什么？实例对象不是由 <em>__init__</em> 魔术方法创建吗？为了拨开心中的迷雾，我们先将这两者的区别和联系搞清楚。</p>
+</div><div class="cl-preview-section"><p>当我们调用类 <em>C</em> 创建实例对象时，<em>Python</em> 调用 <em>C.__new__</em> 魔法函数完成对象创建：</p>
+</div><div class="cl-preview-section"><pre><code>instance = C.__new__()
+</code></pre>
+</div><div class="cl-preview-section"><p>如果 <em>C</em> 类并没有定义 <em>__new__</em> 方法，<em>Python</em> 将使用父类的 <em>__new__</em> 方法。如果父类也没有实现该方法，<em>Python</em> 将逐层上溯，直到终极父类 <em>object</em> ，而 <em>object</em> 提供了通用的 <em>__new__</em> 版本进行兜底。</p>
+</div><div class="cl-preview-section"><p>将实例对象 <em>instance</em> 返回给调用者之前，<em>C.__new__</em> 调用 <em>instance.__init__</em> 魔术方法对实例对象进行初始化：</p>
+</div><div class="cl-preview-section"><pre><code>instance.__init__()
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li><em>__new__</em> ，负责为创建实例对象(分配内存)；</li>
+<li><em>__init__</em> ，负责对实例对象进行初始化；</li>
+</ul>
+</div><div class="cl-preview-section"><p>由于 <em>__init__</em> 魔术方法执行时，实例对象 <em>self</em> 已经创建好了，因此无法对创建过程施加影响。另一方面，<em>__new__</em> 魔术方法刚执行时，实例对象还未诞生，因此它不可能以实例方法的形式存在，只能以类方法的形式存在。</p>
+</div><div class="cl-preview-section"><p>那么，有什么场景需要应用 <em>__new__</em> 魔术方法呢？——最典型的例子是：<strong>单例模式</strong> 的实现。</p>
+</div><div class="cl-preview-section"><p>举个例子，假设我们有一个计数器类 <em>Counter</em> 用于统计应用访问量：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">class</span> <span class="token class-name">Counter</span><span class="token punctuation">:</span>
+
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>value <span class="token operator">=</span> <span class="token number">0</span>
+        self<span class="token punctuation">.</span>lock <span class="token operator">=</span> Lock<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">inc</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">with</span> self<span class="token punctuation">.</span>lock<span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>value <span class="token operator">+=</span> <span class="token number">1</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在程序很多地方都会调用计数器的 <em>inc</em> 方法，对计数器进行自增：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python">counter <span class="token operator">=</span> Counter<span class="token punctuation">(</span><span class="token punctuation">)</span>
+counter<span class="token punctuation">.</span>inc<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>由于计数器全局只需一个，我们希望把它做成单例。换句话讲，不管我们调用 <em>Counter</em> 多少次，它都返回全局唯一的一个 <em>Counter</em> 实例：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> Counter<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">is</span> Counter<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>因此，当 <em>Counter</em> 创建第一个实例后，我们需要将它记录起来；后续再调用 <em>Counter</em> ，直接将其返回。结合 <em>__new__</em> 和 <em>__init__</em> 这两种魔术方法的运行机制，我们知道应该在 <em>__new__</em> 方法中做文章：</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token keyword">class</span> <span class="token class-name">Counter</span><span class="token punctuation">:</span>
+
+    instance <span class="token operator">=</span> <span class="token boolean">None</span>
+
+    <span class="token keyword">def</span> <span class="token function">__new__</span><span class="token punctuation">(</span>cls<span class="token punctuation">,</span> <span class="token operator">*</span>args<span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span> cls<span class="token punctuation">.</span>instance <span class="token keyword">is</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+            cls<span class="token punctuation">.</span>instance <span class="token operator">=</span> <span class="token builtin">super</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>__new__<span class="token punctuation">(</span>cls<span class="token punctuation">,</span> <span class="token operator">*</span>args<span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span>
+
+        <span class="token keyword">return</span> cls<span class="token punctuation">.</span>instance
+
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>value <span class="token operator">=</span> <span class="token number">0</span>
+        self<span class="token punctuation">.</span>lock <span class="token operator">=</span> Lock<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">inc</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">with</span> self<span class="token punctuation">.</span>lock<span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>value <span class="token operator">+=</span> <span class="token number">1</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>我们引入类属性 <em>instance</em> ，用于记录唯一的实例对象。在 <em>__new__</em> 方法中，我们先检查 <em>instance</em> 属性：如果发现它尚未创建，则调用父类 <em>__new__</em> 方法进行创建；否则，直接将实例返回。</p>
+</div><div class="cl-preview-section"><p>如果存在多个线程并发调用 <em>Counter</em> 创建实例对象的情况，将产生 <strong>竞争态</strong> 。举个例子，假设两个线程同时检查了 <em>instance</em> 属性，发现实例对象尚未创建，然后分头创建实例对象。</p>
+</div><div class="cl-preview-section"><p>解决竞争态的手段也很简单，只需为 <em>__new__</em> 函数也加上一把锁，就像 <em>inc</em> 方法一样：</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token keyword">class</span> <span class="token class-name">Counter</span><span class="token punctuation">:</span>
+
+    lock <span class="token operator">=</span> Lock<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    instance <span class="token operator">=</span> <span class="token boolean">None</span>
+
+    <span class="token keyword">def</span> <span class="token function">__new__</span><span class="token punctuation">(</span>cls<span class="token punctuation">,</span> <span class="token operator">*</span>args<span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">with</span> cls<span class="token punctuation">.</span>lock<span class="token punctuation">:</span>
+            <span class="token keyword">if</span> cls<span class="token punctuation">.</span>instance <span class="token keyword">is</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+                cls<span class="token punctuation">.</span>instance <span class="token operator">=</span> <span class="token builtin">super</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>__new__<span class="token punctuation">(</span>cls<span class="token punctuation">,</span> <span class="token operator">*</span>args<span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span>
+
+            <span class="token keyword">return</span> cls<span class="token punctuation">.</span>instance
+
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>value <span class="token operator">=</span> <span class="token number">0</span>
+
+    <span class="token keyword">def</span> <span class="token function">inc</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">with</span> self<span class="token punctuation">.</span>lock<span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>value <span class="token operator">+=</span> <span class="token number">1</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>注意到，例子将锁从实例属性，调整成类属性。这样一来，一把锁即可同时保护类方法( <em>__new__</em> )和实例方法( <em>inc</em> )。</p>
+</div><div class="cl-preview-section"><h2 id="metaclass">metaclass</h2>
+</div><div class="cl-preview-section"><p>在 <em>Python</em> 对象模型中，类型对象的类型是一个特殊的类型对象，称为 <strong>元类</strong> ( <em>metaclass</em> )。元类可以看作一个类型工厂，可以制造新的类型对象。</p>
+</div><div class="cl-preview-section"><p><em>type</em> 对象我们已经非常熟悉，它是 <em>Python</em> 内置的元类，提供了制造新类型的最基本能力。我们编写自定义类时，正是它在背后默默工作。</p>
+</div><div class="cl-preview-section"><p>元类引入了一种强大的魔力，但它的 <strong>抽象性</strong> 却令许多人为之却步。为此，我准备了一个非常典型的例子，力求将元类的原理一次性讲透。为尽量降低阅读难度，我对例子作了最大程度的简化。</p>
+</div><div class="cl-preview-section"><p>假设我们正在设计了一个用于实现插件的基类，它提供了 <em>serve_forever</em> 方法，具备根据指定时间间隔，循环执行 <em>process</em> 处理函数的基础能力：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">import</span> time
+
+<span class="token keyword">class</span> <span class="token class-name">BasePlugin</span><span class="token punctuation">:</span>
+    
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> interval<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>interval <span class="token operator">=</span> interval
+        
+    <span class="token keyword">def</span> <span class="token function">serve_forever</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">while</span> <span class="token boolean">True</span><span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>process<span class="token punctuation">(</span><span class="token punctuation">)</span>
+            time<span class="token punctuation">.</span>sleep<span class="token punctuation">(</span>self<span class="token punctuation">.</span>interval<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>当 <em>Python</em> 执行这段代码时，最终调用 <em>type</em> 对象完成 <em>BasePlugin</em> 类对象的创建，伪代码大致是这样的：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python">attrs <span class="token operator">=</span> <span class="token punctuation">{</span>
+    <span class="token string">'__init__'</span><span class="token punctuation">:</span> <span class="token operator">&lt;</span>function<span class="token operator">&gt;</span><span class="token punctuation">,</span>
+    <span class="token string">'serve_forever'</span><span class="token punctuation">:</span> <span class="token operator">&lt;</span>function<span class="token operator">&gt;</span><span class="token punctuation">,</span>
+<span class="token punctuation">}</span>
+
+BasePlugin <span class="token operator">=</span> <span class="token builtin">type</span><span class="token punctuation">(</span>name<span class="token operator">=</span><span class="token string">'BasePlugin'</span><span class="token punctuation">,</span> bases<span class="token operator">=</span><span class="token punctuation">(</span><span class="token builtin">object</span><span class="token punctuation">,</span><span class="token punctuation">)</span><span class="token punctuation">,</span> attrs<span class="token operator">=</span>attrs<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>实际插件作为 <em>BasePlugin</em> 的子类来组织，子类从基类继承了 <em>serve_forever</em> 的能力，并在 <em>process</em> 方法中实现具体处理逻辑：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">class</span> <span class="token class-name">BarPlugin</span><span class="token punctuation">(</span>BasePlugin<span class="token punctuation">)</span><span class="token punctuation">:</span>
+
+    <span class="token keyword">def</span> <span class="token function">process</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'bar processing'</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这时，确保子类 <em>BarPlugin</em> 实现了 <em>process</em> 方法就显得格外重要，只有满足这一点才算是一个合法的插件。</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">class</span> <span class="token class-name">FaultPlugin</span><span class="token punctuation">(</span>BasePlugin<span class="token punctuation">)</span><span class="token punctuation">:</span>
+
+    <span class="token keyword">def</span> <span class="token function">run</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'xxxx'</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><em>FaultPlugin</em> 就不是一个合法的插件，它没有实现 <em>process</em> 方法。然而，<em>Python</em> 默认无法发现这一点。</p>
+</div><div class="cl-preview-section"><p>那么，有没有办法让 <em>Python</em> 在创建新类时，自动检查它是否实现了某个方法呢？我们接着探索。</p>
+</div><div class="cl-preview-section"><p>理所当然，<em>FaultPlugin</em> 类是 <em>type</em> 的实例对象，默认也是 <em>type</em> 创建的：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python">attrs <span class="token operator">=</span> <span class="token punctuation">{</span>
+    <span class="token string">'run'</span><span class="token punctuation">:</span> <span class="token operator">&lt;</span>function<span class="token operator">&gt;</span>
+<span class="token punctuation">}</span>
+
+FaultPlugin <span class="token operator">=</span> <span class="token builtin">type</span><span class="token punctuation">(</span>name<span class="token operator">=</span><span class="token string">'FaultPlugin'</span><span class="token punctuation">,</span> bases<span class="token operator">=</span><span class="token punctuation">(</span>BasePlugin<span class="token punctuation">,</span><span class="token punctuation">)</span><span class="token punctuation">,</span> attrs<span class="token operator">=</span>attrs<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>但 <em>type</em> 作为一个通用的元类，并不会帮我们检查 <em>attrs</em> 属性空间，确保 <em>process</em> 函数存在。</p>
+</div><div class="cl-preview-section"><p>理论上，只要继承 <em>type</em> 来实现新元类，并在子��中重写 <em>type</em> 的默认行为，便可实现检查 <em>process</em> 函数的目的。那么，有办法为自定义类指定元类吗？答案是肯定的——我们可以在类定义中通过 <em>metaclass</em> 指定。</p>
+</div><div class="cl-preview-section"><p>假设我们实现的新元类名为 <em>PluginMeta</em> ，而 <em>BasePlugin</em> 通过 <em>metaclass</em> 参数指定以它为元类：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">class</span> <span class="token class-name">BasePlugin</span><span class="token punctuation">(</span>metaclass<span class="token operator">=</span>PluginMeta<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> interval<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>interval <span class="token operator">=</span> interval
+        
+    <span class="token keyword">def</span> <span class="token function">serve_forever</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">while</span> <span class="token boolean">True</span><span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>process<span class="token punctuation">(</span><span class="token punctuation">)</span>
+            time<span class="token punctuation">.</span>sleep<span class="token punctuation">(</span>self<span class="token punctuation">.</span>interval<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这意味着，<em>Python</em> 在创建 <em>BasePlugin</em> 类及子类对象时，将调用 <em>PluginMeta</em> ，而不是直接调用 <em>type</em> 了：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python">attrs <span class="token operator">=</span> <span class="token punctuation">{</span>
+    <span class="token string">'__init__'</span><span class="token punctuation">:</span> <span class="token operator">&lt;</span>function<span class="token operator">&gt;</span><span class="token punctuation">,</span>
+    <span class="token string">'serve_forever'</span><span class="token punctuation">:</span> <span class="token operator">&lt;</span>function<span class="token operator">&gt;</span><span class="token punctuation">,</span>
+<span class="token punctuation">}</span>
+
+BasePlugin <span class="token operator">=</span> PluginMeta<span class="token punctuation">(</span>name<span class="token operator">=</span><span class="token string">'BasePlugin'</span><span class="token punctuation">,</span> bases<span class="token operator">=</span><span class="token punctuation">(</span><span class="token builtin">object</span><span class="token punctuation">,</span><span class="token punctuation">)</span><span class="token punctuation">,</span> attrs<span class="token operator">=</span>attrs<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>由于实例对象是 <em>__new__</em> 魔术方法负责创建的，因此我们需要覆写 <em>type</em> 类的 <em>__new__</em> 方法：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">class</span> <span class="token class-name">PlulginMeta</span><span class="token punctuation">(</span><span class="token builtin">type</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+
+    <span class="token keyword">def</span> <span class="token function">__new__</span><span class="token punctuation">(</span>cls<span class="token punctuation">,</span> name<span class="token punctuation">,</span> bases<span class="token punctuation">,</span> dct<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span> name <span class="token operator">!=</span> <span class="token string">'BasePlugin'</span> <span class="token operator">and</span> <span class="token string">'process'</span> <span class="token operator">not</span> <span class="token keyword">in</span> dct<span class="token punctuation">:</span>
+            <span class="token keyword">raise</span> TypeError<span class="token punctuation">(</span><span class="token string">'subclass {} should implement process method'</span><span class="token punctuation">.</span><span class="token builtin">format</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token builtin">super</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>__new__<span class="token punctuation">(</span>cls<span class="token punctuation">,</span> name<span class="token punctuation">,</span> bases<span class="token punctuation">,</span> dct<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在子类 <em>__new__</em> 方法，我们先检查属性空间字典。如果发现 <em>process</em> 方法不存在，则直接抛出 <em>TypeError</em> 异常。注意到，基类 <em>BasePlugin</em> 没实现 <em>process</em> 是正常的，我们通过类名判断，对它豁免检查。</p>
+</div><div class="cl-preview-section"><p>现在，<em>Python</em> 就像有了火眼金睛一样，能够轻松识别非法插件子类—— <em>FaultPlugin</em> ：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python">TypeError<span class="token punctuation">:</span> subclass FaultPlugin should implement process method
+</code></pre>
+</div><div class="cl-preview-section"><ol>
+<li><em>FaultPlugin</em> 继承于 <em>BasePlugin</em> ，从中获得元类 <em>PluginMeta</em> ；</li>
+<li>当 <em>Python</em> 执行到 <em>FaultPlugin</em> 定义时，调用 <em>PluginMeta</em> 创建 <em>FaultPlugin</em> 类对象；</li>
+<li>这时 <em>PluginMeta.__new__</em> 开始执行，它检查类属性空间中是否包含 <em>process</em> 函数；</li>
+<li>由于 <em>FaultPlugin</em> 未实现 <em>process</em> 函数，<em>Python</em> 将抛出 <em>TypeError</em> 异常，正如代码中写的那样；</li>
+<li>正常情况下，<em>PluginMeta.__new__</em> 将调用基类版本，即 <em>type.__new__</em> 完成插件子类的创建；</li>
+</ol>
+</div><div class="cl-preview-section"><p>现在，我们把所有研究成果整合起来，形成一个完整的例子：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">import</span> time
+
+<span class="token keyword">class</span> <span class="token class-name">PlulginMeta</span><span class="token punctuation">(</span><span class="token builtin">type</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+
+    <span class="token keyword">def</span> <span class="token function">__new__</span><span class="token punctuation">(</span>cls<span class="token punctuation">,</span> name<span class="token punctuation">,</span> bases<span class="token punctuation">,</span> dct<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span> name <span class="token operator">!=</span> <span class="token string">'BasePlugin'</span> <span class="token operator">and</span> <span class="token string">'process'</span> <span class="token operator">not</span> <span class="token keyword">in</span> dct<span class="token punctuation">:</span>
+            <span class="token keyword">raise</span> TypeError<span class="token punctuation">(</span><span class="token string">'subclass {} should implement process method'</span><span class="token punctuation">.</span><span class="token builtin">format</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token builtin">super</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>__new__<span class="token punctuation">(</span>cls<span class="token punctuation">,</span> name<span class="token punctuation">,</span> bases<span class="token punctuation">,</span> dct<span class="token punctuation">)</span>
+
+<span class="token keyword">class</span> <span class="token class-name">BasePlugin</span><span class="token punctuation">(</span>metaclass<span class="token operator">=</span>PlulginMeta<span class="token punctuation">)</span><span class="token punctuation">:</span>
+
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> interval<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>interval <span class="token operator">=</span> interval
+
+    <span class="token keyword">def</span> <span class="token function">serve_forever</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">while</span> <span class="token boolean">True</span><span class="token punctuation">:</span>
+            self<span class="token punctuation">.</span>process<span class="token punctuation">(</span><span class="token punctuation">)</span>
+            time<span class="token punctuation">.</span>sleep<span class="token punctuation">(</span>self<span class="token punctuation">.</span>interval<span class="token punctuation">)</span>
+
+<span class="token keyword">class</span> <span class="token class-name">BarPlugin</span><span class="token punctuation">(</span>BasePlugin<span class="token punctuation">)</span><span class="token punctuation">:</span>
+
+    <span class="token keyword">def</span> <span class="token function">process</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'bar processing'</span><span class="token punctuation">)</span>
+
+bar <span class="token operator">=</span> BarPlugin<span class="token punctuation">(</span>interval<span class="token operator">=</span><span class="token number">5</span><span class="token punctuation">)</span>
+
+<span class="token keyword">class</span> <span class="token class-name">FooPlugin</span><span class="token punctuation">(</span>BasePlugin<span class="token punctuation">)</span><span class="token punctuation">:</span>
+
+    <span class="token keyword">def</span> <span class="token function">process</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'foo processing'</span><span class="token punctuation">)</span>
+
+foo <span class="token operator">=</span> FooPlugin<span class="token punctuation">(</span>interval<span class="token operator">=</span><span class="token number">5</span><span class="token punctuation">)</span>
+
+<span class="token keyword">class</span> <span class="token class-name">FaultPlugin</span><span class="token punctuation">(</span>BasePlugin<span class="token punctuation">)</span><span class="token punctuation">:</span>
+
+    <span class="token keyword">def</span> <span class="token function">run</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'xxxx'</span><span class="token punctuation">)</span>
+
+fault <span class="token operator">=</span> FaultPlugin<span class="token punctuation">(</span>interval<span class="token operator">=</span><span class="token number">5</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>例子所涉及了 <strong>类</strong> 对象、<strong>实例</strong> 对象以及 <strong>元类</strong> 对象，不同对象间关系可归纳如下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f39e82a0001f1a909460355.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>插件基类 <em>BasePlugin</em> ，插件子类 <em>BarPlugin</em> 、 <em>FooPlugin</em> 均为元类 <em>PluginMeta</em> 的实例；</li>
+<li>元类 <em>PluginMeta</em> 是 <em>type</em> 的子类，同时也是 <em>type</em> 的实例；</li>
+<li>由于执行 <em>FaultPlugin</em> 定义时抛了异常， <em>FaultPlugin</em> 类实例胎死腹中，它的实例 <em>fault</em> 更无从谈起；</li>
+<li>建议关系图与 <strong>对象模型</strong> 部分的对照阅读，进一步体会元类 <em>PluginMeta</em> 的位置、角色与作用；</li>
+</ul>
+</div><div class="cl-preview-section"><p>例子出于演示目的而设计，可能无法直接应用于工程项目，但相信它对启发元类应用思维会有所帮助。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5f39e80100011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6627">
+						<img src="https://img4.mukewang.com/5b8cd6570001575102000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕UI0052680</h4>
+						<div class="comment-text">自定义类型对象的实例，如果没有指定元类，应该是通过type的tp_call先后调用tp_new和tp_init完成实例的创建和初始化；如果类型对象指定了元类，是不是就意味着是实例的创建是通过所指定元类的tp_call完成tp_new和tp_init函数指针的调用呢？另外，如果一个元类的子类同时继承了其他正常的类，其创建应该还是会被元类拦截？</div>
+						<div>
+							
+								<div class="reply">讲师回复：第一个问题：是的。
+
+第二个问题，你是指元类子类的创建吗？如果是的话，就取决于子类有没有指定metaclass以及子类的父类有没有指定metaclass，跟子类的父类是不是元类没有关系。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-24</span>
+						<a href="/read/commentdetail/6627">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6627" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6615">
+						<img src="https://img2.mukewang.com/5b8cd6570001575102000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕UI0052680</h4>
+						<div class="comment-text">最近正在写一个数据表处理的类，每种数据的表头不一样，就想着父类若能特性化处理不同表格就太好了，实现之后发现只能通过子类传递表格的表头元组，方法定义在父类，当时内心就觉得无比别扭……而且万一子类没有定义列名属性一定就会死翘翘，当时也想到了直接将父类变成一个元类，子类的所有方法都由元类直接生产，所以元类的init被我定义的���长，最后虽然实现了目的，但是代码丑的不忍直视……文章里这处理方式，相比之下简直太简洁了，直接可以拿去改写我最初版本的父类</div>
+						<div>
+							
+								<div class="reply">讲师回复：哈哈，对卓越的追求永无止境~ 亲还可以看看标准库abc模块中，里面可能有一些东西可以直接拿来用，不用再造轮子，例如：abc. abstractmethod 。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-22</span>
+						<a href="/read/commentdetail/6615">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6615" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6614">
+						<img src="https://img4.mukewang.com/5b8cd6570001575102000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕UI0052680</h4>
+						<div class="comment-text">cls.instance = super().__new__(cls, *args, kwargs) 这里是不是少了两个*＊</div>
+						<div>
+							
+								<div class="reply">讲师回复：收到，多谢指正~</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-22</span>
+						<a href="/read/commentdetail/6614">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6614" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6603">
+						<img src="https://img.mukewang.com/5b8ce70a0001353702000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">网商路菜鸟</h4>
+						<div class="comment-text">Counter例子中, 用于计数的值value是否应放在__new__中（作为类静态变量）初始化？否则，每次创建新的Counter时，用于计数的value都会被初始化为0</div>
+						<div>
+							
+								<div class="reply">讲师回复：可以将代码贴到答疑群讨论一下哈：278378402</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-21</span>
+						<a href="/read/commentdetail/6603">
+							<span class="icon r"><i class="imwap-comment"></i><em>3</em></span>
+						</a>
+						<span data-cid="6603" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6569">
+						<img src="https://img1.mukewang.com/533e4d660001312002000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">我不是药神</h4>
+						<div class="comment-text">最后面的例子中 bar = BarPlugin()
+这里的BarPlugin的构造函数中要传 interval, 文中这样声明的话，会直接报错的</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-17</span>
+						<a href="/read/commentdetail/6569">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6569" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=76">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '34 metaclass 在程序开发中的妙用',
+					'CID': '1930',
+					'Teacher': 'fasionchan'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "34 metaclass 在程序开发中的妙用",
+                    desc: "突破技术瓶颈，迈向更高岗位",
+                    imgUrl: 'https:https://img.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/76',
+                    link: 'https://m.imooc.com/read/76'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

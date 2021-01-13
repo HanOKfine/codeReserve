@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>20 DOM 事件体系（一）</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="拉开你与普通面试者的差距">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "3";
+	var chapter_id = "1848";
+	var chapter_title = "20 DOM 事件体系（一）";
+	var aid = "70";
+	var a_name = "解锁前端面试体系核心攻略  ";
+	var a_price = "78.00";
+	var a_pic = "https://img4.mukewang.com/5e5c85e1000116c505400720.jpg";
+	var userId = 0;
+
+	var column_id = '70';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-12&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			20 DOM 事件体系（一）
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5ea6c2d40001eb8d06400426.jpg')"></div>
+	
+	
+		<a href="/read/70">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5e50a213000179ce12800720-40-40.jpg" alt="修言">
+				<h3>解锁前端面试体系核心攻略  </h3>
+				<p>修言 · 大型互联网公司业务线Owner</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">先相信你自己，然后别人才会相信你。<p class="author">——屠格涅夫</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>DOM 事件体系相关的基本功，大家需要从以下几个方面来掌握：</p>
+</div><div class="cl-preview-section"><ul>
+<li>DOM 事件流</li>
+<li>事件对象</li>
+<li>事件代理</li>
+<li>自定义事件</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="dom-事件流">DOM 事件流</h2>
+</div><div class="cl-preview-section"><h4 id="前置知识">前置知识</h4>
+</div><div class="cl-preview-section"><p>在理解事件流之前，大家首先要对以下三个名词有确切的认知：</p>
+</div><div class="cl-preview-section"><ol>
+<li>
+<p><code>事件流：它描述的是事件在页面中传播的</code><strong>顺序</strong></p>
+</li>
+<li>
+<p><code>事件：它描述的是发生在浏览器里的动作</code>。这个动作可以是用户触发的，也可以是浏览器触发的。像点击（click）、鼠标悬停（mouseover）、鼠标移走（mousemove）这些都是��件。</p>
+</li>
+<li>
+<p><code>事件监听函数：事件发生后，浏览器如何响应——用来应答事件的函数，就是事件监听函数，也叫事件处理程序。</code></p>
+</li>
+</ol>
+</div><div class="cl-preview-section"><h4 id="事件流的演进">事件流的演进</h4>
+</div><div class="cl-preview-section"><p>当下广为大家所接受的 JS 事件流规范，也并非一蹴而就。早年， IE 和 NetScape 两家浏览器厂商在事件机制的设计上，争得你死我活，谁也不认可谁。IE 提出了冒泡流，而 NetScape 只认捕获流。两家各干各的，搞得前端程序员那段日子过得很难，每次做网页兼容性适配都是一把鼻涕一把泪。好在后来正义的 W3C 介入了，在 W3C 的统一组织下，JS 同时支持了冒泡流和捕获流，并以此为确切的事件流标准。这个标准也叫做“DOM2事件流”。不标准的我们不聊，下面我们所有的讨论，都围绕这个板上钉钉的“DOM2事件流”展开。</p>
+</div><div class="cl-preview-section"><h4 id="一个事件的旅行">一个事件的旅行</h4>
+</div><div class="cl-preview-section"><p>W3C 标准约定了一个事件的传播过程要经过以下三个阶段：</p>
+</div><div class="cl-preview-section"><ol>
+<li>事件捕获阶段</li>
+<li>目标阶段</li>
+<li>事件冒泡阶段</li>
+</ol>
+</div><div class="cl-preview-section"><p>理解这个过程最好的方式就是读图了，下图中的箭头就代表着时间的“穿梭”路径：<br>
+<img src="https://img.mukewang.com/5ea6c2f20001815d11880874.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>当事件被触发时，首先经历的是一个捕获过程：事件会从最外层的元素开始“穿梭”，逐层“穿梭”到最内层元素。这个穿梭过程会持续到事件抵达它目标的元素（也就是真正触发这个事件的元素）为止。此时事件流就切换到了“目标阶段”——事件被目标元素所接收。然后事件会被“回弹”，���入到冒泡阶段——它会沿着来时的路“逆流而上”，一层一层再走回去。</p>
+</div><div class="cl-preview-section"><p>这个过程很像是大家小时候玩蹦床：从高处下落，触达蹦床后再弹起、回到高处，整个过程呈一个对称的“V”字形：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ea6c33e0001ffc112920904.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="事件对象基础">事件对象基础</h2>
+</div><div class="cl-preview-section"><p>当事件在层层的 DOM 元素中穿梭时，它可没闲着——所到之处，它都会触发当前元素上安装的事件处理函数。比如说你点击了上面图示中的 button 节点，但其实 div 节点上也安装了 click 这个事件的处理函数。那么当你点击 button 节点触发的这个 click 事件经过 div 节点时，div 节点上的处理函数照样会被触发。</p>
+</div><div class="cl-preview-section"><p>当 DOM 接受了一个事件、对应的事件处理函数被触发时，就会产生一个事件对象 event 作为处理函数的入参。这个对象中囊括了与事件有关的信息，比如事件具体是由哪个元素所触发、事件的类型等等。</p>
+</div><div class="cl-preview-section"><p>在触发 DOM 上的某个事件时，会产生一个事件对象 event。这个对象中包含着所有与事件有关的信息。</p>
+</div><div class="cl-preview-section"><p>包括导致事件的元素，事件的类型以及其他与特定事件相关的信息。</p>
+</div><div class="cl-preview-section"><p>现在我们来写一个简单的 HTML：</p>
+</div><div class="cl-preview-section"><pre class="  language-html"><code class="prism  language-html"><span class="token doctype">&lt;!DOCTYPE html&gt;</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>html</span> <span class="token attr-name">lang</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>en<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>head</span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>meta</span> <span class="token attr-name">charset</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>UTF-8<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>meta</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>viewport<span class="token punctuation">"</span></span> <span class="token attr-name">content</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>width=device-width, initial-scale=1.0<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>meta</span> <span class="token attr-name">http-equiv</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>X-UA-Compatible<span class="token punctuation">"</span></span> <span class="token attr-name">content</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>ie=edge<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>title</span><span class="token punctuation">&gt;</span></span>Document<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>title</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>head</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>body</span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>div</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>outer<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>button</span> <span class="token attr-name">id</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>button<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>点击我<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>button</span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>div</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>body</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>html</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>​</p>
+</div><div class="cl-preview-section"><p>咱们想看看这个 DEMO 中 button 的点击事件对象是啥样的，我们可以这么写对应的处理函数：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">function</span> <span class="token function">clickProcessor</span><span class="token punctuation">(</span>event<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>event<span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>没错，event 就是事件处理函数的第一个入参。我们把这个处理函数安装到 button 身上：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> button <span class="token operator">=</span> document<span class="token punctuation">.</span><span class="token function">getElementById</span><span class="token punctuation">(</span><span class="token string">'button'</span><span class="token punctuation">)</span>
+button<span class="token punctuation">.</span><span class="token function">addEventListener</span><span class="token punctuation">(</span><span class="token string">'click'</span><span class="token punctuation">,</span> clickProcessor<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>现在我们触发一个鼠标的点击动作时，对应的 event 对象就长这样：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ea6c39d00014e0512980144.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>我们可以看到里面除了一事件普遍都会具备的基本的信息，还包括了一些某一类事件特有的补充信息（比如针对点击事件，这里记录了鼠标位置相关的信息）。这个事件对象很有意思，我们接下来着重对它展开剖析。</p>
+</div><div class="cl-preview-section"><h2 id="事件对象考点梳理">事件对象考点梳理</h2>
+</div><div class="cl-preview-section"><p>在事件对象中，有一些属性和方法，是我们特别常用的。这部分东西比较碎，但考察频率较高。面试官有时会单独问你，但更多的是倾向于在编码类题目中直接看你能不能用它们来写代码。我们把这部分考点总结如下：</p>
+</div><div class="cl-preview-section"><h5 id="currenttarget">1. currentTarget</h5>
+</div><div class="cl-preview-section"><p>它记录了事件当下正在被哪个元素接收，即”正在经过哪个元素“。这个元素是一直在改变的，因为事件的传播毕竟是个层层穿梭的过程。</p>
+</div><div class="cl-preview-section"><p>如果事件处理程序绑定的元素，与具体的触发元素是一样的，那么函数中的 <code>this</code>、event.<code>currentTarget</code>、和 event.<code>target</code> 三个值是相同的。我们可以以此为依据，判断当前的元素是否就是目标元素。</p>
+</div><div class="cl-preview-section"><h4 id="target">2. target</h4>
+</div><div class="cl-preview-section"><p>指触发事件的具体目标，也就是最具体的那个元素，是事件的真正来源。</p>
+</div><div class="cl-preview-section"><p>就算事件处理程序没有绑定在目标元素上、而是绑定在了目标元素的父元素上，只要它是由内部的目标元素冒泡到父容器上触发的，那么我们仍然可以通过 target 来感知到目标元素才是事件真实的来源。</p>
+</div><div class="cl-preview-section"><p>（以上两个属性，是我们下节实现事件代理的好帮手）</p>
+</div><div class="cl-preview-section"><h4 id="preventdefault-阻止默认行为">3. preventDefault 阻止默认行为</h4>
+</div><div class="cl-preview-section"><p>这个方法用于阻止特定事件的默认行为，如 <code>a</code> 标签的跳转等。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js">e<span class="token punctuation">.</span><span class="token function">preventDefault</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><h4 id="stoppropagation-不再派发事件">stopPropagation 不再派发事件</h4>
+</div><div class="cl-preview-section"><p>这个方法用于终止事件在传播过程的捕获、目标处理或起泡阶段进一步传播。调用该方法后，该节点上处理该事件的处理程序将被调用，事件不再被分派到其他节点。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js">e<span class="token punctuation">.</span><span class="token function">stopPropagation</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>有时我们不希望一个事件的触发带来“一石激起千层浪”的效果，希望把它的影响面控制在目标元素这个范围内。这种情况下，千万别忘了 stopPropagation。</p>
+</div><div class="cl-preview-section"><h4 id="事件对象，是可以手动创建的">事件对象，是可以手动创建的</h4>
+</div><div class="cl-preview-section"><p>事件对象不一定需要你通过触发某个具体的事件来让它“自然发生”，它也可以手动创建的：</p>
+</div><div class="cl-preview-section"><p>我们可以借助 Event() 构造函数, 来创建一个新的事件对象 Event。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"> event <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Event</span><span class="token punctuation">(</span>typeArg<span class="token punctuation">,</span> eventInit<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>事件对象的这个特性，是我们创建自定义事件的基础——可能一些同学对自定义事件还比较陌生，但它确实非常重要。在四五年前，自定义事件就已经是考察一个前端是否资深的重要标准。随着前端技术的蓬勃发展，对资深前端的要求不断提高，自定义事件的能力变成了基础层次的能力，但它的不可或缺性仍然不可改变。</p>
+</div><div class="cl-preview-section"><h2 id="结语">结语</h2>
+</div><div class="cl-preview-section"><p>本节，我们针对事件机制中最最基础的一系列知识点进行了复习。在下节，我们会基于此展开对自定义事件、事件的绑定/委托等具备一定综合性的面试热点展开探讨。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5ea6c2d900011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6291">
+						<img src="https://img1.mukewang.com/54584e390001972002200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕勒0587794</h4>
+						<div class="comment-text">有个问题还望老师解答。
+本章中的“事件对象基础”中有一段话“ 当事件在层层的 DOM 元素中穿梭时，它可没闲着——所到之处，它都会触发当前元素上安装的事件处理函数。”
+我的问题是：我做父子元素的click事件测试时发现，事件在事件捕获阶段并没有触发事件处理函数。因为点击子元素，触发的是  子-父，而不是  父-子-父，这是为什么，为什么捕获阶段不触发事件？</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-24</span>
+						<a href="/read/commentdetail/6291">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6291" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5390">
+						<img src="https://img1.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">TokugawaNakashima</h4>
+						<div class="comment-text">"当事件被触发时，首先经历的是一个捕获过程：事件会从最外层的元素开始“穿梭”，逐层“穿梭”到最内层div。" 这句话，其实最内层也不一定室div对吧？</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-09</span>
+						<a href="/read/commentdetail/5390">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5390" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥78.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=70">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '20 DOM 事件体系（一）',
+					'CID': '1848',
+					'Teacher': '修言'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "20 DOM 事件体系（一）",
+                    desc: "拉开你与普通面试者的差距",
+                    imgUrl: 'https:https://img4.mukewang.com/5e5c85e1000116c505400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5e5c85e1000116c505400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/70',
+                    link: 'https://m.imooc.com/read/70'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

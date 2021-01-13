@@ -1,0 +1,785 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>19 多路复用：高性能服务器一定要采用非阻塞 Socket 编程模式</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="学好通用知识，提升技术竞争力">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2108";
+	var chapter_title = "19 多路复用：高性能服务器一定要采用非阻塞 Socket 编程模式";
+	var aid = "80";
+	var a_name = "零基础学透网络编程";
+	var a_price = "58.00";
+	var a_pic = "https://img2.mukewang.com/5ed8c1c600015fc805400720.jpg";
+	var userId = 0;
+
+	var column_id = '80';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-06-09&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			19 多路复用：高性能服务器一定要采用非阻塞 Socket 编程模式
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5ed9fd7f0001acfc06400359.jpg')"></div>
+	
+	
+		<a href="/read/80">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/5458620000018a2602200220-40-40.jpg" alt="陈子兴">
+				<h3>零基础学透网络编程</h3>
+				<p>陈子兴 · 资深软件架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">辛苦是获得一切的定律。<p class="author">——牛顿</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="前言">前言</h2>
+</div><div class="cl-preview-section"><p>前面专栏介绍的都是<strong>阻塞式</strong> Socket 编程，比如我们之前编写的 nwchecker 程序。由于此程序的功能非常简单，客户端定时发送消息，服务器只是做一个 echo 响应，所以通过<strong>阻塞式</strong> Socket 编程勉强能达到目的。</p>
+</div><div class="cl-preview-section"><p>nwchecker TCP 客户端只有一个<strong>文件描述符</strong>，采用<strong>阻塞式</strong> Socket 完全可以胜任。nwchecker TCP 服务器会涉及到多个<strong>文件描述符</strong>，我们的方案是为每一个新连接 fork 一个独立的子进程，由这个独立的子进程完成数据收发。然而这种解决方案也有很大弊端，因为系统能够创建的进程数量是有限的，是无法支撑高并发场景的。对于高并发的应用场景来说，还是得通过<strong>非阻塞式</strong> Socket 编程来解决，这是本文将要介绍的内容。</p>
+</div><div class="cl-preview-section"><p>首先我们了解一下<strong>阻塞式</strong>和<strong>非阻塞式</strong>的区别。</p>
+</div><div class="cl-preview-section"><h2 id="阻塞式与非阻塞式模型">阻塞式与非阻塞式模型</h2>
+</div><div class="cl-preview-section"><p>在前面的专栏介绍过 linux 系统 API 的调用流程，Linux 程序的执行模式分为<strong>用户态</strong>和<strong>内核态</strong>，应用程序逻辑运行在<strong>用户态</strong>，访问系统资源的逻辑运行在<strong>内核态</strong>。其实现代操作系统都是这种模式。</p>
+</div><div class="cl-preview-section"><p>当程序的执行逻辑从<strong>用户态</strong>切换到<strong>内核态</strong>时，会引发上下文的切换，会涉及到数据从<strong>用户态</strong>到<strong>内核态</strong>，或者是从<strong>内核态</strong>到<strong>用户态</strong>拷贝的问题。这时，系统 API 会提供<strong>阻塞式</strong>和<strong>非阻塞式</strong>两种调用方式。比如，我们调用 recv 函数接收 Socket 数据，recv 函数可以选择<strong>阻塞式</strong>或者是<strong>非阻塞式</strong>调用模式，不同的模式，编程风格是完全不同。假如 Socket 的接收缓冲区没有准备好要接收的数据，如果选择<strong>阻塞式</strong>调用，那么应用线程会被阻塞在 recv 调用上，不能继续执行，线程会处于等待状态，直到系统准备好数据；如果选择<strong>非阻塞式</strong>调用，那么应用线程不会被阻塞，recv 函数会立即返回。当系统准备好数据以后，会触发一个<strong>读事件</strong>，这就要求我们必须通过某种机制监听<strong>读事件</strong>，一般都是通过 I/O 多路复用机制来解决。</p>
+</div><div class="cl-preview-section"><p>我们通过两张图来感受一下<strong>阻塞式</strong>和<strong>非阻塞式</strong>的差异。</p>
+</div><div class="cl-preview-section"><p>阻塞式：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed9a9030001290710900600.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>非阻塞式：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed9a91500018bd811530500.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>从以上两张图可以看出，如果 read 函数采用<strong>阻塞式</strong>调用 ，当内核没有准备好的数据时，应用线程会被阻塞到 read 调用上，进入等待状态，直到有数据可以读取才返回。如果 read 函数采用<strong>非阻塞式</strong>调用，当内核没有准备好数据时，read 函数会返回 EAGAIN，线程不会被阻塞。当系统准备好数据以后，会触发一个<strong>读事件</strong>。</p>
+</div><div class="cl-preview-section"><p>对于逻辑比较简单的场景，比如逻辑简单的客户端程序，可以采用<strong>阻塞式</strong>编程模型，这样实现简单，容易理解。对于逻辑比较复杂的场景，比如高性能服务器，必须采用<strong>非阻塞式</strong>编程模型，而且要配合 <strong>I/O 多路复用</strong>机制。</p>
+</div><div class="cl-preview-section"><p>下来我们就介绍一下如何进行<strong>非阻塞式</strong> Socket 编程。</p>
+</div><div class="cl-preview-section"><h2 id="非阻塞式-socket-编程">非阻塞式 Socket 编程</h2>
+</div><div class="cl-preview-section"><p>首先需要声明的是：进行<strong>非阻塞式</strong> Socket 编程，也需要调用我们之前学习的 API，只不过需要对这些 API 做进一步的处理。将这些 API 分为四种情况：</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>数据接收函数，read、recv、recvfrom、recvmsg。read 一般是在读取磁盘文件时调用，recvmsg 函数在后面专栏会介绍。在<strong>阻塞</strong>模式下，如果系统接收缓冲区没有数据，应用线程会被阻塞。在<strong>非阻塞</strong>模式下，如果系统接收缓冲区没有数据，应用程序调用这些函数会返回 EAGAIN，你需要再次调用；</p>
+</li>
+<li>
+<p>数据发送函数，write、send、sendto、sendmsg。write 一般是在写入磁盘文件是调用，sendmsg 函数在后面专栏会介绍。在<strong>阻塞</strong>模式下，如果系统发送缓冲区已满，应用线程会被阻塞等待发送缓冲区有可用的空间。在<strong>非阻塞</strong>模式下，如果系统的发送缓冲区已满，那么应用层调用这些函数会返回 EAGAIN，表示你需要再次调用；</p>
+</li>
+<li>
+<p>客户端调用 connect 函数主动建立连接，我们知道 UDP Socket 调用 connect 函数只是绑定本地网络接口，不会有真正的连接过程，所以阻塞和非阻塞没有区别。对于 TCP Socket 来说，调用 connect 函数会触发<strong>三次握手</strong>过程。如果 TCP Socket 处于<strong>阻塞</strong>模式，调用 connect 函数要等到连接完成才返回。如果 TCP Socket 处于<strong>非阻塞</strong>模式，调用 connect 函数可能不会等到<strong>三次握手</strong>完成，而是发完第一个 SYN 报文段就返回，返回值是 EINPROCESS，这并不是出现错误，而是表示连接正在建立。关于非阻塞 TCP Socket 的连接建立，我们后续会专门讲解；</p>
+</li>
+<li>
+<p>服务器调用 accept 函数接收客户端的连接请求，如果没有新的客户端请求建立连接，并且 TCP Socket 处于<strong>阻塞</strong>模式，调用 accept 函数的线程会阻塞；否则 TCP Socket 处于<strong>非阻塞</strong>模式，调用 accept 函数会返回 EAGAIN。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>在 Linux 系统下将 Socket 设置为<strong>非阻塞模式</strong>，需要调用 fcntl 函数，原型如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token macro property">#<span class="token directive keyword">include</span> <span class="token string">&lt;unistd.h&gt;</span></span>
+<span class="token macro property">#<span class="token directive keyword">include</span> <span class="token string">&lt;fcntl.h&gt;</span></span>
+
+<span class="token keyword">int</span> <span class="token function">fcntl</span><span class="token punctuation">(</span><span class="token keyword">int</span> fd<span class="token punctuation">,</span> <span class="token keyword">int</span> cmd<span class="token punctuation">,</span> <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> <span class="token comment">/* arg */</span> <span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>fcntl 函数的功能非常丰富，我们只是用它将 Socket 设置为<strong>非阻塞</strong>模式。关于 fcntl 的细节可以参<a href="http://man7.org/linux/man-pages/man2/fcntl.2.html" title="fcntl">考官方手册</a>。</p>
+</div><div class="cl-preview-section"><ul>
+<li>fd 表示文件描述符；</li>
+<li>cmd 是传入的命令值。设置<strong>非阻塞</strong>模式要用到 F_GETFL 和 F_SETFL 两个标志位；</li>
+<li>arg 是可变参数，设置<strong>非阻塞</strong>模式，需要一个 int 型参数，取值是 O_NONBLOCK。</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>注意：当前 fd 可能还有其他标志位，首先需要通过 F_GETFL 获取当前标志位，然后将获取的已有标志位和 O_NONBLOCK 做一个“按位或”运算，最后通过 F_SETFL 设置给 Socket。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>在 Windows 系统上可以调用 ioctlsocket 函数将 Socket 设置为非阻塞模式，用法类似 fcntl，细节可以参考微软 MSDN。</p>
+</div><div class="cl-preview-section"><p>下来我们将之前编写的 nwchecker TCP Client/Server 程序改造成<strong>非阻塞</strong>模式。</p>
+</div><div class="cl-preview-section"><h2 id="将-nwchecker-tcp-clientserver-改造成非阻塞模式">将 nwchecker TCP Client/Server 改造成非阻塞模式</h2>
+</div><div class="cl-preview-section"><p>我们用 select 改造 nwchecker TCP Client/Server 程序，改造以后的程序保存在 “imooc-sock-core-tech\03-18_非阻塞Socket编程” 目录下面。我们先改造一下 nwchecker_client.c 程序。</p>
+</div><div class="cl-preview-section"><p>Socket 创建代码片段：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"> <span class="token number">28</span>     <span class="token keyword">struct</span> timeval timeout<span class="token punctuation">,</span> <span class="token operator">*</span>timeout_ptr <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+ <span class="token number">29</span>     fd_set readfds<span class="token punctuation">,</span> writefds<span class="token punctuation">;</span>
+ <span class="token number">30</span>     <span class="token keyword">int</span> events <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span><span class="token comment">// 1: read, 2: write, 3, read and write.</span>
+ <span class="token number">31</span>     <span class="token keyword">int</span> state <span class="token operator">=</span> CONN_UNCONNECTED<span class="token punctuation">;</span><span class="token comment">// 1: unconnected, 2: connected.</span>
+ <span class="token number">32</span>
+ <span class="token number">33</span>     <span class="token comment">// Used to receive the "pong" message from the server.</span>
+ <span class="token number">34</span>     <span class="token keyword">char</span> recv_buffer<span class="token punctuation">[</span><span class="token number">8</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">;</span>
+ <span class="token number">35</span>
+ <span class="token number">36</span>     sock_fd <span class="token operator">=</span> <span class="token function">socket</span><span class="token punctuation">(</span>AF_INET<span class="token punctuation">,</span> SOCK_STREAM<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">37</span>     <span class="token keyword">if</span> <span class="token punctuation">(</span>sock_fd <span class="token operator">==</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">39</span>         <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+ <span class="token number">40</span>     <span class="token punctuation">}</span>
+ <span class="token number">41</span>
+ <span class="token number">42</span>     <span class="token keyword">int</span> flags <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+ <span class="token number">43</span>     flags <span class="token operator">=</span> <span class="token function">fcntl</span><span class="token punctuation">(</span>sock_fd<span class="token punctuation">,</span> F_GETFL<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">44</span>     flags <span class="token operator">|</span><span class="token operator">=</span> O_NONBLOCK<span class="token punctuation">;</span>
+ <span class="token number">45</span>     <span class="token function">fcntl</span><span class="token punctuation">(</span>sock_fd<span class="token punctuation">,</span> F_SETFL<span class="token punctuation">,</span> flags<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">46</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>第 28 ~ 30 行声明了将要传给 select 函数的相关变量，分别是 timeout、readfds 和 writefds。变量 events 是用于记录客户端 fd 需要关心的事件，1 表示读事件，2 表示写事件，3 表示读写事件；</p>
+</li>
+<li>
+<p>第 31 行声明变量 state，简单记录客户端的连接状态；</p>
+<blockquote>
+<p>注意: 进行<strong>非阻塞</strong>式编程是离不开状态机的，根据程序逻辑的繁杂程度，状态机也会有简单和复杂之分。本程序只需要简单记录<strong>连接</strong>和<strong>未连接</strong>两种状态。</p>
+</blockquote>
+</li>
+<li>
+<p>第 36 ~ 40 行是创建 Socket，用变量 sock_fd 保存文件描述符；</p>
+</li>
+<li>
+<p>第 42 ~ 45 行是将 Socket 设置为<strong>非阻塞</strong>模式。第 43 行是通过 F_GETFL 获取 sock_fd 当前的标志，第 44 行通过“按位或”设置 O_NONBLOCK 标志，第 45 行将新标志重新设置给 sock_fd；</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>非阻塞</strong> TCP 连接代码片段：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"> <span class="token number">47</span>     <span class="token function">memset</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>serveraddr<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>serveraddr<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">48</span>
+ <span class="token number">49</span>     serveraddr<span class="token punctuation">.</span>sin_family <span class="token operator">=</span> AF_INET<span class="token punctuation">;</span>
+ <span class="token number">50</span>     serveraddr<span class="token punctuation">.</span>sin_port <span class="token operator">=</span> <span class="token function">htons</span><span class="token punctuation">(</span>na<span class="token operator">-&gt;</span>port<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">51</span>     serveraddr<span class="token punctuation">.</span>sin_addr<span class="token punctuation">.</span>s_addr <span class="token operator">=</span> <span class="token function">inet_addr</span><span class="token punctuation">(</span>na<span class="token operator">-&gt;</span>ip<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">52</span>
+ <span class="token number">53</span>     rc <span class="token operator">=</span> <span class="token function">connect</span><span class="token punctuation">(</span>sock_fd<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">struct</span> sockaddr<span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>serveraddr<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>serveraddr<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">54</span>     <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">==</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">55</span>         rc <span class="token operator">=</span> errno<span class="token punctuation">;</span>
+ <span class="token number">56</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">!=</span> EINPROGRESS <span class="token operator">&amp;&amp;</span> rc <span class="token operator">!=</span> EWOULDBLOCK<span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">58</span>             <span class="token function">close</span><span class="token punctuation">(</span>sock_fd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">59</span>             <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+ <span class="token number">60</span>         <span class="token punctuation">}</span>
+ <span class="token number">61</span>         events <span class="token operator">|</span><span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">;</span>
+ <span class="token number">62</span>     <span class="token punctuation">}</span><span class="token keyword">else</span><span class="token punctuation">{</span>
+ <span class="token number">63</span>         <span class="token comment">// connection ok</span>
+ <span class="token number">64</span>         state <span class="token operator">=</span> CONN_CONNECTED<span class="token punctuation">;</span>
+ <span class="token number">65</span>         timeout<span class="token punctuation">.</span>tv_sec <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+ <span class="token number">66</span>         timeout<span class="token punctuation">.</span>tv_usec <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+ <span class="token number">67</span>         timeout_ptr <span class="token operator">=</span> <span class="token operator">&amp;</span>timeout<span class="token punctuation">;</span>
+ <span class="token number">68</span>         events <span class="token operator">&amp;</span><span class="token operator">=</span> <span class="token number">0x1</span><span class="token punctuation">;</span>
+ <span class="token number">69</span>         <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"Connection success...1\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">70</span>     <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>第 47 ~ 51 行是构造目标服务器 Socket 地址；</li>
+<li>第 53 行是调用 connect 函数，重点是处理返回值；</li>
+<li>第 54 ~ 61 行是处理连接没有一次完成的情况，虽然返回值是 -1，我们仍然需要检查变量 errno 的取值，如果变量 errno 取值是 EINPROGRESS 和 EWOULDBLOCK 表示连接正在进行中，此时在第 61 行设置监听“写”事件；</li>
+<li>第 62 ~ 70 行是处理 connect 一次调用成功的情况，此时我们直接将连接状态设置为 CONN_CONNECTED 状态，在第 68 行设置监听“读”事件。</li>
+</ul>
+</div><div class="cl-preview-section"><p>select 代码片段：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"> <span class="token number">94</span>     <span class="token keyword">while</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">95</span>         <span class="token function">FD_ZERO</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>readfds<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">96</span>         <span class="token function">FD_ZERO</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>writefds<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">97</span>
+ <span class="token number">98</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span>events <span class="token operator">&amp;</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+ <span class="token number">99</span>             <span class="token function">FD_SET</span><span class="token punctuation">(</span>sock_fd<span class="token punctuation">,</span> <span class="token operator">&amp;</span>readfds<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">100</span>         <span class="token punctuation">}</span>
+<span class="token number">101</span>
+<span class="token number">102</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span>events <span class="token operator">&amp;</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+<span class="token number">103</span>             <span class="token function">FD_SET</span><span class="token punctuation">(</span>sock_fd<span class="token punctuation">,</span> <span class="token operator">&amp;</span>writefds<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">104</span>         <span class="token punctuation">}</span>
+<span class="token number">105</span>
+<span class="token number">106</span>         rc <span class="token operator">=</span> <span class="token function">select</span><span class="token punctuation">(</span>sock_fd<span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>readfds<span class="token punctuation">,</span> <span class="token operator">&amp;</span>writefds<span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> timeout_ptr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">107</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">==</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+<span class="token number">109</span>             <span class="token keyword">if</span> <span class="token punctuation">(</span>errno <span class="token operator">==</span> EINTR<span class="token punctuation">)</span><span class="token punctuation">{</span>
+<span class="token number">110</span>                 <span class="token keyword">continue</span><span class="token punctuation">;</span>
+<span class="token number">111</span>             <span class="token punctuation">}</span>
+<span class="token number">112</span>             <span class="token keyword">break</span><span class="token punctuation">;</span>
+<span class="token number">113</span>         <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>第 94 行是循环处理语句；</li>
+<li>第 95 ~ 96 行是将 readfds 和 writefds 初始化，这是必须要做的步骤；</li>
+<li>第 98 ~ 100 行是设置读事件；</li>
+<li>第 102 ~ 104 行是设置写事件；</li>
+<li>第 106 是 select 调用。注意，第一个参数是最大 fd 加 1；</li>
+<li>第 107 ~ 113 行是处理 select 返回值，如果 select 返回的是 -1，此时需要检查 errno 取值是否为 EINTR，EINTR 表示 select 是由于系统中断返回的，所以还需要继续调用 select；</li>
+</ul>
+</div><div class="cl-preview-section"><p>非阻塞连接处理代码片段：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token number">115</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span>state <span class="token operator">==</span> CONN_UNCONNECTED<span class="token punctuation">)</span><span class="token punctuation">{</span>
+<span class="token number">116</span>             <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">FD_ISSET</span><span class="token punctuation">(</span>sock_fd<span class="token punctuation">,</span> <span class="token operator">&amp;</span>writefds<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+<span class="token number">117</span>                 <span class="token keyword">int</span> err <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token number">118</span>                 <span class="token keyword">int</span> len <span class="token operator">=</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>err<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">119</span>                 rc <span class="token operator">=</span> <span class="token function">getsockopt</span><span class="token punctuation">(</span>sock_fd<span class="token punctuation">,</span> SOL_SOCKET<span class="token punctuation">,</span> SO_ERROR<span class="token punctuation">,</span> <span class="token operator">&amp;</span>err<span class="token punctuation">,</span> <span class="token operator">&amp;</span>len<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">120</span>                 <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span>
+<span class="token number">121</span>                     rc <span class="token operator">=</span> err<span class="token punctuation">;</span>
+<span class="token number">122</span>
+<span class="token number">123</span>                 <span class="token keyword">if</span> <span class="token punctuation">(</span>err <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+<span class="token number">124</span>                     <span class="token keyword">if</span><span class="token punctuation">(</span> err <span class="token operator">==</span> ECONNREFUSED <span class="token operator">||</span>
+<span class="token number">125</span>                             err <span class="token operator">==</span> ECONNRESET <span class="token operator">||</span>
+<span class="token number">126</span>                             err <span class="token operator">==</span> ETIMEDOUT <span class="token operator">||</span>
+<span class="token number">127</span>                             err <span class="token operator">==</span> EHOSTUNREACH <span class="token operator">||</span>
+<span class="token number">128</span>                             err <span class="token operator">==</span> ENETUNREACH <span class="token operator">||</span>
+<span class="token number">129</span>                             err <span class="token operator">==</span> ENETDOWN <span class="token operator">||</span>
+<span class="token number">130</span>                             err <span class="token operator">==</span> EINVAL<span class="token punctuation">)</span><span class="token punctuation">{</span>
+<span class="token number">132</span>                         <span class="token keyword">break</span><span class="token punctuation">;</span>
+<span class="token number">133</span>                     <span class="token punctuation">}</span>
+<span class="token number">134</span>                 <span class="token punctuation">}</span>
+<span class="token number">135</span>                 <span class="token comment">// connection ok</span>
+<span class="token number">136</span>                 state <span class="token operator">=</span> CONN_CONNECTED<span class="token punctuation">;</span>
+<span class="token number">137</span>                 timeout_ptr <span class="token operator">=</span> <span class="token operator">&amp;</span>timeout<span class="token punctuation">;</span>
+<span class="token number">138</span>                 events <span class="token operator">&amp;</span><span class="token operator">=</span> <span class="token number">0x1</span><span class="token punctuation">;</span>
+<span class="token number">140</span>             <span class="token punctuation">}</span>
+<span class="token number">141</span>         <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>第 115 行是通过 state 变量检查连接是否建立；</li>
+<li>第 116 行是检查写事件是否发生，对于非阻塞式连接，需要检查写事件；</li>
+<li>第 117 ~ 121 行是调用 getsockopt 获取 Socket 选项 SO_ERROR 的取值。Socket 选项 SO_ERROR 记录了连接的当前状态，取值保存在变量 err 中；</li>
+<li>第 123 ~ 134 行是检查 err 的取值，如果 err 取值是 0 表示连接成功；如果 err 取值不是 0，那么还需要判断取值是否为代码中列出的错误码，如果是这些错误码，表示连接失败；</li>
+<li>第 136 ~ 138 行表示连接成功以后，设置连接状态，设置读事件；</li>
+</ul>
+</div><div class="cl-preview-section"><p>数据收发代码片段：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token number">143</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span>state <span class="token operator">==</span> CONN_CONNECTED<span class="token punctuation">)</span><span class="token punctuation">{</span>
+<span class="token number">144</span>             <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token punctuation">(</span>events <span class="token operator">&amp;</span> <span class="token number">2</span><span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token function">FD_ISSET</span><span class="token punctuation">(</span>sock_fd<span class="token punctuation">,</span> <span class="token operator">&amp;</span>writefds<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+<span class="token number">145</span>                 events <span class="token operator">&amp;</span><span class="token operator">=</span> <span class="token number">0x1</span><span class="token punctuation">;</span>
+<span class="token number">146</span>                 rc <span class="token operator">=</span> <span class="token function">send</span><span class="token punctuation">(</span>sock_fd<span class="token punctuation">,</span> send_msg<span class="token punctuation">,</span> send_msg_len<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">147</span>                 <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">==</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+<span class="token number">149</span>                     <span class="token keyword">if</span> <span class="token punctuation">(</span>errno <span class="token operator">==</span> EINTR<span class="token punctuation">)</span><span class="token punctuation">{</span>
+<span class="token number">150</span>                         <span class="token keyword">continue</span><span class="token punctuation">;</span>
+<span class="token number">151</span>                     <span class="token punctuation">}</span><span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>errno <span class="token operator">==</span> EAGAIN<span class="token punctuation">)</span><span class="token punctuation">{</span>
+<span class="token number">152</span>                         events <span class="token operator">|</span><span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">;</span>
+<span class="token number">153</span>                     <span class="token punctuation">}</span><span class="token keyword">else</span><span class="token punctuation">{</span>
+<span class="token number">154</span>                         <span class="token keyword">break</span><span class="token punctuation">;</span>
+<span class="token number">155</span>                     <span class="token punctuation">}</span>
+<span class="token number">156</span>                 <span class="token punctuation">}</span>
+<span class="token number">161</span>             <span class="token punctuation">}</span>
+<span class="token number">164</span>             <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">FD_ISSET</span><span class="token punctuation">(</span>sock_fd<span class="token punctuation">,</span> <span class="token operator">&amp;</span>readfds<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+<span class="token number">165</span>                 rc <span class="token operator">=</span> <span class="token function">recv</span><span class="token punctuation">(</span>sock_fd<span class="token punctuation">,</span> recv_buffer<span class="token punctuation">,</span> <span class="token number">7</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">166</span>                 <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+<span class="token number">168</span>                     <span class="token keyword">break</span><span class="token punctuation">;</span>
+<span class="token number">169</span>                 <span class="token punctuation">}</span>
+<span class="token number">170</span>
+<span class="token number">171</span>                 <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">==</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+<span class="token number">173</span>                     <span class="token keyword">if</span> <span class="token punctuation">(</span>errno <span class="token operator">==</span> EINTR<span class="token punctuation">)</span><span class="token punctuation">{</span>
+<span class="token number">174</span>                         <span class="token keyword">continue</span><span class="token punctuation">;</span>
+<span class="token number">175</span>                     <span class="token punctuation">}</span><span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>errno <span class="token operator">==</span> EAGAIN<span class="token punctuation">)</span><span class="token punctuation">{</span>
+<span class="token number">176</span>                         <span class="token punctuation">;</span><span class="token comment">// do nothing</span>
+<span class="token number">177</span>                     <span class="token punctuation">}</span><span class="token keyword">else</span><span class="token punctuation">{</span>
+<span class="token number">178</span>                         <span class="token keyword">break</span><span class="token punctuation">;</span>
+<span class="token number">179</span>                     <span class="token punctuation">}</span>
+<span class="token number">180</span>                 <span class="token punctuation">}</span>
+<span class="token number">185</span>             <span class="token punctuation">}</span>
+<span class="token number">186</span>         <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>第 143 行检查连接是否处于 CONN_CONNECTED 状态进；</li>
+<li>第 144 行表示没有设置写事件，或者是设置了写事件，但是写事件发生才调用 send 函数发送数据；</li>
+<li>第 145 行表示取消写事件，我们不是每次都需要设置写事件的。每次发送都设置写事件，也是一种浪费；</li>
+<li>第 147 ~ 156 行是处理 send 发送失败的情况，此时要检查 errno 的取值，如果 errno 取值是 EINTR，表示 send 是由于信号中断返回，需要继续调用；如果 errno 取值是 EAGAIN，表示 Socket 发送缓冲区已满，需要等待写事件发生，所以在 152 行设置写事件；</li>
+<li>第 154 行是处理发送失败的情况；</li>
+<li>第 164 行是检查 sock_fd 是否有读事件发生；</li>
+<li>第 165 行是调用 recv 函数接收数据；</li>
+<li>第 166 ~ 169 行是 recv 返回 0 的情况，表示连接被对方关闭；</li>
+<li>第 171 ~ 180 行是 recv 返回 -1 的情况，此时同样需要处理 EINTR 和 EAGAIN 的情况。recv 返回 EAGAIN 表示当前 Socket 接收缓冲区没有数据，需要等待读事件发生。</li>
+</ul>
+</div><div class="cl-preview-section"><p>nwchecker_server.c 的改造方法和 nwchecker_client.c 类似，不同之处是 nwchecker Server 会接收不同客户端的连接请求，所以我们为每一个客户端抽象一个 nwc_connection 对象，记录每一个连接的上下文信息。关于 nwchecker_server.c 改造的细节，我们就不再一一介绍，参考客户端分析过程很容易理解。</p>
+</div><div class="cl-preview-section"><h2 id="总结">总结</h2>
+</div><div class="cl-preview-section"><p>本文首先是介绍了<strong>阻塞式</strong>和<strong>非阻塞式</strong> 模型的基本概念。紧接着介绍了在<strong>非阻塞</strong>模式下 ，Socket API 需要做的一些处理。最后，我们通过 select 将 nwchecker TCP Client/Server 程序改造成了<strong>非阻塞</strong>模式，并且对 nwchecker TCP Client 程序的实现展开了详细的分析。尽管我们没有在文中分析 nwchecker TCP Server 程序的实现，但是你看了具体实现以后，一定能够轻松理解。</p>
+</div><div class="cl-preview-section"><p>现在我们学完了<strong>阻塞式</strong>和<strong>非阻塞式</strong> Socket 编程的方法，不知道你是否体会到<strong>阻塞式</strong> Socket 编程逻辑简单，容易理解。而<strong>非阻塞式</strong> Socket 编程逻辑复杂，往往要配合状态机，不是很好理解。那我们在实践中到底如何选择这两种模式呢？</p>
+</div><div class="cl-preview-section"><p>其实很好判断，如果你的 Socket 程序是一个客户端程序，逻辑比较简单，只有一个 fd，那么选择<strong>阻塞式</strong> Socket；如果你的 Socket 程序是一个服务器程序，fd 可能有多个，那么只能选择<strong>非阻塞式</strong> Socket，并且要配合 I/O 多路复用机制。</p>
+</div><div class="cl-preview-section"><h2 id="思考时间">思考时间</h2>
+</div><div class="cl-preview-section"><ol>
+<li>
+<p>请将 nwchecker UDP Client/Server 改造成非阻塞模式。（提示：可以采用 poll 或者 select）</p>
+</li>
+<li>
+<p>请将 nwchecker Unix 域 Client/Server 改造成非阻塞模式。（提示：可以采用 poll 或者 select）</p>
+</li>
+</ol>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img1.mukewang.com/5ed9fd84000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=80">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '19 多路复用：高性能服务器一定要采用非阻塞 Socket 编程模式',
+					'CID': '2108',
+					'Teacher': '陈子兴'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "19 多路复用：高性能服务器一定要采用非阻塞 Socket 编程模式",
+                    desc: "学好通用知识，提升技术竞争力",
+                    imgUrl: 'https:https://img2.mukewang.com/5ed8c1c600015fc805400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5ed8c1c600015fc805400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/80',
+                    link: 'https://m.imooc.com/read/80'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

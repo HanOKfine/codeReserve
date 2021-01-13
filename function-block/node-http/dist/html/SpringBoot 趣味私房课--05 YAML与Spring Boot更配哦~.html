@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>05 YAML与Spring Boot更配哦~</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="够吃管饱的SpringBoot大餐">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "5";
+	var chapter_id = "1801";
+	var chapter_title = "05 YAML与Spring Boot更配哦~";
+	var aid = "75";
+	var a_name = "SpringBoot 趣味私房课";
+	var a_price = "58.00";
+	var a_pic = "https://img3.mukewang.com/5e9cfd1f0001ece605400720.jpg";
+	var userId = 0;
+
+	var column_id = '75';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-26&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			05 YAML与Spring Boot更配哦~
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5e9cff1e00017dc806400359.jpg')"></div>
+	
+	
+		<a href="/read/75">
+			<div class="course-entry">
+				<img src="https://img2.mukewang.com/5e776f3c000149fd10801080-40-40.jpg" alt="刘水镜">
+				<h3>SpringBoot 趣味私房课</h3>
+				<p>刘水镜 · 知名 A.I. 公司 Java 工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">不想当将军的士兵，不是好士兵。<p class="author">——拿破仑</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="yaml简介">1. YAML简介</h2>
+</div><div class="cl-preview-section"><blockquote>
+<p>YAML（/ˈjæməl/，尾音类似 camel 骆驼）是一个可读性高，用来表达数据序列化的格式。YAML 参考了其他多种语言，包括：C 语言、Python、Perl，并从 XML、电子邮件的数据格式（RFC 2822）中获得灵感。Clark Evans 在 2001 年首次发表了这种语言，另外 Ingy döt Net 与 Oren Ben-Kiki 也是这语言的共同设计者。当前已经有数种编程语言或脚本语言支持（或者说解析）这种语言。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>——维基百科</p>
+</div><div class="cl-preview-section"><p>Spring（以及其他主流 Java 框架）的配置文件从最开始的 XML 到后来的 Properties ，再到现在比较流行的 YAML 。一路的演变越来越关注数据本身，这一点从 YAML 的名字就可见一斑。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>YAML: YAML Ain’t Markup Language</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="yaml与properties">2. YAML与Properties</h2>
+</div><div class="cl-preview-section"><p><code>YAML 不是一种标记语言</code> 作者通过 YAML 的名字也正是想传达这种语言以数据做为中心，而不是以标记语言为重点，下面我们来看看 YAML 跟 Properties 有哪些不同吧（示例来自 <a href="https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-external-config-yaml">Spring Boot Reference Guide</a>）。</p>
+</div><div class="cl-preview-section"><p>Properties：</p>
+</div><div class="cl-preview-section"><pre class="  language-yaml"><code class="prism  language-yaml">environments.dev.url=https<span class="token punctuation">:</span>//dev.example.com
+environments.dev.name=Developer Setup
+environments.prod.url=https<span class="token punctuation">:</span>//another.example.com
+environments.prod.name=My Cool App
+</code></pre>
+</div><div class="cl-preview-section"><p>YAML：</p>
+</div><div class="cl-preview-section"><pre class="  language-yaml"><code class="prism  language-yaml"><span class="token key atrule">environments</span><span class="token punctuation">:</span>
+	<span class="token key atrule">dev</span><span class="token punctuation">:</span>
+		<span class="token key atrule">url</span><span class="token punctuation">:</span> https<span class="token punctuation">:</span>//dev.example.com
+		<span class="token key atrule">name</span><span class="token punctuation">:</span> Developer Setup
+	<span class="token key atrule">prod</span><span class="token punctuation">:</span>
+		<span class="token key atrule">url</span><span class="token punctuation">:</span> https<span class="token punctuation">:</span>//another.example.com
+		<span class="token key atrule">name</span><span class="token punctuation">:</span> My Cool App
+</code></pre>
+</div><div class="cl-preview-section"><p>比起 XML 来，不管是 Properties 还是 YAML 都已经非常简洁了，都很好的体现了以数据为中心的理念。不过从结构上看 YAML 更加具有整体性和层次感，一眼看上去更容易体现上述配置是对一个对象的各个属性的赋值，而 Properties 在这一点上稍微弱了一点，它的内容一眼看上去更像是四条配置项，至于它们之间是什么关系并不是很明确。而且 YAML 的写法更加简洁一些（用缩进代替了重复的前缀）。</p>
+</div><div class="cl-preview-section"><h2 id="yaml语法">3. YAML语法</h2>
+</div><div class="cl-preview-section"><h3 id="基本规则">3.1 基本规则</h3>
+</div><div class="cl-preview-section"><ul>
+<li>大小写敏感</li>
+<li>使用空格缩进表示层级关系</li>
+<li>缩进的空格数目没有要求，同级元素左侧对齐即可</li>
+<li>使用 # 注释，只有行注释，没有块注释</li>
+<li>key 与 value 用 <code>:</code> 加上空格来分割</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="基本组件">3.2 基本组件</h3>
+</div><div class="cl-preview-section"><p>YAML 基本组件主要就两种：</p>
+</div><div class="cl-preview-section"><ul>
+<li>对象（映射/字典）</li>
+<li>数组（列表）</li>
+</ul>
+</div><div class="cl-preview-section"><p>对象：</p>
+</div><div class="cl-preview-section"><pre class="  language-yaml"><code class="prism  language-yaml"><span class="token key atrule">person</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> John Smith
+  <span class="token key atrule">age</span><span class="token punctuation">:</span> <span class="token number">33</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>数组：</p>
+</div><div class="cl-preview-section"><pre class="  language-yaml"><code class="prism  language-yaml"><span class="token punctuation">-</span> apple
+<span class="token punctuation">-</span> banana
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="数据类型">3.3 数据类型</h3>
+</div><div class="cl-preview-section"><ul>
+<li>字符串</li>
+<li>布尔值</li>
+<li>数值（整型、浮点）</li>
+<li>Null</li>
+<li>日期时间（Date、Time）</li>
+</ul>
+</div><div class="cl-preview-section"><p>示例：</p>
+</div><div class="cl-preview-section"><pre class="  language-yaml"><code class="prism  language-yaml"><span class="token key atrule">number</span><span class="token punctuation">:</span> <span class="token number">123</span>
+<span class="token key atrule">boolean</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+<span class="token key atrule">string</span><span class="token punctuation">:</span> hello
+<span class="token key atrule">null</span><span class="token punctuation">:</span> <span class="token null important">~</span>
+<span class="token key atrule">date</span><span class="token punctuation">:</span> <span class="token datetime number">2019-06-09</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>OK，有了以上这些知识，应对我们接下来的实战内容已经足够了，YAML 还有一些高级用法，如果感兴趣可以自己去探索一下。</p>
+</div><div class="cl-preview-section"><h2 id="spring-boot常用配置项">4. Spring Boot常用配置项</h2>
+</div><div class="cl-preview-section"><p>常用配置项：</p>
+</div><div class="cl-preview-section"><pre class="  language-yaml"><code class="prism  language-yaml"><span class="token key atrule">spring</span><span class="token punctuation">:</span>
+  <span class="token comment"># 数据源配置</span>
+  <span class="token key atrule">datasource</span><span class="token punctuation">:</span>
+    <span class="token key atrule">type</span><span class="token punctuation">:</span> com.alibaba.druid.pool.DruidDataSource
+    <span class="token key atrule">url</span><span class="token punctuation">:</span> jdbc<span class="token punctuation">:</span>mysql<span class="token punctuation">:</span>//127.0.0.1<span class="token punctuation">:</span>3306/spring_boot
+    <span class="token key atrule">username</span><span class="token punctuation">:</span> root
+    <span class="token key atrule">password</span><span class="token punctuation">:</span> <span class="token number">123456</span>
+    <span class="token key atrule">driver-class-name</span><span class="token punctuation">:</span> com.mysql.jdbc.Driver
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> druid
+  <span class="token key atrule">druid</span><span class="token punctuation">:</span>
+    <span class="token comment"># 初始化大小，最小，最大</span>
+    <span class="token key atrule">initialSize</span><span class="token punctuation">:</span> <span class="token number">5</span>
+    <span class="token key atrule">minIdle</span><span class="token punctuation">:</span> <span class="token number">5</span>
+    <span class="token key atrule">maxActive</span><span class="token punctuation">:</span> <span class="token number">20</span>
+    <span class="token comment"># 配置获取连接等待超时的时间</span>
+    <span class="token key atrule">maxWait</span><span class="token punctuation">:</span> <span class="token number">60000</span>
+    <span class="token comment"># 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒</span>
+    <span class="token key atrule">timeBetweenEvictionRunsMillis</span><span class="token punctuation">:</span> <span class="token number">60000</span>
+    <span class="token comment"># 配置一个连接在池中最小生存的时间，单位是毫秒</span>
+    <span class="token key atrule">minEvictableIdleTimeMillis</span><span class="token punctuation">:</span> <span class="token number">300000</span>
+  
+  <span class="token comment"># http请求</span>
+  <span class="token key atrule">http</span><span class="token punctuation">:</span>
+  	<span class="token comment">#json序列化框架</span>
+    <span class="token key atrule">converters</span><span class="token punctuation">:</span>
+      <span class="token key atrule">preferred-json-mapper</span><span class="token punctuation">:</span> fastjson
+    <span class="token comment">#上传文件、请求最大限制</span>
+    <span class="token key atrule">multipart</span><span class="token punctuation">:</span>
+      <span class="token key atrule">max-file-size</span><span class="token punctuation">:</span> 50MB
+      <span class="token key atrule">max-request-size</span><span class="token punctuation">:</span> 50MB
+
+  <span class="token comment"># Spring MVC配置</span>
+  <span class="token key atrule">mvc</span><span class="token punctuation">:</span>
+    <span class="token key atrule">dispatch-options-request</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+    <span class="token key atrule">static-path-pattern</span><span class="token punctuation">:</span> /**
+
+  <span class="token comment"># 激活环境配置</span>
+  <span class="token key atrule">profiles</span><span class="token punctuation">:</span>
+    <span class="token key atrule">active</span><span class="token punctuation">:</span> local
+
+  <span class="token comment"># Redis配置</span>
+  <span class="token key atrule">redis</span><span class="token punctuation">:</span>
+    <span class="token key atrule">host</span><span class="token punctuation">:</span> 127.0.0.1
+    <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">6379</span>
+
+  <span class="token comment"># 应用名</span>
+  <span class="token key atrule">application</span><span class="token punctuation">:</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> springboot
+
+<span class="token comment"># Redis客户端</span>
+<span class="token key atrule">jedis</span><span class="token punctuation">:</span>
+  <span class="token key atrule">pool</span><span class="token punctuation">:</span>
+    <span class="token key atrule">host</span><span class="token punctuation">:</span> 127.0.0.1
+    <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">6379</span>
+
+<span class="token comment"># 线程池的配置文件</span>
+<span class="token key atrule">threads</span><span class="token punctuation">:</span>
+  <span class="token key atrule">pool</span><span class="token punctuation">:</span>
+    <span class="token key atrule">queueCapacity</span><span class="token punctuation">:</span> <span class="token number">50</span>
+    <span class="token key atrule">corePoolSize</span><span class="token punctuation">:</span> <span class="token number">20</span>
+    <span class="token key atrule">maxPoolSize</span><span class="token punctuation">:</span> <span class="token number">50</span>
+    <span class="token key atrule">keepAliveSeconds</span><span class="token punctuation">:</span> <span class="token number">600</span>
+
+<span class="token comment"># 日志级别</span>
+<span class="token key atrule">logging</span><span class="token punctuation">:</span>
+  <span class="token key atrule">level</span><span class="token punctuation">:</span> info
+
+<span class="token comment"># Web服务器</span>
+<span class="token key atrule">server</span><span class="token punctuation">:</span>
+  <span class="token comment"># 超时时间</span>
+  <span class="token key atrule">session</span><span class="token punctuation">:</span>
+    <span class="token key atrule">timeout</span><span class="token punctuation">:</span> <span class="token number">60</span>
+  <span class="token comment"># 端口</span>
+  <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">8080</span>
+  <span class="token comment"># 根路径</span>
+  <span class="token key atrule">context-path</span><span class="token punctuation">:</span> /springboot
+</code></pre>
+</div><div class="cl-preview-section"><p>以上是 Spring Boot 比较常用的一些配置项，不需要刻意去记，这些配置都是在应用中慢慢熟悉的。</p>
+</div><div class="cl-preview-section"><h2 id="总结">5. 总结</h2>
+</div><div class="cl-preview-section"><p>这一节我们一起学习了一种不是标记语言的标记语言—— YAML 。了解了它的基本构成，语法和用法，还和 Properties 做了一些对比，突出了 YAML 的特性。后面我们还对 Spring Boot 的常用配置项做了一个初步的了解，后面还会经常的使用。最后，希望你也会喜欢 YAML 这个不甘心做一个标记语言的标记语言，我们下一小节见！</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5e9abbf400011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6184">
+						<img src="https://img4.mukewang.com/5333a08f0001700202000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕移动0446252</h4>
+						<div class="comment-text">比起yml我个人更喜欢Properties，因为yml对空格要求很严格。有一次我做一个项目就是因为yml文件不知道什么时候误删了一个空格，它也不报错，我足足找了一个下午的bug，有点心理阴影了。</div>
+						<div>
+							
+								<div class="reply">讲师回复：哈哈，有专门的语法检查工具。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-17</span>
+						<a href="/read/commentdetail/6184">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6184" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6068">
+						<img src="https://img3.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕运维0427676</h4>
+						<div class="comment-text">白嫖了</div>
+						<div>
+							
+								<div class="reply">讲师回复：哈哈，可以分享给更多人哦</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-06</span>
+						<a href="/read/commentdetail/6068">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6068" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6039">
+						<img src="https://img3.mukewang.com/5b8ce5e40001a28702000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕桂英9205550</h4>
+						<div class="comment-text">YAML:yet another markup language</div>
+						<div>
+							
+								<div class="reply">讲师回复：是的</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-03</span>
+						<a href="/read/commentdetail/6039">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6039" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5878">
+						<img src="https://img.mukewang.com/5a2cef030001da1301000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_Sophia_20</h4>
+						<div class="comment-text">YAML 不是一种标记语言</div>
+						<div>
+							
+								<div class="reply">讲师回复：哈哈。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-20</span>
+						<a href="/read/commentdetail/5878">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5878" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5613">
+						<img src="https://img1.mukewang.com/5d9df0d60001de8e11100966-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">一只程序猿儿</h4>
+						<div class="comment-text">学习了</div>
+						<div>
+							
+								<div class="reply">讲师回复：感谢支持！</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-26</span>
+						<a href="/read/commentdetail/5613">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5613" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=75">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '05 YAML与Spring Boot更配哦~',
+					'CID': '1801',
+					'Teacher': '刘水镜'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "05 YAML与Spring Boot更配哦~",
+                    desc: "够吃管饱的SpringBoot大餐",
+                    imgUrl: 'https:https://img3.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/75',
+                    link: 'https://m.imooc.com/read/75'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

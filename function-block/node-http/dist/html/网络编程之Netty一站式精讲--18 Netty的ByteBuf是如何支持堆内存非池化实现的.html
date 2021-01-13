@@ -1,0 +1,1026 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>18 Netty的ByteBuf是如何支持堆内存非池化实现的</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="全面掌握迈向高级工程师的必备技能">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "1";
+	var chapter_id = "2177";
+	var chapter_title = "18 Netty的ByteBuf是如何支持堆内存非池化实现的";
+	var aid = "82";
+	var a_name = "网络编程之Netty一站式精讲";
+	var a_price = "68.00";
+	var a_pic = "https://img2.mukewang.com/5f052aa90001f15b05400720.jpg";
+	var userId = 0;
+
+	var column_id = '82';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-03&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			18 Netty的ByteBuf是如何支持堆内存非池化实现的
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5f0595f20001aed506400359.jpg')"></div>
+	
+	
+		<a href="/read/82">
+			<div class="course-entry">
+				<img src="https://img3.mukewang.com/5d9c91f40001dcac05000500-40-40.jpg" alt="彤哥读源码">
+				<h3>网络编程之Netty一站式精讲</h3>
+				<p>彤哥读源码 · 互联网大厂项目经理</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">虚心使人进步，骄傲使人落后。<p class="author">——毛泽东</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">前言</h1>
+</div><div class="cl-preview-section"><p>你好，我是彤哥。</p>
+</div><div class="cl-preview-section"><p>上一节，我们一起再次深入学习了 Java 原生的 ByteBuffer，并从源码级别对其进行了完整的剖析，ByteBuffer 从实现方式上分成 HeapByteBuffer 和 DirectByteBuffer 两种内存实现方式，HeapByteBuffer 底层使用 byte 数组存储数据，DirectByteBuffer 底层使用 unsafe 操作直接内存。通过源码的学习，我们还进一步掌握了很多 Java 中的高阶知识，有了很大的收获。</p>
+</div><div class="cl-preview-section"><p>如果说 Java 中 ByteBuffer 的实现方式用精巧来形容，那么，Netty 中的 ByteBuf 可以用精妙来形式，它有哪些妙之处呢？我想用一词概括它的精妙之处 —— 高效易用。</p>
+</div><div class="cl-preview-section"><h1 id="问题">问题</h1>
+</div><div class="cl-preview-section"><p>通过上一节的学习，我们知道，Java 原生的 Buffer 有三种不同的分类方式：按数据类型、按内存实现方式、按读写方式，可以分成不同的 Buffer。那么，今天，我想问：</p>
+</div><div class="cl-preview-section"><ol>
+<li>Netty 中的 ByteBuf 有没有兄弟类呢，即 CharBuf 等？</li>
+<li>Netty 中的 ByteBuf 有哪些分类方式？</li>
+<li>Netty 中的 ByteBuf 各种实现方式的底层原理是什么？</li>
+</ol>
+</div><div class="cl-preview-section"><p>掌握这几个问题，相信你一定对 ByteBuf 有一个全面的认识。</p>
+</div><div class="cl-preview-section"><p>今天的学习，我们还是遵循上一节的方法 —— 从宏观到微观，一步一步深入剖析，好了，让我们进入今天的学习吧。</p>
+</div><div class="cl-preview-section"><h1 id="宏观分析bytebuf">宏观分析 ByteBuf</h1>
+</div><div class="cl-preview-section"><h2 id="继承体系">继承体系</h2>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f276c350001bf4113780487.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>从继承体系上看，ByteBuf 有八个主要实现类，这八个实现类又可以按三个维度来划分：</p>
+</div><div class="cl-preview-section"><ol>
+<li>内存实现方式：Heap 和 Direct；</li>
+<li>池化与否：Pooled 和 Unpooled；</li>
+<li>Unsafe 与否：Unsafe 和 Safe（类名不带 Unsafe 的即为 Safe）；</li>
+</ol>
+</div><div class="cl-preview-section"><blockquote>
+<p>ByteBuf 并没有类似于 CharBuf、IntBuf 这样的兄弟类。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>经过上一节的学习，内存实现方式这个维度我们都比较熟悉了，另外两个维度对于我们可能就比较懵了：</p>
+</div><div class="cl-preview-section"><ol>
+<li>池化，这里的池跟线程池、数据库连接��是一样的概念吗？ByteBuf 如何池化？</li>
+<li>Unsafe，这里的 Unsafe 跟 Java 原生的 Unsafe 有关系吗？上一节不是说 DirectByteBuffer 底层就是通过 Unsafe 操作直接内存实现的吗？这里的 Unsafe 又是几个意思？</li>
+</ol>
+</div><div class="cl-preview-section"><p>先把这些问题记录下来，一步一步来，我们再来看看 ByteBuf 这个类的结构。</p>
+</div><div class="cl-preview-section"><h2 id="类结构">类结构</h2>
+</div><div class="cl-preview-section"><p>类结构主要包含字段和方法，ByteBuf 作为一个抽象类，没有任何字段，大致浏览一下它的方法，主要可以分成三大类：</p>
+</div><div class="cl-preview-section"><ol>
+<li>writeXxx ()/readXxx ()：写入、读取数据</li>
+<li> setXxx ()/getXxx ()：根据索引写入、读取数据</li>
+<li>其它：返回 ByteBuf 的状态、遍历等方法，比如返回容量、是否可读等方法</li>
+</ol>
+</div><div class="cl-preview-section"><p>在这些方法中，有一个方法比较亮眼，即：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">abstract</span> ByteBufAllocator <span class="token function">alloc</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>OK，这是我们找到的一个突破口，从类名 <code>ByteBufAllocator</code> 可以看出它是 ByteBuf 的分配器，什么是分配器呢？它类似于我们常说的工厂模式，用来创建 ByteBuf 的地方。</p>
+</div><div class="cl-preview-section"><p>此时，我们需要简单浏览一下 ByteBufAllocator 的继承体系和类结构，即宏观分析一下。</p>
+</div><div class="cl-preview-section"><h3 id="bytebufallocator的继承体系">ByteBufAllocator 的继承体系</h3>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f276c48000186e310410287.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>我们可以把上图分解成左右两个部分来看，左半边是以 Pooled/Unpooled 为划分标准，右半边是以 Heap/Direct 为划分标准，这是跟 ByteBuf 本身的分类方式差不多嘛？实际上是不是这样呢？</p>
+</div><div class="cl-preview-section"><p>很遗憾，并不是这样，再仔细观察一下右边两个类的名字，一个是以 Preferred 开头，一个是以 Prefer 开头，可见这两个类不是出自同一人之手，或者不是同一人同一时间写的。</p>
+</div><div class="cl-preview-section"><p>通过这个切入点，再仔细观察一下，会发现 UnpooledByteBufAllocator 和 PooledByteBufAllocator 位于核心库 netty-buffer 中，而 PreferHeapByteBufAllocator 位于核心库 netty-transport 中，而 PreferredDirectByteBufAllocator 位于库 transport-native-unix-common 中。</p>
+</div><div class="cl-preview-section"><p>再大概浏览一下四个类中的代码，可以发现，UnpooledByteBufAllocator 和 PooledByteBufAllocator 类中默认都是偏向于使用 Direct 的方式创建 ByteBuf，而 PreferHeapByteBufAllocator 和 PreferredDirectByteBufAllocator 中保存了 ByteBufAllocator 的实例，其实真正干活还是交给 UnpooledByteBufAllocator 或者 PooledByteBufAllocator 类来实现的，这是设计模式中的装饰器模式的用法。</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// 使用池化技术</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">PooledByteBufAllocator</span> <span class="token keyword">extends</span> <span class="token class-name">AbstractByteBufAllocator</span> <span class="token keyword">implements</span> <span class="token class-name">ByteBufAllocatorMetricProvider</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> PooledByteBufAllocator DEFAULT <span class="token operator">=</span>
+            <span class="token keyword">new</span> <span class="token class-name">PooledByteBufAllocator</span><span class="token punctuation">(</span>PlatformDependent<span class="token punctuation">.</span><span class="token function">directBufferPreferred</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 省略其它代码</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 不使用池化技术</span>
+<span class="token keyword">public</span> <span class="token keyword">final</span> <span class="token keyword">class</span> <span class="token class-name">UnpooledByteBufAllocator</span> <span class="token keyword">extends</span> <span class="token class-name">AbstractByteBufAllocator</span> <span class="token keyword">implements</span> <span class="token class-name">ByteBufAllocatorMetricProvider</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> UnpooledByteBufAllocator DEFAULT <span class="token operator">=</span>
+            <span class="token keyword">new</span> <span class="token class-name">UnpooledByteBufAllocator</span><span class="token punctuation">(</span>PlatformDependent<span class="token punctuation">.</span><span class="token function">directBufferPreferred</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 省略其它代码</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 更偏向于使用堆内存</span>
+<span class="token keyword">public</span> <span class="token keyword">final</span> <span class="token keyword">class</span> <span class="token class-name">PreferHeapByteBufAllocator</span> <span class="token keyword">implements</span> <span class="token class-name">ByteBufAllocator</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> ByteBufAllocator allocator<span class="token punctuation">;</span>
+    <span class="token comment">// 省略其它代码</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 更偏向于使用直接内存</span>
+<span class="token keyword">public</span> <span class="token keyword">final</span> <span class="token keyword">class</span> <span class="token class-name">PreferredDirectByteBufAllocator</span> <span class="token keyword">implements</span> <span class="token class-name">ByteBufAllocator</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> ByteBufAllocator allocator<span class="token punctuation">;</span>
+    <span class="token comment">// 省略其它代码</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>所以，我大胆猜测，一开始 Netty 的作者只提供了 UnpooledByteBufAllocator 和 PooledByteBufAllocator 这两种创建 ByteBuf 的分配器，而 PreferHeapByteBufAllocator 和 PreferredDirectByteBufAllocator 是后面写的，且不是同一个作者写的，或者不是同一时间写的。</p>
+</div><div class="cl-preview-section"><p>好了，我们再来看看 ByteBufAllocator 这个接口的结构。</p>
+</div><div class="cl-preview-section"><h3 id="bytebufallocator的结构">ByteBufAllocator 的结构</h3>
+</div><div class="cl-preview-section"><p>这里我列出几个比较重要的方法，还有一个常量：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">ByteBufAllocator</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 默认的分配器，除非显式地配成unpooled，否则使用pooled</span>
+    ByteBufAllocator DEFAULT <span class="token operator">=</span> ByteBufUtil<span class="token punctuation">.</span>DEFAULT_ALLOCATOR<span class="token punctuation">;</span>
+    
+    <span class="token comment">// 创建一个ByteBuf，看具体的实现方式决定创建的是direct的还是heap的</span>
+    ByteBuf <span class="token function">buffer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    ByteBuf <span class="token function">buffer</span><span class="token punctuation">(</span><span class="token keyword">int</span> initialCapacity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    ByteBuf <span class="token function">buffer</span><span class="token punctuation">(</span><span class="token keyword">int</span> initialCapacity<span class="token punctuation">,</span> <span class="token keyword">int</span> maxCapacity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 创建一个heap类型的ByteBuf</span>
+    ByteBuf <span class="token function">heapBuffer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    ByteBuf <span class="token function">heapBuffer</span><span class="token punctuation">(</span><span class="token keyword">int</span> initialCapacity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    ByteBuf <span class="token function">heapBuffer</span><span class="token punctuation">(</span><span class="token keyword">int</span> initialCapacity<span class="token punctuation">,</span> <span class="token keyword">int</span> maxCapacity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 创建一个direct的ByteBuf</span>
+    ByteBuf <span class="token function">directBuffer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    ByteBuf <span class="token function">directBuffer</span><span class="token punctuation">(</span><span class="token keyword">int</span> initialCapacity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    ByteBuf <span class="token function">directBuffer</span><span class="token punctuation">(</span><span class="token keyword">int</span> initialCapacity<span class="token punctuation">,</span> <span class="token keyword">int</span> maxCapacity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+	<span class="token comment">// 省略其它方法</span>
+ <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>有这几个方法，完全够我们使用了，通过观察可以发现，每种方法都提供了三种重载方式，且参数的变化是跟容量相关的，所以，我们是否可以大胆猜测：其实，ByteBuf 是支持扩容的呢？</p>
+</div><div class="cl-preview-section"><p>支不支持扩容呢？下面进入我们的微观分析阶段。</p>
+</div><div class="cl-preview-section"><h1 id="微观分析bytebuf">微观分析 ByteBuf</h1>
+</div><div class="cl-preview-section"><p>通过宏观分析，我们知道 ByteBuf 有 8 个主要实现类，我们又知道，可以通过 ByteBufAllocator 来创建不同类型的 ByteBuf，但是，并没有看到跟 Unsafe 相关的代码，这是一个问题，等待我们去挖掘。</p>
+</div><div class="cl-preview-section"><p>所以，我们先从简单的 Unpooled 和 Heap 入手，这样怎么写调试用例呢？其实很简单，请看：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">ByteBufTest</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 1. 参数是preferDirect，即是否偏向于使用直接内存</span>
+        UnpooledByteBufAllocator allocator <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">UnpooledByteBufAllocator</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment">// 2. 创建一个非池化基于堆内存的ByteBuf</span>
+        ByteBuf byteBuf <span class="token operator">=</span> allocator<span class="token punctuation">.</span><span class="token function">heapBuffer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment">// 3. 写入数据</span>
+        byteBuf<span class="token punctuation">.</span><span class="token function">writeInt</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        byteBuf<span class="token punctuation">.</span><span class="token function">writeInt</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        byteBuf<span class="token punctuation">.</span><span class="token function">writeInt</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 4. 读取数据</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>byteBuf<span class="token punctuation">.</span><span class="token function">readInt</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>byteBuf<span class="token punctuation">.</span><span class="token function">readInt</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>byteBuf<span class="token punctuation">.</span><span class="token function">readInt</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这个调试用例，我将分成 4 个部分来进行源码级别的剖析：</p>
+</div><div class="cl-preview-section"><ol>
+<li>创建 ByteBufAllocator 的过程；</li>
+<li>创建 heapByteBuf 的过程；</li>
+<li>写入数据的过程；</li>
+<li>读取数据的过程；</li>
+</ol>
+</div><div class="cl-preview-section"><p>首先，让我们看看创建 ByteBufAllocator 的过程：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// 参数1preferDirect表示是否偏向于使用直接内存</span>
+<span class="token comment">// 这里我们传的是false</span>
+<span class="token keyword">public</span> <span class="token function">UnpooledByteBufAllocator</span><span class="token punctuation">(</span><span class="token keyword">boolean</span> preferDirect<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">this</span><span class="token punctuation">(</span>preferDirect<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 参数2表示是否禁用内存泄漏检测，先跳过</span>
+<span class="token keyword">public</span> <span class="token function">UnpooledByteBufAllocator</span><span class="token punctuation">(</span><span class="token keyword">boolean</span> preferDirect<span class="token punctuation">,</span> <span class="token keyword">boolean</span> disableLeakDetector<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">this</span><span class="token punctuation">(</span>preferDirect<span class="token punctuation">,</span> disableLeakDetector<span class="token punctuation">,</span> PlatformDependent<span class="token punctuation">.</span><span class="token function">useDirectBufferNoCleaner</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 参数3表示是否尝试没有Cleaner的构造方法，这个是什么意思呢？</span>
+<span class="token keyword">public</span> <span class="token function">UnpooledByteBufAllocator</span><span class="token punctuation">(</span><span class="token keyword">boolean</span> preferDirect<span class="token punctuation">,</span> <span class="token keyword">boolean</span> disableLeakDetector<span class="token punctuation">,</span> <span class="token keyword">boolean</span> tryNoCleaner<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">super</span><span class="token punctuation">(</span>preferDirect<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>disableLeakDetector <span class="token operator">=</span> disableLeakDetector<span class="token punctuation">;</span>
+    noCleaner <span class="token operator">=</span> tryNoCleaner <span class="token operator">&amp;&amp;</span> PlatformDependent<span class="token punctuation">.</span><span class="token function">hasUnsafe</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token operator">&amp;&amp;</span> PlatformDependent<span class="token punctuation">.</span><span class="token function">hasDirectBufferNoCleanerConstructor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 调用父类的构造方法</span>
+<span class="token keyword">protected</span> <span class="token function">AbstractByteBufAllocator</span><span class="token punctuation">(</span><span class="token keyword">boolean</span> preferDirect<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 如果偏向于直接内存且平台有Unsafe，则默认使用直接内存</span>
+    <span class="token comment">// 这里的Unsafe是Java原生的Unsafe吗？</span>
+    directByDefault <span class="token operator">=</span> preferDirect <span class="token operator">&amp;&amp;</span> PlatformDependent<span class="token punctuation">.</span><span class="token function">hasUnsafe</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    emptyBuf <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">EmptyByteBuf</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这段代码看着是不是很费劲？那就对了。这段代码主要是用来判断当前运行的 JDK 平台是否支持相关的功能，比如直接内存，并不是说这里传了 <code>preferDirect=true</code>，最后就一定会创建直接内存形式的 ByteBuf 给到我们。说句不好听的，你喜欢是你的事，支不支持是我的事。</p>
+</div><div class="cl-preview-section"><p>为什么会有平台是否支持的判断呢？归纳起来主要有三个原因：</p>
+</div><div class="cl-preview-section"><ol>
+<li>JDK 各版本之间并不完全兼容。比如低版本的 JDK 可能就不支持使用直接内存。</li>
+<li>不同的设备支持的功能不一样。我们知道，Java 程序是 <code>write once, run anywhere</code>，这其实是各个平台级别的 JDK 底层给我们做了很多兼容，有的平台可能就不支持直接内存，比如安卓可能就不支持直接内存。</li>
+<li>不同类型的 JDK 支持的功能不一样。目前比较主流的有两大阵营 ——OracleJDK 和 OpenJDK，OracleJDK 是功能最齐全的，OpenJDK 相对来说会缺失一些功能。</li>
+</ol>
+</div><div class="cl-preview-section"><p>所以，Netty 把这些细节都给我们考虑在内了，它会检测当前运行的平台是否支持某些功能，然后做出最好的优化让程序可以继续运行。比如，我们如果直接使用 Java 原生的方法创建了一个 DirectByteBuffer，可能换一个平台就无法运行，但是，使用 Netty 不会出现这种情况，它可能会退化成 HeapByteBuffer，让程序可以继续运行。如果这部分判断让我们自己来写呢，那肯定是不现实的，我们不可能把每个平台不同设备不同类型的 JDK 全部研究一遍。</p>
+</div><div class="cl-preview-section"><p>然而，它是怎么检测的呢？比如 <code>PlatformDependent.hasUnsafe()</code> 这个方法内部到底做了哪些判断呢？让我们一起来看一看：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">boolean</span> <span class="token function">hasUnsafe</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> UNSAFE_UNAVAILABILITY_CAUSE <span class="token operator">==</span> null<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这里只是简单地判断了一下 <code>UNSAFE_UNAVAILABILITY_CAUSE</code> 是否为 null，这个变量又是什么？</p>
+</div><div class="cl-preview-section"><p>在 IDEA 中，按住 CTRL 键鼠标点击一下，可以定位到这个变量声明的地方：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">final</span> <span class="token keyword">class</span> <span class="token class-name">PlatformDependent</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> Throwable UNSAFE_UNAVAILABILITY_CAUSE <span class="token operator">=</span> <span class="token function">unsafeUnavailabilityCause0</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token comment">// 省略其它代码</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>OK，可以看到，这里是通过一个方法返回的，跟踪进去：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// 返回不支持Unsafe的原因</span>
+<span class="token keyword">private</span> <span class="token keyword">static</span> Throwable <span class="token function">unsafeUnavailabilityCause0</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 如果是安卓，直接抛出不支持的异常</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">isAndroid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"sun.misc.Unsafe: unavailable (Android)"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">UnsupportedOperationException</span><span class="token punctuation">(</span><span class="token string">"sun.misc.Unsafe: unavailable (Android)"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// 如果是IKVM.NET，直接抛出不支持的异常</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">isIkvmDotNet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"sun.misc.Unsafe: unavailable (IKVM.NET)"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">UnsupportedOperationException</span><span class="token punctuation">(</span><span class="token string">"sun.misc.Unsafe: unavailable (IKVM.NET)"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// 通过PlatformDependent0.getUnsafeUnavailabilityCause()判断是否支持Unsafe</span>
+    Throwable cause <span class="token operator">=</span> PlatformDependent0<span class="token punctuation">.</span><span class="token function">getUnsafeUnavailabilityCause</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 如果有原因，直接返回</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>cause <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> cause<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 再判断是否有Unsafe</span>
+        <span class="token keyword">boolean</span> hasUnsafe <span class="token operator">=</span> PlatformDependent0<span class="token punctuation">.</span><span class="token function">hasUnsafe</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        logger<span class="token punctuation">.</span><span class="token function">debug</span><span class="token punctuation">(</span><span class="token string">"sun.misc.Unsafe: {}"</span><span class="token punctuation">,</span> hasUnsafe <span class="token operator">?</span> <span class="token string">"available"</span> <span class="token operator">:</span> <span class="token string">"unavailable"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> hasUnsafe <span class="token operator">?</span> null <span class="token operator">:</span> PlatformDependent0<span class="token punctuation">.</span><span class="token function">getUnsafeUnavailabilityCause</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Throwable</span> t<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        logger<span class="token punctuation">.</span><span class="token function">trace</span><span class="token punctuation">(</span><span class="token string">"Could not determine if Unsafe is available"</span><span class="token punctuation">,</span> t<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// Probably failed to initialize PlatformDependent0.</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">UnsupportedOperationException</span><span class="token punctuation">(</span><span class="token string">"Could not determine if Unsafe is available"</span><span class="token punctuation">,</span> t<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>最后，到 <code>PlatformDependent0</code> 这个类中，实际上，是在它的静态块中进行判断的（删减了许多代码）：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// io.netty.util.internal.PlatformDependent0#getUnsafeUnavailabilityCause</span>
+<span class="token keyword">static</span> Throwable <span class="token function">getUnsafeUnavailabilityCause</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 这个变量是在下面这个静态块中赋值的</span>
+    <span class="token keyword">return</span> UNSAFE_UNAVAILABILITY_CAUSE<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">static</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 是否显式地关闭unsafe，通过参数io.netty.noUnsafe控制</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>unsafeUnavailabilityCause <span class="token operator">=</span> EXPLICIT_NO_UNSAFE_CAUSE<span class="token punctuation">)</span> <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        direct <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        addressField <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        unsafe <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        internalUnsafe <span class="token operator">=</span> null<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 创建一个Java原生的DirectByteBuffer后面使用</span>
+        direct <span class="token operator">=</span> ByteBuffer<span class="token punctuation">.</span><span class="token function">allocateDirect</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 尝试获取Unsafe的字段theUnsafe</span>
+        <span class="token keyword">final</span> Field unsafeField <span class="token operator">=</span> Unsafe<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">.</span><span class="token function">getDeclaredField</span><span class="token punctuation">(</span><span class="token string">"theUnsafe"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 尝试获取copyMemory()方法</span>
+        finalUnsafe<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getDeclaredMethod</span><span class="token punctuation">(</span>
+            <span class="token string">"copyMemory"</span><span class="token punctuation">,</span> Object<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> <span class="token keyword">long</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> Object<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> <span class="token keyword">long</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> <span class="token keyword">long</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 尝试获取DirectByteBuffer中的address字段（实际是在其父类Buffer中）</span>
+        <span class="token comment">// 这个address是专门用来存储直接内存的地址的</span>
+        <span class="token keyword">final</span> Field field <span class="token operator">=</span> Buffer<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">.</span><span class="token function">getDeclaredField</span><span class="token punctuation">(</span><span class="token string">"address"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">final</span> <span class="token keyword">long</span> offset <span class="token operator">=</span> finalUnsafe<span class="token punctuation">.</span><span class="token function">objectFieldOffset</span><span class="token punctuation">(</span>field<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">final</span> <span class="token keyword">long</span> address <span class="token operator">=</span> finalUnsafe<span class="token punctuation">.</span><span class="token function">getLong</span><span class="token punctuation">(</span>direct<span class="token punctuation">,</span> offset<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment">// 上面方法的返回值</span>
+        UNSAFE_UNAVAILABILITY_CAUSE <span class="token operator">=</span> unsafeUnavailabilityCause<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 省略其它代码</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>首先，会检测我们是否显式地关闭了 Unsafe，即通过参数 <code>io.netty.noUnsafe</code> 控制的，其实，Netty 中很多场景都是可以通过参数显式地控制的，但是，一般我们也没有必要去修改默认配置，因为 Netty 给我们的默认配置已经足够好了。</p>
+</div><div class="cl-preview-section"><p>然后，会尝试反射访问 Unsafe 中的属性 <code>theUnsafe</code> 和方法 <code>copyMemory</code>，其中，<code>theUnsafe</code> 是我们获得 Unsafe 实例的唯一方法，因为这个类是 Java 核心类，有非常严格的权限控制，我们只能通过这种方式获得其实例。</p>
+</div><div class="cl-preview-section"><p>最后，会反射获取 DirectByteBuffer 中的 <code>address</code> 属性，这个 <code>address</code> 是定义在其父类 Buffer 中的。</p>
+</div><div class="cl-preview-section"><p>如果上面三步都成功了，才能宣判我们可以正确地使用 Unsafe 了，当然了，这个 Unsafe 就是 Java 原生的那个 Unsafe。</p>
+</div><div class="cl-preview-section"><p>另外，前面看到的 <code>PlatformDependent.hasDirectBufferNoCleanerConstructor()</code> 最终也是在这个静态块中判断的，原理都差不多，无非是通过反射判断某个方法或者属性存不存在，有兴趣的同学可以研究下。</p>
+</div><div class="cl-preview-section"><p>好了，接下来，我们来看看创建 HeapByteBuffer 的过程吧，即 <code>ByteBuf byteBuf = allocator.heapBuffer();</code>:</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> ByteBuf <span class="token function">heapBuffer</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// DEFAULT_INITIAL_CAPACITY = 256</span>
+    <span class="token comment">// DEFAULT_MAX_CAPACITY = Integer.MAX_VALUE = 2147483647</span>
+    <span class="token keyword">return</span> <span class="token function">heapBuffer</span><span class="token punctuation">(</span>DEFAULT_INITIAL_CAPACITY<span class="token punctuation">,</span> DEFAULT_MAX_CAPACITY<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> ByteBuf <span class="token function">heapBuffer</span><span class="token punctuation">(</span><span class="token keyword">int</span> initialCapacity<span class="token punctuation">,</span> <span class="token keyword">int</span> maxCapacity<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>initialCapacity <span class="token operator">==</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> maxCapacity <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> emptyBuf<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 检查这两个容量是否合规</span>
+    <span class="token function">validate</span><span class="token punctuation">(</span>initialCapacity<span class="token punctuation">,</span> maxCapacity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token function">newHeapBuffer</span><span class="token punctuation">(</span>initialCapacity<span class="token punctuation">,</span> maxCapacity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">protected</span> ByteBuf <span class="token function">newHeapBuffer</span><span class="token punctuation">(</span><span class="token keyword">int</span> initialCapacity<span class="token punctuation">,</span> <span class="token keyword">int</span> maxCapacity<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 根据是否可以使用Unsafe创建不同的类型</span>
+    <span class="token keyword">return</span> PlatformDependent<span class="token punctuation">.</span><span class="token function">hasUnsafe</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">?</span>
+        <span class="token keyword">new</span> <span class="token class-name">InstrumentedUnpooledUnsafeHeapByteBuf</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> initialCapacity<span class="token punctuation">,</span> maxCapacity<span class="token punctuation">)</span> <span class="token operator">:</span>
+    <span class="token keyword">new</span> <span class="token class-name">InstrumentedUnpooledHeapByteBuf</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> initialCapacity<span class="token punctuation">,</span> maxCapacity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>看到这里你可能会有一些疑问：</p>
+</div><div class="cl-preview-section"><ol>
+<li>原来 Unsafe 是在最后一步这里才真正用到，但是，Unsafe 不是用来操作直接内存的吗？我们这里创建的是基于堆内存的，它有什么意义呢？</li>
+<li>为什么创建的不是我们上面介绍的 8 种类型呢，而是它们的子类？</li>
+<li>这里有两个容量，难道 Netty 中的 ByteBuf 可以支持扩容？</li>
+</ol>
+</div><div class="cl-preview-section"><p>OK，我们先回答第二个问题，为什么创建的是 InstrumentedUnpooledHeapByteBuf 或者 InstrumentedUnpooledUnsafeHeapByteBuf 类的对象呢？</p>
+</div><div class="cl-preview-section"><p>首先，我们要理解 <code>Instrumented</code> 这个单词的含义，直接查它的意思是指<code>乐器、仪器、工具</code>，这个词更偏向于指法律、艺术、科学方面的工具或者器械，不过，这些可能还是跟我们这里的意思没有太大关系，最后，我找到了一段对这个单词的英文解释：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>the semantic role of the entity (usually inanimate) that the agent uses to perform an action or start a process</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>正所谓是，每个单词都认识，连一起就都不认识了，其实，也不用全认识，认识一个单词即可 ——<code>agent</code>—— 代理的意思，这个代理跟 Proxy 比较类似，不过有一点区别，像我们常用的代理（Proxy）都是方法级别的，而这个代理（Agent/Instrument）一般是指类级别的代理，它会代理整个类。好吧，还是比较懵，那就当成一样的吧也无所谓。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>其实，在 Java 和 Spring 中也分别有 Instrument 一说，在 Spring 中，也可以把它看成是 AOP 的一种方式，有兴趣的同学可以面向搜索引擎学习一下。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>问题又来了，为什么要使用 Instrument 做一层代理呢？那肯定是对原有功能进行了一些增强，至于做了哪些增强，我们接着看。</p>
+</div><div class="cl-preview-section"><p>因为我使用的是 win8 JDK8，天生就是支持 Unsafe 的，所以，在我的电脑上创建的就是 InstrumentedUnpooledUnsafeHeapByteBuf 的对象，让我们继续跟下去：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token function">InstrumentedUnpooledUnsafeHeapByteBuf</span><span class="token punctuation">(</span>UnpooledByteBufAllocator alloc<span class="token punctuation">,</span> <span class="token keyword">int</span> initialCapacity<span class="token punctuation">,</span> <span class="token keyword">int</span> maxCapacity<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 调用父类的构造方法</span>
+    <span class="token keyword">super</span><span class="token punctuation">(</span>alloc<span class="token punctuation">,</span> initialCapacity<span class="token punctuation">,</span> maxCapacity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">public</span> <span class="token function">UnpooledUnsafeHeapByteBuf</span><span class="token punctuation">(</span>ByteBufAllocator alloc<span class="token punctuation">,</span> <span class="token keyword">int</span> initialCapacity<span class="token punctuation">,</span> <span class="token keyword">int</span> maxCapacity<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 调用父类的构造方法</span>
+    <span class="token keyword">super</span><span class="token punctuation">(</span>alloc<span class="token punctuation">,</span> initialCapacity<span class="token punctuation">,</span> maxCapacity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">public</span> <span class="token function">UnpooledHeapByteBuf</span><span class="token punctuation">(</span>ByteBufAllocator alloc<span class="token punctuation">,</span> <span class="token keyword">int</span> initialCapacity<span class="token punctuation">,</span> <span class="token keyword">int</span> maxCapacity<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 这个父类构造方法里没什么重要的东西，不断续往里跟了</span>
+    <span class="token keyword">super</span><span class="token punctuation">(</span>maxCapacity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 检查两个容量</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>initialCapacity <span class="token operator">&gt;</span> maxCapacity<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalArgumentException</span><span class="token punctuation">(</span>String<span class="token punctuation">.</span><span class="token function">format</span><span class="token punctuation">(</span>
+            <span class="token string">"initialCapacity(%d) &gt; maxCapacity(%d)"</span><span class="token punctuation">,</span> initialCapacity<span class="token punctuation">,</span> maxCapacity<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">this</span><span class="token punctuation">.</span>alloc <span class="token operator">=</span> <span class="token function">checkNotNull</span><span class="token punctuation">(</span>alloc<span class="token punctuation">,</span> <span class="token string">"alloc"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 调用allocateArray创建了一个byte数组，并保存起来</span>
+    <span class="token function">setArray</span><span class="token punctuation">(</span><span class="token function">allocateArray</span><span class="token punctuation">(</span>initialCapacity<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 初始化readIndex和writeIndex为0</span>
+    <span class="token function">setIndex</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// InstrumentedUnpooledUnsafeHeapByteBuf#allocateArray</span>
+<span class="token comment">// 这个方法就是做了增强的方法</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">protected</span> <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token function">allocateArray</span><span class="token punctuation">(</span><span class="token keyword">int</span> initialCapacity<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> bytes <span class="token operator">=</span> <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">allocateArray</span><span class="token punctuation">(</span>initialCapacity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 增强的地方</span>
+    <span class="token punctuation">(</span><span class="token punctuation">(</span>UnpooledByteBufAllocator<span class="token punctuation">)</span> <span class="token function">alloc</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">incrementHeap</span><span class="token punctuation">(</span>bytes<span class="token punctuation">.</span>length<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> bytes<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>到这里就比较清楚了，UnpooledUnsafeHeapByteBuf 底层还是使用的 Java 原生的 byte 数组来实现的，至于这里增强的方法，其实是加入了监控，打开 InstrumentedUnpooledUnsafeHeapByteBuf 这个类，你会发现，它里面还有另一个方法叫作 freeArray ()，它做的增强即：当创建 byte 数组的时候记录下来分配的堆内存大小，当释放 byte 数组的时候将其占用的堆内存大小相应减少。这样就起来了监控的目的，即 Netty 可以监控进程中所有的 UnpooledUnsafeHeapByteBuf 到底占用了多少堆内存，方便出问题时进行排查，当然，也可以用于提前发现内存泄漏等问题。</p>
+</div><div class="cl-preview-section"><p>OK，经过前面的过程，我们终于创建了一个 UnpooledUnsafeHeapByteBuf 对象，接下来我们再来看看写入数据的过程吧，即 <code>byteBuf.writeInt(1);</code> 这行代码，继续跟踪进去：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> ByteBuf <span class="token function">writeInt</span><span class="token punctuation">(</span><span class="token keyword">int</span> value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 一个int等于4个字节</span>
+    <span class="token comment">// 检查是否可写，里面会做扩容相关的操作，</span>
+    <span class="token comment">// 最终会调用allocateArray()分配一个新的数组，并把旧数组的数据拷贝到新数组</span>
+    <span class="token comment">// 且调用freeArray()把旧数组释放，当然，此时也会改变上面提到的监控的数值</span>
+    <span class="token function">ensureWritable0</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 在写索引的位置开始写入值</span>
+    <span class="token function">_setInt</span><span class="token punctuation">(</span>writerIndex<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 写索引加4</span>
+    writerIndex <span class="token operator">+=</span> <span class="token number">4</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">_setInt</span><span class="token punctuation">(</span><span class="token keyword">int</span> index<span class="token punctuation">,</span> <span class="token keyword">int</span> value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 调用UnsafeByteBufUtil工具类修改array数组index位置的值</span>
+    UnsafeByteBufUtil<span class="token punctuation">.</span><span class="token function">setInt</span><span class="token punctuation">(</span>array<span class="token punctuation">,</span> index<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">setInt</span><span class="token punctuation">(</span><span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> array<span class="token punctuation">,</span> <span class="token keyword">int</span> index<span class="token punctuation">,</span> <span class="token keyword">int</span> value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 我的电脑UNALIGNED=true</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>UNALIGNED<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 又到了PlatformDependent这个类中</span>
+        PlatformDependent<span class="token punctuation">.</span><span class="token function">putInt</span><span class="token punctuation">(</span>array<span class="token punctuation">,</span> index<span class="token punctuation">,</span> BIG_ENDIAN_NATIVE_ORDER <span class="token operator">?</span> value <span class="token operator">:</span> Integer<span class="token punctuation">.</span><span class="token function">reverseBytes</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        PlatformDependent<span class="token punctuation">.</span><span class="token function">putByte</span><span class="token punctuation">(</span>array<span class="token punctuation">,</span> index<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">byte</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>value <span class="token operator">&gt;&gt;&gt;</span> <span class="token number">24</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        PlatformDependent<span class="token punctuation">.</span><span class="token function">putByte</span><span class="token punctuation">(</span>array<span class="token punctuation">,</span> index <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">byte</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>value <span class="token operator">&gt;&gt;&gt;</span> <span class="token number">16</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        PlatformDependent<span class="token punctuation">.</span><span class="token function">putByte</span><span class="token punctuation">(</span>array<span class="token punctuation">,</span> index <span class="token operator">+</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">byte</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>value <span class="token operator">&gt;&gt;&gt;</span> <span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        PlatformDependent<span class="token punctuation">.</span><span class="token function">putByte</span><span class="token punctuation">(</span>array<span class="token punctuation">,</span> index <span class="token operator">+</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">byte</span><span class="token punctuation">)</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">putInt</span><span class="token punctuation">(</span><span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> data<span class="token punctuation">,</span> <span class="token keyword">int</span> index<span class="token punctuation">,</span> <span class="token keyword">int</span> value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 继续到PlatformDependent0这个类中</span>
+    PlatformDependent0<span class="token punctuation">.</span><span class="token function">putInt</span><span class="token punctuation">(</span>data<span class="token punctuation">,</span> index<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">putInt</span><span class="token punctuation">(</span><span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> data<span class="token punctuation">,</span> <span class="token keyword">int</span> index<span class="token punctuation">,</span> <span class="token keyword">int</span> value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 调用Unsafe的putInt()方法直接修改对象的属性</span>
+    <span class="token comment">// 数组本身就是一种特殊的对象，它也有对象头等属性</span>
+    <span class="token comment">// 所以，需要一个偏移量，BYTE_ARRAY_BASE_OFFSET=16</span>
+    UNSAFE<span class="token punctuation">.</span><span class="token function">putInt</span><span class="token punctuation">(</span>data<span class="token punctuation">,</span> BYTE_ARRAY_BASE_OFFSET <span class="token operator">+</span> index<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// native方法</span>
+<span class="token comment">// 这个putInt()跟上一节修改直接内存的putInt()不是同一个方法</span>
+<span class="token comment">// 上一节的putInt(long var1, int var3)第一个参数是内存地址</span>
+<span class="token comment">// 本节的putInt()第一个参数是对象，第二参数是在对象中的偏移量</span>
+<span class="token keyword">public</span> <span class="token keyword">native</span> <span class="token keyword">void</span> <span class="token function">putInt</span><span class="token punctuation">(</span>Object var1<span class="token punctuation">,</span> <span class="token keyword">long</span> var2<span class="token punctuation">,</span> <span class="token keyword">int</span> var4<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>好了，到这里就比较清晰了，UnpooledUnsafeHeapByteBuf 底层是使用的 Unsafe 来修改数组中的值，为了与 Java 原生 HeapByteBuffer 对比，我们把上一节 HeapByteBuffer 写入数据的最终方法拿过来再对比一下：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// 写入一个int类型的数值</span>
+<span class="token keyword">public</span> ByteBuffer <span class="token function">putInt</span><span class="token punctuation">(</span><span class="token keyword">int</span> x<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 调用Bits工具类的putInt()方法，Bits是位的意思</span>
+    <span class="token comment">// 堆内存的实现中使用大端法来存储数据</span>
+    Bits<span class="token punctuation">.</span><span class="token function">putInt</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> <span class="token function">ix</span><span class="token punctuation">(</span><span class="token function">nextPutIndex</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> x<span class="token punctuation">,</span> bigEndian<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// java.nio.Bits#putInt(java.nio.ByteBuffer, int, int, boolean)</span>
+<span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">putInt</span><span class="token punctuation">(</span>ByteBuffer bb<span class="token punctuation">,</span> <span class="token keyword">int</span> bi<span class="token punctuation">,</span> <span class="token keyword">int</span> x<span class="token punctuation">,</span> <span class="token keyword">boolean</span> bigEndian<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 堆内存使用的是大端法，更符合人们的习惯</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>bigEndian<span class="token punctuation">)</span>
+        <span class="token comment">// 大端法</span>
+        <span class="token function">putIntB</span><span class="token punctuation">(</span>bb<span class="token punctuation">,</span> bi<span class="token punctuation">,</span> x<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">else</span>
+        <span class="token function">putIntL</span><span class="token punctuation">(</span>bb<span class="token punctuation">,</span> bi<span class="token punctuation">,</span> x<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// java.nio.Bits#putIntB(java.nio.ByteBuffer, int, int)</span>
+<span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">putIntB</span><span class="token punctuation">(</span>ByteBuffer bb<span class="token punctuation">,</span> <span class="token keyword">int</span> bi<span class="token punctuation">,</span> <span class="token keyword">int</span> x<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 把一个int拆分成4个byte，分别写入</span>
+    <span class="token comment">// int3(int x) { return (byte)(x &gt;&gt; 24); }</span>
+    bb<span class="token punctuation">.</span><span class="token function">_put</span><span class="token punctuation">(</span>bi    <span class="token punctuation">,</span> <span class="token function">int3</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// int2(int x) { return (byte)(x &gt;&gt; 16); }</span>
+    bb<span class="token punctuation">.</span><span class="token function">_put</span><span class="token punctuation">(</span>bi <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token function">int2</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// int1(int x) { return (byte)(x &gt;&gt;  8); }</span>
+    bb<span class="token punctuation">.</span><span class="token function">_put</span><span class="token punctuation">(</span>bi <span class="token operator">+</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token function">int1</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// int0(int x) { return (byte)(x      ); }</span>
+    bb<span class="token punctuation">.</span><span class="token function">_put</span><span class="token punctuation">(</span>bi <span class="token operator">+</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token function">int0</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// java.nio.HeapByteBuffer#_put</span>
+<span class="token keyword">void</span> <span class="token function">_put</span><span class="token punctuation">(</span><span class="token keyword">int</span> i<span class="token punctuation">,</span> <span class="token keyword">byte</span> b<span class="token punctuation">)</span> <span class="token punctuation">{</span>                  <span class="token comment">// package-private</span>
+    <span class="token comment">// 最终变成了修改byte数组</span>
+    hb<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> b<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以看到，Java 原生的 HeapByteBuffer 并没有使用 Unsafe，而是把一个 int 类型拆分成了 4 个 byte 类型，再分别修改 byte 数组对应位置的值，而 Netty 中是直接使用 Unsafe 来修改 byte 数组的值，它是直接修改那一片内存区域的值，不需要拆分等操作，所以，相对来说，更高效一些。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>其实呢，Netty 中也有 Java 这样的实现，即不带 Unsafe 的 UnpooledHeapByteBuf 类，它的底层就是像 Java 这样把一个 int 拆分成 4 个 byte，并修改数组下标的方式来实现的，有兴趣的同学可以自己看看相关的源码。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>同样地，我们可以想像得到，读取数据的过程肯定也是使用 Unsafe 来操作的，我们直接给出代码，就不赘述了：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">readInt</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 检查可读</span>
+    <span class="token function">checkReadableBytes0</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 在读索引的位置读取数据</span>
+    <span class="token keyword">int</span> v <span class="token operator">=</span> <span class="token function">_getInt</span><span class="token punctuation">(</span>readerIndex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 读索引加4</span>
+    readerIndex <span class="token operator">+=</span> <span class="token number">4</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> v<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">protected</span> <span class="token keyword">int</span> <span class="token function">_getInt</span><span class="token punctuation">(</span><span class="token keyword">int</span> index<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 调用UnsafeByteBufUtil工具类</span>
+    <span class="token keyword">return</span> UnsafeByteBufUtil<span class="token punctuation">.</span><span class="token function">getInt</span><span class="token punctuation">(</span>array<span class="token punctuation">,</span> index<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">getInt</span><span class="token punctuation">(</span><span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> array<span class="token punctuation">,</span> <span class="token keyword">int</span> index<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 在我的电脑UNALIGNED=true</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>UNALIGNED<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 调用PlatformDependent</span>
+        <span class="token keyword">int</span> v <span class="token operator">=</span> PlatformDependent<span class="token punctuation">.</span><span class="token function">getInt</span><span class="token punctuation">(</span>array<span class="token punctuation">,</span> index<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> BIG_ENDIAN_NATIVE_ORDER <span class="token operator">?</span> v <span class="token operator">:</span> Integer<span class="token punctuation">.</span><span class="token function">reverseBytes</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> PlatformDependent<span class="token punctuation">.</span><span class="token function">getByte</span><span class="token punctuation">(</span>array<span class="token punctuation">,</span> index<span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token number">24</span> <span class="token operator">|</span>
+        <span class="token punctuation">(</span>PlatformDependent<span class="token punctuation">.</span><span class="token function">getByte</span><span class="token punctuation">(</span>array<span class="token punctuation">,</span> index <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">0xff</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> <span class="token number">16</span> <span class="token operator">|</span>
+        <span class="token punctuation">(</span>PlatformDependent<span class="token punctuation">.</span><span class="token function">getByte</span><span class="token punctuation">(</span>array<span class="token punctuation">,</span> index <span class="token operator">+</span> <span class="token number">2</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">0xff</span><span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span>  <span class="token number">8</span> <span class="token operator">|</span>
+        PlatformDependent<span class="token punctuation">.</span><span class="token function">getByte</span><span class="token punctuation">(</span>array<span class="token punctuation">,</span> index <span class="token operator">+</span> <span class="token number">3</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token number">0xff</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">getInt</span><span class="token punctuation">(</span><span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> data<span class="token punctuation">,</span> <span class="token keyword">int</span> index<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 调用PlatformDependent0</span>
+    <span class="token keyword">return</span> PlatformDependent0<span class="token punctuation">.</span><span class="token function">getInt</span><span class="token punctuation">(</span>data<span class="token punctuation">,</span> index<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">getInt</span><span class="token punctuation">(</span><span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> data<span class="token punctuation">,</span> <span class="token keyword">int</span> index<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 调用Unsafe的getInt()方法</span>
+    <span class="token keyword">return</span> UNSAFE<span class="token punctuation">.</span><span class="token function">getInt</span><span class="token punctuation">(</span>data<span class="token punctuation">,</span> BYTE_ARRAY_BASE_OFFSET <span class="token operator">+</span> index<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 第一个参数是对象，第二个参数是在对象中的偏移量</span>
+<span class="token keyword">public</span> <span class="token keyword">native</span> <span class="token keyword">int</span> <span class="token function">getInt</span><span class="token punctuation">(</span>Object var1<span class="token punctuation">,</span> <span class="token keyword">long</span> var2<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+</code></pre>
+</div><div class="cl-preview-section"><p>好了，到这里对于 UnpooledUnsafeHeapByteBuf 的源码级别的剖析就结束了。</p>
+</div><div class="cl-preview-section"><h1 id="后记">后记</h1>
+</div><div class="cl-preview-section"><p>本节，我们一起从宏观上对 ByteBuf 做了一个全面的剖析，并从微观上深入剖析了其一个子类 UnpooledUnsafeHeapByteBuf，到这里，你可能还有一些疑问的，比如，Netty 是怎么利用直接内存的，等等。嗯，有问题是好事，别急，我们一步一步来，先从简单的入手，再慢慢过渡到更难的级别。</p>
+</div><div class="cl-preview-section"><p>下一节，我们将一起学习 <code>Netty是如何使用直接内存的</code>这个问题，不见不散。</p>
+</div><div class="cl-preview-section"><h1 id="思维导图">思维导图</h1>
+</div><div class="cl-preview-section"><p>本次的思维导图和以往不太一样，大家可以在分类方式后面不断联想并提出一些问题。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f276c7000015c4620261217.png" alt="图片描述"></p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5f0543a000011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/7042">
+						<img src="https://img4.mukewang.com/545861d500015cc602200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">langlangliu</h4>
+						<div class="comment-text">文章越往后, 留言越少了, 兄弟们, follow上, 作者写的挺好的(深度, 清晰度比多数市面的博客要好), 也给作者点个暂.</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-10-24</span>
+						<a href="/read/commentdetail/7042">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="7042" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=82">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '18 Netty的ByteBuf是如何支持堆内存非池化实现的',
+					'CID': '2177',
+					'Teacher': '彤哥读源码'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "18 Netty的ByteBuf是如何支持堆内存非池化实现的",
+                    desc: "全面掌握迈向高级工程师的必备技能",
+                    imgUrl: 'https:https://img2.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/82',
+                    link: 'https://m.imooc.com/read/82'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

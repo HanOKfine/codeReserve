@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>05 源码和反汇编实战案例</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="学习Java很重要，学会怎么学习Java更重要">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "5";
+	var chapter_id = "1979";
+	var chapter_title = "05 源码和反汇编实战案例";
+	var aid = "78";
+	var a_name = "再学经典：《Effective Java》独家解析";
+	var a_price = "68.00";
+	var a_pic = "https://img1.mukewang.com/5ecf522a00013a1d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '78';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-27&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			05 源码和反汇编实战案例
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5ece27d20001526f06400359.jpg')"></div>
+	
+	
+		<a href="/read/78">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/54dc328d0001b75e04630463-40-40.jpg" alt="明明如月">
+				<h3>再学经典：《Effective Java》独家解析</h3>
+				<p>明明如月 · 高级JAVA开发工程师 </p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">生活永远不像我们想像的那样好，但也不会像我们想像的那样糟。<p class="author">——莫泊桑</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">1. 前言</h1>
+</div><div class="cl-preview-section"><p>前面几节讲到了源码、反编译和反汇编，这些都将为深入学习《Effective Java》 的知识点奠定了坚实的基础。</p>
+</div><div class="cl-preview-section"><p>在下一章正式进入《Effective Java》相关条目和涉及的知识点的深度解读之前，我们以一个代码为例，带着大家实践本章所讲的内容。</p>
+</div><div class="cl-preview-section"><h1 id="示例">2. 示例</h1>
+</div><div class="cl-preview-section"><h2 id="简单的代码案例">2.1 简单的代码案例</h2>
+</div><div class="cl-preview-section"><p>我们在读源码时会发现很多开源项目的代码中有一个共性：<strong>在函数中声明一个和成员变量相同的局部变量，并将成员变量的引用赋值给该局部变量，然后在函数再使用该对象</strong>。</p>
+</div><div class="cl-preview-section"><p>�� netty 的 <code>io.netty.handler.stream.ChunkedWriteHandler#resumeTransfer</code> 类中 <code>resumeTransfer</code> 函数：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token comment">/**
+ * Continues to fetch the chunks from the input.
+ */</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">resumeTransfer</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">final</span> ChannelHandlerContext ctx <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>ctx<span class="token punctuation">;</span><span class="token comment">// 看这里</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>ctx <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>ctx<span class="token punctuation">.</span><span class="token function">executor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">inEventLoop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token function">resumeTransfer0</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        <span class="token comment">// let the transfer resume on the next event loop round</span>
+        ctx<span class="token punctuation">.</span><span class="token function">executor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token function">resumeTransfer0</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>还有该类的 <code>discard</code> 函数：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">discard</span><span class="token punctuation">(</span>Throwable cause<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token punctuation">;</span><span class="token punctuation">;</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+       
+        PendingWrite currentWrite <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>currentWrite<span class="token punctuation">;</span> <span class="token comment">// 看这里</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>currentWrite <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            currentWrite <span class="token operator">=</span> queue<span class="token punctuation">.</span><span class="token function">poll</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span>currentWrite <span class="token operator">=</span> null<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>currentWrite <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">break</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        Object message <span class="token operator">=</span> currentWrite<span class="token punctuation">.</span>msg<span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>message <span class="token keyword">instanceof</span> <span class="token class-name">ChunkedInput</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            ChunkedInput<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">&gt;</span> in <span class="token operator">=</span> <span class="token punctuation">(</span>ChunkedInput<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">&gt;</span><span class="token punctuation">)</span> message<span class="token punctuation">;</span>
+            <span class="token keyword">boolean</span> endOfInput<span class="token punctuation">;</span>
+            <span class="token keyword">long</span> inputLength<span class="token punctuation">;</span>
+            <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                endOfInput <span class="token operator">=</span> in<span class="token punctuation">.</span><span class="token function">isEndOfInput</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                inputLength <span class="token operator">=</span> in<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token function">closeInput</span><span class="token punctuation">(</span>in<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token function">closeInput</span><span class="token punctuation">(</span>in<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                currentWrite<span class="token punctuation">.</span><span class="token function">fail</span><span class="token punctuation">(</span>e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isWarnEnabled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    logger<span class="token punctuation">.</span><span class="token function">warn</span><span class="token punctuation">(</span>ChunkedInput<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">.</span><span class="token function">getSimpleName</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">" failed"</span><span class="token punctuation">,</span> e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                <span class="token keyword">continue</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>endOfInput<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>cause <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    cause <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ClosedChannelException</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                currentWrite<span class="token punctuation">.</span><span class="token function">fail</span><span class="token punctuation">(</span>cause<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+                currentWrite<span class="token punctuation">.</span><span class="token function">success</span><span class="token punctuation">(</span>inputLength<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>cause <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                cause <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ClosedChannelException</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+            currentWrite<span class="token punctuation">.</span><span class="token function">fail</span><span class="token punctuation">(</span>cause<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>那么为什么要这么做？</p>
+</div><div class="cl-preview-section"><h2 id="猜想和验证">2.2 猜想和验证</h2>
+</div><div class="cl-preview-section"><h3 id="猜想">2.2.1 猜想</h3>
+</div><div class="cl-preview-section"><p>前面提到猜想和验证是学习源码的非常高效的一种方式。</p>
+</div><div class="cl-preview-section"><p>既然这么写就有它的理由，就有一些好处。那么到底有啥好处呢？</p>
+</div><div class="cl-preview-section"><p>使用这个局部变量和直接使用成员变量效果是等价的，而且在函数中使用成员变量也可以省略 this，因此删除 <code>discard</code> 函数标记的那一行代码应该也没啥影响。</p>
+</div><div class="cl-preview-section"><p>那么既然很多开源框架都有这种写法，这么做的目的到底是什么呢？</p>
+</div><div class="cl-preview-section"><p>我们猜想：可能是为了提高可读性；为了防止函数执行过程中成员变量的引用被改变；为了提高性能。</p>
+</div><div class="cl-preview-section"><h3 id="理解和验证">2.3.2 理解和验证</h3>
+</div><div class="cl-preview-section"><p><code>resumeTransfer</code> 函数内声明 <code>final ChannelHandlerContext ctx = this.ctx;</code> 很明显的一个目的是避免函数执行过程中局部变量 ctx 的引用发生变化。</p>
+</div><div class="cl-preview-section"><p>那么 <code>discard</code> 函数未声明为 final 为啥也这么写呢？有没有性能方面的好处呢？</p>
+</div><div class="cl-preview-section"><p>为了降低理解难度，我们写一个等价的简单的代码：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">LocalDemo</span> <span class="token punctuation">{</span>
+ 
+    <span class="token keyword">private</span> List<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span> data <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ 
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">someMethod</span><span class="token punctuation">(</span>String param<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        List<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span> data <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>data<span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>data <span class="token operator">!=</span> null <span class="token operator">&amp;&amp;</span> data<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&gt;</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> data<span class="token punctuation">.</span><span class="token function">contains</span><span class="token punctuation">(</span>param<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>data<span class="token punctuation">.</span><span class="token function">indexOf</span><span class="token punctuation">(</span>param<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+ 
+    <span class="token punctuation">}</span>
+ 
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>编译：`javac LocalDemo.java``</p>
+</div><div class="cl-preview-section"><p>反汇编：<code>javap -c LocalDemo</code></p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>basic<span class="token punctuation">.</span>learn_source_code<span class="token punctuation">.</span>local<span class="token punctuation">.</span>LocalDemo</span> <span class="token punctuation">{</span>
+  <span class="token keyword">public</span> com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>basic<span class="token punctuation">.</span>learn_source_code<span class="token punctuation">.</span>local<span class="token punctuation">.</span><span class="token function">LocalDemo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Code<span class="token operator">:</span>
+       <span class="token number">0</span><span class="token operator">:</span> aload_0
+       <span class="token number">1</span><span class="token operator">:</span> invokespecial #<span class="token number">1</span>                  <span class="token comment">// Method java/lang/Object."&lt;init&gt;":()V</span>
+       <span class="token number">4</span><span class="token operator">:</span> aload_0
+       <span class="token number">5</span><span class="token operator">:</span> <span class="token keyword">new</span>           #<span class="token number">2</span>                  <span class="token comment">// class java/util/ArrayList</span>
+       <span class="token number">8</span><span class="token operator">:</span> dup
+       <span class="token number">9</span><span class="token operator">:</span> invokespecial #<span class="token number">3</span>                  <span class="token comment">// Method java/util/ArrayList."&lt;init&gt;":()V</span>
+      <span class="token number">12</span><span class="token operator">:</span> putfield      #<span class="token number">4</span>                  <span class="token comment">// Field data:Ljava/util/List;</span>
+      <span class="token number">15</span><span class="token operator">:</span> <span class="token keyword">return</span>
+ 
+  <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">someMethod</span><span class="token punctuation">(</span>java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>String<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Code<span class="token operator">:</span>
+       <span class="token number">0</span><span class="token operator">:</span> aload_0
+       <span class="token number">1</span><span class="token operator">:</span> getfield      #<span class="token number">4</span>                  <span class="token comment">// Field data:Ljava/util/List;</span>
+       <span class="token number">4</span><span class="token operator">:</span> astore_2
+       <span class="token number">5</span><span class="token operator">:</span> aload_2
+       <span class="token number">6</span><span class="token operator">:</span> ifnull        <span class="token number">41</span>
+       <span class="token number">9</span><span class="token operator">:</span> aload_2
+      <span class="token number">10</span><span class="token operator">:</span> invokeinterface #<span class="token number">5</span><span class="token punctuation">,</span>  <span class="token number">1</span>            <span class="token comment">// InterfaceMethod java/util/List.size:()I</span>
+      <span class="token number">15</span><span class="token operator">:</span> ifle          <span class="token number">41</span>
+      <span class="token number">18</span><span class="token operator">:</span> aload_2
+      <span class="token number">19</span><span class="token operator">:</span> aload_1
+      <span class="token number">20</span><span class="token operator">:</span> invokeinterface #<span class="token number">6</span><span class="token punctuation">,</span>  <span class="token number">2</span>            <span class="token comment">// InterfaceMethod java/util/List.contains:(Ljava/lang/Object;)Z</span>
+      <span class="token number">25</span><span class="token operator">:</span> ifeq          <span class="token number">41</span>
+      <span class="token number">28</span><span class="token operator">:</span> getstatic     #<span class="token number">7</span>                  <span class="token comment">// Field java/lang/System.out:Ljava/io/PrintStream;</span>
+      <span class="token number">31</span><span class="token operator">:</span> aload_2
+      <span class="token number">32</span><span class="token operator">:</span> aload_1
+      <span class="token number">33</span><span class="token operator">:</span> invokeinterface #<span class="token number">8</span><span class="token punctuation">,</span>  <span class="token number">2</span>            <span class="token comment">// InterfaceMethod java/util/List.indexOf:(Ljava/lang/Object;)I</span>
+      <span class="token number">38</span><span class="token operator">:</span> invokevirtual #<span class="token number">9</span>                  <span class="token comment">// Method java/io/PrintStream.println:(I)V</span>
+      <span class="token number">41</span><span class="token operator">:</span> <span class="token keyword">return</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>对应的局部变量表</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ece440400019d5d06530383.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>接下来看直接使用成员变量的例子。</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">ThisDemo</span> <span class="token punctuation">{</span>
+ 
+ 
+    <span class="token keyword">private</span> List<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span> data <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ 
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">someMethod</span><span class="token punctuation">(</span>String param<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+ 
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>data <span class="token operator">!=</span> null <span class="token operator">&amp;&amp;</span> data<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&gt;</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> data<span class="token punctuation">.</span><span class="token function">contains</span><span class="token punctuation">(</span>param<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>data<span class="token punctuation">.</span><span class="token function">indexOf</span><span class="token punctuation">(</span>param<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+ 
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>编译：<code>javac ThisDemo.java</code></p>
+</div><div class="cl-preview-section"><p>反汇编：<code>javap -c ThisDemo</code></p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>basic<span class="token punctuation">.</span>learn_source_code<span class="token punctuation">.</span>local<span class="token punctuation">.</span>ThisDemo</span> <span class="token punctuation">{</span>
+  <span class="token keyword">public</span> com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>basic<span class="token punctuation">.</span>learn_source_code<span class="token punctuation">.</span>local<span class="token punctuation">.</span><span class="token function">ThisDemo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Code<span class="token operator">:</span>
+       <span class="token number">0</span><span class="token operator">:</span> aload_0
+       <span class="token number">1</span><span class="token operator">:</span> invokespecial #<span class="token number">1</span>                  <span class="token comment">// Method java/lang/Object."&lt;init&gt;":()V</span>
+       <span class="token number">4</span><span class="token operator">:</span> aload_0
+       <span class="token number">5</span><span class="token operator">:</span> <span class="token keyword">new</span>           #<span class="token number">2</span>                  <span class="token comment">// class java/util/ArrayList</span>
+       <span class="token number">8</span><span class="token operator">:</span> dup
+       <span class="token number">9</span><span class="token operator">:</span> invokespecial #<span class="token number">3</span>                  <span class="token comment">// Method java/util/ArrayList."&lt;init&gt;":()V</span>
+      <span class="token number">12</span><span class="token operator">:</span> putfield      #<span class="token number">4</span>                  <span class="token comment">// Field data:Ljava/util/List;</span>
+      <span class="token number">15</span><span class="token operator">:</span> <span class="token keyword">return</span>
+ 
+  <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">someMethod</span><span class="token punctuation">(</span>java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>String<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Code<span class="token operator">:</span>
+       <span class="token number">0</span><span class="token operator">:</span> aload_0
+       <span class="token number">1</span><span class="token operator">:</span> getfield      #<span class="token number">4</span>                  <span class="token comment">// Field data:Ljava/util/List;</span>
+       <span class="token number">4</span><span class="token operator">:</span> ifnull        <span class="token number">48</span>
+       <span class="token number">7</span><span class="token operator">:</span> aload_0
+       <span class="token number">8</span><span class="token operator">:</span> getfield      #<span class="token number">4</span>                  <span class="token comment">// Field data:Ljava/util/List;</span>
+      <span class="token number">11</span><span class="token operator">:</span> invokeinterface #<span class="token number">5</span><span class="token punctuation">,</span>  <span class="token number">1</span>            <span class="token comment">// InterfaceMethod java/util/List.size:()I</span>
+      <span class="token number">16</span><span class="token operator">:</span> ifle          <span class="token number">48</span>
+      <span class="token number">19</span><span class="token operator">:</span> aload_0
+      <span class="token number">20</span><span class="token operator">:</span> getfield      #<span class="token number">4</span>                  <span class="token comment">// Field data:Ljava/util/List;</span>
+      <span class="token number">23</span><span class="token operator">:</span> aload_1
+      <span class="token number">24</span><span class="token operator">:</span> invokeinterface #<span class="token number">6</span><span class="token punctuation">,</span>  <span class="token number">2</span>            <span class="token comment">// InterfaceMethod java/util/List.contains:(Ljava/lang/Object;)Z</span>
+      <span class="token number">29</span><span class="token operator">:</span> ifeq          <span class="token number">48</span>
+      <span class="token number">32</span><span class="token operator">:</span> getstatic     #<span class="token number">7</span>                  <span class="token comment">// Field java/lang/System.out:Ljava/io/PrintStream;</span>
+      <span class="token number">35</span><span class="token operator">:</span> aload_0
+      <span class="token number">36</span><span class="token operator">:</span> getfield      #<span class="token number">4</span>                  <span class="token comment">// Field data:Ljava/util/List;</span>
+      <span class="token number">39</span><span class="token operator">:</span> aload_1
+      <span class="token number">40</span><span class="token operator">:</span> invokeinterface #<span class="token number">8</span><span class="token punctuation">,</span>  <span class="token number">2</span>            <span class="token comment">// InterfaceMethod java/util/List.indexOf:(Ljava/lang/Object;)I</span>
+      <span class="token number">45</span><span class="token operator">:</span> invokevirtual #<span class="token number">9</span>                  <span class="token comment">// Method java/io/PrintStream.println:(I)V</span>
+      <span class="token number">48</span><span class="token operator">:</span> <span class="token keyword">return</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>对应的局部变量表：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ece43ea000184a906480338.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>接下来我们开始对比两者的区别。</p>
+</div><div class="cl-preview-section"><p><strong>我们发现第二个例子源码比第一个还短，但是反编译后的代码比第一个还长。</strong></p>
+</div><div class="cl-preview-section"><p>那么长在哪里呢？为什么会更长呢？</p>
+</div><div class="cl-preview-section"><p>二个例子反编译后的字节码比第一个例子长在哪里呢？</p>
+</div><div class="cl-preview-section"><p>我们发现主要多在：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java">aload_0
+getfield      #<span class="token number">4</span>      <span class="token comment">// Field data:Ljava/util/List;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>其中非静态函数的局部变量表索引为 0 的位置表示 this。</p>
+</div><div class="cl-preview-section"><p><strong>即每次获取 data 对象都要先 aload_0 将 this 实例引用加载到操作数栈，然后再调用 getfield 指令，将实例出栈，对应的数值（data 的引用）压栈。</strong></p>
+</div><div class="cl-preview-section"><p>第一个例子通过 <code>astore_2</code> 将其存到了局部变量表的索引为 2 的局部变量中，每次用直接 <code>aload_2</code> 直接从局部变量表中加载到操作数栈。</p>
+</div><div class="cl-preview-section"><p>不需要每次都从 this 对象中获取这个属性，因此效率更高。</p>
+</div><div class="cl-preview-section"><h3 id="透过现象看本质">2.3.3 透过现象看本质</h3>
+</div><div class="cl-preview-section"><p>很多人到上面部分就思考结束了，其实这远远不够。最需要思考的最有价值的恰恰是最本质的东西。</p>
+</div><div class="cl-preview-section"><p>《深入理解计算机系统》 原书第 3 版，第 10 页讲到： “存储器层次结构的主要思想是上一层的存储器作为低一层存储器的高速缓存”<sup class="footnote-ref"><a href="#fn1" id="fnref1">1</a></sup>。</p>
+</div><div class="cl-preview-section"><p>其实本文中局部变量表中 data 其实就是成员变量 data 引用的一种缓存。</p>
+</div><div class="cl-preview-section"><p>局部变量表和操作数栈都属于栈帧的一部分，都是线程私有，更接近被使用的位置。</p>
+</div><div class="cl-preview-section"><p>这种做法本质上体现了：<strong>空间换时间的概念，体现了时间和空间局部性的概念</strong>。</p>
+</div><div class="cl-preview-section"><p>那么大家可以继续思考，<u>实际的学习和开发中有哪些空间换时间的做法？</u></p>
+</div><div class="cl-preview-section"><p><strong>缓存角度：内存缓存，浏览器缓存、DNS 缓存、路由器缓存、CPU 高速缓存等。</strong></p>
+</div><div class="cl-preview-section"><p><strong>还有分库分表、消息队列的分布式服务中间件；动态规划算法等都体现了空间换时间的思想。</strong></p>
+</div><div class="cl-preview-section"><h1 id="总结">3. 总结</h1>
+</div><div class="cl-preview-section"><p>本文结合一个具体的源码案例，带着大家使用反汇编对源码进行分析，并重点分析了这种做法体现出的思想本质。</p>
+</div><div class="cl-preview-section"><p>希望大家在学习源码时，要多实践这种猜想和验证的学习方式。</p>
+</div><div class="cl-preview-section"><p>在学习和分析问题时，多向专业知识中最重要的基本原理上靠拢，养成从本质思考的意识。</p>
+</div><div class="cl-preview-section"><p>这样才能学到知识的精髓，才能见微知著，才能更好地理解和运用知识。</p>
+</div><div class="cl-preview-section"><h1 id="思考与练习">4. 思考与练习</h1>
+</div><div class="cl-preview-section"><p>1、你还了解哪些空间换时间的做法？</p>
+</div><div class="cl-preview-section"><p>2、请结合上一节所学的内容以及《Java 虚拟机规范》，回顾本节所涉及的字节码指令的含义。确保自己能过理解本节涉及的字节码指令的含义。</p>
+</div><div class="cl-preview-section"><p>欢迎在留言区进行评论和探讨。</p>
+</div><div class="cl-preview-section"><h1 id="参考资料">参考资料</h1>
+<hr class="footnotes-sep">
+<section class="footnotes">
+<ol class="footnotes-list">
+<li id="fn1" class="footnote-item"><p>[美] Randal E. Bryant. David R.O Hallaron.《深入理解计算机系统》.[译] 龚奕利，贺莲. 2016 <a href="#fnref1" class="footnote-backref">↩︎</a></p>
+</li>
+</ol>
+</section>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img1.mukewang.com/5ece27d8000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6573">
+						<img src="https://img.mukewang.com/57dcb3740001be2904930511-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">Omooo</h4>
+						<div class="comment-text">在看编译器优化时，我突然意思到，这个不就是标量替换嘛？
+所谓的标量，就是仅能存储一个值的变量，比如 Java 代码中的局部变量。标量替换这项优化技术，可以看成将原本对对象的字段的访问，替换成一个个的局部变量的访问。</div>
+						<div>
+							
+								<div class="reply">讲师回复：嗯，核心做法是一样的。
+本质就是将数据缓存在更靠近使用的位置，用空间换时间来提高性能。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-18</span>
+						<a href="/read/commentdetail/6573">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6573" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5803">
+						<img src="https://img1.mukewang.com/580b32fa0001c33b12390930-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">Johnson85</h4>
+						<div class="comment-text">挖掘事物本质，理解起来非常自然。
+学习了</div>
+						<div>
+							
+								<div class="reply">讲师回复：是的，其实掌握了读源码、反编译和反汇编并且能够融会贯通，学习Java 会容易很多，有自己的章法。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-11</span>
+						<a href="/read/commentdetail/5803">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5803" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5764">
+						<img src="https://img.mukewang.com/57dcb3740001be2904930511-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">Omooo</h4>
+						<div class="comment-text">厉害！</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-08</span>
+						<a href="/read/commentdetail/5764">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="5764" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5738">
+						<img src="https://img3.mukewang.com/545864190001966102200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">所相虚妄</h4>
+						<div class="comment-text">谢谢老师，这里这个用法的确在非常多的jdk源码中都有出现过，但是对于原理一直是一知半解，甚至在爆栈我还问过类似的问题，今天终于得到了全面的回答了，谢谢了</div>
+						<div>
+							
+								<div class="reply">讲师回复：嗯，善于发现问题就容易学好，剩下就是需要扎实的专业基础，其次是高效的方法，希望本专栏对你有帮助，加油。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-05</span>
+						<a href="/read/commentdetail/5738">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5738" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=78">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '05 源码和反汇编实战案例',
+					'CID': '1979',
+					'Teacher': '明明如月'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "05 源码和反汇编实战案例",
+                    desc: "学习Java很重要，学会怎么学习Java更重要",
+                    imgUrl: 'https:https://img1.mukewang.com/5ecf522a00013a1d05400720.jpg',
+                    otherImgUrl: 'https://img1.mukewang.com/5ecf522a00013a1d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/78',
+                    link: 'https://m.imooc.com/read/78'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

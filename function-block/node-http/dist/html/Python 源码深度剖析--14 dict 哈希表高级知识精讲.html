@@ -1,0 +1,832 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>14 dict 哈希表高级知识精讲</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="突破技术瓶颈，迈向更高岗位">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "5";
+	var chapter_id = "1910";
+	var chapter_title = "14 dict 哈希表高级知识精讲";
+	var aid = "76";
+	var a_name = "Python 源码深度剖析";
+	var a_price = "68.00";
+	var a_pic = "https://img2.mukewang.com/5eb68ab400017cda05400720.jpg";
+	var userId = 0;
+
+	var column_id = '76';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-06-19&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			14 dict 哈希表高级知识精讲
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img.mukewang.com/5ed701820001238a06400426.jpg')"></div>
+	
+	
+		<a href="/read/76">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/5e4a3ec90001ef8d04000400-40-40.jpg" alt="fasionchan">
+				<h3>Python 源码深度剖析</h3>
+				<p>fasionchan · 资深 Python 研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">读书而不思考，等于吃饭而不消化。<p class="author">——波尔克</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>上一小节，我们通过源码学习，研究了 <em>dict</em> 对象的内部结构，并找到隐藏其中的秘密—— <strong>哈希表</strong> 。<strong>关联式容器</strong> 一般由 <strong>平衡搜索树</strong> 或 <strong>哈希表</strong> 来实现，<em>dict</em> 选用 <strong>哈希表</strong> ，主要考虑 <strong>搜索效率</strong> 。但哈希表 <strong>稀疏</strong> 的特性，意味着巨大的内存开销。为优化内存使用，<em>Python</em> 别出心裁地将哈希表分成两部分来实现：<strong>哈希索引</strong> 以及 <strong>键值对存储</strong> 数组。</p>
+</div><div class="cl-preview-section"><p>尽管如此，由于篇幅关系，很多细节我们还没来得及讨论。本节，我们再接再厉，继续研究 <strong>哈希函数</strong> 、<strong>哈希冲突</strong>、<strong>哈希攻击</strong> 以及 <strong>删除操作</strong> 等高级知识点，彻底掌握哈希表设计精髓。</p>
+</div><div class="cl-preview-section"><h2 id="哈希值">哈希值</h2>
+</div><div class="cl-preview-section"><p><em>Python</em> 内置函数 <em>hash</em> 返回对象 <strong>哈希值</strong> ，<strong>哈希表</strong> 依赖 <strong>哈希值</strong> 索引元素：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed7019900014fcd09180741.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>根据哈希表性质， <strong>键对象</strong> 必须满足以下两个条件，否则哈希表便不能正常工作：</p>
+</div><div class="cl-preview-section"><ul>
+<li>哈希值在对象整个生命周期内不能改变；</li>
+<li>可比较，且比较相等的对象哈希值必须相同；</li>
+</ul>
+</div><div class="cl-preview-section"><p>满足这两个条件的对象便是 <strong>可哈希</strong> ( <em>hashable</em> )对象，只有可哈希对象才可作为哈希表的键。因此，诸如 dict 、set等底层由哈希表实现的容器对象，其键对象必须是可哈希对象。</p>
+</div><div class="cl-preview-section"><p><em>Python</em> 内建对象中的 <strong>不可变对象</strong> ( <em>immutable</em> )都是可哈希对象；而诸如 <em>list</em> 、<em>dict</em> 等 <strong>可变对象</strong> 则不是：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">hash</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+Traceback <span class="token punctuation">(</span>most recent call last<span class="token punctuation">)</span><span class="token punctuation">:</span>
+  File <span class="token string">"&lt;stdin&gt;"</span><span class="token punctuation">,</span> line <span class="token number">1</span><span class="token punctuation">,</span> <span class="token keyword">in</span> <span class="token operator">&lt;</span>module<span class="token operator">&gt;</span>
+TypeError<span class="token punctuation">:</span> unhashable <span class="token builtin">type</span><span class="token punctuation">:</span> <span class="token string">'list'</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>不可哈希对象不能作为 <em>dict</em> 对象的键，显然 <em>list</em> 、 <em>dict</em> 等均不是合法的键对象：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>     <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">:</span> <span class="token string">'list is not hashable'</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> <span class="token punctuation">}</span>
+Traceback <span class="token punctuation">(</span>most recent call last<span class="token punctuation">)</span><span class="token punctuation">:</span>
+  File <span class="token string">"&lt;stdin&gt;"</span><span class="token punctuation">,</span> line <span class="token number">2</span><span class="token punctuation">,</span> <span class="token keyword">in</span> <span class="token operator">&lt;</span>module<span class="token operator">&gt;</span>
+TypeError<span class="token punctuation">:</span> unhashable <span class="token builtin">type</span><span class="token punctuation">:</span> <span class="token string">'list'</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>     <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">:</span> <span class="token string">'dict is not hashable either'</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> <span class="token punctuation">}</span>
+Traceback <span class="token punctuation">(</span>most recent call last<span class="token punctuation">)</span><span class="token punctuation">:</span>
+  File <span class="token string">"&lt;stdin&gt;"</span><span class="token punctuation">,</span> line <span class="token number">2</span><span class="token punctuation">,</span> <span class="token keyword">in</span> <span class="token operator">&lt;</span>module<span class="token operator">&gt;</span>
+TypeError<span class="token punctuation">:</span> unhashable <span class="token builtin">type</span><span class="token punctuation">:</span> <span class="token string">'dict'</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>而用户自定义的对象默认便是可哈希对象，对象哈希值由对象地址计算而来，且任意两个不同对象均不相等：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">class</span> <span class="token class-name">A</span><span class="token punctuation">:</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>     <span class="token keyword">pass</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> a <span class="token operator">=</span> A<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> b <span class="token operator">=</span> A<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">hash</span><span class="token punctuation">(</span>a<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token builtin">hash</span><span class="token punctuation">(</span>b<span class="token punctuation">)</span>
+<span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">9223372036573452351</span><span class="token punctuation">,</span> <span class="token operator">-</span><span class="token number">9223372036573452365</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> a <span class="token operator">==</span> b
+<span class="token boolean">False</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>那么，哈希值如何计算呢？答案是—— <strong>哈希函数</strong> 。在对象模型部分，我们知道对象行为由类型对象决定。 <strong>哈希值</strong> 计算作为对象行为中的一种，秘密也隐藏在类型对象中—— <em>tp_hash</em> 函数指针。而内置函数 <em>hash</em> 则依赖类型对象中的 <em>tp_hash</em> 函数，完成哈希值计算并返回。</p>
+</div><div class="cl-preview-section"><p>以 <em>str</em> 对象为例，其哈希函数位于 <em>Objects/unicodeobject.c</em> 源文件，<em>unicode_hash</em> 是也：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c">PyTypeObject PyUnicode_Type <span class="token operator">=</span> <span class="token punctuation">{</span>
+    <span class="token function">PyVarObject_HEAD_INIT</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>PyType_Type<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+    <span class="token string">"str"</span><span class="token punctuation">,</span>              <span class="token comment">/* tp_name */</span>
+    <span class="token keyword">sizeof</span><span class="token punctuation">(</span>PyUnicodeObject<span class="token punctuation">)</span><span class="token punctuation">,</span>        <span class="token comment">/* tp_size */</span>
+    <span class="token comment">// ...</span>
+
+    <span class="token punctuation">(</span>hashfunc<span class="token punctuation">)</span> unicode_hash<span class="token punctuation">,</span>        <span class="token comment">/* tp_hash*/</span>
+
+    <span class="token comment">// ...</span>
+    unicode_new<span class="token punctuation">,</span>            <span class="token comment">/* tp_new */</span>
+    PyObject_Del<span class="token punctuation">,</span>           <span class="token comment">/* tp_free */</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>对于用户自定义的对象，可以实现 <em><strong>hash</strong></em> 魔术方法，重写默认哈希值计算方法。举个例子，假设标签类 <em>Tag</em> 的实例对象由 <em>value</em> 字段唯一标识，便可以根据 value 字段实现 <strong>哈希函数</strong> 以及 <strong>相等性</strong> 判断：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">class</span> <span class="token class-name">Tag</span><span class="token punctuation">:</span>
+
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> value<span class="token punctuation">,</span> title<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>value <span class="token operator">=</span> value
+        self<span class="token punctuation">.</span>title <span class="token operator">=</span> title
+
+    <span class="token keyword">def</span> <span class="token function">__hash__</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">return</span> <span class="token builtin">hash</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>value<span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">__eq__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> other<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">return</span> self<span class="token punctuation">.</span>value <span class="token operator">==</span> other<span class="token punctuation">.</span>value
+</code></pre>
+</div><div class="cl-preview-section"><p>哈希值 <strong>使用频率</strong> 较高，而且在对象生命周期内均不变。因此，可以在对象内部对哈希值进行缓存，避免重复计算。以 <em>str</em> 对象为例，内部结构中的 <em>hash</em> 字段便是用于保存哈希值的。</p>
+</div><div class="cl-preview-section"><p>理想的哈希函数必须保证哈希值尽量均匀地分布于整个哈希空间，越是相近的值，其哈希值差别应该越大。</p>
+</div><div class="cl-preview-section"><h2 id="哈希冲突">哈希冲突</h2>
+</div><div class="cl-preview-section"><p>一方面，不同的对象，哈希值有可能相同，另一方面，与哈希值空间相比，哈希表的槽位是非常有限的。因此，存在多个键被映射到哈希索引的同一槽位的可能性，这便是 <strong>哈希冲突</strong> ！</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed701b10001878c03550332.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>解决哈希冲突的常用方法有两种：</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>分离链接法</strong> ( <em>separate chaining</em> ) ；</li>
+<li><strong>开放地址法</strong> ( <em>open addressing</em> )；</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="分离链接法">分离链接法</h3>
+</div><div class="cl-preview-section"><p><strong>分离链接法</strong> 为每个哈希槽维护一个链表，所有哈希到同一槽位的键保存到对应的链表中：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed701bc0001136605110334.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>如上图，<strong>哈希索引</strong> 每个槽位都接着一个 <strong>链表</strong> ，初始状态为空；哈希到某个槽位的 <strong>键</strong> 则保存于对应的链表中。例如，<em>key1</em> 和 <em>key3</em> 都哈希到下标为 3 的槽位，依次保存于槽位对应的链表中。</p>
+</div><div class="cl-preview-section"><h3 id="开放地址法">开放地址法</h3>
+</div><div class="cl-preview-section"><p><em>Python</em> 采用 <strong>开放地址法</strong> ( <em>open addressing</em> )，将数据直接保存于哈希槽位中，如果槽位已被占用，则尝试另一个。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed701c5000118a003770344.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>如上图，<em>key3</em> 哈希到槽位 <em>3</em> ，但已被 <em>key1</em> 占用了；接着尝试槽位 <em>5</em> 并成功保存。那么，槽位 <em>5</em> 是如何决定的呢？一般而言，第 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>i</mi></mrow><annotation encoding="application/x-tex">i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.65952em;"></span><span class="strut bottom" style="height: 0.65952em; vertical-align: 0em;"></span><span class="base"><span class="mord mathit">i</span></span></span></span></span> 次尝试在首槽位基础上加上一定的偏移量 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>d</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">d_i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.69444em;"></span><span class="strut bottom" style="height: 0.84444em; vertical-align: -0.15em;"></span><span class="base"><span class="mord"><span class="mord mathit">d</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.311664em;"><span class="" style="top: -2.55em; margin-left: 0em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathit mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"></span></span></span></span></span></span></span></span></span>。因此，探测方式因函数  <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>d</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">d_i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.69444em;"></span><span class="strut bottom" style="height: 0.84444em; vertical-align: -0.15em;"></span><span class="base"><span class="mord"><span class="mord mathit">d</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.311664em;"><span class="" style="top: -2.55em; margin-left: 0em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathit mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"></span></span></span></span></span></span></span></span></span> 而异。常见的方法有 <strong>线性探测</strong> ( <em>linear probing</em> )以及 <strong>平方探测</strong> ( <em>quadratic probing</em> )。</p>
+</div><div class="cl-preview-section"><p><strong>线性探测</strong> ，顾名思义， <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>d</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">d_i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.69444em;"></span><span class="strut bottom" style="height: 0.84444em; vertical-align: -0.15em;"></span><span class="base"><span class="mord"><span class="mord mathit">d</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.311664em;"><span class="" style="top: -2.55em; margin-left: 0em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathit mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"></span></span></span></span></span></span></span></span></span> 是一个线性函数，例如  <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>d</mi><mi>i</mi></msub><mo>=</mo><mn>2</mn><mo>∗</mo><mi>i</mi></mrow><annotation encoding="application/x-tex">d_i = 2 * i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.69444em;"></span><span class="strut bottom" style="height: 0.84444em; vertical-align: -0.15em;"></span><span class="base"><span class="mord"><span class="mord mathit">d</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.311664em;"><span class="" style="top: -2.55em; margin-left: 0em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathit mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"></span></span></span></span></span><span class="mrel">=</span><span class="mord mathrm">2</span><span class="mbin">∗</span><span class="mord mathit">i</span></span></span></span></span>：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed701d20001fdb803470351.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><strong>平方探测</strong> ，顾名思义， <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>d</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">d_i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.69444em;"></span><span class="strut bottom" style="height: 0.84444em; vertical-align: -0.15em;"></span><span class="base"><span class="mord"><span class="mord mathit">d</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.311664em;"><span class="" style="top: -2.55em; margin-left: 0em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathit mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"></span></span></span></span></span></span></span></span></span> 是一个平方函数，例如  <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>d</mi><mi>i</mi></msub><mo>=</mo><msup><mi>i</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">d_i = i^2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.814108em;"></span><span class="strut bottom" style="height: 0.964108em; vertical-align: -0.15em;"></span><span class="base"><span class="mord"><span class="mord mathit">d</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.311664em;"><span class="" style="top: -2.55em; margin-left: 0em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathit mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"></span></span></span></span></span><span class="mrel">=</span><span class="mord"><span class="mord mathit">i</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height: 0.814108em;"><span class="" style="top: -3.063em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathrm mtight">2</span></span></span></span></span></span></span></span></span></span></span></span> ：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed701dd0001738106030272.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><strong>线性探测</strong> 和 <strong>平方探测</strong> 很简单，平方探测似乎更胜一筹。如果哈希表存在局部热点，探测很难快速跳过热点区域，而 <strong>平方探测</strong> 则好很多。然而，这两种方法都不够好——因为固定的探测序列加大了冲突的概率。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed701e90001a33205940315.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>如图 <em>key</em> 和 <em>key2</em> 等都哈希到槽位 <em>1</em> ，由于探测序列式相同的，因此冲突概率很高。<em>Python</em> 对此进行了优化，探测函数参考对象哈希值，生成不同的探测序列，进一步降低哈希冲突的可能性：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed702580001a5b806330319.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><em>Python</em> 探测方法在 <em>lookdict</em> 函数中实现，位于 <em>Objects/dictobject.c</em> 源文件内。关键代码如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token keyword">static</span> Py_ssize_t _Py_HOT_FUNCTION
+<span class="token function">lookdict</span><span class="token punctuation">(</span>PyDictObject <span class="token operator">*</span>mp<span class="token punctuation">,</span> PyObject <span class="token operator">*</span>key<span class="token punctuation">,</span>
+         Py_hash_t hash<span class="token punctuation">,</span> PyObject <span class="token operator">*</span><span class="token operator">*</span>value_addr<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    size_t i<span class="token punctuation">,</span> mask<span class="token punctuation">,</span> perturb<span class="token punctuation">;</span>
+    PyDictKeysObject <span class="token operator">*</span>dk<span class="token punctuation">;</span>
+    PyDictKeyEntry <span class="token operator">*</span>ep0<span class="token punctuation">;</span>
+
+top<span class="token punctuation">:</span>
+    dk <span class="token operator">=</span> mp<span class="token operator">-&gt;</span>ma_keys<span class="token punctuation">;</span>
+    ep0 <span class="token operator">=</span> <span class="token function">DK_ENTRIES</span><span class="token punctuation">(</span>dk<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    mask <span class="token operator">=</span> <span class="token function">DK_MASK</span><span class="token punctuation">(</span>dk<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    perturb <span class="token operator">=</span> hash<span class="token punctuation">;</span>
+    i <span class="token operator">=</span> <span class="token punctuation">(</span>size_t<span class="token punctuation">)</span>hash <span class="token operator">&amp;</span> mask<span class="token punctuation">;</span>
+
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token punctuation">;</span><span class="token punctuation">;</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        Py_ssize_t ix <span class="token operator">=</span> <span class="token function">dk_get_index</span><span class="token punctuation">(</span>dk<span class="token punctuation">,</span> i<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 省略键比较部分代码</span>
+
+        <span class="token comment">// 计算下个槽位</span>
+        <span class="token comment">// 由于参考了对象哈希值，探测序列因哈希值而异</span>
+        perturb <span class="token operator">&gt;&gt;=</span> PERTURB_SHIFT<span class="token punctuation">;</span>
+        i <span class="token operator">=</span> <span class="token punctuation">(</span>i<span class="token operator">*</span><span class="token number">5</span> <span class="token operator">+</span> perturb <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> mask<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">Py_UNREACHABLE</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="哈希攻击">哈希攻击</h2>
+</div><div class="cl-preview-section"><p><em>Python</em> 在 <em>3.3</em> 以前， <strong>哈希算法</strong> 只根据对象本身计算哈希值。因此，只要 <em>Python</em> 解释器相同，对象哈希值也肯定相同。我们执行 <em>Python 2</em> 解释器启动一个交互式终端，并计算字符串 <em>fasion</em> 的哈希值：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">import</span> os
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> os<span class="token punctuation">.</span>getpid<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token number">2878</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">hash</span><span class="token punctuation">(</span><span class="token string">'fasion'</span><span class="token punctuation">)</span>
+<span class="token number">3629822619130952182</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>我们再次执行 <em>Python 2</em> 解释器启动另一个交互式终端，发现字符串 <em>fasion</em> 的哈希值保存不变：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">import</span> os
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> os<span class="token punctuation">.</span>getpid<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token number">2915</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">hash</span><span class="token punctuation">(</span><span class="token string">'fasion'</span><span class="token punctuation">)</span>
+<span class="token number">3629822619130952182</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如果一些别有用心的人构造出大量哈希值相同的 <em>key</em> ，并提交给服务器，会发生什么事情呢？例如，向一台 <em>Python 2  Web</em> 服务器 <em>post</em> 一个 <em>json</em> 数据，数据包含大量的 <em>key</em> ，所有 <em>key</em> 的哈希值相同。这意味着哈希表将频繁发生哈希冲突，性能由  <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">O(1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathrm">1</span><span class="mclose">)</span></span></span></span></span> 急剧下降为 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mi>N</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">O(N)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathit" style="margin-right: 0.10903em;">N</span><span class="mclose">)</span></span></span></span></span>，被活生生打垮！这就是 <strong>哈希攻击</strong> 。</p>
+</div><div class="cl-preview-section"><p>问题很严重，好在应对方法却很简单——为对象加把 <strong>盐</strong> ( <em>salt</em> )。具体做法如下：</p>
+</div><div class="cl-preview-section"><ol>
+<li><em>Python</em> 解释器进程启动后，产生一个随机数作为 <strong>盐</strong> ；</li>
+<li>哈希函数同时参考 <strong>对象本身</strong> 以及 <strong>随机数</strong> 计算哈希值；</li>
+</ol>
+</div><div class="cl-preview-section"><p>这样一来，攻击者无法获悉解释器内部的随机数，也就无法构造出哈希值相同的对象了！<em>Python</em> 自 <em>3.3</em> 以后，哈希函数均采用加盐模式，杜绝了 <strong>哈希攻击</strong> 的可能性。<em>Python</em> 哈希算法在 <em>Python/pyhash.c</em> 源文件中实现，有兴趣的童鞋可以学习一下，这里就不再展开了。</p>
+</div><div class="cl-preview-section"><p>执行 <em>Python 3.7</em> 解释器，启动一个交互式终端，并计算字符串 <em>fasion</em> 的哈希值：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">hash</span><span class="token punctuation">(</span><span class="token string">'fasion'</span><span class="token punctuation">)</span>
+<span class="token number">7411353060704220518</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>再次执行 <em>Python 3.7</em> 解释器，启动另一个交互式终端，发现字符串 <em>fasion</em> 的哈希值已经变了：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">hash</span><span class="token punctuation">(</span><span class="token string">'fasion'</span><span class="token punctuation">)</span>
+<span class="token number">1784735826115825426</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="删除操作">删除操作</h2>
+</div><div class="cl-preview-section"><p>现在回过头来讨论 <em>dict</em> 哈希表的 <strong>删除</strong> 操作，以下图这个场景为例：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed702690001792004590294.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><em>key1</em> 最先插入，使用了哈希槽位 <em>5</em> 以及存储单元 <em>0</em> ；紧接着插入 <em>key2</em> ，使用了哈希槽位 <em>1</em> 以及存储单元 <em>1</em> ；最后插入 <em>key3</em> 时，由于哈希槽位被 <em>key2</em> 占用，改用槽位 <em>6</em> 。</p>
+</div><div class="cl-preview-section"><p>如果需要删除 <em>key2</em> ，该如何操作呢？假设我们在将哈希槽位设置为 <em>EMPTY</em> ，并将存储单元标记为删除：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed70272000173c004650299.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>这样一来，由于 <em>key3</em> 哈希到的槽位 <em>1</em> 是空的，便误以为 <em>key3</em> 不存在。换句话讲，<em>key3</em> 不翼而飞了！因此，删除元素时，必须将对应的哈希槽设置为一个特殊的标识 <em>DUMMY</em> ，避免中断哈希探测链：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed7027b00010ede04690297.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>哈希槽位状态常量在 <em>Objects/dict-common.h</em> 头文件中定义：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token macro property">#<span class="token directive keyword">define</span> DKIX_EMPTY (-1)</span>
+<span class="token macro property">#<span class="token directive keyword">define</span> DKIX_DUMMY (-2)  </span><span class="token comment">/* Used internally */</span>
+<span class="token macro property">#<span class="token directive keyword">define</span> DKIX_ERROR (-3)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>那么，被删除的存储单元如何复用呢？<em>Python</em> 压根就没想费这个劲，直接使用新的不就好了吗？假设现在新插入 <em>key4</em> ，<em>Python</em> 并不理会已删除存储单元 <em>1</em> ，直接使用新的存储单元 <em>3</em> ：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed7028500019cbb04750295.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>是的，存储单元中可能有一些是浪费的，但却无伤大雅。如果存储单元已用完，<em>Python</em> 则执行一次容量调整操作，重新分配一个哈希表，并将所有元素搬过去，简单粗暴：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed7028c00013c3b10660300.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>新哈希表规模由当前 <em>dict</em> 当前元素个数决定，因此容量调整有可能是 <strong>扩容</strong> 、<strong>缩容</strong> 或者 <strong>保持不变</strong> 。无论怎样，新哈希表创建后，便有新存储单元可用了！</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img2.mukewang.com/5ed7018700011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6953">
+						<img src="https://img.mukewang.com/5333a1bc00014e8302000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕粉6018178</h4>
+						<div class="comment-text">有一点不太明白，还望老师请教，就是当hash冲突发生时，比如两个key，tom和bob在hash后得到同一个哈希值，通过开放地址法将其对应的value放在两个位置上。那么当查询的时候，是通过什么来保证，key tom取到的value不是bob的，因为他们的hash映射是一样的，是不是还要用空间记录其他的信息</div>
+						<div>
+							
+								<div class="reply">讲师回复：查询的时候根据hash值找到槽位，然后对比key；只有key命中才会返回对应的value。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-10-11</span>
+						<a href="/read/commentdetail/6953">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6953" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6949">
+						<img src="https://img3.mukewang.com/56a348690001fe1006400640-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">lttzzlllX</h4>
+						<div class="comment-text">也正是因为Entry数组的"不可变性", Python3.7中的字典才支持按插入顺序迭代吧。</div>
+						<div>
+							
+								<div class="reply">讲师回复：对~但最好不要依赖这个特性，使用collections.OrderedDict才是正确姿势。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-10-10</span>
+						<a href="/read/commentdetail/6949">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6949" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6533">
+						<img src="https://img1.mukewang.com/533e4bec0001ae5302000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_六月的古明地觉_0</h4>
+						<div class="comment-text">一年前阅读过关于源码剖析的书, 不过是基于Python2.5的, 很高兴遇到了Python3.x的源码剖析, 正在对着源码一点一点剖析, 感谢老师出了这个专栏。
+
+但还是遇到了一个问题, 记得您说: "那么，被删除的存储单元如何复用呢？Python 压根就没想费这个劲，直接使用新的不就好了吗？"。
+不过我隐约记得之前在看那本书的时候, 记得书上画了一张图, 描述entry的unused态、active态、dummy态三者的关系。dummy态无法转为unused态, 但dummy态和active态的entry之间的关系是一个双向箭头。
+
+可不可以这样理解，Python默认是不会管处于dummy态的entry的, 只是做了一个逻辑删除, 但是内存还在占用这。
+如果来了一个新的entry, 并且没有发生冲突, 那么Python就存在新的位置上。但如果发生了冲突, 沿着"冲突探测链"查找的时候, 碰巧发现了一个处于dummy态的entry, 那么就把这个处于dummy态的entry给换成新存储的entry。
+此时entry由dummy态变成了active态, 只不过此时不一定是同一个entry了。可以这样理解吗</div>
+						<div>
+							
+								<div class="reply">讲师回复：完全正确。dummy状态其实也是特殊的unused，之所以不能转成直接转成unused是因为需要维护冲突探测链。另外，Python 3内建对象与Python 2相比变化很大，特别是dict、str等对象，学习建议以最新版本源码为准。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-14</span>
+						<a href="/read/commentdetail/6533">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6533" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6301">
+						<img src="https://img3.mukewang.com/5b8cd6570001575102000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕UI0052680</h4>
+						<div class="comment-text">扩容时，哈希表号存储单元都会变吗？还是只是改一下指针？</div>
+						<div>
+							
+								<div class="reply">讲师回复：扩容时，Python分配新的哈希索引数组，和键值对数组；然后将旧数组中的键值对逐一拷贝到新数组；再调整数组指针指向新数组；最后回收旧数组。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-26</span>
+						<a href="/read/commentdetail/6301">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6301" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6242">
+						<img src="https://img.mukewang.com/54584eff000195a302200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">幕布斯5266815</h4>
+						<div class="comment-text">window下面python2相同解释器相同对象的hash值怎么是一样的噢</div>
+						<div>
+							
+								<div class="reply">讲师回复：Python 2的时候还没有引入哈希加盐的特性，从这个角度讲，安全性不如Python 3。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-21</span>
+						<a href="/read/commentdetail/6242">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6242" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=76">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '14 dict 哈希表高级知识精讲',
+					'CID': '1910',
+					'Teacher': 'fasionchan'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "14 dict 哈希表高级知识精讲",
+                    desc: "突破技术瓶颈，迈向更高岗位",
+                    imgUrl: 'https:https://img2.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/76',
+                    link: 'https://m.imooc.com/read/76'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

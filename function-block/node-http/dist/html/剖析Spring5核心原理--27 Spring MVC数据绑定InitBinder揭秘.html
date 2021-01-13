@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>27 Spring MVC数据绑定InitBinder揭秘</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="Java工程师提升必修课">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2041";
+	var chapter_title = "27 Spring MVC数据绑定InitBinder揭秘";
+	var aid = "77";
+	var a_name = "剖析Spring5核心原理";
+	var a_price = "68.00";
+	var a_pic = "https://img3.mukewang.com/5ec1f3830001652c05400720.jpg";
+	var userId = 0;
+
+	var column_id = '77';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-04&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			27 Spring MVC数据绑定InitBinder揭秘
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img1.mukewang.com/5ecf19470001d29e06400359.jpg')"></div>
+	
+	
+		<a href="/read/77">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/5cfe2ab00001bd1606380638-40-40.jpg" alt="David">
+				<h3>剖析Spring5核心原理</h3>
+				<p>David · 资深架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">人生的旅途，前途很远，也很暗。然而不要怕，不怕的人的面前才有路。<p class="author">—— 鲁 迅</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="背景">背景</h2>
+</div><div class="cl-preview-section"><p>在使用 SpingMVC 框架的项目中，经常会遇到页面某些数据要转换成类型是 Date、Integer、Double 等的数据绑定到控制器的实体。</p>
+</div><div class="cl-preview-section"><p>Spring 提供了很多的将表单数据转换到特定类型的 PropertyEditor 实现类，如 CustomDateEditor、CustomBooleanEditor、CustomNumberEditor 等将页面数据转换到特定的数据类型，在绑定表单之前，都会先注册这些编辑器，SpringMVC 提供了使用注解 <code>@InitBinder</code> 来解决注册这些类型转换器，然后通过例如@ModelAttribute 类似的注解来绑定表单数据到 JavaBean。</p>
+</div><div class="cl-preview-section"><p>一般会将这些方法些在 BaseController 中，需要进行这类转换的控制器只需继�� BaseController 即可。PropertyEditor 实现类很多，大部分场景是够用的。如果业务比较特殊，可以继承 PropertyEditorSupport 自定义一个类型转换器。</p>
+</div><div class="cl-preview-section"><h2 id="实例">实例</h2>
+</div><div class="cl-preview-section"><h3 id="准备一个普通的-mvc-项目">准备一个普通的 MVC 项目</h3>
+</div><div class="cl-preview-section"><p><strong>1. 创建 Maven 项目，选择 Web 项目：</strong></p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f0d165b0001beb006340571.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><strong>2. 添加依赖：</strong><br>
+<img src="https://img.mukewang.com/5f0d167400015fa905120517.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><strong>3. 修改或者添加配置文件：</strong></p>
+</div><div class="cl-preview-section"><p>web.xml 替换类：<br>
+<img src="https://img.mukewang.com/5f0d169000014bee06400346.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>dispatcher-servlet.xml 替换类：<br>
+<img src="https://img.mukewang.com/5f0d16a6000117eb06400461.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><strong>4. 控制器 Controller：</strong><br>
+<img src="https://img.mukewang.com/5f0d16d60001cfdb06400371.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>其中 User 定义如下：<br>
+<img src="https://img.mukewang.com/5f0d16e300010b6f04600476.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h3 id="postman-测试">Postman 测试</h3>
+</div><div class="cl-preview-section"><p>启动 Web 项目，可以添加 Jetty 或者 Tomcat 插件来启动，本文以 Jetty 为例，添加 Jetty 依赖：</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>build</span><span class="token punctuation">&gt;</span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugins</span><span class="token punctuation">&gt;</span></span>
+         <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugin</span><span class="token punctuation">&gt;</span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>org.eclipse.jetty<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>jetty-maven-plugin<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">&gt;</span></span>9.4.8.v20171121<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">&gt;</span></span>
+         <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugin</span><span class="token punctuation">&gt;</span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugins</span><span class="token punctuation">&gt;</span></span>
+   <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>build</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>使用 <code>jetty:run</code> 启动，然后利用 Postman 进行测试。</p>
+</div><div class="cl-preview-section"><p>Header ：<code>Content-Type application/x-www-form-urlencoded</code>。<br>
+<img src="https://img.mukewang.com/5f0d16fd000139fc06400434.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>结果：<br>
+<img src="https://img.mukewang.com/5f0d1712000192b708320218.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="深入原理">深入原理</h2>
+</div><div class="cl-preview-section"><p>从 DispatcherServlet 开始，所有的请求统一追踪到 <code>InvocableHandlerMethod#invokeForRequest</code> 获取参数。<br>
+![<img src="https://img.mukewang.com/5f0d17b80001feb006400232.png" alt="图片描述"><br>
+此时，调用 HandlerMethodArgumentResolverComposite 包装的 <code>resolveArgument</code> 方法，真正执行的是:</p>
+</div><div class="cl-preview-section"><p><code>ModelAttributeMethodProcessor.java#resolveArgument</code> 方法，Argument 解析注解 <code>@ModelAttribute("user")</code> 。<br>
+<img src="https://img.mukewang.com/5f293d300001700412470606.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>绑定的详细的流程如下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f293d4a0001f68f13140496.png" alt="图片描述"><br>
+<strong>1.  初始化 HelloController 自定义的 PropertyEditor</strong></p>
+</div><div class="cl-preview-section"><p>InitBinderDataBinderFactory.java#initBinder ：<br>
+<img src="https://img.mukewang.com/5f0d1824000144cb06400397.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><strong>2. 属性绑定</strong></p>
+</div><div class="cl-preview-section"><p>ServletRequestDataBinder#bind ：<br>
+<img src="https://img.mukewang.com/5f0d183f00019bf006400357.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>最终使用 DataBinder#applyPropertyValues 来执行：<br>
+<img src="https://img.mukewang.com/5f0d197d0001d19006400321.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>完整流程如下：<br>
+<img src="https://img.mukewang.com/5f293e200001d91c16000436.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="扩展">扩展</h2>
+</div><div class="cl-preview-section"><p>上面的 initBinder 针对的是单个 Controller，那么如何设置全局的 initBinder 呢？</p>
+</div><div class="cl-preview-section"><p>可以通过 <code>@ControllerAdvice</code> 注解来定义一个全局的 initBinder，使用 <code>@ControllerAdvice</code>，可以实现三个方面的功能：</p>
+</div><div class="cl-preview-section"><ol>
+<li>全局异常处理；</li>
+<li>全局数据绑定；</li>
+<li>全局数据预处理。</li>
+</ol>
+</div><div class="cl-preview-section"><p>如下所示：<br>
+<img src="https://img.mukewang.com/5f0d19ac0001454706060320.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="总结">总结</h2>
+</div><div class="cl-preview-section"><p>从上面的流程可以看出，整个流程的关键点是 ModelAttributeMethodProcessor.java#resolveArgument ，它处理请求的数据绑定和数据验证。</p>
+</div><div class="cl-preview-section"><ol>
+<li>初始化，使用 WebDataBinderFactory 来创建 createBinder 一个 DataBinder;</li>
+<li>使用 DataBinder 将请求绑定到变量中;</li>
+<li>验证<code>@Valid</code> 定义的变量。</li>
+</ol>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img1.mukewang.com/5ecf194a000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=77">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '27 Spring MVC数据绑定InitBinder揭秘',
+					'CID': '2041',
+					'Teacher': 'David'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "27 Spring MVC数据绑定InitBinder揭秘",
+                    desc: "Java工程师提升必修课",
+                    imgUrl: 'https:https://img3.mukewang.com/5ec1f3830001652c05400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5ec1f3830001652c05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/77',
+                    link: 'https://m.imooc.com/read/77'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

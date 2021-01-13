@@ -1,0 +1,1140 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>18 JavaScript Proxy 最佳实践</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="前端进阶必备，未来少走弯路">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "1";
+	var chapter_id = "1670";
+	var chapter_title = "18 JavaScript Proxy 最佳实践";
+	var aid = "72";
+	var a_name = "Web前端开发修炼指南";
+	var a_price = "58.00";
+	var a_pic = "https://img4.mukewang.com/5e6af0f50001b61d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '72';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-03&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			18 JavaScript Proxy 最佳实践
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5e6edf6a00019dc306400359.jpg')"></div>
+	
+	
+		<a href="/read/72">
+			<div class="course-entry">
+				<img src="https://img3.mukewang.com/5e6c7ecc00012eaa10000884-40-40.jpg" alt="sh22n">
+				<h3>Web前端开发修炼指南</h3>
+				<p>sh22n · 前携程高级前端工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">人生的价值，并不是用时间，而是用深度去衡量的。<p class="author">——列夫·托尔斯泰</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><blockquote>
+<p>只听空相大声道：“请道长立即禀报张真人，事在紧急，片刻延缓不得！”那道人道：“大师来得不巧，敝师祖自去岁坐关，至今一年有余，本派弟子亦已久不见他老人家慈范。”</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>在武侠小说中，经常看到这样的桥段。某位武林人士前来拜访德高望重的帮派掌门，往往需要经过手下弟子的通报。如果掌门外出或者不想见来人，就会让弟子婉拒。</p>
+</div><div class="cl-preview-section"><p>今天要讲的 Proxy 和这个有异曲同工之妙。顾名思义，Proxy 的意思是代理，作用是为其他对象提供一种代理以控制对这个对象的访问。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>本文会涉及到 <a href="http://es6.ruanyifeng.com/#docs/proxy">Proxy</a> 和 <a href="http://es6.ruanyifeng.com/#docs/reflect">Reflect</a>、<a href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Function">Function</a>、<a href="http://es6.ruanyifeng.com/#docs/array#%E6%89%A9%E5%B1%95%E8%BF%90%E7%AE%97%E7%AC%A6">扩展运算符</a> 等知识，主要以实践为主，对语法不会进行详细的讲解，建议配合阮一峰的 <a href="http://es6.ruanyifeng.com/#docs/proxy">ES6入门</a> 中相关章节一起学习 。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="元编程">1. 元编程</h2>
+</div><div class="cl-preview-section"><p>Proxy 常常被用于修改某些操作的默认行为，这种将代码视为数据，通过编写代码来生成代码，使程序获得额外能力的方式叫做元编程。更简单地理解起来，那就是“一段自动写程序的程序”。</p>
+</div><div class="cl-preview-section"><p>在 JavaScript 中，<code>eval</code> 和 <code>new Function</code> 就是两种典型的用于元编程的特性。而 ES6 新出现的 Proxy 也是可以进行元编程的特性。</p>
+</div><div class="cl-preview-section"><p>比如下面这段代码，通过 <code>eval</code> 自动生成一句声明 <code>person</code> 变量的语句：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token function">eval</span><span class="token punctuation">(</span><span class="token string">"var person = 'ygy'"</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在 Underscore 的 template 方法实现中，就使用到 <code>new Function</code> 来将传入的数据和 JavaScript 代码字符串解析成一段可执行的脚本。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token comment">// source是收集的模板语法</span>
+source <span class="token operator">=</span> <span class="token string">"var __p = '';"</span> <span class="token operator">+</span> source <span class="token operator">+</span> <span class="token string">'return __p;'</span>
+        <span class="token comment">// 使用with可以修改作用域</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>settings<span class="token punctuation">.</span>variable<span class="token punctuation">)</span> source <span class="token operator">=</span> <span class="token string">"with(obj||{}) {\n"</span> <span class="token operator">+</span> source <span class="token operator">+</span> <span class="token string">"\n}"</span>
+        <span class="token keyword">var</span> render <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Function</span><span class="token punctuation">(</span>settings<span class="token punctuation">.</span>variable <span class="token operator">||</span> <span class="token string">"obj"</span><span class="token punctuation">,</span> source<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如果对如何编写模板感兴趣，可以参考一下我的这篇文章： <a href="https://juejin.im/post/5c0cdc2ef265da612577ef27">60行代码实现简单模板语法</a></p>
+</div><div class="cl-preview-section"><h2 id="语法">2. 语法</h2>
+</div><div class="cl-preview-section"><p>Proxy 一般是用来架设在目标对象之上的一层拦截，来实现对目标对象访问和修改的控制。Proxy 是一个构造函数，使用的时候需要配合 <code>new</code> 操作符，直接调用会报错。</p>
+</div><div class="cl-preview-section"><p><img src="http://static.zybuluo.com/gyyin/cmn29ih3y4g0ruxcspxgk8k1/image.png" alt="image.png-21.9kB"></p>
+</div><div class="cl-preview-section"><p>Proxy 构造函数接收两个参数，第一个参数是需要拦截的目标对象，这个对象只可以是对象、数组或者函数；第二个参数则是一个配置对象，提供了拦截方法。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token keyword">const</span> person <span class="token operator">=</span> <span class="token punctuation">{</span>
+    name<span class="token punctuation">:</span> <span class="token string">'tom'</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 如果第二个参数为空对象</span>
+<span class="token keyword">const</span> proxy <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>person<span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+proxy <span class="token operator">===</span> person<span class="token punctuation">;</span> <span class="token comment">// false</span>
+
+<span class="token comment">// 第二个参数不为空</span>
+<span class="token keyword">const</span> proxy <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>person<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+    <span class="token keyword">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> prop<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token template-string"><span class="token string">`</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>prop<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string"> is </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>target<span class="token punctuation">[</span>prop<span class="token punctuation">]</span><span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">`</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> target<span class="token punctuation">[</span>prop<span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+proxy<span class="token punctuation">.</span>name <span class="token comment">// 'name is tom'</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="api">2.1 API</h3>
+</div><div class="cl-preview-section"><p>Proxy 支持13种拦截操作，这里重点讲解其中四种。</p>
+</div><div class="cl-preview-section"><ol>
+<li><strong>get(target, prop, receiver)</strong>：拦截对象属性的访问。</li>
+<li><strong>set(target, prop, value, receiver)</strong>：拦截对象属性的设置，最后返回一个布尔值。</li>
+<li><strong>apply(target, object, args)</strong>：用于拦截函数的调用，比如 <code>proxy()</code>。</li>
+<li><strong>construct(target, args)</strong>：方法用于拦截 new 操作符，比如 <code>new proxy()</code>。为了使 new操作符在生成的Proxy对象上生效，用于初始化代理的目标对象自身必须具有[[Construct]]内部方法（即 new target 必须是有效的）。</li>
+<li><strong>has(target, prop)</strong>：拦截例如 prop in proxy的操作，返回一个布尔值。</li>
+<li><strong>deleteProperty(target, prop)</strong>：拦截例如 <code>delete proxy[prop]</code> 的操作，返回一个布尔值。</li>
+<li><strong>ownKeys(target)</strong>：拦截 <code>Object.getOwnPropertyNames(proxy)</code>、<code>Object.keys(proxy)</code>、<code>for in</code> 循环等等操作，最终会返回一个数组。</li>
+<li><strong>getOwnPropertyDescriptor(target, prop)</strong>：拦截 <code>Object.getOwnPropertyDescriptor(proxy, propKey)</code>，返回属性的描述对象。</li>
+<li><strong>defineProperty(target, propKey, propDesc)</strong>：拦截 <code>Object.defineProperty(proxy, propKey, propDesc</code>）、<code>Object.defineProperties(proxy, propDescs)</code>，返回一个布尔值。</li>
+<li><strong>preventExtensions(target)</strong>：拦截 <code>Object.preventExtensions(proxy)</code>，返回一个布尔值。</li>
+<li><strong>getPrototypeOf(target)</strong>：拦截 <code>Object.getPrototypeOf(proxy)</code>，返回一个对象。</li>
+<li><strong>isExtensible(target)</strong>：拦截 <code>Object.isExtensible(proxy)</code>，返回一个布尔值。</li>
+<li><strong>setPrototypeOf(target, proto)</strong>：拦截 <code>Object.setPrototypeOf(proxy, proto)</code>，返回一个布尔值。如果目标对象是函数，那么还有两种额外操作可以拦截。</li>
+</ol>
+</div><div class="cl-preview-section"><h3 id="和-object.defineproperty-的区别">2.2 和 Object.defineProperty 的区别</h3>
+</div><div class="cl-preview-section"><p>在 Proxy 出现之前，JavaScript 中就提供过 <code>Object.defineProperty</code>，允许对对象的 <code>getter/setter</code> 进行拦截，那么两者的区别在哪里呢？</p>
+</div><div class="cl-preview-section"><ol>
+<li><code>Object.defineProperty</code> 无法拦截数组，而 Proxy 支持拦截数组。</li>
+<li><code>Object.defineProperty</code> 只能代理对象属性，想要代理整个对象只能通过遍历的形式，而 Proxy 是代理整个对象。</li>
+<li><code>Object.defineProperty</code> 无法代理新添加的属性（因为通过遍历代理整个对象），而 Proxy 对新添加的属性依然起效。</li>
+<li>Proxy 提供了多达13种拦截方法，而 <code>Object.defineProperty</code> 可以拦截的方式有限。</li>
+<li><code>Object.defineProperty</code> 的兼容性更好，Proxy 是新出的 API，兼容性还不够好。</li>
+</ol>
+</div><div class="cl-preview-section"><h3 id="get">2.3 get</h3>
+</div><div class="cl-preview-section"><p>get 方法用来拦截对目标对象属性的读取，它接收三个参数，分别是目标对象、属性名和 Proxy 实例本身。<br>
+基于 get 方法的特性，可以实现很多实用的功能，比如在对象里面设置私有属性（一般定义属性我们以 <code>_</code> 开头表明是私有属性） ，实现禁止访问私有属性的功能。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> person <span class="token operator">=</span> <span class="token punctuation">{</span>
+    name<span class="token punctuation">:</span> <span class="token string">'tom'</span><span class="token punctuation">,</span>
+    age<span class="token punctuation">:</span> <span class="token number">20</span><span class="token punctuation">,</span>
+    _sex<span class="token punctuation">:</span> <span class="token string">'male'</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">const</span> proxy <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>person<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+    <span class="token keyword">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> prop<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>prop<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">===</span> <span class="token string">'_'</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">Error</span><span class="token punctuation">(</span><span class="token template-string"><span class="token string">`</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>prop<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string"> is private attribute`</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> target<span class="token punctuation">[</span>prop<span class="token punctuation">]</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+proxy<span class="token punctuation">.</span>name<span class="token punctuation">;</span> <span class="token comment">// 'tom'</span>
+proxy<span class="token punctuation">.</span>_sex<span class="token punctuation">;</span> <span class="token comment">// _sex is private attribute</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>还可以给对象中未定义的属性设置默认值。通过拦截对属性的访问，如果是 <code>undefined</code>，那就返回最开始设置的默认值。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">let</span> person <span class="token operator">=</span> <span class="token punctuation">{</span>
+    name<span class="token punctuation">:</span> <span class="token string">'tom'</span><span class="token punctuation">,</span>
+    age<span class="token punctuation">:</span> <span class="token number">20</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">const</span> <span class="token function-variable function">defaults</span> <span class="token operator">=</span> <span class="token punctuation">(</span>obj<span class="token punctuation">,</span> initial<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>obj<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+        <span class="token keyword">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> prop<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>prop <span class="token keyword">in</span> target<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">return</span> target<span class="token punctuation">[</span>prop<span class="token punctuation">]</span>
+            <span class="token punctuation">}</span>
+            <span class="token keyword">return</span> initial
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+person <span class="token operator">=</span> <span class="token function">defaults</span><span class="token punctuation">(</span>person<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+person<span class="token punctuation">.</span>name <span class="token comment">// 'tom'</span>
+person<span class="token punctuation">.</span>sex <span class="token comment">// 0</span>
+person <span class="token operator">=</span> <span class="token function">defaults</span><span class="token punctuation">(</span>person<span class="token punctuation">,</span> <span class="token keyword">null</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+person<span class="token punctuation">.</span>sex <span class="token comment">// null</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="set">2.4 set</h3>
+</div><div class="cl-preview-section"><p>set 方法可以拦截对属性的赋值操作，一般来说接收四个参数，分别是目标对象、属性名、属性值、Proxy 实例。<br>
+下面是一个 set 方法的用法，在对属性进行赋值的时候打印出当前状态。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> proxy <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token punctuation">{</span>
+    <span class="token keyword">set</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> value<span class="token punctuation">,</span> receiver<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token template-string"><span class="token string">`</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>key<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string"> has been set to </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>value<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">`</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        Reflect<span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+proxy<span class="token punctuation">.</span>name <span class="token operator">=</span> <span class="token string">'tom'</span><span class="token punctuation">;</span> <span class="token comment">// name has been setted ygy</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>第四个参数 <code>receiver</code> 则是指当前的 Proxy 实例，在下例中指代 <code>proxy</code>。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> proxy <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token punctuation">{</span>
+    <span class="token keyword">set</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> value<span class="token punctuation">,</span> receiver<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>key <span class="token operator">===</span> <span class="token string">'self'</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            Reflect<span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> receiver<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+            Reflect<span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+proxy<span class="token punctuation">.</span>self <span class="token operator">===</span> proxy<span class="token punctuation">;</span> <span class="token comment">// true</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如果你写过表单验证，也许会被各种验证规则搞得很头疼。使用 Proxy 可以在填写表单的时候，拦截其中的字段进行格式校验。</p>
+</div><div class="cl-preview-section"><p>通常来说，大家都会用一个对象来保存验证规则，这样会更容易对规则进行扩展。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token comment">// 验证规则</span>
+<span class="token keyword">const</span> validators <span class="token operator">=</span> <span class="token punctuation">{</span>
+    name<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token function">validate</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> value<span class="token punctuation">.</span>length <span class="token operator">&gt;</span> <span class="token number">6</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        message<span class="token punctuation">:</span> <span class="token string">'用户名长度不能小于六'</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    password<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token function">validate</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> value<span class="token punctuation">.</span>length <span class="token operator">&gt;</span> <span class="token number">10</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        message<span class="token punctuation">:</span> <span class="token string">'密码长度不能小于十'</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    moblie<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token function">validate</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> <span class="token regex">/^1(3|5|7|8|9)[0-9]{9}$/</span><span class="token punctuation">.</span><span class="token function">test</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        message<span class="token punctuation">:</span> <span class="token string">'手机号格式错误'</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>然后编写验证方法，用 set 方法对 <code>form</code> 表单对象设置属性进行拦截，拦截的时候用上面的验证规则对属性值进行校验，如果校验失败，则弹窗提示。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token comment">// 验证方法</span>
+<span class="token keyword">function</span> <span class="token function">validator</span><span class="token punctuation">(</span>obj<span class="token punctuation">,</span> validators<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>obj<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+        <span class="token keyword">set</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">const</span> validator <span class="token operator">=</span> validators<span class="token punctuation">[</span>key<span class="token punctuation">]</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>validator<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                target<span class="token punctuation">[</span>key<span class="token punctuation">]</span> <span class="token operator">=</span> value<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>validator<span class="token punctuation">.</span><span class="token function">validate</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                target<span class="token punctuation">[</span>key<span class="token punctuation">]</span> <span class="token operator">=</span> value<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+                <span class="token function">alert</span><span class="token punctuation">(</span>validator<span class="token punctuation">.</span>message <span class="token operator">||</span> <span class="token string">""</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">let</span> form <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">;</span>
+form <span class="token operator">=</span> <span class="token function">validator</span><span class="token punctuation">(</span>form<span class="token punctuation">,</span> validators<span class="token punctuation">)</span><span class="token punctuation">;</span>
+form<span class="token punctuation">.</span>name <span class="token operator">=</span> <span class="token string">'666'</span><span class="token punctuation">;</span> <span class="token comment">// 用户名长度不能小于六</span>
+form<span class="token punctuation">.</span>password <span class="token operator">=</span> <span class="token string">'113123123123123'</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>但是，如果这个属性已经设置为不可写，那么 set 将不会生效（但 set 方法依然会执行）。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> person <span class="token operator">=</span> <span class="token punctuation">{</span>
+    name<span class="token punctuation">:</span> <span class="token string">'tom'</span>
+<span class="token punctuation">}</span>
+Object<span class="token punctuation">.</span><span class="token function">defineProperty</span><span class="token punctuation">(</span>person<span class="token punctuation">,</span> <span class="token string">'name'</span><span class="token punctuation">,</span> <span class="token punctuation">{</span>
+    writable<span class="token punctuation">:</span> <span class="token boolean">false</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token keyword">const</span> proxy <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>person<span class="token punctuation">,</span> <span class="token punctuation">{</span>  
+    <span class="token keyword">set</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token number">666</span><span class="token punctuation">)</span>
+        target<span class="token punctuation">[</span>key<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token string">'jerry'</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+proxy<span class="token punctuation">.</span>name <span class="token operator">=</span> <span class="token string">''</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="apply">2.5 apply</h3>
+</div><div class="cl-preview-section"><p>apply 一般是用来拦截函数的调用，它接收三个参数，分别是目标对象、上下文对象（this）、参数数组。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">function</span> <span class="token function">test</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'this is a test function'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">const</span> func <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>test<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+    <span class="token function">apply</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> context<span class="token punctuation">,</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'hello, world'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        target<span class="token punctuation">.</span><span class="token function">apply</span><span class="token punctuation">(</span>context<span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token function">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>通过 apply 方法可以获取到函数的执行次数，在性能分析的时候会有一些帮助。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">function</span> <span class="token function">log</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token keyword">const</span> func <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>log<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+    _count<span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+    <span class="token function">apply</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> context<span class="token punctuation">,</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        target<span class="token punctuation">.</span><span class="token function">apply</span><span class="token punctuation">(</span>context<span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token template-string"><span class="token string">`this function has been called </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span><span class="token operator">++</span><span class="token keyword">this</span><span class="token punctuation">.</span>_count<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string"> times`</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token function">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="construct">2.6 construct</h3>
+</div><div class="cl-preview-section"><p>construct 方法用来拦截 new 操作符。它接收三个参数，分别是目标对象、构造函数的参数列表、proxy 对象，最后需要返回一个对象。</p>
+</div><div class="cl-preview-section"><p>使用方式可以参考下面这么一个例子：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">function</span> <span class="token function">Person</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> age<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>name <span class="token operator">=</span> name<span class="token punctuation">;</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>age <span class="token operator">=</span> age<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">const</span> P <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>Person<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+    <span class="token function">construct</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> args<span class="token punctuation">,</span> newTarget<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'construct'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">target</span><span class="token punctuation">(</span><span class="token operator">...</span>args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token keyword">const</span> p <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">P</span><span class="token punctuation">(</span><span class="token string">'tom'</span><span class="token punctuation">,</span> <span class="token number">21</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 'construct'</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>甚至你还可以代理一个空函数，返回一个新的对象。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">function</span> <span class="token function">noop</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token keyword">const</span> Person <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>noop<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+    <span class="token function">construct</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> args<span class="token punctuation">,</span> newTarget<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token punctuation">{</span>
+            name<span class="token punctuation">:</span> args<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+            age<span class="token punctuation">:</span> args<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token keyword">const</span> person <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Person</span><span class="token punctuation">(</span><span class="token string">'tom'</span><span class="token punctuation">,</span> <span class="token number">21</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// { name: 'tom', age: 21 }</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>注意：构造函数中如果最后返回了一个引用类型，那么 new 出来的实例就是这个引用类型；如果最后返回的不是引用类型，那么默认返回了 this。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>使用 construct 甚至可以代理类，你可能会好奇，Proxy 不是只能代理 Object 类型吗？类该怎么代理呢？<br>
+其实类的本质也是构造函数和原型（对象），完全可以对其进行代理。</p>
+</div><div class="cl-preview-section"><p>考虑有这么一个需求，需要拦截对属性的访问，以及计算原型上函数的执行时间。这样该怎么去做就比较清晰了，可以对属性设置 get 拦截，对原型函数设置 apply 拦截。</p>
+</div><div class="cl-preview-section"><p>先考虑对下面的 <code>Person</code> 类的原型函数进行拦截。使用 <code>Object.getOwnPropertyNames</code> 来获取原型上面所有的函数，遍历这些函数并对其使用 apply 拦截。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">Person</span> <span class="token punctuation">{</span>
+  <span class="token function">constructor</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> age<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>name <span class="token operator">=</span> name<span class="token punctuation">;</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>age <span class="token operator">=</span> age<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token function">say</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token template-string"><span class="token string">`my name is </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span><span class="token keyword">this</span><span class="token punctuation">.</span>name<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">, and my age is </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span><span class="token keyword">this</span><span class="token punctuation">.</span>age<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">`</span></span><span class="token punctuation">)</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">const</span> prototype <span class="token operator">=</span> Person<span class="token punctuation">.</span>prototype<span class="token punctuation">;</span>
+<span class="token comment">// 获取 prototype 上所有的属性名</span>
+Object<span class="token punctuation">.</span><span class="token function">getOwnPropertyNames</span><span class="token punctuation">(</span>prototype<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    Person<span class="token punctuation">.</span>prototype<span class="token punctuation">[</span>name<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>prototype<span class="token punctuation">[</span>name<span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">{</span>
+        <span class="token function">apply</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> context<span class="token punctuation">,</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            console<span class="token punctuation">.</span><span class="token function">time</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            target<span class="token punctuation">.</span><span class="token function">apply</span><span class="token punctuation">(</span>context<span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            console<span class="token punctuation">.</span><span class="token function">timeEnd</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span>
+ <span class="token punctuation">}</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>拦截了原型函数后，开始考虑拦截对属性的访问。前面刚刚讲过 construct 方法的作用，那么是不是可以在 new 的时候对所有属性的访问设置拦截呢？</p>
+</div><div class="cl-preview-section"><p>没错，由于 new 出来的实例也是个对象，那么完全可以对这个对象进行拦截。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js">
+<span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>Person<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 拦截 construct 方法</span>
+    <span class="token function">construct</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">target</span><span class="token punctuation">(</span><span class="token operator">...</span>args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 返回一个代理过的对象</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>obj<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+            <span class="token keyword">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> prop<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      		    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token template-string"><span class="token string">`</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>target<span class="token punctuation">.</span>name<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">.</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>prop<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string"> is being getting`</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      		    <span class="token keyword">return</span> target<span class="token punctuation">[</span>prop<span class="token punctuation">]</span>
+    	    <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>       
+</code></pre>
+</div><div class="cl-preview-section"><p>所以，最后完整的代码如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">Person</span> <span class="token punctuation">{</span>
+  <span class="token function">constructor</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> age<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>name <span class="token operator">=</span> name<span class="token punctuation">;</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>age <span class="token operator">=</span> age<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token function">say</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token template-string"><span class="token string">`my name is </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span><span class="token keyword">this</span><span class="token punctuation">.</span>name<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">, and my age is </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span><span class="token keyword">this</span><span class="token punctuation">.</span>age<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">`</span></span><span class="token punctuation">)</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">const</span> <span class="token function-variable function">proxyTrack</span> <span class="token operator">=</span> <span class="token punctuation">(</span>targetClass<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+  <span class="token keyword">const</span> prototype <span class="token operator">=</span> targetClass<span class="token punctuation">.</span>prototype<span class="token punctuation">;</span>
+  Object<span class="token punctuation">.</span><span class="token function">getOwnPropertyNames</span><span class="token punctuation">(</span>prototype<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+        targetClass<span class="token punctuation">.</span>prototype<span class="token punctuation">[</span>name<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>prototype<span class="token punctuation">[</span>name<span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">{</span>
+            <span class="token function">apply</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> context<span class="token punctuation">,</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                console<span class="token punctuation">.</span><span class="token function">time</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                target<span class="token punctuation">.</span><span class="token function">apply</span><span class="token punctuation">(</span>context<span class="token punctuation">,</span> args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                console<span class="token punctuation">.</span><span class="token function">timeEnd</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span><span class="token punctuation">)</span>
+  <span class="token punctuation">}</span><span class="token punctuation">)</span>
+  <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>targetClass<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+    <span class="token function">construct</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">target</span><span class="token punctuation">(</span><span class="token operator">...</span>args<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>obj<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+        <span class="token keyword">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> prop<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      		console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token template-string"><span class="token string">`</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>target<span class="token punctuation">.</span>name<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">.</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>prop<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string"> is being getting`</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      		<span class="token keyword">return</span> target<span class="token punctuation">[</span>prop<span class="token punctuation">]</span>
+    	<span class="token punctuation">}</span>
+      <span class="token punctuation">}</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span><span class="token punctuation">)</span>       
+<span class="token punctuation">}</span>
+<span class="token keyword">const</span> MyClass <span class="token operator">=</span> <span class="token function">proxyTrack</span><span class="token punctuation">(</span>Person<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> myClass <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">MyClass</span><span class="token punctuation">(</span><span class="token string">'tom'</span><span class="token punctuation">,</span> <span class="token number">21</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+myClass<span class="token punctuation">.</span><span class="token function">say</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+myClass<span class="token punctuation">.</span>name<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="实践">3. 实践</h2>
+</div><div class="cl-preview-section"><p>Proxy 的使用场景非常广泛，可以用来拦截对象的 set/get 从而实现数据响应。在 Vue3 和 Mobx5 中都使用了 Proxy 代替 <code>Object.defineProperty</code>。那么接下来就来看看 Proxy 都可以做哪些事情吧。</p>
+</div><div class="cl-preview-section"><h3 id="深层取值">3.1 深层取值</h3>
+</div><div class="cl-preview-section"><p>平时取数据的时候，经常会遇到深层数据结构，如果不做任何处理，很容易造成 JS 报错。<br>
+为了避免这个问题，也许你会用多个 &amp;&amp; 进行处理：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> country <span class="token operator">=</span> <span class="token punctuation">{</span>
+    name<span class="token punctuation">:</span> <span class="token string">'china'</span><span class="token punctuation">,</span>
+    province<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        name<span class="token punctuation">:</span> <span class="token string">'guangdong'</span><span class="token punctuation">,</span>
+        city<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+            name<span class="token punctuation">:</span> <span class="token string">'shenzhen'</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">const</span> cityName <span class="token operator">=</span> country<span class="token punctuation">.</span>province
+    <span class="token operator">&amp;&amp;</span> country<span class="token punctuation">.</span>province<span class="token punctuation">.</span>city
+    <span class="token operator">&amp;&amp;</span> country<span class="token punctuation">.</span>province<span class="token punctuation">.</span>city<span class="token punctuation">.</span>name<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>但这样还是过于繁琐了，于是 lodash 提供了 get 方法帮忙处理这个问题：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js">_<span class="token punctuation">.</span><span class="token keyword">get</span><span class="token punctuation">(</span>country<span class="token punctuation">,</span> <span class="token string">'province.city.name'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>虽然看起来似乎还不错，但总觉得哪里不太对。对，这种写法看起来很不自然，有没有更自然的写法呢？<br>
+最新的 ES 提案中提供了可选链的语法糖，支持我们用下面的语法来深层取值。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js">country<span class="token operator">?</span><span class="token punctuation">.</span>province<span class="token operator">?</span><span class="token punctuation">.</span>city<span class="token operator">?</span><span class="token punctuation">.</span>name
+</code></pre>
+</div><div class="cl-preview-section"><p>但是这个特性只是处于 stage3阶段，还没有被正式纳入 ES 规范中，更没有浏览器已经支持了这个特性。<br>
+所以，我们只能另辟蹊径。这时你可能会想到如果使用 Proxy 的 get 方法拦截对属性的访问，这样是不是就可以实现深层取值了呢？<br>
+接下来，我将会带着你一步步实现下面的这个 get 方法。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> obj <span class="token operator">=</span> <span class="token punctuation">{</span>
+    person<span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 预期结果（这里为什么要当做函数执行呢？）</span>
+<span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">===</span> obj<span class="token punctuation">;</span>
+<span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">person</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// {}</span>
+<span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span><span class="token punctuation">.</span>person<span class="token punctuation">.</span><span class="token function">name</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// undefined</span>
+<span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span><span class="token punctuation">.</span>person<span class="token punctuation">.</span>name<span class="token punctuation">.</span>xxx<span class="token punctuation">.</span>yyy<span class="token punctuation">.</span><span class="token function">zzz</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// undefined</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>首先，创建一个 get 方法，使用 Proxy 中的 get 对传入的对象进行拦截。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">function</span> <span class="token keyword">get</span> <span class="token punctuation">(</span>obj<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>obj<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+        <span class="token keyword">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> prop<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> target<span class="token punctuation">[</span>prop<span class="token punctuation">]</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>来运行一下上面的三个例子，看一下结果如何：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span><span class="token punctuation">.</span>person<span class="token punctuation">;</span> <span class="token comment">// {}</span>
+<span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span><span class="token punctuation">.</span>person<span class="token punctuation">.</span>name<span class="token punctuation">;</span> <span class="token comment">// undefined</span>
+<span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span><span class="token punctuation">.</span>person<span class="token punctuation">.</span>name<span class="token punctuation">.</span>xxx<span class="token punctuation">.</span>yyy<span class="token punctuation">.</span>zzz<span class="token punctuation">;</span> <span class="token comment">// Cannot read property 'xxx' of undefined</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>前两个测试用例是成功了，但第三个还是不行，因为 <code>get(obj).person.name</code> 是 <code>undefined</code>，所以接下来的重点是处理属性为 <code>undefined</code> 的情况。</p>
+</div><div class="cl-preview-section"><p>对这个 get 方法进行一下简单的改造，这次不再直接返回 <code>target[prop]</code>，而是返回一个代理对象，让第三个例子不再报错。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">function</span> <span class="token keyword">get</span> <span class="token punctuation">(</span>obj<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>obj<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+        <span class="token keyword">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> prop<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> <span class="token keyword">get</span><span class="token punctuation">(</span>target<span class="token punctuation">[</span>prop<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>嗯，看起来有点儿高大上了，但是 <code>target[prop]</code> 为 <code>undefined</code> 的时候，传给 get 方法的就是 <code>undefined</code> 了，而 Proxy 第一个参数必须为对象，这样岂不是会报错？</p>
+</div><div class="cl-preview-section"><p>所以，需要对 obj 为 <code>undefined</code> 的时候进行特殊处理，为了能够深层取值，只能对值为 <code>undefined</code> 的属性设置默认值为空对象。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">function</span> <span class="token keyword">get</span> <span class="token punctuation">(</span>obj <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>obj<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+        <span class="token keyword">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> prop<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> <span class="token keyword">get</span><span class="token punctuation">(</span>target<span class="token punctuation">[</span>prop<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span><span class="token punctuation">.</span>person<span class="token punctuation">;</span> <span class="token comment">// {}</span>
+<span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span><span class="token punctuation">.</span>person<span class="token punctuation">.</span>name<span class="token punctuation">;</span> <span class="token comment">// {}</span>
+<span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span><span class="token punctuation">.</span>person<span class="token punctuation">.</span>name<span class="token punctuation">.</span>xxx<span class="token punctuation">.</span>yyy<span class="token punctuation">.</span>zzz<span class="token punctuation">;</span> <span class="token comment">// {}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>虽然不报错了，可是后两个返回值却不对了。不设置默认值为空对象就无法继续访问，设置默认值为空对象就会改变返回值。这可该怎么办呢？</p>
+</div><div class="cl-preview-section"><p>仔细看一下上面的预期设计，是不是发现少了一个括号，这就是为什么每个属性都被当做函数来执行。<br>
+所以需要对这个函数稍加修改，让其支持 apply 拦截的方式。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">function</span> <span class="token function">noop</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token keyword">function</span> <span class="token keyword">get</span> <span class="token punctuation">(</span>obj<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 注意这里拦截的是 noop 函数</span>
+    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>noop<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 这里支持返回执行的时候传入的参数</span>
+        <span class="token function">apply</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> context<span class="token punctuation">,</span> <span class="token punctuation">[</span>arg<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> obj<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token keyword">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> prop<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> <span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">[</span>prop<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>所以这个 get 方法已经可以这样使用了。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">===</span> obj<span class="token punctuation">;</span> <span class="token comment">// true</span>
+<span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span><span class="token punctuation">.</span>person<span class="token punctuation">.</span><span class="token function">name</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// undefined</span>
+<span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span><span class="token punctuation">.</span>person<span class="token punctuation">.</span>name<span class="token punctuation">.</span>xxx<span class="token punctuation">.</span>yyy<span class="token punctuation">.</span><span class="token function">zzz</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// Cannot read property 'xxx' of undefined</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>我们理想中的应该是，如果属性为 <code>undefined</code> 就返回 <code>undefined</code>，但仍要支持访问下级属性，而不是抛出错误。顺着这个思路来的话，很明显当属性为 <code>undefined</code> 的时候也需要用 Proxy 进行特殊处理。</p>
+</div><div class="cl-preview-section"><p>所以我们需要一个具有下面特性的 get 方法：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">get</span><span class="token punctuation">(</span>undefined<span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">===</span> undefined<span class="token punctuation">;</span> <span class="token comment">// true</span>
+<span class="token keyword">get</span><span class="token punctuation">(</span>undefined<span class="token punctuation">)</span><span class="token punctuation">.</span>xxx<span class="token punctuation">.</span>yyy<span class="token punctuation">.</span><span class="token function">zzz</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token comment">// undefined</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>和前面的困扰不一样的地方是，这里完全不需要注意 <code>get(undefined).xxx</code> 是否为正确的值，因为想获取值必须要执行才能拿到。那么只需要对所有 <code>undefined</code> 后面访问的属性都默认为 <code>undefined</code> 就好了。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">function</span> <span class="token function">noop</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token keyword">function</span> <span class="token keyword">get</span> <span class="token punctuation">(</span>obj<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>obj <span class="token operator">===</span> undefined<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> proxyVoid<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 注意这里拦截的是 noop 函数</span>
+    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>noop<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 这里支持返回执行的时候传入的参数</span>
+        <span class="token function">apply</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> context<span class="token punctuation">,</span> <span class="token punctuation">[</span>arg<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> obj <span class="token operator">===</span> undefined <span class="token operator">?</span> arg <span class="token punctuation">:</span> obj<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token keyword">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> prop<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>
+                obj <span class="token operator">!==</span> undefined <span class="token operator">&amp;&amp;</span>
+                obj <span class="token operator">!==</span> <span class="token keyword">null</span> <span class="token operator">&amp;&amp;</span>
+                obj<span class="token punctuation">.</span><span class="token function">hasOwnProperty</span><span class="token punctuation">(</span>prop<span class="token punctuation">)</span>
+            <span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">return</span> <span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">[</span>prop<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+            <span class="token keyword">return</span> proxyVoid<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>接下来思考一下这个 <code>proxyVoid</code> 函数该如何实现呢？很明显它应该是一个代理了 <code>undefined</code> 后返回的对象。直接这样好不好？</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> proxyVoid <span class="token operator">=</span> <span class="token keyword">get</span><span class="token punctuation">(</span>undefined<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>但是这样很明显会造成死循环了，那么就需要判断临界值了，让 get 方法第一次接收 <code>undefined</code> 的时候不会死循环。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">let</span> isFirst <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+<span class="token keyword">function</span> <span class="token function">noop</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token keyword">let</span> proxyVoid <span class="token operator">=</span> <span class="token keyword">get</span><span class="token punctuation">(</span>undefined<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">function</span> <span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>obj <span class="token operator">===</span> undefined <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span>isFirst<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> proxyVoid<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>obj <span class="token operator">===</span> undefined <span class="token operator">&amp;&amp;</span> isFirst<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        isFirst <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 注意这里拦截的是 noop 函数</span>
+    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>noop<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 这里支持返回执行的时候传入的参数</span>
+        <span class="token function">apply</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> context<span class="token punctuation">,</span> <span class="token punctuation">[</span>arg<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> obj <span class="token operator">===</span> undefined <span class="token operator">?</span> arg <span class="token punctuation">:</span> obj<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token keyword">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> prop<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>
+                obj <span class="token operator">!==</span> undefined <span class="token operator">&amp;&amp;</span>
+                obj <span class="token operator">!==</span> <span class="token keyword">null</span> <span class="token operator">&amp;&amp;</span>
+                obj<span class="token punctuation">.</span><span class="token function">hasOwnProperty</span><span class="token punctuation">(</span>prop<span class="token punctuation">)</span>
+            <span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">return</span> <span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">[</span>prop<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+            <span class="token keyword">return</span> proxyVoid<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>我们再来验证一下，这种方式是否可行：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">===</span> obj<span class="token punctuation">;</span> <span class="token comment">// true</span>
+<span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span><span class="token punctuation">.</span>person<span class="token punctuation">.</span><span class="token function">name</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// undefined</span>
+<span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span><span class="token punctuation">.</span>person<span class="token punctuation">.</span>name<span class="token punctuation">.</span>xxx<span class="token punctuation">.</span>yyy<span class="token punctuation">.</span><span class="token function">zzz</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// undefined</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>bingo，这个方法完全实现了我们的需求。最后，完整的代码如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token punctuation">(</span><span class="token keyword">function</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">let</span> isFirst <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+    <span class="token keyword">function</span> <span class="token function">noop</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+    <span class="token keyword">let</span> proxyVoid <span class="token operator">=</span> <span class="token keyword">get</span><span class="token punctuation">(</span>undefined<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">function</span> <span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>obj <span class="token operator">===</span> undefined<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>isFirst<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">return</span> proxyVoid<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+            isFirst <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token comment">// 注意这里拦截的是 noop 函数</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>noop<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 这里支持返回执行的时候传入的参数</span>
+            <span class="token function">apply</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> context<span class="token punctuation">,</span> <span class="token punctuation">[</span>arg<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">return</span> obj <span class="token operator">===</span> undefined <span class="token operator">?</span> arg <span class="token punctuation">:</span> obj<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span><span class="token punctuation">,</span>
+            <span class="token keyword">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> prop<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>
+                    obj <span class="token operator">!==</span> undefined <span class="token operator">&amp;&amp;</span>
+                    obj <span class="token operator">!==</span> <span class="token keyword">null</span> <span class="token operator">&amp;&amp;</span>
+                    obj<span class="token punctuation">.</span><span class="token function">hasOwnProperty</span><span class="token punctuation">(</span>prop<span class="token punctuation">)</span>
+                <span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">return</span> <span class="token keyword">get</span><span class="token punctuation">(</span>obj<span class="token punctuation">[</span>prop<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                <span class="token keyword">return</span> proxyVoid<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token keyword">get</span> <span class="token operator">=</span> <span class="token keyword">get</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">call</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这个基于 Proxy 的 get 方法的灵感来自于 Github 上的一个名为 safe-touch 的库，感兴趣的可以去看一下它的源码实现：<a href="https://github.com/EnixCoda/safe-touch">safe-touch</a></p>
+</div><div class="cl-preview-section"><h3 id="管道">3.2 管道</h3>
+</div><div class="cl-preview-section"><p>在最新的 ECMA 提案中，出现了原生的管道操作符 <code>|&gt;</code>，在 rxjs 和 nodejs 中都有类似的 <code>pipe</code> 概念。<br>
+使用 Proxy 也可以实现 <code>pipe</code> 功能，只要使用 get 对属性访问进行拦截就能轻易实现，将访问的方法都放到 <code>stack</code> 数组里面，一旦最后访问了 <code>execute</code> 就返回结果。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> <span class="token function-variable function">pipe</span> <span class="token operator">=</span> <span class="token punctuation">(</span>value<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> stack <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token keyword">const</span> proxy <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token punctuation">{</span>
+        <span class="token keyword">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> prop<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>prop <span class="token operator">===</span> <span class="token string">'execute'</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">return</span> stack<span class="token punctuation">.</span><span class="token function">reduce</span><span class="token punctuation">(</span><span class="token keyword">function</span> <span class="token punctuation">(</span>val<span class="token punctuation">,</span> fn<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">return</span> <span class="token function">fn</span><span class="token punctuation">(</span>val<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span><span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+            stack<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>window<span class="token punctuation">[</span>prop<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span> proxy<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> proxy<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">var</span> <span class="token function-variable function">double</span> <span class="token operator">=</span> n <span class="token operator">=&gt;</span> n <span class="token operator">*</span> <span class="token number">2</span><span class="token punctuation">;</span>
+<span class="token keyword">var</span> <span class="token function-variable function">pow</span> <span class="token operator">=</span> n <span class="token operator">=&gt;</span> n <span class="token operator">*</span> n<span class="token punctuation">;</span>
+<span class="token function">pipe</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">.</span>double<span class="token punctuation">.</span>pow<span class="token punctuation">.</span>execute<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>注意：这里为了在 <code>stack</code> 存入方法，使用了 <code>window[prop]</code> 的形式，是为了获取到对应的方法。也可以将 <code>double</code> 和 <code>pow</code> 方法挂载到一个对象里面，用这个对象替换 <code>window</code>。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h3 id="双向绑定">3.3 双向绑定</h3>
+</div><div class="cl-preview-section"><p>众所周知，Vue 相对于 React 的一个卖点就是 <em><strong>Reactive</strong></em> ，而 React 的状态管理库 Mobx 也是基于依赖追踪的，这两个库的核心实现都是 <code>Object.defineProperty</code>，后来都改为了 Proxy。</p>
+</div><div class="cl-preview-section"><p>那么，接下来会带着你实现一个简单的类似下面的双向绑定。</p>
+</div><div class="cl-preview-section"><p><img src="http://static.zybuluo.com/gyyin/he6j1n4tcs4qmvifoia9h9ub/%E7%BB%91%E5%AE%9A.gif" alt="绑定.gif-1236.4kB"><br>
+我们的 HTML 结构如下，要求在输入框输入内容的时候，会同步显示在下方的 <code>span</code> 中。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token operator">&lt;</span>input type<span class="token operator">=</span><span class="token string">"text"</span> id<span class="token operator">=</span><span class="token string">"input"</span> <span class="token operator">/</span><span class="token operator">&gt;</span>
+<span class="token operator">&lt;</span>span id<span class="token operator">=</span><span class="token string">"span"</span><span class="token operator">&gt;</span><span class="token operator">&lt;</span><span class="token operator">/</span>span<span class="token operator">&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>传统的事件绑定形式实现这个很简单，只需要对 <code>input</code> 绑定事件，一旦输入内容就去修改 <code>span</code> 的 <code>innerHTML</code>。但这里我们想使用数据驱动的形式，用数据绑定视图的形式来做。</p>
+</div><div class="cl-preview-section"><p>所以，这里完全可以使用 Proxy 监听一个对象，当在输入框输入内容的时候去修改这个对象属性的时候，在 set 函数中修改 <code>span</code> 的内容。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">let</span> obj <span class="token operator">=</span> <span class="token punctuation">{</span>
+    text<span class="token punctuation">:</span> <span class="token string">'1'</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> input <span class="token operator">=</span> document<span class="token punctuation">.</span><span class="token function">getElementById</span><span class="token punctuation">(</span><span class="token string">'input'</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    span <span class="token operator">=</span> document<span class="token punctuation">.</span><span class="token function">getElementById</span><span class="token punctuation">(</span><span class="token string">'span'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+obj <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>obj<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+  <span class="token keyword">get</span><span class="token punctuation">:</span> <span class="token keyword">function</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'get val'</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token keyword">set</span><span class="token punctuation">:</span> <span class="token keyword">function</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> prop<span class="token punctuation">,</span> newVal<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>prop <span class="token operator">===</span> <span class="token string">'text'</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        target<span class="token punctuation">[</span>prop<span class="token punctuation">]</span> <span class="token operator">=</span> newVal<span class="token punctuation">;</span>
+        input<span class="token punctuation">.</span>value <span class="token operator">=</span> newVal<span class="token punctuation">;</span>
+        span<span class="token punctuation">.</span>innerHTML <span class="token operator">=</span> newVal<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+input<span class="token punctuation">.</span><span class="token function">addEventListener</span><span class="token punctuation">(</span><span class="token string">'keyup'</span><span class="token punctuation">,</span> <span class="token keyword">function</span><span class="token punctuation">(</span>e<span class="token punctuation">)</span><span class="token punctuation">{</span>
+  obj<span class="token punctuation">.</span>text <span class="token operator">=</span> e<span class="token punctuation">.</span>target<span class="token punctuation">.</span>value<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这个功能就完美实现了，但是这个代码缺陷有很多：</p>
+</div><div class="cl-preview-section"><ol>
+<li>现在只是监听了一个属性，如果需要监听多个属性变化呢？</li>
+<li>如果下次需要在一个新的 <code>span</code> 中也要展示输入内容呢？每次修改 set 方法不符合开闭原则。</li>
+<li>代码耦合太严重，set 方法中既有赋值，又有操作 DOM。</li>
+</ol>
+</div><div class="cl-preview-section"><p>而在 Vue 中，还增加了发布订阅的形式来实现双向绑定，这里篇幅有限，就不具体展示讲解了。感兴趣的同学可以参考一下这篇文章：<a href="https://juejin.im/post/5acd0c8a6fb9a028da7cdfaf">实现双向绑定Proxy比defineproperty优劣如何?</a></p>
+</div><div class="cl-preview-section"><h2 id="推荐阅读">推荐阅读</h2>
+</div><div class="cl-preview-section"><ol>
+<li><a href="http://es6.ruanyifeng.com/#docs/proxy">Proxy</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/69106037">JavaScript的Proxy可以做哪些有意思的事儿</a></li>
+<li><a href="https://juejin.im/post/5d2e657ae51d4510b71da69d">Proxy 的巧用<br>
+</a></li>
+</ol>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img1.mukewang.com/5e6edf76000158e806700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=72">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '18 JavaScript Proxy 最佳实践',
+					'CID': '1670',
+					'Teacher': 'sh22n'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "18 JavaScript Proxy 最佳实践",
+                    desc: "前端进阶必备，未来少走弯路",
+                    imgUrl: 'https:https://img4.mukewang.com/5e6af0f50001b61d05400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5e6af0f50001b61d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/72',
+                    link: 'https://m.imooc.com/read/72'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

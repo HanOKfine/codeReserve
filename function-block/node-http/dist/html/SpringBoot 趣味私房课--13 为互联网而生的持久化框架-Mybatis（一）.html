@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>13 为互联网而生的持久化框架-Mybatis（一）</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="够吃管饱的SpringBoot大餐">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "2";
+	var chapter_id = "1809";
+	var chapter_title = "13 为互联网而生的持久化框架-Mybatis（一）";
+	var aid = "75";
+	var a_name = "SpringBoot 趣味私房课";
+	var a_price = "58.00";
+	var a_pic = "https://img4.mukewang.com/5e9cfd1f0001ece605400720.jpg";
+	var userId = 0;
+
+	var column_id = '75';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-26&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			13 为互联网而生的持久化框架-Mybatis（一）
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img4.mukewang.com/5e9d004c0001af9a06400359.jpg')"></div>
+	
+	
+		<a href="/read/75">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5e776f3c000149fd10801080-40-40.jpg" alt="刘水镜">
+				<h3>SpringBoot 趣味私房课</h3>
+				<p>刘水镜 · 知名 A.I. 公司 Java 工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">受苦的人，没有悲观的权利。<p class="author">——尼采</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="what-is-mybatis">1. What is Mybatis</h1>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eb2156e0001c93806450238.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>提起 Mybatis 我们就会想到那只吉祥物—— 一只 Cosplay 忍者神龟的愤怒滴小鸟，想要了解一个技术最好的办法就是去它的官网看看，那么我们就先看一下官网是怎么向我们介绍 Mybatis 的。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>MyBatis is a first class persistence framework with support for custom SQL, stored procedures and advanced mappings. MyBatis eliminates almost all of the JDBC code and manual setting of parameters and retrieval of results. MyBatis can use simple XML or Annotations for configuration and map primitives, Map interfaces and Java POJOs (Plain Old Java Objects) to database records.</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>上面是 Mybatis 官网对于 Mybatis 的一个介绍，简单翻译一下：</p>
+</div><div class="cl-preview-section"><p>MyBatis 是一个很牛逼的持久层框架，支持定制化 SQL、存储过程和高级映射。MyBatis 干掉了几乎所有的 JDBC 代码，不需要手动拼接参数和检索结果。MyBatis 可以使用简单的 XML 或注解来配置和映射原生类型、接口和 Java 的 POJO（Plain Old Java Objects，普通老式 Java 对象）为数据库中的记录。</p>
+</div><div class="cl-preview-section"><h1 id="身世">2. 身世</h1>
+</div><div class="cl-preview-section"><p>MyBatis 的前世为 iBatis（ 该名称为 internet 和 abatis 的组合，寓意为互联网而生），iBatis 是由 Clinton Begin 在 2001 年发起的开源项目。</p>
+</div><div class="cl-preview-section"><p>在 2004 年，iBatis 发布了 2.0 版本，随后 Clinton Begin 将 iBatis 献给 Apache 软件基金会（ Apache Software Foundation, ASF）。</p>
+</div><div class="cl-preview-section"><p>在之后的 6 年中，iBatis 在方法论、源码管理、社交、开源基础建设等方面都取得了很大的进步。</p>
+</div><div class="cl-preview-section"><p>2010 年 5 月 21 日，iBatis 项目迁移到 Google Code ，并更名为 MyBatis，正式投胎转世。版本从 3.0.1 一直更新到 3.2.3，稳定性得到很大提升。</p>
+</div><div class="cl-preview-section"><p>2010 年 6 月 16 日， iBatis 项目被正式归入 Apache Attic， 属性变为“只读”， 这意味着该项目在 iBatis 时代正式结束。</p>
+</div><div class="cl-preview-section"><p>2013 年 11 月 10 日，为了让更多的人参与到项目中，MyBatis 项目被迁移至 GitHub，而后一直发展至今，目前最新的稳定版本为 3.5.4 。</p>
+</div><div class="cl-preview-section"><h1 id="特点">3. 特点</h1>
+</div><div class="cl-preview-section"><p>说 Mybatis 是目前国内 Java 持久层最为主流的技术��应该不会有什么人反对吧。它比 JPA（HIbernate）更加简单易用，学习门槛更低。遥想当年，在软件开发以企业管理系统（ERP、CRM 等）为主的年代，Hibernate 的模型化有助于系统分析与建模，顺应当时的需要，可谓叱咤风云，一时无两。然而世事无常，三十年河东三十年河西，如今已是移动互联网时代，业务重点从原来的模型、关系变成了大数据量、并发、高性能。这样一来，老牌 ORM 框架显得捉襟见肘了，新晋小生 Mybatis 走入我们的视野。</p>
+</div><div class="cl-preview-section"><p>从 Mybatis 的前世 iBatis 的名字（ internet + abatis）来看，Mybatis 天生就具有互联网基因。互联网业务的特性就是快（更新迭代飞快）和灵活（各种花样各种玩法层出不穷）。既然我们说 Mybatis 天生具有互联网的基因，那么它必然也具备相应的特性，否则根本无法应对瞬息万变的互联网。</p>
+</div><div class="cl-preview-section"><p>与其他的 ORM （对象关系映射，比如老大哥 Hibernate）框架不同，Mybatis 没有延续以往 ORM 框架将 Java 对象与数据库表关联起来的思路，而是另辟蹊径将 Java 方法与 SQL 语句进行关联。在 JDBC 和 JPA （Hibernate）之间找到了一个平衡点，即解决了 JDBC 的繁琐冗余与低效的开发速率，又解决了 JPA （Hibernate）的“笨重”与不灵活。Mybatis 允许用户充分的利用数据库的各种功能，如存储过程、视图、复杂查询以及某种数据库独有的特性，又对 JDBC 做了一定的封装，加上约定优于配置的设计理念，让开发效率也有了质的提升。</p>
+</div><div class="cl-preview-section"><p>上面我们对 Mybatis 的特点进行了感性或者说是相对抽象的描述，那么下面我们换个角度用理性且具体的方式列出 Mybatis 的特点：</p>
+</div><div class="cl-preview-section"><ul>
+<li>它消除了大量的 JDBC 冗余代码</li>
+<li>它的学习门槛很低</li>
+<li>它能很好地与传统数据库协同工作</li>
+<li>它可以接受 SQL 语句</li>
+<li>它提供了与 Spring 框架的集成支持</li>
+<li>它提供了与第三方缓存类库的集成支持</li>
+<li>它引入了更好的性能</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="架构设计">4. 架构设计</h1>
+</div><div class="cl-preview-section"><p>接下来我们从宏观层面了解一下 Mybatis 的整体设计与架构，先来看看 Mybatis 内部都有哪些组件。</p>
+</div><div class="cl-preview-section"><h2 id="组件">4.1 组件</h2>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eb215b6000187a012260676.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>MyBatis 通过 mybatis-3 的应用程序接口和 ibatis-spring 向用户提供 SQL 访问方法， 而 ibatis-spring 底层仍依赖 mybatis-3 和 spring-tx 来实现对 SQL Mapping 和事务的支持。 mybatis-3 实现了 SQL 映射的全部功能， 通过构建器构建配置环境和 JDBC 环境， 对应用程序提供接口并使用执行器执行 SQL，</p>
+</div><div class="cl-preview-section"><h2 id="功能架构">4.2 功能架构</h2>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eb215c400010c2109880547.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>Mybatis 按照功能划分，可以分为三部分：</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p><strong>接口层</strong>：提供给外部使用的接口，开发人员通过这些本地接口来操纵数据库。接口层一接收到调用请求就会调用数据处理层来完成具体的数据处理。</p>
+</li>
+<li>
+<p><strong>数据处理层</strong>：负责具体的 SQL 查找、SQL 解析、SQL 执行和执行结果映射处理等。它主要的目的是根据调用的请求完成一次数据库操作。</p>
+</li>
+<li>
+<p><strong>基础支持层</strong>：负责最基础的功能支持，包括连接管理、事务管理、配置加载和缓存处理，这些都是公用的东西，将他们抽取出来作为最基础的组件。为上层的数据处理层提供最基础的支持。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>打个比方，接口层就好比饭店的菜单，数据处理层就是厨房，基础支持层就好比是水、电、燃气之类的。客户按菜单点菜（调用接口），厨房负责做菜（数据处理），基础设施提供最基本的水、电、燃气的支持（基础支持）。</p>
+</div><div class="cl-preview-section"><h2 id="包结构">4.3 包结构</h2>
+</div><div class="cl-preview-section"><pre><code>org
+ └─ apache
+     └─ ibatis
+        +─ annotations
+        +─ binding
+        +─ builder
+        +─ cache
+        +─ cursor
+        +─ datasource
+        +─ exceptions
+        +─ executor
+        +─ io
+        +─ javassist
+        +─ jdbc
+        +─ logging
+        +─ mapping
+        +─ ognl
+        +─ parsing
+        +─ plugin
+        +─ reflection
+        +─ scripting
+        +─ session
+        +─ transaction
+        +─ type
+</code></pre>
+</div><div class="cl-preview-section"><p>MyBatis主要的源码包及其作用如下。</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>annotations</strong>：注解包，包含所有mapper 接口中用到的注解</li>
+<li><strong>binding</strong>：负责将 mapper 接口与 SQL 语句进行绑定</li>
+<li><strong>builder</strong>：包含 Configuration 对象所有构建器，主要包括 XML、注解两种方式配置解析</li>
+<li><strong>cache</strong>：缓存功能实现、包含各种缓存装饰器</li>
+<li><strong>cursor</strong>：实现游标的方式查询数据、游标非常适合处理百万级别的数据查询，通常情况下不适合一次性加载到内存中这种方式类似使用 SAX 解析 XML 文件</li>
+<li><strong>datasource</strong>： 数据源包括 jndi 数据源、连接池功能</li>
+<li><strong>exceptions</strong>：框架异常包</li>
+<li><strong>executor</strong>：包含 SQL 语句执行器，核心功能包</li>
+<li><strong>io</strong>：资源文件读取</li>
+<li><strong>javassist</strong>：Java 功能增强，包含类加载、编译、代码生成等</li>
+<li><strong>jdbc</strong>： 测试代码</li>
+<li><strong>lang</strong>：Java 版本的注解代码。 这个包只有2个注解 @UsesJava7 @UsesJava8  使用这个两个注解标识哪些可以使用 JDK7 API 哪些可以使用 JDK8 API</li>
+<li><strong>logging</strong>： 日志功能代码，实现多种日志框架的对接</li>
+<li><strong>mapping</strong>：参数、结果集的映射（基本类型、结合、自定义 JavaBean）</li>
+<li>ognl：动态 SQL 中提供 ognl 表达式支持</li>
+<li><strong>parsing</strong>：XML解析工具，用来解析 mapper.xml 文件</li>
+<li><strong>plugin</strong>：拦截器功能实现，使用代理模式实现拦截</li>
+<li><strong>reflection</strong>：类元数据、反射功能实现代码</li>
+<li><strong>scripting</strong>： 动态 SQL 语言实现，配置文件中<code>&lt;if&gt; &lt;where&gt; &lt;set&gt; &lt;foreach&gt; &lt;choose&gt;</code>功能就是在这个包实现，借助 OGNL 表达式你也可以扩展自己的语言实现功能</li>
+<li><strong>session</strong>：主要实现 SqlSession 功能，非常核心包</li>
+<li><strong>transaction</strong>：事务功能实现，包装了数据库连接，处理数据库连接生命周期包括：连接创建，预编译，提交、回滚和关闭</li>
+<li><strong>type</strong>：类型处理器，包括所有数据库类型对应 Java 类型的处理器，如果要实现自己类型处理器就需要实现包下的基础接口</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="总结">5. 总结</h1>
+</div><div class="cl-preview-section"><p>OK，我们花了一个小节来认识 Mybatis，我们知道了 Mybatis 是一个简单灵活的 ORM 框架；了解到 Mybatis 是由 iBatis 进化而来；了解到它具有简单、易学、灵活等诸多特性；还知道了它由 ibatis-spring、mybatis-3、configuration 等组件构成；知道了它按从功能角度可以分为 接口层、数据处理层和基础支持层；最后又对其源码中的每个包的职责进行了学习。通过这一小节，我们对于 Mybatis 已经有了一个非常完整且清晰的宏观认识。你是不是迫不及待想要动手实践一下了？哈哈，别急，下一节我将会带着你用我们勤劳的双手一起撸代码，敲实例，我们下一节不见不散！</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5e996fae00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6477">
+						<img src="https://img1.mukewang.com/54584e2c00010a2c02200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">Gorit</h4>
+						<div class="comment-text">看了包结构再看看自己写的，嗯😊</div>
+						<div>
+							
+								<div class="reply">讲师回复：嗯？</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-07</span>
+						<a href="/read/commentdetail/6477">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6477" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5925">
+						<img src="https://img1.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">慕慕童鞋</h4>
+						<div class="comment-text">对于 MyBatis 有了更宏观的认识</div>
+						<div>
+							
+								<div class="reply">讲师回复：棒！</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-25</span>
+						<a href="/read/commentdetail/5925">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5925" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=75">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '13 为互联网而生的持久化框架-Mybatis（一）',
+					'CID': '1809',
+					'Teacher': '刘水镜'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "13 为互联网而生的持久化框架-Mybatis（一）",
+                    desc: "够吃管饱的SpringBoot大餐",
+                    imgUrl: 'https:https://img4.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/75',
+                    link: 'https://m.imooc.com/read/75'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

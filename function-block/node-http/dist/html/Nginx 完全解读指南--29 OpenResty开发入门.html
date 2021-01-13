@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>29 OpenResty开发入门</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="后端工程师必修系列课">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "2";
+	var chapter_id = "1689";
+	var chapter_title = "29 OpenResty开发入门";
+	var aid = "57";
+	var a_name = "Nginx 完全解读指南";
+	var a_price = "58.00";
+	var a_pic = "https://img4.mukewang.com/5ddba7a100012fe405400720.jpg";
+	var userId = 0;
+
+	var column_id = '57';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-03-19&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			29 OpenResty开发入门
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img1.mukewang.com/5e72e084000133e906400318.jpg')"></div>
+	
+	
+		<a href="/read/57">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/5ddbad63000138d907001092-40-40.jpg" alt="郑尔多斯">
+				<h3>Nginx 完全解读指南</h3>
+				<p>郑尔多斯 · 一线大厂后端开发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">没有引发任何行动的思想都不是思想，而是梦想。 <p class="author">—— 马丁</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h3 id="前言">前言</h3>
+</div><div class="cl-preview-section"><p>我们在上一篇文章中介绍了<code>OpenResty</code>的概念，并且带领大家安装了<code>OR</code>，写了一个简单的<code>demo</code>，体会了一把如何爽快的使用<code>Lua</code>实现我们的功能。<br>
+<code>OR</code>有很多指令，我不会逐个指令的介绍，大家可以参考我在文章末尾给大家列出来的<code>参考教程</code>，里面非常详细的列出来了各个指令的详细用法。<br>
+我想在本篇文章中介绍一下<code>OR</code>框架的工作原理，从高纬度上帮助大家理解它。</p>
+</div><div class="cl-preview-section"><h3 id="重要概念">重要概念</h3>
+</div><div class="cl-preview-section"><p>我们介绍几个在<code>OR</code>框架中非常重要的几个概念，理解这些概念有助于我们理解整个框架。</p>
+</div><div class="cl-preview-section"><h5 id="cosocket"><code>cosocket</code></h5>
+</div><div class="cl-preview-section"><p>这个概念非常的抽象，我在学习的过程中非常的懵逼，当时问了度娘，<code>Google</code>，收效甚微，后来随着自己在工作中的慢慢使用，有了一点理解，在这里分享给大家。</p>
+</div><div class="cl-preview-section"><pre><code>cosocket = coroutine + socket
+coroutine：协程，go，python，lua中都有协程的概念
+socket：套接字，TCP，UPD套接字
+</code></pre>
+</div><div class="cl-preview-section"><p>所以说<code>cosocket</code>就是使用协程实现的套接字管理功能。<br>
+是不是也很懵逼？理解这个概念关键在于理解<code>Nginx</code>的异步事件处理机制和<code>Lua</code>中的协程。<br>
+<img src="https://img.mukewang.com/5e72e0ba00011fec05280309.png" alt="图片描述"><br>
+(上面的图片是<code>OpenResty最佳实践</code>中的图片)<br>
+这个图片非常准确的解释了<code>cosocket</code>的工作原理。<br>
+每个网络操作都是一个<code>Lua</code>协程，如果网络事件没有准备好，协程就可以调用<code>yield</code>阻塞自己，同时向<code>Nginx</code>注册一个事件，并将控制权交回给<code>Nginx</code>。等到事件满足的时候，<code>Nginx</code>会通知协程，此时协程调用<code>resume</code>就可以恢复运行。<br>
+<code>Lua</code>可以同时启动非常多的协程，每个协程都是一个网络事件，比如有的访问<code>Redis</code>,有的访问<code>MySql</code>，有的访问第三方服务等等，配合<code>Nginx</code>的异步事件处理机制，能够非常高效的完成功能。</p>
+</div><div class="cl-preview-section"><h5 id="运行阶段">运行阶段</h5>
+</div><div class="cl-preview-section"><p><code>Nginx</code>处理一个请求的过程其实是被分为了<code>11</code>个阶段，如下：</p>
+</div><div class="cl-preview-section"><pre><code>NGX_HTTP_POST_READ_PHASE
+NGX_HTTP_POST_READ_PHASE
+NGX_HTTP_POST_READ_PHASE
+NGX_HTTP_REWRITE_PHASE
+NGX_HTTP_POST_REWRITE_PHASE
+NGX_HTTP_POST_REWRITE_PHASE
+NGX_HTTP_ACCESS_PHASE
+NGX_HTTP_POST_ACCESS_PHASE
+NGX_HTTP_POST_ACCESS_PHASE
+NGX_HTTP_CONTENT_PHASE
+NGX_HTTP_LOG_PHASE
+</code></pre>
+</div><div class="cl-preview-section"><p>这种方式非常的好。就像工厂中的流水线一样，我们可以在每个阶段只处理自己感兴趣的部分，这样的话，每个部分实现的逻辑也很清晰，便于解耦。<br>
+我们说过<code>OR</code>是一个第三方模块，那么它必然会介入到上面的某一个或者某几个阶段，我们看一下官方的介绍：<br>
+<img src="https://img.mukewang.com/5e72e0c500018fe108880814.png" alt="图片描述"><br>
+上图是官网(参考教程的第二个)上的介绍，<code>OP</code>介入到了<code>Nginx</code>中的<code>REWRITE</code>, <code>ACCESS</code>,<code>CONTENT</code>以及<code>LOG</code>这几个阶段，并且详细的画出了各类指令起作用的阶段，这是非常重要的，我们对照上图以及指令就可以深刻的理解指令起作用的阶段。</p>
+</div><div class="cl-preview-section"><h3 id="常用工具">常用工具</h3>
+</div><div class="cl-preview-section"><p>如果我们在业务中遇到一些比较奇怪的问题，比如<code>CPU</code>的占用率和实际业务使用的<code>CPU</code>不符合，或者<code>Nginx</code>的吞吐率很低，这个时候应该怎么办呢？这里给大家介绍了一种定位问题的工具，叫做<code>火焰图</code>(形似火焰)。我在公司业务开发中使用的也是这个工具，非常的高效方便。<br>
+<img src="https://img.mukewang.com/5e72e0d20001a94e07700441.png" alt="图片描述"><br>
+这个工具帮助我在工作中排查了很多的问题，大家要深入了解一下。</p>
+</div><div class="cl-preview-section"><p>我在这篇文章中没有介绍什么<code>干货</code>，更多的是从一个比较高的维度给大家介绍了<code>OpenResty</code>的比较重要的一些内容。<br>
+个人觉得，这些东西是我在学习<code>OR</code>过程中遇到的比较费解的东西，我花费了大量的事件学习，但是当时也收效甚微的一些东西。希望对大家有所帮助。</p>
+</div><div class="cl-preview-section"><h3 id="参考教程">参考教程</h3>
+</div><div class="cl-preview-section"><p>我在学习<code>OpenResty</code>的过程中，找过比较多的资料，做了对比之后，比较推荐两个教程供大家参考：</p>
+</div><div class="cl-preview-section"><ul>
+<li><a href="https://openresty.org/en/getting-started.html">官网</a>:先按照官网的<code>Getting Started</code>自己动手做一下</li>
+<li><a href="https://github.com/openresty/lua-nginx-module"><code>github</code>中<code>OR</code>项目</a></li>
+<li><a href="https://www.kancloud.cn/qq13867685/openresty-api-cn/159042"><code>OpenResty</code>中文<code>Api</code></a></li>
+<li><a href="https://moonbingbing.gitbooks.io/openresty-best-practices/lua/main.html"><code>OpenResty</code>最佳实践</a></li>
+</ul>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img.mukewang.com/5e72e08800011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6390">
+						<img src="https://img1.mukewang.com/5e9fe34200011d7a10081008-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">海小生</h4>
+						<div class="comment-text">nginx HTTP 11个执行阶段：POST_READ   SERVER_REWRITE  FIND_CONFIG  REWRITE  POST_REWRITE  PRE_ACCESS  ACCESS  POST_ACCESS  TRY_FILES  CONTENT  LOG</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-01</span>
+						<a href="/read/commentdetail/6390">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6390" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=57">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '29 OpenResty开发入门',
+					'CID': '1689',
+					'Teacher': '郑尔多斯'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "29 OpenResty开发入门",
+                    desc: "后端工程师必修系列课",
+                    imgUrl: 'https:https://img4.mukewang.com/5ddba7a100012fe405400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5ddba7a100012fe405400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/57',
+                    link: 'https://m.imooc.com/read/57'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

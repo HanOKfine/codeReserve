@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>19 架构师的情人，提升性能的瑞士军刀-Redis (三)</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="够吃管饱的SpringBoot大餐">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "3";
+	var chapter_id = "1815";
+	var chapter_title = "19 架构师的情人，提升性能的瑞士军刀-Redis (三)";
+	var aid = "75";
+	var a_name = "SpringBoot 趣味私房课";
+	var a_price = "58.00";
+	var a_pic = "https://img1.mukewang.com/5e9cfd1f0001ece605400720.jpg";
+	var userId = 0;
+
+	var column_id = '75';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-26&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			19 架构师的情人，提升性能的瑞士军刀-Redis (三)
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5eba8a0a00019dbd06400360.jpg')"></div>
+	
+	
+		<a href="/read/75">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5e776f3c000149fd10801080-40-40.jpg" alt="刘水镜">
+				<h3>SpringBoot 趣味私房课</h3>
+				<p>刘水镜 · 知名 A.I. 公司 Java 工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">书是人类进步的阶梯。<p class="author">——高尔基</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>这个小节我们继续学习 Redis，在上个小节里我们学习了 Spring Boot 与 Redis 的整合以及简单的应用。在这一小节中我们将通过一个 Redis 在实际应用中的小案例来深入学习。这个案例就是在互联网业务场景中经常会用到的一个组件——分布式锁。</p>
+</div><div class="cl-preview-section"><h1 id="什么是锁">1. 什么是锁</h1>
+</div><div class="cl-preview-section"><h2 id="锁的自我修养">1.1 锁的自我修养</h2>
+</div><div class="cl-preview-section"><p>作为一个演员要有演员的修养，同样，作为一把锁也要有锁的自我修养。那么下面我们来看一下，作为一把合格的锁，应该具备哪些性质：</p>
+</div><div class="cl-preview-section"><ol>
+<li>
+<p><strong>互斥</strong>：锁具有独占性，一把锁在同一时刻最多只能有一个持有者；</p>
+</li>
+<li>
+<p><strong>安全</strong>：安全指的是解锁时的安全性，即只能解锁自己持有的锁；</p>
+</li>
+<li>
+<p><strong>不死锁</strong>：���能因为意外的发生，导致锁不能被正常释放。</p>
+</li>
+</ol>
+</div><div class="cl-preview-section"><h2 id="传统锁的局限性">1.2 传统锁的局限性</h2>
+</div><div class="cl-preview-section"><p>我们都知道 Java 为我们提供了锁相关的 API（synchronized、ReentrantLock 等）。但这些锁存在一定的局限性，在多线程（同一个 JVM）下可以从容应对，但是到了多进程（不同 JVM，甚至干脆不只有 JVM）的情况下，就有些力不从心了（感觉身体被掏空？）。</p>
+</div><div class="cl-preview-section"><p>现在的业务场景早已经不是一个单体应用就能满足的时候了，随随便便就要整个集群搞个分布式啥的，再复杂一点的还会有异构平台的交互。既然传统的锁不能满足分布式应用的场景，于是聪明绝顶的程序员们就搞出来一个新的锁——分布式锁。</p>
+</div><div class="cl-preview-section"><h1 id="分布式锁">2. 分布式锁</h1>
+</div><div class="cl-preview-section"><p>要在分布式场景下实现锁的功能，那么这个锁就必须是独立于 JVM 之外的了。它必须是一个独立、客观、第三方的东西。那我们该用什么来实现分布式锁呢？往下看！</p>
+</div><div class="cl-preview-section"><h2 id="实现分布式锁的方式">2.1 实现分布式锁的方式</h2>
+</div><div class="cl-preview-section"><p>目前市面上对于分布式锁的实现方式主要有以下 3 种方案：</p>
+</div><div class="cl-preview-section"><ul>
+<li>数据库（这种方式很少被使用了）</li>
+<li>Redis</li>
+<li>Zookeeper（Chubby，来自谷歌）</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>Chubby 是谷歌出品，是专门用来做分布式锁的，原理跟 Zookeeper 有些类似，暂且归为一类吧。据我���解目前国内使用的较少。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>以上三种方案中，基于数据库的实现方案已经很少被应用在实际项目中了。原因很简单，性能是它最大的障碍。Redis 和 Zookeeper 这两种方案目前应用的最广泛。在这两者之间个人感觉（仅仅是个人感觉，没有任何证据）基于 Redis 的方案在国内应用更广，根据我胡乱的猜测（仅仅是猜测，依然没有证据）应该是因为用 Redis 实现起来比较简单。</p>
+</div><div class="cl-preview-section"><h2 id="实现原理">2.2 实现原理</h2>
+</div><div class="cl-preview-section"><p>不管是哪种实现方案，其原理都差不多，只是所依赖的具体技术不同而已。三种方案都是基于对应技术的两个特性实现的分布式锁。<br>
+<strong>基于的两个特性：</strong></p>
+</div><div class="cl-preview-section"><ol>
+<li>操作的原子性；</li>
+<li>资源的唯一性。</li>
+</ol>
+</div><div class="cl-preview-section"><p><strong>实现的 3 种方案：</strong></p>
+</div><div class="cl-preview-section"><ol>
+<li>
+<p><strong>数据库方式：乐观锁/悲观锁 + 唯一约束</strong></p>
+</li>
+<li>
+<p><strong>Redis 方式：setnx</strong></p>
+</li>
+<li>
+<p><strong>Zookeeper 方式：临时顺序节点</strong></p>
+</li>
+</ol>
+</div><div class="cl-preview-section"><p>下面我们具体来看一下基于 Redis 的实现方案吧！</p>
+</div><div class="cl-preview-section"><h1 id="redis-实现分布式锁">3. Redis 实现分布式锁</h1>
+</div><div class="cl-preview-section"><p>Redis 实现分布式锁，主要用到了它的一个命令—— SETNX。SETNX 是 <strong>SET</strong> if <strong>N</strong>ot e<strong>X</strong>ists 的缩写，即在指定的 key 不存在时，为 key 设置指定的值。并且当设置成功时返回 1 。 设置失败时返回 0 。因此，我们可以根据返回值来判断加锁是否成功。</p>
+</div><div class="cl-preview-section"><p>​</p>
+</div><div class="cl-preview-section"><h2 id="第一版">3.1 第一版</h2>
+</div><div class="cl-preview-section"><p>根据上面我们分析 Redis 实现分布式锁的原理，我们先写出一个初始版本的 RedisLock：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Component</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">RedisLock</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@Autowired</span>
+    <span class="token keyword">private</span> StringRedisTemplate redisTemplate<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">lock</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> String value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> redisTemplate<span class="token punctuation">.</span><span class="token function">opsForValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setIfAbsent</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">unLock</span><span class="token punctuation">(</span>String key<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        redisTemplate<span class="token punctuation">.</span><span class="token function">delete</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>RedisTemplate 中将 Redis 的 SETNX 命令封装成了 setIfAbsent() 方法，返回值也封装成了 Boolean。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>下面在我们的业务代码中使用一下我们刚刚完成的 RedisLock：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@RestController</span>
+<span class="token annotation punctuation">@RequestMapping</span><span class="token punctuation">(</span><span class="token string">"/redislock"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">RedisLockController</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token keyword">long</span> TIME_OUT <span class="token operator">=</span> <span class="token number">50</span> <span class="token operator">*</span> <span class="token number">1000</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">final</span> String REDIS_LOCK <span class="token operator">=</span> <span class="token string">"REDIS_LOCK"</span><span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@Autowired</span>
+    <span class="token keyword">private</span> RedisLock redisLock<span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/lock"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+        <span class="token comment">// 加锁</span>
+        <span class="token keyword">long</span> currentTime <span class="token operator">=</span> System<span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">boolean</span> isLock <span class="token operator">=</span> redisLock<span class="token punctuation">.</span><span class="token function">lock</span><span class="token punctuation">(</span>REDIS_LOCK<span class="token punctuation">,</span> String<span class="token punctuation">.</span><span class="token function">valueOf</span><span class="token punctuation">(</span>currentTime <span class="token operator">+</span> TIME_OUT<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>isLock<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">RuntimeException</span><span class="token punctuation">(</span><span class="token string">"资源已被抢占，换个姿势再试试吧！"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token comment">// do something</span>
+
+        <span class="token comment">// 解锁</span>
+        redisLock<span class="token punctuation">.</span><span class="token function">unLock</span><span class="token punctuation">(</span>REDIS_LOCK<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>嗯，看起来还不错。但仔细想想这样写会不会有什么问题？</p>
+</div><div class="cl-preview-section"><p>我相信聪明的你已经发现了问题所在，当 lock() 成功以后，在 do something 的过程中出现意外导致后面的 unLock() 没有被执行，那么就会导致其他请求无法再获得锁，从而造成了死锁。所以，它不是一把好锁。</p>
+</div><div class="cl-preview-section"><h2 id="进化版">3.2 进化版</h2>
+</div><div class="cl-preview-section"><p>我们想一下，如何解决上面死锁的问题？</p>
+</div><div class="cl-preview-section"><p>首先，上面代码导致死锁的原因是，一旦程序执行出现意外，就无法删除对应的 key 了，这就会导致 key 会一直存在，最终的结果就是其他线程再也无法获得锁了。那么要解决这个问题就需要在不能删除 key 的情况下，也能够让这个 key 消失。嗯，于是我们可以想到了给 key 加上过期时间。</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Component</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">RedisLock</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@Autowired</span>
+    <span class="token keyword">private</span> StringRedisTemplate redisTemplate<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">lockV2</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> String value<span class="token punctuation">,</span>Long timeOut<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> redisTemplate<span class="token punctuation">.</span><span class="token function">opsForValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setIfAbsent</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> value<span class="token punctuation">,</span> timeOut<span class="token punctuation">,</span> TimeUnit<span class="token punctuation">.</span>MILLISECONDS<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>Redis 从 2.6.12 版本开始，让 SETNX 操作的同时可以设置一个过期时间。不过不是直接通过 SETNX 命令实现的，而是通过 SET 命令加上 NX 参数来实现的。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>现在这个方案完美了吗？显然还没有。假如有两个线程 A 和 B，在 A 执行完 do something 之后，恰好 key 到了过期时间，又恰好这时 B 获得了锁，那么接下来会发生什么？接下来 A 执行 unLock() 会将 B 获得的锁删掉！防不胜防呀！</p>
+</div><div class="cl-preview-section"><h2 id="再改进">3.3 再改进</h2>
+</div><div class="cl-preview-section"><p>上面我们遇到了一个问题，一个线程删除了不属于它的锁。那么要解决这个问题，就需要在删除之前先判断一下，当前的锁是不是被自己持有，如果是那么删除，如果不是，说明锁已经过期了（此时可能有别的线程持有了锁，也可能没有任何线程持有锁），则不需要再删除了。</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Component</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">RedisLock</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@Autowired</span>
+    <span class="token keyword">private</span> StringRedisTemplate redisTemplate<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">unLockV2</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> String value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        String oldValue <span class="token operator">=</span> redisTemplate<span class="token punctuation">.</span><span class="token function">opsForValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>Objects<span class="token punctuation">.</span><span class="token function">nonNull</span><span class="token punctuation">(</span>oldValue<span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> oldValue<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            redisTemplate<span class="token punctuation">.</span><span class="token function">delete</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>OK，这次我们在删除之前对锁的持有者进行了判断，只有确定自己是锁的持有者才去释放锁。这次看起来没什么毛病了，但是很遗憾，判断持有者的逻辑和删除 key 的逻辑仍然不是一个原子的操作。虽然这两个操作之间的间隔非常短，但仍有可能在这两个操作之间被其他线程干扰。</p>
+</div><div class="cl-preview-section"><p>虽然仍不完美，但相对于上面执行完业务代码后直接删除 key 的方式的可靠性已经提升了 N 个数量级了。因为一般的业务逻辑执行耗时都在几百毫秒上下，而判断所有者的逻辑与删除 key 的逻辑间隔在微秒级别，而时间越短，出错的概率就会越低。</p>
+</div><div class="cl-preview-section"><h1 id="redis-分布式锁的其他实现方式">4. Redis 分布式锁的其他实现方式</h1>
+</div><div class="cl-preview-section"><p><strong>Lua 脚本</strong></p>
+</div><div class="cl-preview-section"><p>Redis 通过调用 Lua 脚本，可以实现更加强大与复杂的功能。而且在执行 Lua 脚本的时候操作具有原子性。这恰好可以用来实现分布式锁，上面例子中解锁时的逻辑漏洞可以通过调用 Lua 脚本来避免。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>通过 RedisTemplate 的 execute() 方法来调用 Lua 脚本</p>
+</blockquote>
+</div><div class="cl-preview-section"><p><strong>Redission</strong></p>
+</div><div class="cl-preview-section"><p>Redission 是一个基于 Redis 的第三方组件，提供了很多强大的功能，也是 Redis 官方推荐的分布式锁解决方案。基于一种叫做 RedLock 的算法实现的分布式锁，比起我们自己实现分布式锁，Redission 更加的安全可靠，所以在生产环境中更加推荐使用 Redission 来作为分布式锁的解决方案。</p>
+</div><div class="cl-preview-section"><h1 id="总结">5. 总结</h1>
+</div><div class="cl-preview-section"><p>OK，这一节我们一起学习了分布式锁，重点讲解了基于 Redis 的分布式锁实现方式。课下一定要自己动手练习鸭！后面又介绍了两种分布式锁的实现方式，一种是 Redis + Lua；另一种是 Redission。这两种方式作为扩展内容，如果你学有余力可以试着去研究一下，然后我们一起讨论！</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img1.mukewang.com/5e9a7f6d00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6341">
+						<img src="https://img2.mukewang.com/545868640001148702200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕雪3205969</h4>
+						<div class="comment-text">我们部门的大部分操作订单和商品的代码还在用数据库实现的分布式锁  哈哈哈😂😂😂</div>
+						<div>
+							
+								<div class="reply">讲师回复：那说明你们的业务量还有很大的提升空间，哈哈。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-29</span>
+						<a href="/read/commentdetail/6341">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6341" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6078">
+						<img src="https://img3.mukewang.com/5333a0d9000196ff02000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕尼黑3461692</h4>
+						<div class="comment-text">老师，请教一下，如果do something 还没有完成，锁过期了怎么办</div>
+						<div>
+							
+								<div class="reply">讲师回复：那就有可能在 do somthing 的时候被其他线程获得锁，可以采用为锁续命的方式来避免这种情况，具体可以参考 Redisson 的实现。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-08</span>
+						<a href="/read/commentdetail/6078">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6078" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5929">
+						<img src="https://img2.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">慕慕童鞋</h4>
+						<div class="comment-text">循序渐进，深入浅出，学到了。</div>
+						<div>
+							
+								<div class="reply">讲师回复：太好了！</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-25</span>
+						<a href="/read/commentdetail/5929">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5929" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=75">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '19 架构师的情人，提升性能的瑞士军刀-Redis (三)',
+					'CID': '1815',
+					'Teacher': '刘水镜'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "19 架构师的情人，提升性能的瑞士军刀-Redis (三)",
+                    desc: "够吃管饱的SpringBoot大餐",
+                    imgUrl: 'https:https://img1.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    otherImgUrl: 'https://img1.mukewang.com/5e9cfd1f0001ece605400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/75',
+                    link: 'https://m.imooc.com/read/75'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

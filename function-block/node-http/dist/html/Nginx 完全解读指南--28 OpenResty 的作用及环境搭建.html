@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>28 OpenResty 的作用及环境搭建</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="后端工程师必修系列课">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "1688";
+	var chapter_title = "28 OpenResty 的作用及环境搭建";
+	var aid = "57";
+	var a_name = "Nginx 完全解读指南";
+	var a_price = "58.00";
+	var a_pic = "https://img1.mukewang.com/5ddba7a100012fe405400720.jpg";
+	var userId = 0;
+
+	var column_id = '57';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-03-19&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			28 OpenResty 的作用及环境搭建
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5e72dfdd0001253722581500.jpg')"></div>
+	
+	
+		<a href="/read/57">
+			<div class="course-entry">
+				<img src="https://img2.mukewang.com/5ddbad63000138d907001092-40-40.jpg" alt="郑尔多斯">
+				<h3>Nginx 完全解读指南</h3>
+				<p>郑尔多斯 · 一线大厂后端开发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">当你做成功一件事，千万不要等待着享受荣誉，应该再做那些需要的事。 <p class="author">—— 巴斯德</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h3 id="前言">前言</h3>
+</div><div class="cl-preview-section"><p>我们在前面的章节中介绍了<code>Nginx</code>的许多内容，从<code>Nginx</code>的安装到配置以及优化等等，大家可以从中体会到<code>Nginx</code>的出色性能。基于优秀的事件通知机制，<code>Nginx</code>服务可以稳定的提供高并发服务。<br>
+大多数时候通过合理的参数配置以及内核优化等方案就可以满足我们的业务场景，但是有些时候我们可能要扩展<code>Nginx</code>的某些功能，或者更大限度的<code>榨取``Nginx</code>的性能，这时候我们可以通过编写<code>Nginx</code>扩展<code>Module</code>来实现。<code>Nginx</code>扩展可以充分的利用<code>Nginx</code>异步事件机制，拥有非常高的性能。但是要用<code>C</code>语言实现的，并且要透彻的理解<code>Nginx</code>的各个处理过程，难度比较高。<br>
+<code>OpenResty</code>给我们提供了另外一种方式，我们可以通过<code>Lua</code>代码来实现我们的功能。</p>
+</div><div class="cl-preview-section"><h3 id="or简介"><code>OR</code>简介</h3>
+</div><div class="cl-preview-section"><p><code>OpenResty</code>又称<code>Ngx_Openresty</code>，简称<code>OR</code>，由国人章亦春(江湖人称<code>春哥</code>)开发和维护。这是一个基于<code>Nginx</code>和<code>Lua</code>的高性能<code>web</code>平台。它的内部集成了大量优秀的<code>Lua</code>库，第三方模块等。这样开发人员就可以使用<code>Lua</code>脚本调用<code>Nginx</code>支持的各种<code>C</code>以及<code>Lua</code>模块。快速构造出足以胜任 <code>C10K</code> 乃至 <code>C1000K</code> 以上单机并发连接的高性能 <code>Web</code> 应用系统。</p>
+</div><div class="cl-preview-section"><blockquote></blockquote>
+</div><div class="cl-preview-section"><p><code>OpenResty</code> 的目标是让你的<code>Web</code>服务直接跑在 <code>Nginx</code> 服务内部，充分利用 <code>Nginx</code> 的非阻塞 <code>I/O</code> 模型，不仅仅对 <code>HTTP</code> 客户端请求,甚至于对远程后端诸如 <code>MySQL</code>、<code>PostgreSQL</code>、<code>Memcached</code> 以及 <code>Redis</code> 等都进行一致的高性能响应。<br>
+— <code>OR</code>官网</p>
+</div><div class="cl-preview-section"><p>我们可以从官网上找到<code>OpenResty</code>支持的第三方模块：<br>
+<img src="https://img.mukewang.com/5e72e03d0001d89309000958.png" alt="图片描述"><br>
+这里面几乎包含了我们平时常用的所有模块，我们可以充分的利用这些模块完成我们的应用开发。</p>
+</div><div class="cl-preview-section"><p>在实际的工作中，我接触的使用到<code>OpenResty</code>最多的场景就是网关的开发。<code>Lua</code>的脚本特性，加上<code>Nginx</code>的高效性，二��有效的融合在了一起，极大的加速了网关的开发。</p>
+</div><div class="cl-preview-section"><h3 id="安装">安装</h3>
+</div><div class="cl-preview-section"><blockquote>
+<p>工欲善其事必先利其器</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>在深入了解<code>OpenResty</code>之前，我们必须先让安装框架，让它<code>run</code>起来才行。</p>
+</div><div class="cl-preview-section"><p>打开<a href="https://openresty.org/en/installation.html"><code>OpenResty</code></a>的安装页面，老规矩，作为一个程序员，我们推荐使用自己编译的方式，这样可以最大程度的个性化定制功能。</p>
+</div><div class="cl-preview-section"><h4 id="逐步编译">逐步编译</h4>
+</div><div class="cl-preview-section"><p>打开<a href="https://openresty.org/en/download.html"><code>download</code></a>页面，下载最新版本。<br>
+<img src="https://img.mukewang.com/5e72e04700011dff06620414.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>我们下载的最新的 <code>1.15.8.2</code> 版本，所以按步骤执行如下命令:</p>
+</div><div class="cl-preview-section"><pre><code>tar -xvf openresty-1.15.8.2.tar.gz
+cd openresty-1.15.8.2
+./configure -j2
+make -j2
+sudo make install
+</code></pre>
+</div><div class="cl-preview-section"><p>这样我们就完成了安装工作。</p>
+</div><div class="cl-preview-section"><h4 id="测试">测试</h4>
+</div><div class="cl-preview-section"><blockquote>
+<p>是骡子是马，拉出来溜溜<br>
+安装成功之后，我们简单的体验与喜爱<code>OpenResty</code>的功能。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>我们先创建几个目录，用于保存<code>OpenResty</code>的配置目录和日志目录：</p>
+</div><div class="cl-preview-section"><pre><code>mkdir ~/work
+cd ~/work
+mkdir logs/ conf/
+</code></pre>
+</div><div class="cl-preview-section"><h5 id="配置文件">配置文件</h5>
+</div><div class="cl-preview-section"><p>我们在上面的<code>~/work/conf</code>目录下面创建一个<code>nginx.conf</code>配置文件，内容如下；</p>
+</div><div class="cl-preview-section"><pre><code>worker_processes  1;
+error_log logs/error.log;
+events {
+    worker_connections 1024;
+}
+http {
+    server {
+        listen 8081;
+        location / {
+            default_type text/html;
+            content_by_lua_block {
+                ngx.say("&lt;p&gt;hello, world&lt;/p&gt;")
+            }
+        }
+    }
+}
+</code></pre>
+</div><div class="cl-preview-section"><p>大家可能注意到了，这里的配置文件和我们在前面学习的<code>Nginx</code>的配置文件非常的相似。因为<code>OpenResty</code>本质上是<code>Nginx</code>的一个扩展模块，在这个模块中增加了一些自定义的指令，比如上面的<code>content_by_lua_block</code>等，所以我们的配置文件，包括<code>OpenResty</code>的各种操作都和<code>Nginx</code>是相同的。大家一定要注意这一点。</p>
+</div><div class="cl-preview-section"><h5 id="启动服务器">启动服务器</h5>
+</div><div class="cl-preview-section"><p>我们启动<code>OpenResty</code>服务器。</p>
+</div><div class="cl-preview-section"><pre><code>/usr/local/openresty/bin/openresty -c ~/work/conf/nginx.conf
+</code></pre>
+</div><div class="cl-preview-section"><p>查看进程状况：<br>
+<img src="https://img.mukewang.com/5e72e050000131fe13060115.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h5 id="请求服务">请求服务</h5>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e72e05c0001e1f307030121.png" alt="图片描述"><br>
+如上可以知道，<code>OpenResty</code>已经可以成功的接收我们的请求了。</p>
+</div><div class="cl-preview-section"><h3 id="总结">总结</h3>
+</div><div class="cl-preview-section"><p>我们在这篇文章中简单的介绍了<code>OpenResty</code>的概念以及用途，以及安装的内容。大家要仔细看看这个相应的文档，更多的了解<code>OpenResty</code>，这是非常有必要的。、</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5e72dfe200011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=57">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '28 OpenResty 的作用及环境搭建',
+					'CID': '1688',
+					'Teacher': '郑尔多斯'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "28 OpenResty 的作用及环境搭建",
+                    desc: "后端工程师必修系列课",
+                    imgUrl: 'https:https://img1.mukewang.com/5ddba7a100012fe405400720.jpg',
+                    otherImgUrl: 'https://img1.mukewang.com/5ddba7a100012fe405400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/57',
+                    link: 'https://m.imooc.com/read/57'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

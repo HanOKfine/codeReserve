@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>34 网盘项目的部署环境搭建</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="轻量级项目，系统化经验">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "1746";
+	var chapter_title = "34 网盘项目的部署环境搭建";
+	var aid = "73";
+	var a_name = "架构思维成长之微服务";
+	var a_price = "68.00";
+	var a_pic = "https://img.mukewang.com/5e86b0220001a99d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '73';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-21&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			34 网盘项目的部署环境搭建
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img1.mukewang.com/5e8c3b7b0001d8ec06400359.jpg')"></div>
+	
+	
+		<a href="/read/73">
+			<div class="course-entry">
+				<img src="https://img1.mukewang.com/5e6eebd60001a49207000933-40-40.jpg" alt="曼巴out">
+				<h3>架构思维成长之微服务</h3>
+				<p>曼巴out · 上市公司资深架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">勤能补拙是良训，一分辛劳一分才。<p class="author">——华罗庚</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">1. 前言</h1>
+</div><div class="cl-preview-section"><p>项目部署架构如下图所示：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec5e3930001fc6310520554.png" alt="图片描述"><br>
+上面就是我们网盘项目部署的核心，主要分为四个部分</p>
+</div><div class="cl-preview-section"><ul>
+<li>Nginx，它可以充当网关，配置请求转发；也可以部署前端的html工程。</li>
+<li>jar服务，这个部分就是把我们开发的项目，打包部署。</li>
+<li>中间件部分，主要是Zookeeper、Redis、Nacos这三个部分</li>
+<li>数据存储部分，主要包括MySQL、Solr、FastDFS</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>思考：那么真实环境，我们如何部署一个分布式架构的项目呢？主要分以下几种情况</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>如果是小型分布式项目，则可以手工安装所依赖的环境，通过编写Shell脚本完成服务的管理（包括：批量启动、停止、重启等）。至于项目的运行，可以是直接启动项目，也可以把项目打包成docker镜像来运行。</li>
+<li>如果是中型分布式项目，则通过docker-compose、docker-swarm来部署项目</li>
+<li>如果是大型分布式项目，则通过k8s来自动化部署</li>
+<li>我们不是专业的运维，我们核心掌握基础环境的手工搭建即可，因为平时开发过程必须依赖这些基础环境。</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：安装包文件，我已经上传到网盘里面，可以下载</p>
+</blockquote>
+</div><div class="cl-preview-section"><h1 id="基础环境的安装">2. 基础环境的安装</h1>
+</div><div class="cl-preview-section"><h2 id="jdk的安装">2.1 JDK的安装</h2>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash">
+<span class="token comment">#1.上传安装包到服务器</span>
+	jdk-8u181-linux-x64.tar.gz
+
+<span class="token comment">#2.解压</span>
+	<span class="token function">tar</span> -zxvf jdk-8u181-linux-x64.tar.gz -C /usr/local
+	
+<span class="token comment">#3.配置</span>
+	<span class="token function">vi</span> /etc/profile
+		<span class="token function">export</span> JAVA_HOME<span class="token operator">=</span>/usr/local/jdk-8u181-linux-x64
+		<span class="token function">export</span> PATH<span class="token operator">=</span><span class="token variable">$PATH</span><span class="token keyword">:</span><span class="token variable">$JAVA_HOME</span>/bin
+
+<span class="token comment">#4.立即生效</span>
+	<span class="token function">source</span> /etc/profile
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="mysql的安装">2.2 MySQL的安装</h2>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash"><span class="token comment">#1.���载</span>
+<span class="token function">wget</span> http://repo.mysql.com/mysql-community-release-el7-5.noarch.rpm
+
+<span class="token comment">#2.安装rpm包</span>
+<span class="token function">sudo</span> rpm -ivh mysql-community-release-el7-5.noarch.rpm
+
+<span class="token comment">#3.安装MySQL</span>
+<span class="token function">sudo</span> yum <span class="token function">install</span> mysql-server
+
+<span class="token comment">#4.授权</span>
+<span class="token function">chown</span> root /var/lib/mysql
+
+<span class="token comment">#5.重启</span>
+systemctl restart mysql.service
+
+<span class="token comment">#6.连接</span>
+mysql -u root
+
+<span class="token comment">#7.进入数据库</span>
+use mysql<span class="token punctuation">;</span>
+
+<span class="token comment">#8.更新密码</span>
+update user <span class="token keyword">set</span> password<span class="token operator">=</span>password<span class="token punctuation">(</span><span class="token string">'netdisk@2020'</span><span class="token punctuation">)</span> where user<span class="token operator">=</span><span class="token string">'root'</span><span class="token punctuation">;</span>
+
+<span class="token comment">#9.退出mysql</span>
+<span class="token keyword">exit</span><span class="token punctuation">;</span>
+
+<span class="token comment">#10.重启mysql</span>
+systemctl restart mysql.service
+
+<span class="token comment">#11.重连mysql</span>
+mysql -u root -p
+
+<span class="token comment">#12.授权</span>
+grant all privileges on *.* to root@<span class="token string">"%"</span> identified by <span class="token string">'netdisk@2020'</span><span class="token punctuation">;</span>
+
+<span class="token comment">#13.刷新</span>
+flush privileges<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="nacos配置中心的安装">2.3 Nacos配置中心的安装</h2>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash"><span class="token comment">#1.上传</span>
+	nacos-server-1.1.0.tar.gz
+	
+<span class="token comment">#2.解压</span>
+	<span class="token function">tar</span> -zxvf nacos-server-1.1.0.tar.gz -C /usr/local
+	
+<span class="token comment">#3.进入nacos目录</span>
+	<span class="token function">cd</span> /usr/local/nacos-server-1.1.0
+	
+<span class="token comment">#4.启动（-m表示使用什么模式，standalone表示单节点模式）</span>
+	sh startup.sh -m standalone
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="zookeeper注册中心的安装">2.4 Zookeeper注册中心的安装</h2>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash"><span class="token comment">#1.上传zookeeper</span>
+	zookeeper-3.4.6.tar.gz
+	
+<span class="token comment">#2.解压</span>
+	<span class="token function">tar</span> -zxvf zookeeper-3.4.6.tar.gz -C /usr/local
+
+<span class="token comment">#3.进入并创建data目录</span>
+	<span class="token function">cd</span> /usr/local/zookeeper-3.4.6
+	<span class="token function">mkdir</span> data
+
+<span class="token comment">#4.修改配置文件的名称</span>
+	<span class="token function">cd</span> conf
+	<span class="token function">mv</span> zoo_sample.cfg zoo.cfg
+
+<span class="token comment">#5.配置zookeeper</span>
+	vim zoo.cfg
+		dataDir<span class="token operator">=</span>/usr/local/zookeepr-3.4.6/data <span class="token comment">#数据存放目录</span>
+		dataLogDir<span class="token operator">=</span>/root/zookeeper-3.4.6/log <span class="token comment">#日志存放目录</span>
+		
+<span class="token comment">#6.启动</span>
+	<span class="token function">cd</span> /usr/local/zookeeper-3.4.6/bin
+	./zkServer.sh start
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="redis分布式缓存的安装">2.5 Redis分布式缓存的安装</h2>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash"><span class="token comment">#1.依赖缓存的安装</span>
+	yum <span class="token function">install</span> gcc-c++
+
+<span class="token comment">#2.把Redis文件上传Linux</span>
+	redis-3.2.4.tar.gz
+
+<span class="token comment">#3.解压Redis</span>
+	<span class="token function">tar</span> -zxvf redis-3.2.4.tar.gz -C /usr/local/
+
+<span class="token comment">#4.创建安装目录</span>
+	<span class="token function">mkdir</span> /usr/local/redis
+
+<span class="token comment">#5.进入解压目录</span>
+	<span class="token function">cd</span> /usr/local/redis-3.2.4
+
+<span class="token comment">#6.开始安装</span>
+	<span class="token function">make</span> <span class="token operator">&amp;&amp;</span> <span class="token function">make</span> <span class="token function">install</span> PREFIX<span class="token operator">=</span>/usr/local/redis
+
+<span class="token comment">#7.从源码文件复制redis.conf到安装目录</span>
+	<span class="token function">cp</span> redis.conf /usr/local/redis/bin
+
+<span class="token comment">#8.进入安装的目录</span>
+	<span class="token function">cd</span> /usr/local/redis/bin
+
+<span class="token comment">#9.编辑</span>
+	vim redis.conf
+        daemonize <span class="token function">yes</span>    <span class="token comment">#开启后台进程运行</span>
+        notify-keyspace-events <span class="token string">"Ex"</span> <span class="token comment">#配置过期监听</span>
+        bind 127.0.0.1 <span class="token comment">#写服务器具体IP</span>
+        requirepass redis@2020 <span class="token comment">#设置redis的密码</span>
+   	
+<span class="token comment">#10.启动Redis</span>
+	./redis-server redis.conf
+</code></pre>
+</div><div class="cl-preview-section"><p>简单说明</p>
+</div><div class="cl-preview-section"><ul>
+<li>必须配置Ex，它是配置过期监听</li>
+<li>必须配置密码，如果不配置密码，则Redis很容易受到攻击</li>
+<li>bind绑定的地址，必须是服务器的局域网ip地址，不要写外网ip也不要写127.0.0.1</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="solr的安装">2.6 Solr的安装</h2>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash"><span class="token comment">#1.上传安装包</span>
+	solr-5.5.5.zip
+	
+<span class="token comment">#2.文件解压（或者windows解压好了，再上传）</span>
+	yum -y unzip
+	<span class="token function">zip</span> solr-5.5.5.zip
+	
+<span class="token comment">#3.启动</span>
+	<span class="token function">cd</span> solr-5.5.5/bin
+	./solr start
+	
+<span class="token comment">#4.创建solrcore</span>
+	./solr create -c disk
+	
+<span class="token comment">#5.集成中文分词器</span>
+	把ik-analyzer-solr5-5.x.jar放到solr-5.5.5/server/solr-webapp/webapp/WEB-INF/lib
+	
+<span class="token comment">#6.配置solrcore</span>
+	<span class="token function">cd</span> solor-5.5.5/server/solr/disk/conf
+	vim managed-schema <span class="token comment">#加入以下内容</span>
+	
+<span class="token comment">#7.重启</span>
+	./solr stop -all <span class="token comment">#先停止</span>
+	./solr start <span class="token comment">#再重启</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>managed-schema加入的内容如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token comment">&lt;!--IK分词器--&gt;</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>fieldType</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>text_ik<span class="token punctuation">"</span></span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>solr.TextField<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>analyzer</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>org.wltea.analyzer.lucene.IKAnalyzer<span class="token punctuation">"</span></span><span class="token punctuation">/&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>fieldType</span><span class="token punctuation">&gt;</span></span>
+
+<span class="token comment">&lt;!--字段---&gt;</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>field</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>filename<span class="token punctuation">"</span></span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>text_ik<span class="token punctuation">"</span></span> <span class="token attr-name">indexed</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span> <span class="token attr-name">stored</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span><span class="token punctuation">/&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>field</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>pid<span class="token punctuation">"</span></span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>string<span class="token punctuation">"</span></span> <span class="token attr-name">indexed</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span> <span class="token attr-name">stored</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span><span class="token punctuation">/&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>field</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>filemd5<span class="token punctuation">"</span></span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>string<span class="token punctuation">"</span></span> <span class="token attr-name">indexed</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span> <span class="token attr-name">stored</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span><span class="token punctuation">/&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>field</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>filesize<span class="token punctuation">"</span></span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>string<span class="token punctuation">"</span></span> <span class="token attr-name">indexed</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span> <span class="token attr-name">stored</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span><span class="token punctuation">/&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>field</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>typecode<span class="token punctuation">"</span></span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>string<span class="token punctuation">"</span></span> <span class="token attr-name">indexed</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span> <span class="token attr-name">stored</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span><span class="token punctuation">/&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>field</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>filesuffix<span class="token punctuation">"</span></span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>string<span class="token punctuation">"</span></span> <span class="token attr-name">indexed</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span> <span class="token attr-name">stored</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span><span class="token punctuation">/&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>field</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>fileicon<span class="token punctuation">"</span></span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>string<span class="token punctuation">"</span></span> <span class="token attr-name">indexed</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span> <span class="token attr-name">stored</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span><span class="token punctuation">/&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>field</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>filetype<span class="token punctuation">"</span></span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>string<span class="token punctuation">"</span></span> <span class="token attr-name">indexed</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span> <span class="token attr-name">stored</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span><span class="token punctuation">/&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>field</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>createuserid<span class="token punctuation">"</span></span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>string<span class="token punctuation">"</span></span> <span class="token attr-name">indexed</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span> <span class="token attr-name">stored</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span><span class="token punctuation">/&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>field</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>createusername<span class="token punctuation">"</span></span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>string<span class="token punctuation">"</span></span> <span class="token attr-name">indexed</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span> <span class="token attr-name">stored</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span><span class="token punctuation">/&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>field</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>createtime<span class="token punctuation">"</span></span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>string<span class="token punctuation">"</span></span> <span class="token attr-name">indexed</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span> <span class="token attr-name">stored</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span><span class="token punctuation">/&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>field</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>pname<span class="token punctuation">"</span></span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>string<span class="token punctuation">"</span></span> <span class="token attr-name">indexed</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span> <span class="token attr-name">stored</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span><span class="token punctuation">/&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="nginx的安装">2.7 Nginx的安装</h2>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash"><span class="token comment">#1.依赖环境的安装</span>
+    yum <span class="token function">install</span> gcc-c++
+    yum <span class="token function">install</span> -y pcre pcre-devel
+    yum <span class="token function">install</span> -y zlib zlib-devel
+    yum <span class="token function">install</span> -y openssl openssl-devel
+
+<span class="token comment">#2.上传安装包到Linux</span>
+	nginx-1.8.0.tar.gz
+	
+<span class="token comment">#3.解压安装包</span>
+	<span class="token function">tar</span> -zxvf nginx-1.8.0.tar.gz -C /usr/local/
+
+<span class="token comment">#4.创建nginx安装目录</span>
+	<span class="token function">mkdir</span> /usr/local/nginx
+
+<span class="token comment">#5.进入nginx源码包</span>
+	<span class="token function">cd</span> /usr/local/nginx-1.8.0
+
+<span class="token comment">#6.编译源码（注意目录：/usr/local/nginx）</span>
+	./configure --prefix<span class="token operator">=</span>/usr/local/nginx
+
+<span class="token comment">#7.开始安装</span>
+	<span class="token function">make</span> <span class="token operator">&amp;&amp;</span> <span class="token function">make</span> <span class="token function">install</span>
+
+<span class="token comment">#8.启动nginx</span>
+    <span class="token function">cd</span> /usr/local/nginx/sbin
+    ./nginx
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="openoffice">2.8 OpenOffice</h2>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash"><span class="token comment">#1.解压（解压之后目录是zh-CN）</span>
+	<span class="token function">tar</span> -zxvf Apache_OpenOffice_4.1.5_Linux_x86-64_install-rpm_zh-CN.tar.gz
+	
+<span class="token comment">#2.进入目录</span>
+	<span class="token function">cd</span> zh-CN/RPMS
+
+<span class="token comment">#3.安装（安装到/opt/openoffice4/program）</span>
+	rpm -ivh *.rpm
+
+<span class="token comment">#4.装完后会在当前目录下生成一个desktop-integration目录</span>
+	<span class="token function">cd</span> desktop-integration/
+	yum localinstall openoffice4.1.5-redhat-menus-4.1.5-9789.noarch.rpm
+	
+<span class="token comment">#5.启动（修改真实IP地址）</span>
+	<span class="token function">cd</span> /opt/openoffice4/program
+	<span class="token function">nohup</span> /opt/openoffice4/program/soffice -headless -accept<span class="token operator">=</span><span class="token string">"socket,host=192.168.1.8,port=8100;urp;"</span> -nofirststartwizard <span class="token operator">&amp;</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="fastdfs">2.9 FastDFS</h2>
+</div><div class="cl-preview-section"><p>大家请参考实战部分里面FastDFS的安装，因为安装比较麻烦，这里就省略了。</p>
+</div><div class="cl-preview-section"><h1 id="配置">3. 配置</h1>
+</div><div class="cl-preview-section"><h2 id="nginx配置">3.1 Nginx配置</h2>
+</div><div class="cl-preview-section"><p>主要配置Nginx做请求转发</p>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash"><span class="token comment">#1.进入Nginx安装目录</span>
+	<span class="token function">cd</span> /usr/local/nginx/conf
+
+<span class="token comment">#2.配置nginx.conf（参考下面的配置）</span>
+	vim nginx.conf	
+</code></pre>
+</div><div class="cl-preview-section"><p>nginx.conf的配置内容如下：（<font color="red">温馨提示：请把IP改成真实即可</font>）</p>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash"> server <span class="token punctuation">{</span>
+     listen       80<span class="token punctuation">;</span>
+     server_name  localhost<span class="token punctuation">;</span>
+     location / <span class="token punctuation">{</span>
+         root   html<span class="token punctuation">;</span>
+         index  index.html index.htm<span class="token punctuation">;</span>
+     <span class="token punctuation">}</span>
+
+    <span class="token comment">#配置前端工程</span>
+    location /disk-manage <span class="token punctuation">{</span>
+        <span class="token function">alias</span>   html/disk-manage<span class="token punctuation">;</span>
+        index  index.html index.htm<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    location /disk <span class="token punctuation">{</span>
+        <span class="token function">alias</span>   html/disk<span class="token punctuation">;</span>
+        index  index.html index.htm<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+
+    <span class="token comment">#配置后端jar   </span>
+    location /netdisk-web-manage <span class="token punctuation">{</span>
+   		proxy_pass http://192.168.1.8:8011<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    location /netdisk-web-perpc <span class="token punctuation">{</span>
+   		proxy_pass http://192.168.1.8:8012<span class="token punctuation">;</span>
+    	client_max_body_size 128m<span class="token punctuation">;</span> <span class="token comment">#上传大小限制</span>
+    <span class="token punctuation">}</span>
+    location /netdisk-service-provider <span class="token punctuation">{</span>
+    	proxy_pass http://192.168.1.8:8013<span class="token punctuation">;</span>
+    	
+    	proxy_http_version 1.1<span class="token punctuation">;</span>
+        proxy_read_timeout 360s<span class="token punctuation">;</span>   
+        proxy_redirect off<span class="token punctuation">;</span>   
+        proxy_set_header Upgrade <span class="token variable">$http_upgrade</span><span class="token punctuation">;</span>
+        proxy_set_header Connection <span class="token string">"upgrade"</span><span class="token punctuation">;</span>
+        proxy_set_header Host <span class="token variable">$host</span><span class="token keyword">:</span><span class="token variable">$server_port</span><span class="token punctuation">;</span>
+        proxy_set_header X-Real-IP <span class="token variable">$remote_addr</span><span class="token punctuation">;</span>
+        proxy_set_header REMOTE-HOST <span class="token variable">$remote_addr</span><span class="token punctuation">;</span>
+        proxy_set_header X-Forwarded-For <span class="token variable">$proxy_add_x_forwarded_for</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    location /netdisk-log-provider <span class="token punctuation">{</span>
+   		proxy_pass http://192.168.1.8:8014<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="nacos配置">3.2 Nacos配置</h2>
+</div><div class="cl-preview-section"><p>第一步，访问nacos后台，<a href="http://xn--nacosip-0k1r365de33b:8848/nacos">http://nacos部署的ip:8848/nacos</a></p>
+</div><div class="cl-preview-section"><p>第二步，导入<code>配置中心.zip</code>（从网盘下载）</p>
+</div><div class="cl-preview-section"><p>第三步，修改配置中心里面的配置，改成真实信息即可</p>
+</div><div class="cl-preview-section"><h2 id="数据库还原">3.3 数据库还原</h2>
+</div><div class="cl-preview-section"><p>第一步，连接MySQL，并且新建数据库，数据库名为netdisk</p>
+</div><div class="cl-preview-section"><p>第二步，还原数据库文件，从网盘获取netdisk.sql</p>
+</div><div class="cl-preview-section"><h1 id="后台项目的部署">4. 后台项目的部署</h1>
+</div><div class="cl-preview-section"><p>注意的是，由于网盘依赖的jodconverter第三方jar包，在Maven中央仓库没有对应的版本，因此需要手工下载jar并且把它导入到本地Maven仓库。</p>
+</div><div class="cl-preview-section"><p>第一步：从我的网盘分享里面下载jodconverter-2.2.2.jar</p>
+</div><div class="cl-preview-section"><p>第二步：把jar导入到本地Maven仓库</p>
+</div><div class="cl-preview-section"><pre class="  language-shell"><code class="prism  language-shell">mvn install:install-file -DgroupId=com.artofsolving -DartifactId=jodconverter -Dversion=2.2.2 -Dpackaging=jar -Dfile=E:/jodconverter-2.2.2.jar
+</code></pre>
+</div><div class="cl-preview-section"><p>第三步：使用Maven的打包命令<code>mvn install</code>打包项目（注意，直接打包<code>netdisk</code>工程即可，自动打包下面的子项目），然后放到服务器启动即可。</p>
+</div><div class="cl-preview-section"><h1 id="前端项目的部署">5. 前端项目的部署</h1>
+</div><div class="cl-preview-section"><h2 id="安装node.js">5.1 安装node.js</h2>
+</div><div class="cl-preview-section"><p>跟配置jdk一模一样，具体如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>第一，从网盘下载node-v12.13.1-win-x64.zip</li>
+<li>第二，解压zip包</li>
+<li>第三，配置环境变量，具体如下</li>
+</ul>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec5e2d100019dac05200583.png" alt="图片描述"><br>
+<img src="https://img.mukewang.com/5ec5e2c6000139e906510178.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>第四，测试是否配置成功</p>
+<pre class="  language-shell"><code class="prism  language-shell">#cmd命令
+npm -v
+</code></pre>
+</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="配置文件的修改">5.2 配置文件的修改</h2>
+</div><div class="cl-preview-section"><p><strong>1、disk-manage工程</strong></p>
+</div><div class="cl-preview-section"><blockquote>
+<p>修改src/main.js文件下的baseurl的地址（注意：指向的是nginx的ip，不是具体的jar的ip）</p>
+</blockquote>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec5e2b60001e10a11310392.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><strong>2、disk工程</strong></p>
+</div><div class="cl-preview-section"><blockquote>
+<p>第一：修改src/main.js文件下的几个地方</p>
+<ul>
+<li>baseurl，指向nginx的ip地址</li>
+<li>socketurl，指向nginx的ip地址</li>
+<li>uploadurl，指向nginx的ip地址</li>
+</ul>
+</blockquote>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec5e2aa0001123b10330339.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><blockquote>
+<p>第二：修改public/ipaddress.js下的baseurl，指向nginx的ip<br>
+<img src="https://img.mukewang.com/5ec5e2990001532410590338.png" alt="图片描述"></p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="打包项目">5.3 打包项目</h2>
+</div><div class="cl-preview-section"><p><strong>1、disk工程打包</strong></p>
+</div><div class="cl-preview-section"><p>第一步，打包disk工程，具体如下图所示</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec5e28b00012ddf12500472.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>第二步，打包完成之后，多一个dist目录，如图所示</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec5e27c000116da09570437.png" alt="图片描述"><br>
+第三步，把public 目录拷贝到dist里面，因为public存放的是静态页面，npm打包会忽略掉，需要手工拷贝</p>
+</div><div class="cl-preview-section"><p>第四步，把dist重命名为disk，复制到服务器部署即可</p>
+</div><div class="cl-preview-section"><p><strong>2、disk-manage工程打包</strong></p>
+</div><div class="cl-preview-section"><p>第一步，打包disk-manage，具体如下图所示：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec5e26d0001661f12670441.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>第二步，打包完成之后，多一个dist目录，如图所示<br>
+<img src="https://img.mukewang.com/5ec5e25d0001734207780360.png" alt="图片描述"><br>
+第三步，disk-manage下没有public目录，所以直接把dist重命名为disk-manage放到服���器部署即可</p>
+</div><div class="cl-preview-section"><h2 id="部署项目">5.4 部署项目</h2>
+</div><div class="cl-preview-section"><p>把打包的两个前端项目放到Nignx下的html目录即可，然后需要在nginx/conf/nginx.conf下配置html工程的映射，具体如下所示：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java">location <span class="token operator">/</span>disk<span class="token operator">-</span>base <span class="token punctuation">{</span>
+	alias   html<span class="token operator">/</span>disk<span class="token operator">-</span>base<span class="token punctuation">;</span>
+	index  index<span class="token punctuation">.</span>html index<span class="token punctuation">.</span>htm<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+location <span class="token operator">/</span>disk<span class="token operator">-</span>personal <span class="token punctuation">{</span>
+	alias  html<span class="token operator">/</span>disk<span class="token operator">-</span>personal<span class="token punctuation">;</span>
+	index  index<span class="token punctuation">.</span>html index<span class="token punctuation">.</span>htm<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+location <span class="token operator">/</span>disk <span class="token punctuation">{</span>
+	alias   html<span class="token operator">/</span>disk<span class="token punctuation">;</span>
+	index  index<span class="token punctuation">.</span>html index<span class="token punctuation">.</span>htm<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+location <span class="token operator">/</span>disk<span class="token operator">-</span>busisystem <span class="token punctuation">{</span>
+	alias  html<span class="token operator">/</span>disk<span class="token operator">-</span>busisystem<span class="token punctuation">;</span>
+	index  index<span class="token punctuation">.</span>html index<span class="token punctuation">.</span>htm<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>简单说明：</p>
+</div><div class="cl-preview-section"><ul>
+<li>alias配置的是前端工程真实所在目录</li>
+<li>index在这里没有什么意义</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="小结">6. 小结</h1>
+</div><div class="cl-preview-section"><p>本节主要是项目在服务器上部署的详细步骤，内容比较多种，但是这其实就是微服务模式需要面临的繁琐部署问题，部署有时候看似简单其实很容易出现细节上的问题，希望大家能认真地动手部署一遍。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img2.mukewang.com/5e8c3b81000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=73">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '34 网盘项目的部署环境搭建',
+					'CID': '1746',
+					'Teacher': '曼巴out'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "34 网盘项目的部署环境搭建",
+                    desc: "轻量级项目，系统化经验",
+                    imgUrl: 'https:https://img.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/73',
+                    link: 'https://m.imooc.com/read/73'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

@@ -1,0 +1,841 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>31 MyCat进行分库分表</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="轻量级项目，系统化经验">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "1743";
+	var chapter_title = "31 MyCat进行分库分表";
+	var aid = "73";
+	var a_name = "架构思维成长之微服务";
+	var a_price = "68.00";
+	var a_pic = "https://img4.mukewang.com/5e86b0220001a99d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '73';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-19&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			31 MyCat进行分库分表
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5e8c3b0c0001fb5106400359.jpg')"></div>
+	
+	
+		<a href="/read/73">
+			<div class="course-entry">
+				<img src="https://img3.mukewang.com/5e6eebd60001a49207000933-40-40.jpg" alt="曼巴out">
+				<h3>架构思维成长之微服务</h3>
+				<p>曼巴out · 上市公司资深架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">机会不会上门来找人，只有人去找机会。<p class="author">——狄更斯</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="、前言">1、前言</h1>
+</div><div class="cl-preview-section"><p>本节主要讲解MyCat中间件，它的核心功能是实现数据库的读写分离、负载均衡、数据分片等，它是底层数据库的中间代理，直接对接应用系统让数据库变的透明，简化了系统的开发。说到这里，大家可以回顾上节基于Aop和Spring动态数据源手写数据库读写分离功能，它虽然很灵活，但是它把读写分离和业务耦合了，如果很多的服务都实现读写分离，则相对比较麻烦。</p>
+</div><div class="cl-preview-section"><p>MyCat实现读写分离架构图：<br>
+<img src="https://img.mukewang.com/5ec1eee10001424707030314.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>从架构图我们可以清晰的指定，其实对于应用服务来说，它们压根就不关心底层是怎么实现的，它只需要连接MyCat即可，可以把MyCat看成是一个独立的数据库。</li>
+<li>其实这里大家可以把MyCat当做的Nginx，MySQL看做是Tomcat；MyCat其实就是对MySQL的一种反向代理思想，它根据规则来转发到具体MySQL去处理。</li>
+</ul>
+</div><div class="cl-preview-section"><p>当然，除了读写分离外，MyCat最核心也是最常用的功能就是分库分表了，也就是常说的垂直拆分和水平拆分。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>思考：我们为什么需要拆分数据库呢？</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>如果一个系统很庞大，一个完整的数据库表多达几百上千张，维护起来非常的麻烦，我们按业务来拆分表，比如：订单服务对应一个订单库、商品服务对应一个商品库等等，这就是垂直拆分。</li>
+<li>如果单表数据量非常的大，那么一个数据库肯定是存储不下的，我们需要做的是根据某个字段制定某种规则，把数据分散到不同数据库来存储，这就是水平拆分。</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>垂直拆分架构图：</strong><br>
+<img src="https://img.mukewang.com/5ec1eecf000181ff06730351.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>不同的业务不同的数据库；每个库都做主从复制并实现读写分离（可以省略）；</li>
+<li>优点：数据库变的更加清理、清晰、单库表数量减少，更加的好维护。</li>
+<li>缺点：如果存在多表关联查询（跨库）则无法实现，只能通过接口来实现；存在分布式事务问题。</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>水平拆分架构图：</strong></p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec1eec40001b02a07380560.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>上面架构图，其实是垂直+水平拆分的综合了，相信大家都能看的懂</li>
+<li>优点：减少单表的数据��</li>
+<li>缺点：跨库join性能较差</li>
+</ul>
+</div><div class="cl-preview-section"><p>总结：MyCat可以帮我们实现以上数据库的复杂架构模式，这也是真实环境常用的数据库架构模式。</p>
+</div><div class="cl-preview-section"><p>或许很多同学都知道，目前数据库中间件，主流的有MyCat（前身是阿里的cobar）和Sharding-JDBC（当当网），那么它们两个有什么区别呢？</p>
+</div><div class="cl-preview-section"><ul>
+<li>可以简单的理解为MyCat服务端操作、Sharding-JDBC是客户端操作。如果大家感觉比较抽象，则可以把MyCat当做是Nginx，Sharding-JDBC则是Spring Cloud Ribbon，它们两个虽然都是实现负载均衡，但是Ribbon需要在我们的工程集成，而Nginx则不需要。</li>
+</ul>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec1eeb80001485504880246.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>好了，讲解到这里相信大家对MyCat应该有一个清晰的了解了，知道它能干什么了。</p>
+</div><div class="cl-preview-section"><h1 id="、mycat的安装及简单配置">2、MyCat的安装及简单配置</h1>
+</div><div class="cl-preview-section"><p>安装的具体步骤如下所示：</p>
+</div><div class="cl-preview-section"><pre class="  language-shell"><code class="prism  language-shell">#1.把MyCat的压缩包上传到linux服务器
+#2.解压缩，得到mycat目录
+#3.进入mycat/bin，启动MyCa
+#4.启动： ./mycat start
+#5.停止： ./mycat stop
+#6.重启： ./mycat restart
+
+#默认端口：8066
+</code></pre>
+</div><div class="cl-preview-section"><p>三个核心配置文件介绍：(conf/*)</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>文件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>server.xml</td>
+<td>MyCat的配置文件，设置账号、参数等</td>
+</tr>
+<tr>
+<td>schema.xml</td>
+<td>MyCat对应的物理数据库和数据库表的设置</td>
+</tr>
+<tr>
+<td>rule.xml</td>
+<td>分片规则的配置</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>server.xml的配置</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token comment">&lt;!--配置账户信息--&gt;</span>
+<span class="token comment">&lt;!--
+	1）账户：root
+	2）密码：123456
+	3）连接数据库：TESTDB，注意这里不是真实的数据库名称，跟schema.xml里面的名称对应
+--&gt;</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>user</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>root<span class="token punctuation">"</span></span> <span class="token attr-name">defaultAccount</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>password<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>123456<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>schemas<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>TESTDB<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>user</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>schema.xml的配置</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token namespace">mycat:</span>schema</span> <span class="token attr-name"><span class="token namespace">xmlns:</span>mycat</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>http://io.mycat/<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+    <span class="token comment">&lt;!--第一步：配置逻辑库--&gt;</span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>schema</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>TESTDB<span class="token punctuation">"</span></span> <span class="token attr-name">checkSQLschema</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>false<span class="token punctuation">"</span></span> <span class="token attr-name">sqlMaxLimit</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>100<span class="token punctuation">"</span></span> <span class="token attr-name">dataNode</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>dn1<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>schema</span><span class="token punctuation">&gt;</span></span>
+    
+    <span class="token comment">&lt;!--第二步：配置真实数据库--&gt;</span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dataNode</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>dn1<span class="token punctuation">"</span></span> <span class="token attr-name">dataHost</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>localhost1<span class="token punctuation">"</span></span> <span class="token attr-name">database</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>micro_disk<span class="token punctuation">"</span></span> <span class="token punctuation">/&gt;</span></span>
+    
+    <span class="token comment">&lt;!--第三步：配置读写策略--&gt;</span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dataHost</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>localhost1<span class="token punctuation">"</span></span> <span class="token attr-name">maxCon</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>1000<span class="token punctuation">"</span></span> <span class="token attr-name">minCon</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>10<span class="token punctuation">"</span></span> <span class="token attr-name">balance</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>3<span class="token punctuation">"</span></span> <span class="token attr-name">writeType</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>0<span class="token punctuation">"</span></span> <span class="token attr-name">dbType</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>mysql<span class="token punctuation">"</span></span> <span class="token attr-name">dbDriver</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>native<span class="token punctuation">"</span></span> <span class="token attr-name">switchType</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>1<span class="token punctuation">"</span></span>  <span class="token attr-name">slaveThreshold</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>100<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+        <span class="token comment">&lt;!--心跳检测--&gt;</span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>heartbeat</span><span class="token punctuation">&gt;</span></span>select user()<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>heartbeat</span><span class="token punctuation">&gt;</span></span>
+        
+        <span class="token comment">&lt;!--writeHost是主库--&gt;</span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>writeHost</span> <span class="token attr-name">host</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>hostM1<span class="token punctuation">"</span></span> <span class="token attr-name">url</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>主库IP:3306<span class="token punctuation">"</span></span> <span class="token attr-name">user</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>root<span class="token punctuation">"</span></span> <span class="token attr-name">password</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>123<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+            <span class="token comment">&lt;!--readHost是从库--&gt;</span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>readHost</span> <span class="token attr-name">host</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>hostS2<span class="token punctuation">"</span></span> <span class="token attr-name">url</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>从库IP:3306<span class="token punctuation">"</span></span> <span class="token attr-name">user</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>root<span class="token punctuation">"</span></span> <span class="token attr-name">password</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>123<span class="token punctuation">"</span></span><span class="token punctuation">/&gt;</span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>writeHost</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dataHost</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span><span class="token namespace">mycat:</span>schema</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>如果需要分表则配置多个dataNode，否则一个就得了</li>
+<li>心跳检查：MySQL和MyCat之间保持心跳检查，MyCat会指定哪些数据库宕机了</li>
+<li>可以配置多个writeHost；每个writeHost也可以配置多个readHost</li>
+<li>相信上面的xml结构还是挺清晰的，大家应该都能看的懂，那么介绍一下每个属性的含义</li>
+</ul>
+</div><div class="cl-preview-section"><p>dataHost的属性介绍</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>序号</th>
+<th>属性名称</th>
+<th>属性含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>name</td>
+<td>节点名称，可以随便取，和dataNode的dataHost属性关联</td>
+</tr>
+<tr>
+<td>2</td>
+<td>maxCon</td>
+<td>最大支持1000个连接</td>
+</tr>
+<tr>
+<td>3</td>
+<td>minCon</td>
+<td>最小保持10个连接</td>
+</tr>
+<tr>
+<td>4</td>
+<td>balance</td>
+<td>0表示不开启读写分离机制，所有读操作都发送到writeHost<br>1表示writeHost和readHost都进行负载均衡<br>2表示随机，读写随机在writeHost和readHost进行分发<br>3表示所有的读请求随机分发到writeHost对应的readHost执行</td>
+</tr>
+<tr>
+<td>5</td>
+<td>writeType</td>
+<td>0，只在writeHost节点写入；1，在所有节点都写入</td>
+</tr>
+<tr>
+<td>6</td>
+<td>dbType</td>
+<td>数据库类型</td>
+</tr>
+<tr>
+<td>7</td>
+<td>dbDriver</td>
+<td>数据库驱动</td>
+</tr>
+<tr>
+<td>8</td>
+<td>switchType</td>
+<td>1 默认值，自动切换；2基于 MySQL 主从同步的状态决定是否切换；3基于 MySQL galary cluster 的切换机制（适合集群）</td>
+</tr>
+<tr>
+<td>9</td>
+<td>slaveThreshold</td>
+<td>它和switchType一起，表示心跳检查heartbeat语句，当 Seconds_Behind_Master&gt;slaveThreshold 时，读写分离筛选器会过滤掉此 Slave 机器</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><h1 id="、mycat的分表">3、MyCat的分表</h1>
+</div><div class="cl-preview-section"><h2 id="、分表策略">3.1、分表策略</h2>
+</div><div class="cl-preview-section"><p>可以把MyCat当成一个路由器，业务系统发起SQL时，由MyCat先解析SQL、执行、组装返回结果，再返回给业务系统，由于它帮我们做了好多的操作，方便业务系统的使用，但是它的性能相比直连数据库是要低很多的。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec1eea500016adb05160268.png" alt="图片描述"><br>
+我们需要根据表的某个字段，按照某种规则去判断到底存哪个数据库。举个例子来说：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec1ee980001f3f905160268.png" alt="图片描述"><br>
+MyCat内置的常见分表规则如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p><strong>分片枚举</strong>：适合按地区存储数据，比如：北京的用户下单时，订单保存到北京的数据库；上海则保存到上海数据库。</p>
+</li>
+<li>
+<p><strong>取模算法</strong>：适合表主键是int类型并且自增；但是它有弊端，必须开始确定数据库的数量，并且后期不能再扩展了。</p>
+</li>
+<li>
+<p><strong>字符串拆分hash解析</strong>：适合表主键是uuid的模式，先计算uuid的hash值再决定存哪个库（类似Redis Cluster槽的概念）</p>
+</li>
+<li>
+<p><strong>范围约定</strong>：适合表主键是int类型并且自增；比如,1<sub>500万条存数据库1，500万</sub>1000完存数据库2,</p>
+</li>
+<li>
+<p><strong>日期指定</strong>：这个应该不难理解</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>思考：如果表的主键是int类，自增的会不会存在问题呢？</p>
+</blockquote>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec1ee87000146fb04930194.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>如果ID自增的情况，会出现每个库的ID会重复，导���数据错乱；因为每个库都是从0开始，每次增长1。</li>
+</ul>
+</div><div class="cl-preview-section"><p>解决方案</p>
+</div><div class="cl-preview-section"><ul>
+<li>方案1：换成uuid做主键</li>
+<li>方案2：不同的数据库设置起始值不一样，步长不一样；比如：MySQL1的起始值是1每次增长2；MySQL2的起始值是0每次增长2。但是它也是有缺点的，在最开始设置好每台节点的自增长步长后，确定节点数量之后，不能再扩展节点了，否则会乱。</li>
+<li>方案3：基于Redis实现全局ID</li>
+</ul>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec1ee75000178dd04930194.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><pre class="  language-shell"><code class="prism  language-shell">#MySQL修改起始值
+set @@auto_increment_offset=0;
+
+#MySQL修改步长
+set @@auto_increment_increment=2;
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="、分表实例">3.2、分表实例</h2>
+</div><div class="cl-preview-section"><p>枚举算法：rule.xml</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token namespace">mycat:</span>rule</span> <span class="token attr-name"><span class="token namespace">xmlns:</span>mycat</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>http://io.mycat/<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>tableRule</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>rule1<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+    	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>rule</span><span class="token punctuation">&gt;</span></span>
+            <span class="token comment">&lt;!--字段是address--&gt;</span>
+        	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>columns</span><span class="token punctuation">&gt;</span></span>address<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>columns</span><span class="token punctuation">&gt;</span></span>
+            <span class="token comment">&lt;!--分片规则--&gt;</span>
+           	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>algorithm</span><span class="token punctuation">&gt;</span></span>hash-int<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>algorithm</span><span class="token punctuation">&gt;</span></span>
+    	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>rule</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>tableRule</span><span class="token punctuation">&gt;</span></span>	
+    <span class="token comment">&lt;!--枚举算法--&gt;</span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>function</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>hash-int<span class="token punctuation">"</span></span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>io.mycat.route.function.PartitionByFileMap<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+		<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>mapFile<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>partition-hash-int.txt<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">&gt;</span></span>
+        <span class="token comment">&lt;!--key：数字0;非数字1--&gt;</span>
+		<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>type<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>1<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">&gt;</span></span>
+        <span class="token comment">&lt;!--传递的address如果不在枚举里面,则默认一个库--&gt;</span>
+		<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>defaultNode<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>1<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">&gt;</span></span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>function</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span><span class="token namespace">mycat:</span>rule</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>conf/partition-hash-int.txt</p>
+</div><div class="cl-preview-section"><pre class="  language-txt"><code class="prism  language-txt">beijing=0
+shanghai=1
+guangzhou=2
+</code></pre>
+</div><div class="cl-preview-section"><p>取模算法：rule.xml</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token namespace">mycat:</span>rule</span> <span class="token attr-name"><span class="token namespace">xmlns:</span>mycat</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>http://io.mycat/<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+   <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>tableRule</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>rule2<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>rule</span><span class="token punctuation">&gt;</span></span>
+            <span class="token comment">&lt;!--字段是id--&gt;</span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>columns</span><span class="token punctuation">&gt;</span></span>id<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>columns</span><span class="token punctuation">&gt;</span></span>
+            <span class="token comment">&lt;!--分片规则--&gt;</span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>algorithm</span><span class="token punctuation">&gt;</span></span>mod-long<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>algorithm</span><span class="token punctuation">&gt;</span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>rule</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>tableRule</span><span class="token punctuation">&gt;</span></span>
+ 
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>function</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>mod-long<span class="token punctuation">"</span></span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>io.mycat.route.function.PartitionByMod<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+        <span class="token comment">&lt;!--指定分片数量，不可以被更改--&gt;</span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>property</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>count<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>3<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>property</span><span class="token punctuation">&gt;</span></span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>function</span><span class="token punctuation">&gt;</span></span>	
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span><span class="token namespace">mycat:</span>rule</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="、策略原理">3.3、策略原理</h2>
+</div><div class="cl-preview-section"><p>新增数据的时候，MyCat帮我们按照某个字段的某种规则把它新增到不同的数据库里面，那么查询的时候，MyCat到底怎么查询的呢？其实思路很简单，MySQL先解析我们的SQL，确定它是去哪个库来查询，再把查询的结果组装好，再返回给我们的应用系统。</p>
+</div><div class="cl-preview-section"><p>下面通过具体案例来分析MyCat的查询原理，具体案例如下所示：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>案例1：根据分片字段来查询，分片规则：id取模算法</p>
+</blockquote>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t_user <span class="token keyword">where</span> id<span class="token operator">=</span>?
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>MyCat先根据id的值取模计算应该到哪个数据库去查询，然后到具体数据库查询。</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>案例2：根据非分片字段来查询，分片规则：id取模算法</p>
+</blockquote>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t_user <span class="token keyword">where</span> name<span class="token operator">=</span>?
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>MyCat会往各个数据库都发送sql查询，再把各个库返回的结果组装返回</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>案例3：分页查询，分片规则：id取模算法</p>
+</blockquote>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t_user <span class="token keyword">limit</span> <span class="token number">0</span><span class="token punctuation">,</span><span class="token number">10</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>第一：MyCat会把sql发送到各个数据库查询</li>
+<li>第二：再根据情况返回给客户端，这里的<code>根据情况</code>比较复杂，比如：每个数据库都有返回值，则随机返回一组数据；如果每个库查询结果都不满10条，则再重组返回。注意的是，每次查询的结果可能都会不一样。</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>案例4：排序，分页，分片规则：id取模算法</p>
+</blockquote>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t_user <span class="token keyword">order</span> <span class="token keyword">by</span> <span class="token keyword">create</span> time <span class="token keyword">limit</span> <span class="token number">0</span><span class="token punctuation">,</span><span class="token number">10</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>第一：MyCat会把sql发送到各个数据库查询</li>
+<li>第二：再根据情况返回给客户端，注意的是，每次查询的结果可能都会不一样。</li>
+</ul>
+</div><div class="cl-preview-section"><p>总结：MyCat的查询性能相对比较低，它的好处是可以减少单表的数据量。所以我们在设计数据库的时候，把表设计好，尽量的是单表，不要有太多的关联查询，因为MyCat不支持太复杂的多表join查询，它内部的原理是组合sql然后往不同的库进行查询，数据不一定准确。</p>
+</div><div class="cl-preview-section"><h1 id="、小结">4、小结</h1>
+</div><div class="cl-preview-section"><p>本节内容主要是讲解MyCat，主要包括MyCat的作用、几种常见的数据库架构、安装及配置、MyCat的分片策略和原理。总之MyCat还是要掌握的，毕竟真实工作中接触的还是比较多，比较实用。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img.mukewang.com/5e86d89100011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=73">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '31 MyCat进行分库分表',
+					'CID': '1743',
+					'Teacher': '曼巴out'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "31 MyCat进行分库分表",
+                    desc: "轻量级项目，系统化经验",
+                    imgUrl: 'https:https://img4.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/73',
+                    link: 'https://m.imooc.com/read/73'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

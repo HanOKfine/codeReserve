@@ -1,0 +1,1039 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>13 dict 对象，高效的关联式容器</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="突破技术瓶颈，迈向更高岗位">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "5";
+	var chapter_id = "1909";
+	var chapter_title = "13 dict 对象，高效的关联式容器";
+	var aid = "76";
+	var a_name = "Python 源码深度剖析";
+	var a_price = "68.00";
+	var a_pic = "https://img2.mukewang.com/5eb68ab400017cda05400720.jpg";
+	var userId = 0;
+
+	var column_id = '76';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-06-19&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			13 dict 对象，高效的关联式容器
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img4.mukewang.com/5ed0e3f700011a2e06400426.jpg')"></div>
+	
+	
+		<a href="/read/76">
+			<div class="course-entry">
+				<img src="https://img1.mukewang.com/5e4a3ec90001ef8d04000400-40-40.jpg" alt="fasionchan">
+				<h3>Python 源码深度剖析</h3>
+				<p>fasionchan · 资深 Python 研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">合理安排时间，就等于节约时间。<p class="author">——培根</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p><em>Python</em> 中的 <em>dict</em> 对象是一种 <strong>关联式容器</strong> 对象，用于保存由 <strong>键</strong> ( <em>key</em> )到 <strong>值</strong> ( <em>value</em> )的映射关系。借助关联式容器，程序可快速定位到与指定 <strong>键</strong> 相关联的 <strong>值</strong> 。<em>dict</em> 对象在 <em>Python</em> 程序中使用频率非常高，如果应用不当将严重影响程序的执行效率。</p>
+</div><div class="cl-preview-section"><p>本节，我们先从 <em>dict</em> 对象常用操作入手，回顾它的 <strong>基本用法</strong> ；接着结合其他内建容器对象，研究 <em>dict</em> 关键操作的 <strong>执行效率</strong> ；最后以 <em>dict</em> 对象 <strong>内部结构</strong> 收尾，详细讲解其内部 <strong>哈希表</strong> 的实现要点，以及其中几个关键 <strong>性能考量</strong> 。相信通过本节学习，读者将对 <em>dict</em> 实现原理了如指掌，这对用好 <em>dict</em> 对象至关重要。</p>
+</div><div class="cl-preview-section"><h2 id="基本用法">基本用法</h2>
+</div><div class="cl-preview-section"><p>我们用一个 <em>dict</em> 对象来保存培训班学员的成绩，先创建一个空对象：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> scores <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> scores
+<span class="token punctuation">{</span><span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>那么，一个什么都不放的 <em>dict</em> 对象需要占用多少内存呢？根据前面章节，我们知道对象头部字段是必不可少的。可我们很惊讶地发现，一个空的 dict 对象居然要占用 <em>240</em> 字节的内存！</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">import</span> sys
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> sys<span class="token punctuation">.</span>getsizeof<span class="token punctuation">(</span>scores<span class="token punctuation">)</span>
+<span class="token number">240</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这是为什么呢？后续我们将从 <em>dict</em> 内部的哈希表中寻找答案。现在我们接着回顾 <em>dict</em> 的基本用法。</p>
+</div><div class="cl-preview-section"><p>现在将 <em>jim</em> 的成绩保存保存到 <em>dict</em> 对象中：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> scores<span class="token punctuation">[</span><span class="token string">'jim'</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">70</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> scores
+<span class="token punctuation">{</span><span class="token string">'jim'</span><span class="token punctuation">:</span> <span class="token number">70</span><span class="token punctuation">}</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> sys<span class="token punctuation">.</span>getsizeof<span class="token punctuation">(</span>scores<span class="token punctuation">)</span>
+<span class="token number">240</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>数据插入后，我们发现 <em>dict</em> 对象内存使用量保存不变。看来， <em>dict</em> 对象也有一种类似 <em>list</em> 对象的 <strong>预分配机制</strong> 。</p>
+</div><div class="cl-preview-section"><p>现在，接着存入 <em>lily</em> 、<em>lucy</em> 以及 <em>tom</em> 的成绩。我们发现， <em>dict</em> 还没达到扩容条件，内存大小保存不变：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> scores<span class="token punctuation">[</span><span class="token string">'lily'</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">75</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> scores<span class="token punctuation">[</span><span class="token string">'lucy'</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">80</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> scores<span class="token punctuation">[</span><span class="token string">'tom'</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">90</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> scores<span class="token punctuation">[</span><span class="token string">'alice'</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">95</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> scores
+<span class="token punctuation">{</span><span class="token string">'jim'</span><span class="token punctuation">:</span> <span class="token number">70</span><span class="token punctuation">,</span> <span class="token string">'lily'</span><span class="token punctuation">:</span> <span class="token number">75</span><span class="token punctuation">,</span> <span class="token string">'lucy'</span><span class="token punctuation">:</span> <span class="token number">80</span><span class="token punctuation">,</span> <span class="token string">'tom'</span><span class="token punctuation">:</span> <span class="token number">90</span><span class="token punctuation">,</span> <span class="token string">'alice'</span><span class="token punctuation">:</span> <span class="token number">95</span><span class="token punctuation">}</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> sys<span class="token punctuation">.</span>getsizeof<span class="token punctuation">(</span>scores<span class="token punctuation">)</span>
+<span class="token number">240</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>借助 <em>dict</em> 对象，我们可以快速检索出某位学员的成绩。例如，获取 tom 的成绩：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> scores<span class="token punctuation">[</span><span class="token string">'tom'</span><span class="token punctuation">]</span>
+<span class="token number">90</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>”快速“不是一个精确的形容词，到底多快呢？这里先给出答案，由于 <em>dict</em> 对象底层由哈希表实现， 查找操作平均时间复杂度是 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">O(1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathrm">1</span><span class="mclose">)</span></span></span></span></span> 。当然了，在哈希不均匀的情况下，最坏时间复杂度是 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">O(n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathit">n</span><span class="mclose">)</span></span></span></span></span> ，但一般情况下很难发生。</p>
+</div><div class="cl-preview-section"><p>当然了，如果有某位学员(例如 <em>lily</em>)转学了，可通过 <em>pop</em> 方法将其剔除：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> scores<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token string">'lily'</span><span class="token punctuation">)</span>
+<span class="token number">75</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> scores
+<span class="token punctuation">{</span><span class="token string">'jim'</span><span class="token punctuation">:</span> <span class="token number">70</span><span class="token punctuation">,</span> <span class="token string">'lucy'</span><span class="token punctuation">:</span> <span class="token number">80</span><span class="token punctuation">,</span> <span class="token string">'tom'</span><span class="token punctuation">:</span> <span class="token number">90</span><span class="token punctuation">,</span> <span class="token string">'alice'</span><span class="token punctuation">:</span> <span class="token number">95</span><span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>哈希表结构决定了 <em>dict</em> 的删除操作也很快，平均时间复杂度也是 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">O(1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathrm">1</span><span class="mclose">)</span></span></span></span></span> 。实际上， <em>dict</em> 插入、删除、查找的平均时间复杂度都是 ，<span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">O(1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathrm">1</span><span class="mclose">)</span></span></span></span></span>最坏时间复杂度是 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">O(n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathit">n</span><span class="mclose">)</span></span></span></span></span> 。因此，哈希函数的选择就至关重要，一个好的哈希函数应该将键尽可能 <strong>均匀</strong> 地映射到哈希空间中，最大限度地避免 <strong>哈希冲突</strong> 。</p>
+</div><div class="cl-preview-section"><h2 id="执行效率">执行效率</h2>
+</div><div class="cl-preview-section"><p>我们知道 <em>dict</em> 对象搜索操作时间复杂度为 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">O(1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathrm">1</span><span class="mclose">)</span></span></span></span></span>，远远好于 <em>list</em> 对象的 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">O(n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathit">n</span><span class="mclose">)</span></span></span></span></span> 。这意味着什么了？为得到一个更准确、直观的感受，我们编写一个测试程序，分别测试不同规模 <em>dict</em> 、 <em>list</em> 对象完成 <em>1000</em> 次搜索所需的时间：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">import</span> random
+<span class="token keyword">import</span> time
+
+<span class="token comment"># 随机数生成器</span>
+randint <span class="token operator">=</span> <span class="token keyword">lambda</span><span class="token punctuation">:</span> random<span class="token punctuation">.</span>randint<span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">2</span><span class="token operator">**</span><span class="token number">30</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token operator">**</span><span class="token number">30</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">count_targets</span><span class="token punctuation">(</span>items<span class="token punctuation">,</span> targets<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">'''
+    计算目标对象出现个数
+        items: 待搜索容器
+        targets: 待搜索目标元素列表
+    '''</span>
+
+    found <span class="token operator">=</span> <span class="token number">0</span>
+
+    <span class="token keyword">for</span> target <span class="token keyword">in</span> targets<span class="token punctuation">:</span>
+        <span class="token keyword">if</span> target <span class="token keyword">in</span> items<span class="token punctuation">:</span>
+            found <span class="token operator">+=</span> <span class="token number">1</span>
+
+    <span class="token keyword">return</span> found
+
+<span class="token keyword">def</span> <span class="token function">generate_random_dict</span><span class="token punctuation">(</span>n<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">'''
+    生成随机数字典
+    '''</span>
+
+    dict_items <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+    <span class="token keyword">while</span> <span class="token builtin">len</span><span class="token punctuation">(</span>dict_items<span class="token punctuation">)</span> <span class="token operator">&lt;</span> n<span class="token punctuation">:</span>
+        dict_items<span class="token punctuation">[</span>randint<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">True</span>
+
+    <span class="token keyword">return</span> dict_items
+
+<span class="token keyword">def</span> <span class="token function">generate_random_list</span><span class="token punctuation">(</span>n<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">'''
+    生成随机数列表
+    '''</span>
+
+    <span class="token keyword">return</span> <span class="token punctuation">[</span>
+        randint<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token keyword">for</span> _ <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> n<span class="token punctuation">)</span>
+    <span class="token punctuation">]</span>
+
+<span class="token keyword">def</span> <span class="token function">test_for_scale</span><span class="token punctuation">(</span>scale<span class="token punctuation">,</span> targets<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">'''
+    执行一个样例
+        scale: 测试容器规模
+        targets: 待搜索元素列表
+    '''</span>
+
+    <span class="token comment"># 生成指定规模的随机数容器</span>
+    dict_items <span class="token operator">=</span> generate_random_dict<span class="token punctuation">(</span>scale<span class="token punctuation">)</span>
+    list_items <span class="token operator">=</span> generate_random_list<span class="token punctuation">(</span>scale<span class="token punctuation">)</span>
+
+    <span class="token comment"># 测试dict搜索所需时间</span>
+    start_ts <span class="token operator">=</span> time<span class="token punctuation">.</span>time<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    count_targets<span class="token punctuation">(</span>dict_items<span class="token punctuation">,</span> targets<span class="token punctuation">)</span>
+    dict_time <span class="token operator">=</span> time<span class="token punctuation">.</span>time<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> start_ts
+
+    <span class="token comment"># 测试list搜索所需时间</span>
+    start_ts <span class="token operator">=</span> time<span class="token punctuation">.</span>time<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    count_targets<span class="token punctuation">(</span>list_items<span class="token punctuation">,</span> targets<span class="token punctuation">)</span>
+    list_time <span class="token operator">=</span> time<span class="token punctuation">.</span>time<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> start_ts
+
+    <span class="token comment"># 打印结果</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'Scale:'</span><span class="token punctuation">,</span> scale<span class="token punctuation">)</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'Dict:'</span><span class="token punctuation">,</span> dict_time<span class="token punctuation">)</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'List:'</span><span class="token punctuation">,</span> list_time<span class="token punctuation">)</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token comment"># 每次测试搜索1000次</span>
+    <span class="token comment"># 生成1000个随机数作为搜索目标</span>
+    targets <span class="token operator">=</span> generate_random_list<span class="token punctuation">(</span><span class="token number">1000</span><span class="token punctuation">)</span>
+
+    <span class="token comment"># 以不同规模运行测试函数</span>
+    <span class="token keyword">for</span> scale <span class="token keyword">in</span> <span class="token punctuation">[</span><span class="token number">1000</span><span class="token punctuation">,</span> <span class="token number">10000</span><span class="token punctuation">,</span> <span class="token number">100000</span><span class="token punctuation">,</span> <span class="token number">1000000</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+        test_for_scale<span class="token punctuation">(</span>scale<span class="token punctuation">,</span> targets<span class="token punctuation">)</span>
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">'__main__'</span><span class="token punctuation">:</span>
+    main<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>测试程序代码逻辑并不复杂，请结合注释阅读理解，这里不再赘述。测试程序执行后，输出内容大致如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python">Scale<span class="token punctuation">:</span> <span class="token number">1000</span>
+Dict<span class="token punctuation">:</span> <span class="token number">0.00012683868408203125</span>
+List<span class="token punctuation">:</span> <span class="token number">0.03683590888977051</span>
+
+Scale<span class="token punctuation">:</span> <span class="token number">10000</span>
+Dict<span class="token punctuation">:</span> <span class="token number">0.00017213821411132812</span>
+List<span class="token punctuation">:</span> <span class="token number">0.3484950065612793</span>
+
+Scale<span class="token punctuation">:</span> <span class="token number">100000</span>
+Dict<span class="token punctuation">:</span> <span class="token number">0.00021696090698242188</span>
+List<span class="token punctuation">:</span> <span class="token number">3.6795387268066406</span>
+
+Scale<span class="token punctuation">:</span> <span class="token number">1000000</span>
+Dict<span class="token punctuation">:</span> <span class="token number">0.0003829002380371094</span>
+List<span class="token punctuation">:</span> <span class="token number">48.04447102546692</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>我们将测试结果制作表格， <em>dict</em> 和 <em>list</em> 的表现一目了然：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th><strong>容器规模</strong></th>
+<th><strong>增长系数</strong></th>
+<th><strong>dict消耗时间</strong></th>
+<th><strong>dict增长系数</strong></th>
+<th><strong>list消耗时间</strong></th>
+<th><strong>list增长系数</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1000</td>
+<td>1</td>
+<td>0.000129s</td>
+<td>1</td>
+<td>0.036s</td>
+<td>1</td>
+</tr>
+<tr>
+<td>10000</td>
+<td>10</td>
+<td>0.000172s</td>
+<td>1.33</td>
+<td>0.348s</td>
+<td>9.67</td>
+</tr>
+<tr>
+<td>100000</td>
+<td>100</td>
+<td>0.000216s</td>
+<td>1.67</td>
+<td>3.679s</td>
+<td>102.19</td>
+</tr>
+<tr>
+<td>1000000</td>
+<td>1000</td>
+<td>0.000382s</td>
+<td>2.96</td>
+<td>48.044s</td>
+<td>1335.56</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>从表格中，我们看到：当容器规模增长 <em>1000</em> 倍， <em>dict</em> 搜索时间几乎保持不变，但 <em>list</em> 搜索时间增长了差不多 <em>1000</em> 倍。当规模达到 <em>10</em> 万时，<em>1000</em> 次 <em>list</em> 搜索花了接近一分钟时间，而 <em>dict</em> 只需 382 微秒！<em>dict</em> 对象完成一次搜索只需 <em>0.382</em> 微秒，也就是说一秒钟可以完成 <em>200</em> 多万次搜索！</p>
+</div><div class="cl-preview-section"><p><em>dict</em> 对象到底用了什么黑科技呢？接下来，我们一起从它的内部结构中寻找答案。</p>
+</div><div class="cl-preview-section"><h2 id="内部结构">内部结构</h2>
+</div><div class="cl-preview-section"><p>由于关联式容器使用场景非常广泛，几乎所有现代编程语言都提供某种关联式容器，而且特别关注键的 <strong>搜索效率</strong> 。例如， <em>C++</em> 标准模板库中的 <em>map</em> 就是一种关联式容器，内部基于 <strong>红黑树</strong> 实现。红黑树是一种 <strong>平衡</strong> 二叉树，能够提供良好的操作效率，插入、删除、搜索等关键操作的时间复杂度均为 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mi>l</mi><mi>o</mi><msub><mi>g</mi><mn>2</mn></msub><mi>n</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">O(log_2 n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathit" style="margin-right: 0.01968em;">l</span><span class="mord mathit">o</span><span class="mord"><span class="mord mathit" style="margin-right: 0.03588em;">g</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.301108em;"><span class="" style="top: -2.55em; margin-left: -0.03588em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathrm mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"></span></span></span></span></span><span class="mord mathit">n</span><span class="mclose">)</span></span></span></span></span> 。</p>
+</div><div class="cl-preview-section"><p><em>Python</em> 虚拟机的运行重度依赖 <em>dict</em> 对象，包括 <strong>名字空间</strong> 以及 <strong>对象属性空间</strong> 等概念底层都是由 <em>dict</em> 对象实现的。因此， <em>Python</em> 对 <em>dict</em> 对象的效率要求更为苛刻。那么，操作效率优于 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mi>l</mi><mi>o</mi><msub><mi>g</mi><mn>2</mn></msub><mi>n</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">O(log_2n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathit" style="margin-right: 0.01968em;">l</span><span class="mord mathit">o</span><span class="mord"><span class="mord mathit" style="margin-right: 0.03588em;">g</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.301108em;"><span class="" style="top: -2.55em; margin-left: -0.03588em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathrm mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"></span></span></span></span></span><span class="mord mathit">n</span><span class="mclose">)</span></span></span></span></span> 的数据结构有哪些呢？好吧，你可能已经猜到了， <em>Python</em> 中的 <em>dict</em> 对象就是基于 <strong>散列表</strong> 实现的。</p>
+</div><div class="cl-preview-section"><p>现在，是时候揭开 dict 对象神秘的面纱了。 <em>dict</em> 对象在 <em>Python</em> 内部由结构体 <em>PyDictObject</em> 表示， <em>PyDictObject</em> 在头文件 <em>Include/dictobject.h</em> 中定义：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token keyword">typedef</span> <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+    PyObject_HEAD
+
+    <span class="token comment">/* Number of items in the dictionary */</span>
+    Py_ssize_t ma_used<span class="token punctuation">;</span>
+
+    <span class="token comment">/* Dictionary version: globally unique, value change each time
+       the dictionary is modified */</span>
+    uint64_t ma_version_tag<span class="token punctuation">;</span>
+
+    PyDictKeysObject <span class="token operator">*</span>ma_keys<span class="token punctuation">;</span>
+
+    <span class="token comment">/* If ma_values is NULL, the table is "combined": keys and values
+       are stored in ma_keys.
+
+       If ma_values is not NULL, the table is splitted:
+       keys are stored in ma_keys and values are stored in ma_values */</span>
+    PyObject <span class="token operator">*</span><span class="token operator">*</span>ma_values<span class="token punctuation">;</span>
+<span class="token punctuation">}</span> PyDictObject<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><em>dict</em> 对象理论上应该是一种变长对象，但 <em>PyObject_HEAD</em> 头部告诉我们， <em>Python</em> 其实把它作为普通对象实现。除了对象公共头部外， <em>PyDictObject</em> 还包括以下几个字段：</p>
+</div><div class="cl-preview-section"><ul>
+<li><em>ma_used</em> ，对象当前所保存的 <strong>键值对个数</strong> ；</li>
+<li><em>ma_version_tag</em> ，对象当前 <strong>版本号</strong> ，每次修改时更新；</li>
+<li><em>ma_keys</em> ，指向按键对象映射的 <strong>哈希表</strong> 结构；</li>
+<li><em>ma_values</em> ， 分离模式下指向由所有 <strong>值对象</strong> 组成的数组。</li>
+</ul>
+</div><div class="cl-preview-section"><p>到目前为止，我们还没找到哈希表的具体结构，但是已经发现了一些蛛丝马迹—— <em>PyDictKeysObject</em> 。现在我们趁热打铁，扒开 <em>PyDictKeysObject</em> 的源码看一看，<em>Objects/dict-common.h</em> 头文件中 <em>_dictkeysobject</em> 是也：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token keyword">struct</span> _dictkeysobject <span class="token punctuation">{</span>
+    Py_ssize_t dk_refcnt<span class="token punctuation">;</span>
+
+    <span class="token comment">/* Size of the hash table (dk_indices). It must be a power of 2. */</span>
+    Py_ssize_t dk_size<span class="token punctuation">;</span>
+
+    <span class="token comment">/* Function to lookup in the hash table (dk_indices):
+
+       - lookdict(): general-purpose, and may return DKIX_ERROR if (and
+         only if) a comparison raises an exception.
+
+       - lookdict_unicode(): specialized to Unicode string keys, comparison of
+         which can never raise an exception; that function can never return
+         DKIX_ERROR.
+
+       - lookdict_unicode_nodummy(): similar to lookdict_unicode() but further
+         specialized for Unicode string keys that cannot be the &lt;dummy&gt; value.
+
+       - lookdict_split(): Version of lookdict() for split tables. */</span>
+    dict_lookup_func dk_lookup<span class="token punctuation">;</span>
+
+    <span class="token comment">/* Number of usable entries in dk_entries. */</span>
+    Py_ssize_t dk_usable<span class="token punctuation">;</span>
+
+    <span class="token comment">/* Number of used entries in dk_entries. */</span>
+    Py_ssize_t dk_nentries<span class="token punctuation">;</span>
+
+    <span class="token comment">/* Actual hash table of dk_size entries. It holds indices in dk_entries,
+       or DKIX_EMPTY(-1) or DKIX_DUMMY(-2).
+
+       Indices must be: 0 &lt;= indice &lt; USABLE_FRACTION(dk_size).
+
+       The size in bytes of an indice depends on dk_size:
+
+       - 1 byte if dk_size &lt;= 0xff (char*)
+       - 2 bytes if dk_size &lt;= 0xffff (int16_t*)
+       - 4 bytes if dk_size &lt;= 0xffffffff (int32_t*)
+       - 8 bytes otherwise (int64_t*)
+
+       Dynamically sized, SIZEOF_VOID_P is minimum. */</span>
+    <span class="token keyword">char</span> dk_indices<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">;</span>  <span class="token comment">/* char is required to avoid strict aliasing. */</span>
+
+    <span class="token comment">/* "PyDictKeyEntry dk_entries[dk_usable];" array follows:
+       see the DK_ENTRIES() macro */</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><em>_dictkeysobject</em> 结构体包含 dict 对象哈希表实现的所有秘密，结合注释可以解读其中的关键字段：</p>
+</div><div class="cl-preview-section"><ul>
+<li><em>dk_refcnt</em> ，引用计数，跟 <strong>映射视图</strong> 的实现有关，有点类似对象引用计数；</li>
+<li><em>dk_size</em> ，哈希表大小，必须是 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msup><mn>2</mn><mi>n</mi></msup></mrow><annotation encoding="application/x-tex">2^n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.664392em;"></span><span class="strut bottom" style="height: 0.664392em; vertical-align: 0em;"></span><span class="base"><span class="mord"><span class="mord mathrm">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height: 0.664392em;"><span class="" style="top: -3.063em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathit mtight">n</span></span></span></span></span></span></span></span></span></span></span></span> ，这样可将模运算优化成 <strong>按位与</strong> 运算；</li>
+<li><em>dk_lookup</em> ， <strong>哈希查找函数</strong> 指针，可根据 <em>dict</em> 当前状态选用最优函数版本；</li>
+<li><em>dk_usable</em> ，键值对数组 <strong>可用个数</strong> ；</li>
+<li><em>dk_nentries</em> ，键值对数组 <strong>已用个数</strong> ；</li>
+<li><em>dk_indices</em> ，哈希表 <strong>起始地址</strong> ，哈希表后紧接着 <strong>键值对数组</strong>  <em>dk_entries</em> 。</li>
+</ul>
+</div><div class="cl-preview-section"><p>键值对结构体 <em>PyDictKeyEntry</em> 就非常直白了，除了保存键对象和值对象的指针外，缓存着键对象的哈希值：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token keyword">typedef</span> <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+    <span class="token comment">/* Cached hash code of me_key. */</span>
+    Py_hash_t me_hash<span class="token punctuation">;</span>
+    PyObject <span class="token operator">*</span>me_key<span class="token punctuation">;</span>
+    PyObject <span class="token operator">*</span>me_value<span class="token punctuation">;</span> <span class="token comment">/* This field is only meaningful for combined tables */</span>
+<span class="token punctuation">}</span> PyDictKeyEntry<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li><em>me_hash</em> ，键对象的 <strong>哈希值</strong> ，避免重复调用 __hash__ 计算哈希值；</li>
+<li><em>me_key</em> ，键对象指针；</li>
+<li><em>me_value</em> ，值对象指针。</li>
+</ul>
+</div><div class="cl-preview-section"><p>至此， <em>dict</em> 对象内部的哈希表结构已经非常清晰了：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed0e8aa0001ba5110980610.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><em>dict</em> 对象真正的实现藏身于 <em>PyDictKeysObject</em> 中，它内部包含两个关键数组，一个是 <strong>键值对数组</strong> <em>dk_entries</em> ，另一个是 <strong>哈希索引数组</strong> <em>dk_indices</em> 。<em>dict</em> 所维护的键值对，按照先来后到的顺序保存于键值对数组中；而哈希索引数组对应槽位则保存着键值对在数组中的位置。</p>
+</div><div class="cl-preview-section"><p>如上图，当我们往空 <em>dict</em> 对象插入新键值对 <em>(‘jim’, 70)</em> 时， <em>Python</em> 执行以下步骤：</p>
+</div><div class="cl-preview-section"><ol>
+<li>将键值对保存于 <em>dk_entries</em> 数组末尾，即下标为 <em>0</em> 的位置；</li>
+<li>计算键对象 <em>‘jim’</em> 的哈希值并取右 <em>3</em> 位，得到该键在哈希索引数组中的下标 5 ；</li>
+<li>将键值对在数组中的下标 <em>0</em> ，保存于哈希索引数组中编号为 <em>5</em> 的槽位中。</li>
+</ol>
+</div><div class="cl-preview-section"><p>这样一来，查找操作便可快速进行，分为以下几个步骤：</p>
+</div><div class="cl-preview-section"><ol>
+<li>计算键对象 <em>‘jim’</em> 的哈希值并取右 <em>3</em> 位，得到该键在哈希索引数组中的下标 5 ；</li>
+<li>找到哈希索引数组下标为 <em>5</em> 的槽位，取出其中保存的下标 0 ；</li>
+<li>找到键值对数组第 0 个位置，并取出 <strong>值对象</strong> ；</li>
+</ol>
+</div><div class="cl-preview-section"><p>由于 <strong>哈希值计算</strong> 以及 <strong>数组定位</strong> 均可在常数时间内完成，以上操作均可在常数时间内完成，也就是 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">O(1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathrm">1</span><span class="mclose">)</span></span></span></span></span> 。为简化讨论，<em>Python</em> 应对 <strong>哈希冲突</strong> 的策略我们先按下不表，留在下节 <strong>源码精讲</strong> 中详细展开。</p>
+</div><div class="cl-preview-section"><h2 id="容量策略">容量策略</h2>
+</div><div class="cl-preview-section"><p>根据行为我们断定， <em>dict</em> 对象也有一种类似 <em>list</em> 对象的 <strong>预分配机制</strong> 。那么， <em>dict</em> 对象容量管理策略是怎样的呢？</p>
+</div><div class="cl-preview-section"><p>由 <em>Objects/dictobject.c</em> 源文件中的 <em>PyDict_MINSIZE</em> 宏定义，我们知道 <em>dict</em> 内部哈希表最小长度为 <em>8</em> ：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token macro property">#<span class="token directive keyword">define</span> PyDict_MINSIZE 8</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>哈希表越密集，哈希冲突则越频繁，性能也就越差。因此，哈希表必须是一种 <strong>稀疏</strong> 的表结构，越稀疏则性能越好。由于 <strong>内存开销</strong> 的制约，哈希表不可能无限度稀疏，需要在时间和空间上进行权衡。实践经验表明，一个 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mfrac><mrow><mn>1</mn></mrow><mrow><mn>2</mn></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{1}{2}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.845108em;"></span><span class="strut bottom" style="height: 1.19011em; vertical-align: -0.345em;"></span><span class="base"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.845108em;"><span class="" style="top: -2.655em;"><span class="pstrut" style="height: 3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathrm mtight">2</span></span></span></span><span class="" style="top: -3.23em;"><span class="pstrut" style="height: 3em;"></span><span class="frac-line hide-tail" style="height: 0.04em;"><svg width="400em" height="400em" viewBox="0 0 400000 400000" preserveAspectRatio="xMinYMin slice"><path d="M0 0 h400000 v400000 h-400000z M0 0 h400000 v400000 h-400000z"></path></svg></span></span><span class="" style="top: -3.394em;"><span class="pstrut" style="height: 3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathrm mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.345em;"></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span>到  <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mfrac><mrow><mn>2</mn></mrow><mrow><mn>3</mn></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{2}{3}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.845108em;"></span><span class="strut bottom" style="height: 1.19011em; vertical-align: -0.345em;"></span><span class="base"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.845108em;"><span class="" style="top: -2.655em;"><span class="pstrut" style="height: 3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathrm mtight">3</span></span></span></span><span class="" style="top: -3.23em;"><span class="pstrut" style="height: 3em;"></span><span class="frac-line hide-tail" style="height: 0.04em;"><svg width="400em" height="400em" viewBox="0 0 400000 400000" preserveAspectRatio="xMinYMin slice"><path d="M0 0 h400000 v400000 h-400000z M0 0 h400000 v400000 h-400000z"></path></svg></span></span><span class="" style="top: -3.394em;"><span class="pstrut" style="height: 3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathrm mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.345em;"></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span> 满的哈希表，性能较为理想——以相对合理的 <strong>内存</strong> 换取相对高效的 <strong>执行性能</strong> 。</p>
+</div><div class="cl-preview-section"><p>为保证哈希表的稀疏程度，进而控制哈希冲突频率， <em>Python</em> 通过 <em>USABLE_FRACTION</em> 宏将哈希表内元素控制在 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mfrac><mrow><mn>2</mn></mrow><mrow><mn>3</mn></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{2}{3}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.845108em;"></span><span class="strut bottom" style="height: 1.19011em; vertical-align: -0.345em;"></span><span class="base"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.845108em;"><span class="" style="top: -2.655em;"><span class="pstrut" style="height: 3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathrm mtight">3</span></span></span></span><span class="" style="top: -3.23em;"><span class="pstrut" style="height: 3em;"></span><span class="frac-line hide-tail" style="height: 0.04em;"><svg width="400em" height="400em" viewBox="0 0 400000 400000" preserveAspectRatio="xMinYMin slice"><path d="M0 0 h400000 v400000 h-400000z M0 0 h400000 v400000 h-400000z"></path></svg></span></span><span class="" style="top: -3.394em;"><span class="pstrut" style="height: 3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathrm mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.345em;"></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span> 以内。<em>USABLE_FRACTION</em> 宏根据哈希表规模 <em>n</em> ，计算哈希表可存储元素个数，也就是 <strong>键值对数组</strong> 的长度。以长度为 8 的哈希表为例，最多可以保持 <em>5</em> 个键值对，超出则需要扩容。USABLE_FRACTION 是一个非常重要的宏定义，位于源文件 <em>Objects/dictobject.c</em> 中：</p>
+</div><div class="cl-preview-section"><pre class=" language-c"><code class="prism  language-c"><span class="token macro property">#<span class="token directive keyword">define</span> USABLE_FRACTION(n) (((n) &lt;&lt; 1)/3)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>哈希表规模一定是 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msup><mn>2</mn><mi>n</mi></msup></mrow><annotation encoding="application/x-tex">2^n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.664392em;"></span><span class="strut bottom" style="height: 0.664392em; vertical-align: 0em;"></span><span class="base"><span class="mord"><span class="mord mathrm">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height: 0.664392em;"><span class="" style="top: -3.063em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathit mtight">n</span></span></span></span></span></span></span></span></span></span></span></span> ，也就是说 <em>Python</em> 采用 <strong>翻倍扩容</strong> 策略。例如，长度为 <em>8</em> 的哈希表扩容后，长度变为 <em>16</em> 。</p>
+</div><div class="cl-preview-section"><p>最后，我们来考察一个空的 dict 对象所占用的内存空间。<em>Python</em> 为空 dict 对象分配了一个长度为 <em>8</em> 的哈希表，因而也要占用相当多的内存，主要有以下几个部分组成：</p>
+</div><div class="cl-preview-section"><ul>
+<li>可收集对象链表节点，共 24 字节，在此不再展开， <strong>垃圾回收机制</strong> 讲解中有详细介绍；</li>
+<li><em>PyDictObject</em> 结构体，<em>6</em> 个字段，共 <em>48</em> 字节；</li>
+<li><em>PyDictKeysObject</em> 结构体，除两个数组外有 <em>5</em> 个字段，共 <em>40</em> 字节；</li>
+<li>哈希索引数组，长度为 <em>8</em> ，每个槽位 <em>1</em> 字节，共 <em>8</em> 字节；</li>
+<li>键值对数组，长度为 <em>5</em> ，每个 <em>PyDictKeyEntry</em> 结构体 <em>24</em> 字节，共 <em>120</em> 字节。</li>
+</ul>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> sys<span class="token punctuation">.</span>getsizeof<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token number">240</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="内存优化">内存优化</h2>
+</div><div class="cl-preview-section"><p>在 <em>Python</em> 早期，哈希表并没有分成两个数组实现，而是由一个键值对数组实现，这个数组也承担哈希索引的角色：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed0e80a0001029207610613.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>如上图，由一个键值对数组充当哈希表，哈希值直接在数组中定位到键值对，无须分成两个步骤，似乎更好。那么， <em>Python</em> 为啥多此一举将哈希表实现分为两个数组来实现呢？答案是处于 <strong>内存</strong> 考量。</p>
+</div><div class="cl-preview-section"><p>由于哈希表必须保持 <strong>稀疏</strong> ，最多只有 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mfrac><mrow><mn>2</mn></mrow><mrow><mn>3</mn></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{2}{3}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.845108em;"></span><span class="strut bottom" style="height: 1.19011em; vertical-align: -0.345em;"></span><span class="base"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.845108em;"><span class="" style="top: -2.655em;"><span class="pstrut" style="height: 3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathrm mtight">3</span></span></span></span><span class="" style="top: -3.23em;"><span class="pstrut" style="height: 3em;"></span><span class="frac-line hide-tail" style="height: 0.04em;"><svg width="400em" height="400em" viewBox="0 0 400000 400000" preserveAspectRatio="xMinYMin slice"><path d="M0 0 h400000 v400000 h-400000z M0 0 h400000 v400000 h-400000z"></path></svg></span></span><span class="" style="top: -3.394em;"><span class="pstrut" style="height: 3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathrm mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.345em;"></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span> 满，这意味着要浪费至少 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mfrac><mrow><mn>1</mn></mrow><mrow><mn>3</mn></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{1}{3}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.845108em;"></span><span class="strut bottom" style="height: 1.19011em; vertical-align: -0.345em;"></span><span class="base"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.845108em;"><span class="" style="top: -2.655em;"><span class="pstrut" style="height: 3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathrm mtight">3</span></span></span></span><span class="" style="top: -3.23em;"><span class="pstrut" style="height: 3em;"></span><span class="frac-line hide-tail" style="height: 0.04em;"><svg width="400em" height="400em" viewBox="0 0 400000 400000" preserveAspectRatio="xMinYMin slice"><path d="M0 0 h400000 v400000 h-400000z M0 0 h400000 v400000 h-400000z"></path></svg></span></span><span class="" style="top: -3.394em;"><span class="pstrut" style="height: 3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathrm mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.345em;"></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span> 的内存空间。更雪上加霜的是，一个键值对条目 <em>PyDictKeyEntry</em> 大小达 <em>24</em> 字节，试想一个规模为 <em>65536</em> 的哈希表，将浪费高达 <em>512KB</em> 的内存空间：<br>
+<span class="katex--display"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mn>6</mn><mn>5</mn><mn>5</mn><mn>3</mn><mn>6</mn><mo>∗</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mn>3</mn></mrow></mfrac><mo>∗</mo><mn>2</mn><mn>4</mn><mo>=</mo><mn>5</mn><mn>2</mn><mn>4</mn><mn>2</mn><mn>8</mn><mn>8</mn></mrow><annotation encoding="application/x-tex">
+65536 * \frac{1}{3} * 24 = 524288
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 1.32144em;"></span><span class="strut bottom" style="height: 2.00744em; vertical-align: -0.686em;"></span><span class="base"><span class="mord mathrm">6</span><span class="mord mathrm">5</span><span class="mord mathrm">5</span><span class="mord mathrm">3</span><span class="mord mathrm">6</span><span class="mbin">∗</span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 1.32144em;"><span class="" style="top: -2.314em;"><span class="pstrut" style="height: 3em;"></span><span class="mord"><span class="mord mathrm">3</span></span></span><span class="" style="top: -3.23em;"><span class="pstrut" style="height: 3em;"></span><span class="frac-line hide-tail" style="height: 0.04em;"><svg width="400em" height="400em" viewBox="0 0 400000 400000" preserveAspectRatio="xMinYMin slice"><path d="M0 0 h400000 v400000 h-400000z M0 0 h400000 v400000 h-400000z"></path></svg></span></span><span class="" style="top: -3.677em;"><span class="pstrut" style="height: 3em;"></span><span class="mord"><span class="mord mathrm">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.686em;"></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mbin">∗</span><span class="mord mathrm">2</span><span class="mord mathrm">4</span><span class="mrel">=</span><span class="mord mathrm">5</span><span class="mord mathrm">2</span><span class="mord mathrm">4</span><span class="mord mathrm">2</span><span class="mord mathrm">8</span><span class="mord mathrm">8</span></span></span></span></span></span></p>
+</div><div class="cl-preview-section"><p>为了尽量节省内存， <em>Python</em> 将键值对数组压缩到原来的 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mfrac><mrow><mn>2</mn></mrow><mrow><mn>3</mn></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{2}{3}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.845108em;"></span><span class="strut bottom" style="height: 1.19011em; vertical-align: -0.345em;"></span><span class="base"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.845108em;"><span class="" style="top: -2.655em;"><span class="pstrut" style="height: 3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathrm mtight">3</span></span></span></span><span class="" style="top: -3.23em;"><span class="pstrut" style="height: 3em;"></span><span class="frac-line hide-tail" style="height: 0.04em;"><svg width="400em" height="400em" viewBox="0 0 400000 400000" preserveAspectRatio="xMinYMin slice"><path d="M0 0 h400000 v400000 h-400000z M0 0 h400000 v400000 h-400000z"></path></svg></span></span><span class="" style="top: -3.394em;"><span class="pstrut" style="height: 3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathrm mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.345em;"></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span> ，只负责存储，索引由另一个数组负责。由于索引数组只需要保存 <strong>键值对数组</strong> 的下标，而整数占用的内存空间只是若干字节，因此可以节约大量内存。</p>
+</div><div class="cl-preview-section"><p><strong>索引数组</strong> 可根据哈希表规模，选择尽量小的整数类型。对于规模不超过 <em>256</em> 的哈希表，选择 <em>8</em> 位整数即可；对于长度不超过 <em>65536</em> 的哈希表， <em>16</em> 位整数足矣；其他以此类推。</p>
+</div><div class="cl-preview-section"><p>以长度为 <em>8</em> 的哈希表为例，键值对数组只需分配 <em>5</em> 个单元，索引数组每个单元只需 1 字节即可：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed0e7fc0001521d08450802.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>这样一来，以区区 <em>8</em> 字节的代价，挽回了 <em>72</em> 字节的开销，还是节约了 <em>64</em> 字节！虽然 <em>64</em> 字节不足挂齿，但对于规模较大的哈希表，节约下来的内存还是相当可观的：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th><strong>哈希表规模</strong></th>
+<th><strong>条目表规模</strong></th>
+<th><strong>旧方案</strong></th>
+<th><strong>新方案</strong></th>
+<th><strong>节约内存</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>8</td>
+<td>8 * 2 / 3 = 5</td>
+<td>24 * 8 = 192</td>
+<td>1 * 8 + 24 * 5 = 128</td>
+<td>64</td>
+</tr>
+<tr>
+<td>256</td>
+<td>256 * 2 / 3 = 170</td>
+<td>24 * 256 = 6144</td>
+<td>1 * 256 + 24 * 170 = 4336</td>
+<td>1808</td>
+</tr>
+<tr>
+<td>65536</td>
+<td>65536 * 2 / 3 = 43690</td>
+<td>24 * 65536 = 1572864</td>
+<td>2 * 65536 + 24 * 43690 = 1179632</td>
+<td>393232</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>由此可见，<em>Python</em> 作者们为节约内存可谓是殚精竭虑，以后在面试中又有一个不错的谈资！</p>
+</div><div class="cl-preview-section"><h2 id="小结">小结</h2>
+</div><div class="cl-preview-section"><p>本节，我们考察了 <em>dict</em> 对象的搜索效率，并深入源码研究其内部 <strong>哈希表</strong> 实现，收获颇多：</p>
+</div><div class="cl-preview-section"><ol>
+<li><em>dict</em> 是一种高效的关联式容器，每秒完成高达 <em>200</em> 多万次搜索操作；</li>
+<li><em>dict</em> 内部由哈希表实现，哈希表的 <strong>稀疏</strong> 特性意味着昂贵的内存开销；</li>
+<li>为优化内存使用， <em>Python</em> 将 <em>dict</em> 哈希表分为 <strong>哈希索引</strong> 和 <strong>键值对</strong> 两个数组来实现；</li>
+<li>哈希表在 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mfrac><mrow><mn>1</mn></mrow><mrow><mn>2</mn></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{1}{2}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.845108em;"></span><span class="strut bottom" style="height: 1.19011em; vertical-align: -0.345em;"></span><span class="base"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.845108em;"><span class="" style="top: -2.655em;"><span class="pstrut" style="height: 3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathrm mtight">2</span></span></span></span><span class="" style="top: -3.23em;"><span class="pstrut" style="height: 3em;"></span><span class="frac-line hide-tail" style="height: 0.04em;"><svg width="400em" height="400em" viewBox="0 0 400000 400000" preserveAspectRatio="xMinYMin slice"><path d="M0 0 h400000 v400000 h-400000z M0 0 h400000 v400000 h-400000z"></path></svg></span></span><span class="" style="top: -3.394em;"><span class="pstrut" style="height: 3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathrm mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.345em;"></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span> 到 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mfrac><mrow><mn>2</mn></mrow><mrow><mn>3</mn></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{2}{3}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.845108em;"></span><span class="strut bottom" style="height: 1.19011em; vertical-align: -0.345em;"></span><span class="base"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.845108em;"><span class="" style="top: -2.655em;"><span class="pstrut" style="height: 3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathrm mtight">3</span></span></span></span><span class="" style="top: -3.23em;"><span class="pstrut" style="height: 3em;"></span><span class="frac-line hide-tail" style="height: 0.04em;"><svg width="400em" height="400em" viewBox="0 0 400000 400000" preserveAspectRatio="xMinYMin slice"><path d="M0 0 h400000 v400000 h-400000z M0 0 h400000 v400000 h-400000z"></path></svg></span></span><span class="" style="top: -3.394em;"><span class="pstrut" style="height: 3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathrm mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.345em;"></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span> 满时，性能较为理想，较好地平衡了 <strong>内存开销</strong> 与 <strong>搜索效率</strong> ；</li>
+</ol>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5ed0e3fd00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6208">
+						<img src="https://img4.mukewang.com/5b8cf1810001c0b302000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_精慕门5533881</h4>
+						<div class="comment-text">dict扩容移动的过程可以讲解下吗？有几个问题想请教下：
+1、扩容时候数据复制的过程是将键值对按照原来的顺序以及槽位复制过去吗？比如开始是1-5号的位置上有有数据，扩容后1-5号位还是原来的数据吗？
+2、索引列表中原来key的hash值还是位于原来的槽位上吗？比如原来是键'a'在索引槽位3，键值对列表中位于2号中，扩容后是不是还是一样呢？</div>
+						<div>
+							
+								<div class="reply">讲师回复：扩容的时候，Python分配一个新的键值对数组和哈希索引数组，然后把键值对一个个拷贝过去。拷贝时，遍历键值对数组，如果条目有效就拷贝，因此顺序由键值对数组dk_entries决定。由于索引数组槽位是由键的哈希值模(%)索引长度决定的，因此只要索引数组长度在扩容前后不变的情况下，槽位才不会变。索引数组长度不变，这是一种伪扩容，不是真正的扩容，容量其实没变。为什么会有为扩容呢？因为dk_entries是只加不删的，因此当字典进过一系列的添加删除操作后，dk_entries槽位就会耗尽。这时需要分配新的dk_entries数组，然后把条目拷贝过去，这个过程跟扩缩容类似，因此Python就直接调用扩缩容相关逻辑来完成这个操作。对于真正的扩容或者缩容，key的哈希值虽然不变，但是索引数组长度变了，因此模���来的槽位也会变。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-19</span>
+						<a href="/read/commentdetail/6208">
+							<span class="icon r"><i class="imwap-comment"></i><em>2</em></span>
+						</a>
+						<span data-cid="6208" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6196">
+						<img src="https://img4.mukewang.com/533e4d660001312002000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">我不是药神</h4>
+						<div class="comment-text">将键值对保存于 dk_entries 数组末尾，即下标为 0 的位置；
+
+是数组末尾还是数组开头?下标为0的是数组开头吧</div>
+						<div>
+							
+								<div class="reply">讲师回复：这里是指 dk_entries 条目的末尾，因为一开始 dk_entries 是空的，没有保存任何条目，所有末尾其实就是数组第一个槽位，也就是下标为 0 的位置。如果 dk_entries 数组已经保存了一个条目，那么末尾就是下标为 1 的位置，以此类推。后续我再斟酌一下，力求一种更加严谨的表达方式。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-18</span>
+						<a href="/read/commentdetail/6196">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6196" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6054">
+						<img src="https://img3.mukewang.com/5b8cf1810001c0b302000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_精慕门5533881</h4>
+						<div class="comment-text">对于键值对数组来说是根据哈希数组长度2/3来确定的吗？假如开始为5，哈希数组8，扩容一次时候，哈希数组为16是一个新的数组，键值对数组也是重新分配一个大小为10的数组对吧，就说这样一个动态扩容的过程吧</div>
+						<div>
+							
+								<div class="reply">讲师回复：对</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-05</span>
+						<a href="/read/commentdetail/6054">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6054" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5988">
+						<img src="https://img4.mukewang.com/54584e390001972002200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕莱坞2377110</h4>
+						<div class="comment-text">我可以这样理解吗？ 哈希表两个数组的形式把可以吧存储的键值对数组的空间占满，而把哈希表所要的保留1/3的空间的要求留给了索引数组，从而节省下整体的使用空间。</div>
+						<div>
+							
+								<div class="reply">讲师回复：对。由于索引数组每个条目更小，为它留出1/3的空闲条目，而引入的内存开销也就更小。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-30</span>
+						<a href="/read/commentdetail/5988">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5988" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5986">
+						<img src="https://img2.mukewang.com/54584e390001972002200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕莱坞2377110</h4>
+						<div class="comment-text">我是了下空dict的大小是64</div>
+						<div>
+							
+								<div class="reply">讲师回复：应该是Python在3.8进一步做了优化，不预先分配索引数组以及键值对数组了，因而只有对象头部需要占用内存空间。专栏刚动笔时，Python最新的版本是3.7.4，因此源码皆以该版本为准。由于Python还在快速变化中，因而有些源码细节可能跟最新的不一致，但变化应该不会太大，不会太影响阅读。后续我会抽空跟踪最新的Python源码变化，对专栏进行更新，敬请关注~</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-30</span>
+						<a href="/read/commentdetail/5986">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5986" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=76">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '13 dict 对象，高效的关联式容器',
+					'CID': '1909',
+					'Teacher': 'fasionchan'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "13 dict 对象，高效的关联式容器",
+                    desc: "突破技术瓶颈，迈向更高岗位",
+                    imgUrl: 'https:https://img2.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/76',
+                    link: 'https://m.imooc.com/read/76'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

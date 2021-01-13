@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>28：灵魂拷问：Node中的Event-Loop与浏览器有何不同？</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="拉开你与普通面试者的差距">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "3";
+	var chapter_id = "1968";
+	var chapter_title = "28：灵魂拷问：Node中的Event-Loop与浏览器有何不同？";
+	var aid = "70";
+	var a_name = "解锁前端面试体系核心攻略  ";
+	var a_price = "78.00";
+	var a_pic = "https://img3.mukewang.com/5e5c85e1000116c505400720.jpg";
+	var userId = 0;
+
+	var column_id = '70';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-26&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			28：灵魂拷问：Node中的Event-Loop与浏览器有何不同？
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5ec513ed00016f2006400426.jpg')"></div>
+	
+	
+		<a href="/read/70">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/5e50a213000179ce12800720-40-40.jpg" alt="修言">
+				<h3>解锁前端面试体系核心攻略  </h3>
+				<p>修言 · 大型互联网公司业务线Owner</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">勤能补拙是良训，一分辛劳一分才。<p class="author">——华罗庚</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>如标题所示，这是一道大厂面试官普遍钟爱的面试题。要想答出 Node 中的 Event-Loop 和浏览器有啥区别，首先你得能说清楚，Node 中的 Event-Loop 本身是怎么一回事。</p>
+</div><div class="cl-preview-section"><h2 id="node技术架构分析-认识-libuv">Node技术架构分析-认识 libuv</h2>
+</div><div class="cl-preview-section"><p>这里我为大家画了一张简化的 Node 架构图：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec64b4c0001171408600626.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>Node整体上由这三部分组成：</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>应用层：这一层就是大家最熟悉的 Node.js 代码，包括 Node 应用以及一些标准库。</p>
+</li>
+<li>
+<p>桥接层：Node 底层是用 C++ 来实现的。桥接层负责封装底层依赖的 C++ 模块的能力，将其简化为 API 向应用层提供服务。</p>
+</li>
+<li>
+<p>底层依赖：这里就是最最底层的 C++ 库了，支撑 Node 运行的最基本能力在此汇聚。其中需要特别引起大家注意的就是 V8 和 libuv：</p>
+<ul>
+<li>V8 是 JS 的运行引擎，它负责把 JavaScript 代码转换成 C++，然后去跑这层 C++ 代码。</li>
+<li><strong>libuv：它对跨平台的异步I/O能力进行封装，同时也是我们本节的主角：Node 中的事件循环就是由 libuv 来初始化的。</strong></li>
+</ul>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>注意哈：这里第一个区别来了——浏览器的 Event-Loop 由各个浏览器自己实现；而 Node 的 Event-Loop 由 libuv 来实现。</p>
+</div><div class="cl-preview-section"><h2 id="libuv中的-event-loop-实现">libuv中的 Event-Loop 实现</h2>
+</div><div class="cl-preview-section"><p>libuv 主导循环机制共有六个循环阶段。这里我引用 Node 官方（出处：<a href="https://nodejs.org/zh-cn/docs/guides/event-loop-timers-and-nexttick/">https://nodejs.org/zh-cn/docs/guides/event-loop-timers-and-nexttick/</a>）的一张图给大家作说明：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ec64bbf0001476c15300928.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>（注：Node 官方给出的这张图非常值得参考，不过不建议大家直接通过阅读其官方文档来理解事件循环，一些表达还是会相对比较生涩，打击积极性）。</p>
+</div><div class="cl-preview-section"><p>我们先来瞅瞅这六个阶段各是处理什么任务的：</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>timers阶段</strong>：执行 setTimeout 和 setInterval 中定义的回调；</li>
+<li><strong>pending callbacks</strong>：直译过来是“被挂起的回调”，如果网络I/O或者文件I/O的过程中出现了错误，就会在这个阶段处理错误的回调（比较少见，可以略过）；</li>
+<li><strong>idle, prepare</strong>：仅系统内部使用。这个阶段我们开发者不需要操心。（可以略过）；</li>
+<li><strong>poll （轮询阶段）</strong>：重点阶段，这个阶段会执行I/O回调，同时还会检查定时器是否到期；</li>
+<li><strong>check（检查阶段）</strong>：处理 setImmediate 中定义的回调；</li>
+<li><strong>close callbacks</strong>：处理一些“关闭”的回调，比如<code>socket.on('close', ...)</code>就会在这个阶段被触发。</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="宏任务与微任务">宏任务与微任务</h2>
+</div><div class="cl-preview-section"><p>和浏览器中一样，Node 世界里也有宏任务与微任务之分。划分依据与我们上文描述的其实是一致的：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>常见的 macro-task 比如： setTimeout、setInterval、 setImmediate、 script（整体代码）、I/O 操作、UI 渲染等。</p>
+<p>常见的 micro-task 比如: process.nextTick、Promise、MutationObserver 等</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>需要注意的是，setImmediate 和 process.nextTick 是 Node 独有的，在本节各位会有充分的机会和它们打交道。</p>
+</div><div class="cl-preview-section"><h2 id="一起走一遍-node-中的事件循环流程">一起走一遍 Node 中的事件循环流程</h2>
+</div><div class="cl-preview-section"><p>在这六个阶段中，大家需要重点关注的就是 <strong>timers、poll 和 check</strong> 这 三个阶段，相关的命题也基本上是围绕它们来做文章。不过在进行考点点拨之前，我们还是要把整个循环的流程给走一遍：</p>
+</div><div class="cl-preview-section"><ol>
+<li>执行全局的 Script 代码（与浏览器无差）；</li>
+<li>把微任务队列清空：注意，Node 清空微任务队列的手法比较特别。在浏览器中，我们只有一个微任务队列需要接受处理；但在 Node 中，有两类微任务队列：next-tick 队列和其它队列。其中这个 next-tick 队列，专门用来收敛 process.nextTick 派发的异步任务。<strong>在清空队列时，优先清空 next-tick 队列中的任务，随后才会清空其它微任务</strong>；</li>
+<li>开始执行 macro-task（宏任务）。注意，Node 执行宏任务的方式与浏览器不同：在浏览器中，我们每次出队并执行一个宏任务；而在 Node 中，我们每次会尝试清空当前阶段对应宏任务队列里的所有任务（除非达到了系统限制）；</li>
+<li>步骤3开始，会进入 3 -&gt; 2 -&gt; 3 -&gt; 2…的循环（整体过程如下所示）:</li>
+</ol>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js">micro<span class="token operator">-</span>task<span class="token operator">-</span>queue <span class="token operator">--</span><span class="token operator">--</span><span class="token operator">&gt;</span> timers<span class="token operator">-</span>queue 
+                            <span class="token operator">|</span>
+                            <span class="token operator">|</span>
+micro<span class="token operator">-</span>task<span class="token operator">-</span>queue <span class="token operator">--</span><span class="token operator">--</span><span class="token operator">&gt;</span> pending<span class="token operator">-</span>queue
+                            <span class="token operator">|</span>
+                            <span class="token operator">|</span>
+micro<span class="token operator">-</span>task<span class="token operator">-</span>queue <span class="token operator">--</span><span class="token operator">--</span><span class="token operator">&gt;</span>  polling<span class="token operator">-</span>queue
+                            <span class="token operator">|</span>
+                            <span class="token operator">|</span>
+micro<span class="token operator">-</span>task<span class="token operator">-</span>queue <span class="token operator">--</span><span class="token operator">--</span><span class="token operator">&gt;</span>  check<span class="token operator">-</span>queue
+                            <span class="token operator">|</span>
+                            <span class="token operator">|</span>
+micro<span class="token operator">-</span>task<span class="token operator">-</span>queue <span class="token operator">--</span><span class="token operator">--</span><span class="token operator">&gt;</span>  close<span class="token operator">-</span>queue
+                            <span class="token operator">|</span>
+                            <span class="token operator">|</span>
+micro<span class="token operator">-</span>task<span class="token operator">-</span>queue <span class="token operator">--</span><span class="token operator">--</span><span class="token operator">&gt;</span> timers<span class="token operator">-</span>queue 
+
+<span class="token operator">...</span><span class="token operator">...</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>​</p>
+</div><div class="cl-preview-section"><p>整体来看，Node 中每次执行异步任务都是以批量的形式，“一队一队”地执行。循环形式为：宏任务队列 -&gt; 微任务队列 -&gt; 宏任务队列 —&gt; 微任务队列… 这样交替进行。</p>
+</div><div class="cl-preview-section"><br>
+经过咱们上面这一通讲，相信把 Node 和浏览器之间不同的 Event-Loop 机制捋清楚，对现在的你来说已经不是什么难事了。   
+</div><div class="cl-preview-section"><p>不过，可别高兴得太早。事件循环这块，比起问答题，更常见的是编码阅读题。咱们下面就一起来通过一系列的真题巩固一下认知。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img2.mukewang.com/5ec513f200011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6815">
+						<img src="https://img.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">安静的小y</h4>
+						<div class="comment-text">老师，有个问题请教下，我看六个阶段处理的都是宏任务队列没看到处理微任务的。但是看最后一个图的时候感觉是每个阶段都是优先处理微任务队列，再处理相应的回调吗？</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-18</span>
+						<a href="/read/commentdetail/6815">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6815" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6034">
+						<img src="https://img2.mukewang.com/5a01810b000154ae06400640-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_风一般的梦幻_0</h4>
+						<div class="comment-text">在node中script也是宏任务吗？如果是宏任务那么应该放在哪一阶段呢？</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-03</span>
+						<a href="/read/commentdetail/6034">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6034" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥78.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=70">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '28：灵魂拷问：Node中的Event-Loop与浏览器有何不同？',
+					'CID': '1968',
+					'Teacher': '修言'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "28：灵魂拷问：Node中的Event-Loop与浏览器有何不同？",
+                    desc: "拉开你与普通面试者的差距",
+                    imgUrl: 'https:https://img3.mukewang.com/5e5c85e1000116c505400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5e5c85e1000116c505400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/70',
+                    link: 'https://m.imooc.com/read/70'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

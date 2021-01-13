@@ -1,0 +1,855 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>09 通过锁解决并发数据问题</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="打包 MySQL 常用高级技巧特性">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "7";
+	var chapter_id = "1690";
+	var chapter_title = "09 通过锁解决并发数据问题";
+	var aid = "71";
+	var a_name = "实战派 MySQL 高阶应用指南";
+	var a_price = "68.00";
+	var a_pic = "https://img.mukewang.com/5e65bd6e0001444005400720.jpg";
+	var userId = 0;
+
+	var column_id = '71';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-09-21&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			09 通过锁解决并发数据问题
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img.mukewang.com/5e7422830001fb9806400425.jpg')"></div>
+	
+	
+		<a href="/read/71">
+			<div class="course-entry">
+				<img src="https://img1.mukewang.com/5c36c432000158e609600960-40-40.jpg" alt="勤一">
+				<h3>实战派 MySQL 高阶应用指南</h3>
+				<p>勤一 · BAT 高级研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">学习知识要善于思考，思考，再思考。 <p class="author">—— 爱因斯</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>数据库的锁机制是并发控制的重要内容，是对程序控制数据一致性的重要补充。单独提到 “锁” 这个概念，大家一定不会陌生，各种语言中都有对 “锁” 的实现。例如，我们在编写 Java 代码时，考虑到多线程并发访问共享数据，只要使用 synchronized 关键字，JVM 底层就可以保证线程安全。MySQL 的存储引擎（不同的存储引擎有不同的实现）对锁的实现也是类似的思想，这一节里，我将解读 MySQL 的悲观锁和乐观锁，包括概念解读、实现原理、使用方法、适用场景等等。</p>
+</div><div class="cl-preview-section"><h2 id="行级锁、表级锁的概念解读">1 行级锁、表级锁的概念解读</h2>
+</div><div class="cl-preview-section"><p>悲观锁与乐观锁的概念是从应用的角度来看的，从数据库（InnoDB 存储引擎）的角度看，数据库锁可以分为行级锁和表级锁（通常称为行锁和表锁）。在学习它们的原理和使用方法之前，把它们的概念搞清楚是非常有必要的。</p>
+</div><div class="cl-preview-section"><h3 id="什么是行级锁">1.1 什么是行级锁</h3>
+</div><div class="cl-preview-section"><p>InnoDB 存储引擎支持行级锁和表级锁，默认情况下，使用行级锁。行级锁是 MySQL 中锁定粒度最细的一种锁，它锁住的是行记录。行级锁可以大大减少数据库操作的冲突，但是加锁的开销也是非常大的。它具有如下特点：</p>
+</div><div class="cl-preview-section"><ul>
+<li>由于开销比较大，加锁会很慢</li>
+<li>锁定粒度小，所以锁冲突的概率低，并发度高</li>
+<li>可能会出现死锁</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="什么是表级锁">1.2 什么是表级锁</h3>
+</div><div class="cl-preview-section"><p>表级锁是 MySQL 中锁定粒度最大的一种锁，正如字面意思，它会锁住整张表。由于锁定粒度很大，它的实现会简单许多，资源消耗也会很低，不光是 InnoDB ，其他大部分的存储引擎也都支持表级锁，它具有如下特点：</p>
+</div><div class="cl-preview-section"><ul>
+<li>由于开销比较小，加锁会很快</li>
+<li>锁定粒度大，所以锁冲突的概率高，并发度低</li>
+<li>不会出现死锁</li>
+</ul>
+</div><div class="cl-preview-section"><p>可以看到，正是由于行级锁和表级锁的锁定范围不同，它们的特性正好是相反的。</p>
+</div><div class="cl-preview-section"><h3 id="mysql-是怎样选择行级锁与表级锁的-？">1.3 MySQL 是怎样选择行级锁与表级锁的 ？</h3>
+</div><div class="cl-preview-section"><p>刚刚说过，InnoDB 存储引擎支持行和表级锁，那么，什么场景下会锁住行、什么场景下又会锁住表呢？把这个问题搞清楚了，也就基本上掌握了这两种锁，在实际的应用中，也就可以把握程序的性能了。</p>
+</div><div class="cl-preview-section"><p>InnoDB 行级锁是通过给索引上的索引项加锁来实现的，所以，只有通过索引条件检索的数据，InnoDB 才会使用行级锁。否则，使用表级锁。总结下来：</p>
+</div><div class="cl-preview-section"><ul>
+<li>不通过索引条件查询时，InnoDB 一定会使用表锁，而不是行锁（因为没有索引只能全表扫描）</li>
+<li>查询时，不论是使用主键索引、唯一索引或者普通的索引，InnoDB 都会使用行锁来对数据加锁</li>
+</ul>
+</div><div class="cl-preview-section"><p>但是，需要注意，对于第二条总结，在有些特殊情况下是不成立的。例如，对于数据量很少的表，MySQL 会认为全表扫描更快，此时，即使使用索引字段查询，InnoDB 也会使用表锁，而不是行锁。因此，如果想确定当前使用的是哪一种锁，检查下 SQL 的执行计划（EXPLAIN），确认是否在查询时使用了索引。</p>
+</div><div class="cl-preview-section"><h2 id="悲观锁、乐观锁的概念解读">2 悲观锁、乐观锁的概念解读</h2>
+</div><div class="cl-preview-section"><p>从应用的角度来说，乐观并发控制与悲观并发控制是并发场景下保证数据一致性的主要方法。乐观锁和悲观锁的概念（思想）不仅仅应用在数据库层面，在编程语言、程序逻辑、ORM 框架中都有广泛的应用。</p>
+</div><div class="cl-preview-section"><h3 id="什么是悲观锁">2.1 什么是悲观锁</h3>
+</div><div class="cl-preview-section"><p>首先，我们先来看一看悲观锁的定义：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>当我们要对数据库中的一条数据进行修改的时候，为了避免同时被其他人修改，最好的办法就是直接对该数据进行加锁以防止并发。这种借助数据库锁机制在修改数据之前锁定，再修改的方式被称为悲观并发控制（PCC）。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>这也就是这种锁被称为 “悲观” 的原因，它会以悲观的态度去对待并发的数据控制，认为共享数据被并发修改的可能性较高，在修改之前先去加锁。在实现效率上，处理加锁的过程会让数据库产生额外的开销，降低并发度，同时，还可能会有死锁的可能。</p>
+</div><div class="cl-preview-section"><p>悲观锁的实现，依赖于数据库提供的锁机制（行级锁、表级锁）。它的工作流程可以总结如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>对数据操作之前，尝试获取锁</li>
+<li>获取锁成功，对数据进行修改、提交事务，最后释放锁</li>
+<li>获取锁失败，则锁正在被占用，等待或抛出异常</li>
+</ul>
+</div><div class="cl-preview-section"><p>最后，我用一张图来更清晰的表达悲观锁的工作流程。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e78201e000194d706900161.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h3 id="什么是乐观锁">2.2 什么是乐观锁</h3>
+</div><div class="cl-preview-section"><p>同样，我们也是先来看一看乐观锁的定义：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>乐观锁是相对悲观锁而言的，乐观锁假设数据一般情况下不会造成冲突，所以在数据进行提交更新的时候，才会正式对数据的冲突与否进行检测。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>从乐观锁的定义可以知道，它并不是真正意义上的 “锁”，所以，自然也就不会使用到数据库的锁机制。乐观（锁）并发控制认为事务之间的数据竞争概率比较低，因此在操作时不需要加锁，只是在提交时再做判断，它也不会产生死锁的情况。</p>
+</div><div class="cl-preview-section"><p>下面，我也用一张图来更清晰的表达乐观锁的工作流程。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e781fc7000108bc06900354.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="悲观锁、乐观锁的实现原理与使用方法">3 悲观锁、乐观锁的实现原理与使用方法</h2>
+</div><div class="cl-preview-section"><p>前面我们理解了悲观锁、乐观锁的理论知识，知道了它们的工作流程。下面，我们看一看怎样在 SQL 中实现它们。首先，还是以 worker 表为例，假设当前我们有如下的数据：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql">mysql<span class="token operator">&gt;</span> <span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> worker <span class="token keyword">WHERE</span> id <span class="token operator">&lt;</span> <span class="token number">4</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+</span>
+<span class="token operator">|</span> id <span class="token operator">|</span> <span class="token keyword">type</span> <span class="token operator">|</span> name <span class="token operator">|</span> salary <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+</span>
+<span class="token operator">|</span>  <span class="token number">1</span> <span class="token operator">|</span> A    <span class="token operator">|</span> tom  <span class="token operator">|</span>   <span class="token number">1800</span> <span class="token operator">|</span>
+<span class="token operator">|</span>  <span class="token number">2</span> <span class="token operator">|</span> B    <span class="token operator">|</span> jack <span class="token operator">|</span>   <span class="token number">2100</span> <span class="token operator">|</span>
+<span class="token operator">|</span>  <span class="token number">3</span> <span class="token operator">|</span> C    <span class="token operator">|</span> pony <span class="token operator">|</span>   <span class="token boolean">NULL</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="学会使用悲观锁">3.1 学会使用悲观锁</h3>
+</div><div class="cl-preview-section"><p>在 MySQL 中使用悲观锁，必须关闭 MySQL 的自动提交（MySQL 默认使用自动提交模式，即执行 INSERT、UPDATE、DELETE 时，结果自动生效），如下所示：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token comment">-- 关闭自动提交</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">SET</span> autocommit <span class="token operator">=</span> <span class="token keyword">off</span><span class="token punctuation">;</span>
+
+<span class="token comment">-- 校验自动提交是否关闭</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">SHOW</span> VARIABLES <span class="token operator">LIKE</span> <span class="token string">'autocommit'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">---------------+-------+</span>
+<span class="token operator">|</span> Variable_name <span class="token operator">|</span> <span class="token keyword">Value</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">---------------+-------+</span>
+<span class="token operator">|</span> autocommit    <span class="token operator">|</span> <span class="token keyword">OFF</span>   <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">---------------+-------+</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>MySQL 提供的悲观锁实现方式是：SELECT … FOR UPDATE。为了演示多线程操作，我们开启两个会话（注意，都需要关闭自动提交）。首先，看一看获取锁超时的情况：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token comment">-- “会话 A” 通过悲观锁语法锁住 id 为 1 的记录</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> worker <span class="token keyword">WHERE</span> id <span class="token operator">=</span> <span class="token number">1</span> <span class="token keyword">FOR</span> <span class="token keyword">UPDATE</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+</span>
+<span class="token operator">|</span> id <span class="token operator">|</span> <span class="token keyword">type</span> <span class="token operator">|</span> name <span class="token operator">|</span> salary <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+</span>
+<span class="token operator">|</span>  <span class="token number">1</span> <span class="token operator">|</span> A    <span class="token operator">|</span> tom  <span class="token operator">|</span>   <span class="token number">1800</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+</span>
+
+<span class="token comment">-- “会话 B” 也通过悲观锁语法锁住 id 为 1 的记录</span>
+<span class="token comment">-- 由于锁被 “会话 A” 占据，长时间获取不到锁，报了锁超时错误</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> worker <span class="token keyword">WHERE</span> id <span class="token operator">=</span> <span class="token number">1</span> <span class="token keyword">FOR</span> <span class="token keyword">UPDATE</span><span class="token punctuation">;</span>
+ERROR <span class="token number">1205</span> <span class="token punctuation">(</span>HY000<span class="token punctuation">)</span>: <span class="token keyword">Lock</span> wait timeout exceeded<span class="token punctuation">;</span> try restarting <span class="token keyword">transaction</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>接下来，我们让 “会话 A” 更新被锁定记录的 salary 字段，并提交事务（在这个过程中，同时让 “会话 B” 尝试去获取锁），如下所示：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token comment">-- “会话 A” 更新记录</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">UPDATE</span> worker <span class="token keyword">SET</span> salary <span class="token operator">=</span> <span class="token number">2000</span> <span class="token keyword">WHERE</span> id <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">1</span> <span class="token keyword">row</span> affected <span class="token punctuation">(</span><span class="token number">0.01</span> sec<span class="token punctuation">)</span>
+<span class="token keyword">Rows</span> <span class="token keyword">matched</span>: <span class="token number">1</span>  Changed: <span class="token number">1</span>  <span class="token keyword">Warnings</span>: <span class="token number">0</span>
+
+<span class="token comment">-- “会话 A” 提交事务</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">commit</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.02</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment">-- “会话 B” 在 “会话 A” 提交事务之后，获取锁成功（观察 SQL 语句执行耗时）</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> worker <span class="token keyword">WHERE</span> id <span class="token operator">=</span> <span class="token number">1</span> <span class="token keyword">FOR</span> <span class="token keyword">UPDATE</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+</span>
+<span class="token operator">|</span> id <span class="token operator">|</span> <span class="token keyword">type</span> <span class="token operator">|</span> name <span class="token operator">|</span> salary <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+</span>
+<span class="token operator">|</span>  <span class="token number">1</span> <span class="token operator">|</span> A    <span class="token operator">|</span> tom  <span class="token operator">|</span>   <span class="token number">2000</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">25.13</span> sec<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>从以上执行过程可以看到，SELECT … FOR UPDATE 只允许一个事务获取到锁，其他的事务只能等待或者超时。所以，自然也就可以解决并发事务问题了。但是，在使用悲观锁的时候，一定需要注意使用索引，否则行锁将会上升为表锁，引起系统问题。</p>
+</div><div class="cl-preview-section"><h3 id="学会使用乐观锁">3.2 学会使用乐观锁</h3>
+</div><div class="cl-preview-section"><p>乐观锁其实是对 CAS（compare-and-swap）的实现：在做修改时，检查当前的环境是否与预定义的一致，如果一致则可以提交；否则，重试或抛异常。根据对这个实现思想的描述，我们可以简单地应用乐观锁：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token comment">-- 查询需要修改的记录，并把当前 salary 的值作为预定义的比对条件</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> worker <span class="token keyword">WHERE</span> id <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+</span>
+<span class="token operator">|</span> id <span class="token operator">|</span> <span class="token keyword">type</span> <span class="token operator">|</span> name <span class="token operator">|</span> salary <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+</span>
+<span class="token operator">|</span>  <span class="token number">1</span> <span class="token operator">|</span> A    <span class="token operator">|</span> tom  <span class="token operator">|</span>   <span class="token number">2000</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment">-- 更新记录 salary 的值，并比对之前预定义的条件是否一致</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">UPDATE</span> worker <span class="token keyword">SET</span> salary <span class="token operator">=</span> <span class="token number">1800</span> <span class="token keyword">WHERE</span> id <span class="token operator">=</span> <span class="token number">1</span> <span class="token operator">AND</span> salary <span class="token operator">=</span> <span class="token number">2000</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">1</span> <span class="token keyword">row</span> affected <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+<span class="token keyword">Rows</span> <span class="token keyword">matched</span>: <span class="token number">1</span>  Changed: <span class="token number">1</span>  <span class="token keyword">Warnings</span>: <span class="token number">0</span>
+
+<span class="token comment">-- 比对一致，更新成功</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> worker <span class="token keyword">WHERE</span> id <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+</span>
+<span class="token operator">|</span> id <span class="token operator">|</span> <span class="token keyword">type</span> <span class="token operator">|</span> name <span class="token operator">|</span> salary <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+</span>
+<span class="token operator">|</span>  <span class="token number">1</span> <span class="token operator">|</span> A    <span class="token operator">|</span> tom  <span class="token operator">|</span>   <span class="token number">1800</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>以上就是最简单的乐观锁实现，但是，这里存在一个隐藏很深的问题：ABA。考虑这样一种情况：“线程 A” 在更新 salary 之前，“线程 B” 先将 salary 更新为2500，再将 salary 更新为 2000。此时，“线程 A” 则会认为 salary 没有发生变化，而实际的情况是，“线程 B” 对此更新了两次。</p>
+</div><div class="cl-preview-section"><p>既然这种直接比较的方式不可信，我们可以想办法加入一个不会重复修改的值数据来作为版本号，即 version 参数，version 只能增加，不能减少。乐观锁在每次执行数据修改时，都需要去比对 version，如果一致，则更新数据的同时，也要更新 version。示例如下所示：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token comment">-- 给 worker 表添加 version 列</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">ALTER</span> <span class="token keyword">TABLE</span> <span class="token punctuation">`</span>worker<span class="token punctuation">`</span> <span class="token keyword">ADD</span> <span class="token keyword">COLUMN</span> <span class="token punctuation">`</span>version<span class="token punctuation">`</span> <span class="token keyword">BIGINT</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'乐观锁版本号'</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.18</span> sec<span class="token punctuation">)</span>
+Records: <span class="token number">0</span>  Duplicates: <span class="token number">0</span>  <span class="token keyword">Warnings</span>: <span class="token number">0</span>
+
+<span class="token comment">-- 读取数据，记录 version 的值</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> worker <span class="token keyword">WHERE</span> id <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+---------+</span>
+<span class="token operator">|</span> id <span class="token operator">|</span> <span class="token keyword">type</span> <span class="token operator">|</span> name <span class="token operator">|</span> salary <span class="token operator">|</span> version <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+---------+</span>
+<span class="token operator">|</span>  <span class="token number">1</span> <span class="token operator">|</span> A    <span class="token operator">|</span> tom  <span class="token operator">|</span>   <span class="token number">1800</span> <span class="token operator">|</span>       <span class="token number">0</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+---------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+
+<span class="token comment">-- 比对 version 是否符合预期，更新数据和 version</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">UPDATE</span> worker <span class="token keyword">SET</span> salary <span class="token operator">=</span> <span class="token number">2000</span><span class="token punctuation">,</span> version <span class="token operator">=</span> version <span class="token operator">+</span> <span class="token number">1</span> <span class="token keyword">WHERE</span> id <span class="token operator">=</span> <span class="token number">1</span> <span class="token operator">AND</span> version <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">1</span> <span class="token keyword">row</span> affected <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+<span class="token keyword">Rows</span> <span class="token keyword">matched</span>: <span class="token number">1</span>  Changed: <span class="token number">1</span>  <span class="token keyword">Warnings</span>: <span class="token number">0</span>
+
+<span class="token comment">-- 再次读取数据，校验是否符合预期</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> worker <span class="token keyword">WHERE</span> id <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+---------+</span>
+<span class="token operator">|</span> id <span class="token operator">|</span> <span class="token keyword">type</span> <span class="token operator">|</span> name <span class="token operator">|</span> salary <span class="token operator">|</span> version <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+---------+</span>
+<span class="token operator">|</span>  <span class="token number">1</span> <span class="token operator">|</span> A    <span class="token operator">|</span> tom  <span class="token operator">|</span>   <span class="token number">2000</span> <span class="token operator">|</span>       <span class="token number">1</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">----+------+------+--------+---------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以看到，乐观锁的思想比较简单，而且不会使用到真正的锁，实现效率很高。但是，乐观锁也并不是没有缺点的：当遇到高并发时，只可能会有一个线程修改成功，会造成大量的线程失败或重试。最后，补充一点，乐观锁同样可以使用时间戳来实现，一样的道理。</p>
+</div><div class="cl-preview-section"><h2 id="悲观锁、乐观锁的适用场景">4 悲观锁、乐观锁的适用场景</h2>
+</div><div class="cl-preview-section"><p>不管是悲观锁还是乐观锁，其实都是人为定义的概念。它们都一定有各自的优缺点，也就自然会有不同的适用场景。下面，我们先来总结下它们的特性、优缺点，再去反推下它们的适用场景。</p>
+</div><div class="cl-preview-section"><h3 id="悲观锁、乐观锁的特性及优缺点">4.1 悲观锁、乐观锁的特性及优缺点</h3>
+</div><div class="cl-preview-section"><p>悲观锁是依赖于数据库（存储引擎）的，它的优缺点总结如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>优点：利用锁机制保证了数据的顺序执行，不需要自己控制，加锁、释放完全由数据库代劳</li>
+<li>缺点：一旦一个事务获取了锁，其他的事务必须等待，势必会影响系统的吞吐量</li>
+</ul>
+</div><div class="cl-preview-section"><p>乐观锁不是真正的加锁，对其他事务友好，它的优缺点总结如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>优点：由于不需要加锁，其他的事务可以同时操作数据，相比于悲观锁，系统吞吐量会提高</li>
+<li>缺点：需要自行控制，如果并发度较高，失败重试的情况会成为系统瓶颈</li>
+</ul>
+</div><div class="cl-preview-section"><p>正如它们的名字一样，悲观锁是一种悲观情绪，总是假设最坏的情况，每次读取数据时，都认为会被其他人修改，必须加上锁；乐观锁则是一种乐观情绪，总是假设最好的情况，每次读取数据时，都认为不会被其他人修改，而是在更新时做一次额外的判断。</p>
+</div><div class="cl-preview-section"><h3 id="悲观锁、乐观锁的合理应用">4.2 悲观锁、乐观锁的合理应用</h3>
+</div><div class="cl-preview-section"><p>既然已经分析了悲观锁与乐观锁的优缺点，它们的适用场景也是显而易见的：</p>
+</div><div class="cl-preview-section"><ul>
+<li>悲观锁的适用场景：写入操作比较频繁的场景，如果有大量的读取操作，每次读取都需要加锁，会增加锁开销，降低系统的吞吐量</li>
+<li>乐观锁的适用场景：读取操作比较频繁的场景，如果有大量的写入操作，冲突的可能性会剧增，降低系统的吞吐量</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="总结">5 总结</h2>
+</div><div class="cl-preview-section"><p>数据库的锁机制不仅仅在企业级开发中非常常用，它也是笔试、面试的高频考点，不过好在它比较容易理解。在学习时，除了对思想和原理的理解之外，也要在纸上画一画不同类型锁的执行流程，最后再去开启会话验证你的想法。</p>
+</div><div class="cl-preview-section"><h2 id="问题">6 问题</h2>
+</div><div class="cl-preview-section"><p>你能给出一个行级锁升级为表级锁的案例吗（使用 worker 表或者你定义的表都可以）？<br><br>
+你能用 timestamp（时间戳）的方式实现乐观锁吗 ？<br><br>
+除了我这里的讲解，你是怎样看待 MySQL 中的锁机制呢（可以从锁粒度、锁应用的角度去思考） ？</p>
+</div><div class="cl-preview-section"><h2 id="参考资料">7 参考资料</h2>
+</div><div class="cl-preview-section"><p>《高性能 MySQL（第三版）》<br><br>
+《MySQL技术内幕：InnoDB存储引擎》<br><br>
+<a href="https://dev.mysql.com/doc/refman/5.7/en/innodb-locking.html">MySQL 官方文档：InnoDB Locking</a></p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5e74228700011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6823">
+						<img src="https://img1.mukewang.com/533e4d660001312002000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">我不是药神</h4>
+						<div class="comment-text">除了 InnoDB 之外，大部分的存储引擎都支持表级锁。
+这句话感觉有歧义，从语义上理解，这句话的意思是 InnoDB不支持表记锁</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-19</span>
+						<a href="/read/commentdetail/6823">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6823" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6016">
+						<img src="https://img3.mukewang.com/5333a0600001f9ed02000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">浅滩小螃蟹</h4>
+						<div class="comment-text">锁表会导致系统问题？具体是什么呢？因为我在系统中使用模糊查询也没发现有什么问题。。。</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-02</span>
+						<a href="/read/commentdetail/6016">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6016" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5834">
+						<img src="https://img1.mukewang.com/545868250001157802200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_孙雨</h4>
+						<div class="comment-text">乐观锁工作流程图上放描述文字写成了悲观锁</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-15</span>
+						<a href="/read/commentdetail/5834">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="5834" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5618">
+						<img src="https://img.mukewang.com/578102720001d0f501000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">无心铁憨憨</h4>
+						<div class="comment-text">一哥，那请问ABA具体会导致什么问题呢?</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-26</span>
+						<a href="/read/commentdetail/5618">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="5618" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/4732">
+						<img src="https://img3.mukewang.com/55b03d4e00012bb701000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_电耗子_0</h4>
+						<div class="comment-text">问题1：InnoDB默认行级锁，当where条件没有索引的时候会锁整个表，加入worker表的salary没加索引，select * from worker where salary=1会变成表锁，前提是worker够大，参照1.3；另外还有一种是因为表中某个加索引字段如 name=‘0332’，但where的查询条件为 name=0332(没有引号）导致无法使用索引从而使用表锁。
+问题2：用时间戳取代版本号，操作和版本号一样</div>
+						<div>
+							
+								<div class="reply">讲师回复：非常感谢你的回答，说的非常好，是准确的</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-03-26</span>
+						<a href="/read/commentdetail/4732">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="4732" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>3</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/4637">
+						<img src="https://img4.mukewang.com/54586313000139c902200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">八卦一百二十八掌</h4>
+						<div class="comment-text">图片显示不出来？编辑麻烦检查一下！</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-03-21</span>
+						<a href="/read/commentdetail/4637">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="4637" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=71">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '09 通过锁解决并发数据问题',
+					'CID': '1690',
+					'Teacher': '勤一'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "09 通过锁解决并发数据问题",
+                    desc: "打包 MySQL 常用高级技巧特性",
+                    imgUrl: 'https:https://img.mukewang.com/5e65bd6e0001444005400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5e65bd6e0001444005400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/71',
+                    link: 'https://m.imooc.com/read/71'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

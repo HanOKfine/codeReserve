@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>08 不辱使命：可靠传输协议 TCP 的数据传输原理</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="学好通用知识，提升技术竞争力">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2097";
+	var chapter_title = "08 不辱使命：可靠传输协议 TCP 的数据传输原理";
+	var aid = "80";
+	var a_name = "零基础学透网络编程";
+	var a_price = "58.00";
+	var a_pic = "https://img1.mukewang.com/5ed8c1c600015fc805400720.jpg";
+	var userId = 0;
+
+	var column_id = '80';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-07&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			08 不辱使命：可靠传输协议 TCP 的数据传输原理
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img4.mukewang.com/5edf447a0001dbc106400359.jpg')"></div>
+	
+	
+		<a href="/read/80">
+			<div class="course-entry">
+				<img src="https://img3.mukewang.com/5458620000018a2602200220-40-40.jpg" alt="陈子兴">
+				<h3>零基础学透网络编程</h3>
+				<p>陈子兴 · 资深软件架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">加紧学习，抓住中心，宁精勿杂，宁专勿多。 <p class="author">—— 周恩来</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="前言">前言</h2>
+</div><div class="cl-preview-section"><p>在上一篇我们对 TCP 报文格式，TCP 的连接建立和拆除以及状态变迁过程做了详细的介绍。本文主要介绍 TCP 数据流的交互过程，以及保证数据流传输的可靠、有序、不重复的实现机制，总结起来包含以下几个内容：</p>
+</div><div class="cl-preview-section"><ul>
+<li>TCP 数据交互实验</li>
+<li>TCP 滑动窗口的工作原理</li>
+<li>ACK 机制</li>
+<li>关于 MSS 的概念</li>
+<li>Nagle 算法和延迟 ACK</li>
+<li>TCP 超时重传机制</li>
+</ul>
+</div><div class="cl-preview-section"><p>基于上一篇 nwchecker 代码，我们增加几个新功能，具体如下：</p>
+</div><div class="cl-preview-section"><ol>
+<li>客户端支持选项 -g，可以指定发送的消息块大小，单位是字节；</li>
+<li>客户端支持选项 -i，可以指定发送的时间间隔，单位是毫秒（ms）；</li>
+<li>客户端支持选项 -e，可以指定每个发送间隔内，发送的消息个数；</li>
+<li>服务���支持选项 -m，可以指定响应模式。0：立即响应，1：按照设置的时间间隔响应（单位是毫秒），2：不响应。</li>
+</ol>
+</div><div class="cl-preview-section"><p>修改后的代码保存在"imooc-sock-core-tech/02-07_可靠传输协议_TCP_数据传输"目录下面。</p>
+</div><div class="cl-preview-section"><p>由于本文主要是介绍 TCP 的实现原理，理解起来非常抽象。所以我们首先从实验开始，当你亲手去实践，并且获得一个实验结果，然后基于此实验结果再去分析理论，就会形象一些、具体一些，目标也会明确一些。现在就让我们一起进入实验吧。</p>
+</div><div class="cl-preview-section"><h2 id="tcp-数据交互实验">TCP 数据交互实验</h2>
+</div><div class="cl-preview-section"><p>我们用自己实现的 nwchecker 来做 TCP 实验，本文是为了书写方便，所选择 tcpdump 抓包，并且粘贴文本的方式。如果你是自己学习研究，建议直接用 Wireshark 抓包分析；也可以通过 tcpdump 抓包，保存成二进制格式，然后通过 Wireshark 来分析。毕竟图形窗口要方便很多，对吗？</p>
+</div><div class="cl-preview-section"><p>实验环境及工具说明：</p>
+</div><div class="cl-preview-section"><ul>
+<li>Ubuntu 18.04 server 一台；</li>
+<li>Windows 10 cygwin 环境；</li>
+<li>tcpdump 工具（linux 系统一般会自带此工具）。</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：抓包需要 root 权限。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>实验步骤：</p>
+</div><div class="cl-preview-section"><p><strong>1.</strong> 打开 cygwin 命令行，输入：</p>
+</div><div class="cl-preview-section"><pre><code> ./nwc.exe -c -a 117.50.1.178 -p 80 -i 40
+</code></pre>
+</div><div class="cl-preview-section"><p>参数说明：</p>
+</div><div class="cl-preview-section"><ul>
+<li>-c 表示客户端模式；</li>
+<li>-a 表示 Server 的 IP 地址；</li>
+<li>-p 80 表示 Server 监听的端口号是 80；</li>
+<li>-i 40 表示每 40ms 发送一个消息。</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>2.</strong> 打开 linux 命令行，输入：</p>
+</div><div class="cl-preview-section"><pre><code>sudo ./nwc -s -p 80 -i 30 -m 1
+</code></pre>
+</div><div class="cl-preview-section"><p>参数说明：</p>
+</div><div class="cl-preview-section"><ul>
+<li>-s 表示服务端模式；</li>
+<li>-p 80 表示服务器监听的端口号是 80；</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：服务端不需要指定监听的 IP 地址。</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>-i 30 表示服务器收到对方消息后，延迟 30 ms 再发送应答消息；</li>
+<li>-m 1 表示服务器的应答模式是按照时间间隔应答。</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>3.</strong> 在 Ubuntu 上打开命令进行抓包，输入如下命令：</p>
+</div><div class="cl-preview-section"><pre><code>sudo tcpdump -nn port 80
+</code></pre>
+</div><div class="cl-preview-section"><p>参数说明：</p>
+</div><div class="cl-preview-section"><ul>
+<li>-nn 表示抓包不对 IP 地址和端口号进行解析；</li>
+<li>port 80 表示按照端口号 80 进行过滤。</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：</p>
+<ul>
+<li>tcpdump 需要 root 权限，比如我是通过 sudo 来执行。</li>
+<li>如果你的机器是多网卡，需要通过 -i 选项指定具体某个网卡。</li>
+</ul>
+</blockquote>
+</div><div class="cl-preview-section"><ol start="4">
+<li>观察输出结果，如下：</li>
+</ol>
+</div><div class="cl-preview-section"><p><font color="#DC143C" size="1">1. 10:57:10.196075 IP 113.200.43.134.18967 &gt; 10.9.50.2.80: Flags [S], seq 928325892, win 64240, options [mss 1412,nop,nop,sackOK], length 0 </font></p>
+</div><div class="cl-preview-section"><p><font color="#DAA520" size="1">2. 10:57:10.196131 IP 10.9.50.2.80 &gt; 113.200.43.134.18967: Flags [S.], seq 4090835722, ack 928325893, win 28280, options [mss 1414,nop,nop,sackOK], length 0 </font></p>
+</div><div class="cl-preview-section"><p><font color="#DC143C" size="1">3. 10:57:10.223203 IP 113.200.43.134.18967 &gt; 10.9.50.2.80: Flags [.], ack 1, win 64240, length 0 </font></p>
+</div><div class="cl-preview-section"><p><font color="#DC143C" size="1">4. 10:57:10.224061 IP 113.200.43.134.18967 &gt; 10.9.50.2.80: Flags [P.], seq 1:6, ack 1, win 64240, length 5: HTTP</font></p>
+</div><div class="cl-preview-section"><p><font color="#DAA520" size="1">5. 10:57:10.224073 IP 10.9.50.2.80 &gt; 113.200.43.134.18967: Flags [.], ack 6, win 28280, length 0</font></p>
+</div><div class="cl-preview-section"><p><font color="#DAA520" size="1">6. 10:57:10.254705 IP 10.9.50.2.80 &gt; 113.200.43.134.18967: Flags [P.], seq 1:5, ack 6, win 28280, length 4: HTTP</font></p>
+</div><div class="cl-preview-section"><p><font color="#DC143C" size="1">7. 10:57:10.321512 IP 113.200.43.134.18967 &gt; 10.9.50.2.80: Flags [.], ack 5, win 64236, length 0 </font></p>
+</div><div class="cl-preview-section"><p><font color="#DC143C" size="1">8. 10:57:10.322318 IP 113.200.43.134.18967 &gt; 10.9.50.2.80: Flags [P.], seq 6:11, ack 5, win 64236, length 5: HTTP</font></p>
+</div><div class="cl-preview-section"><p><font color="#DAA520" size="1">9. 10:57:10.352810 IP 10.9.50.2.80 &gt; 113.200.43.134.18967: Flags [P.], seq 5:9, ack 11, win 28280, length 4: HTTP</font></p>
+</div><div class="cl-preview-section"><p><font color="#DC143C" size="1">10. 10:57:10.421629 IP 113.200.43.134.18967 &gt; 10.9.50.2.80: Flags [P.], seq 11:16, ack 9, win 64232, length 5: HTTP</font></p>
+</div><div class="cl-preview-section"><p><font color="#DC143C" size="1">11. 10:57:10.422464 IP 113.200.43.134.18967 &gt; 10.9.50.2.80: Flags [.], ack 9, win 64232, length 0</font></p>
+</div><div class="cl-preview-section"><p><font color="#DAA520" size="1">12. 10:57:10.452307 IP 10.9.50.2.80 &gt; 113.200.43.134.18967: Flags [P.], seq 9:13, ack 16, win 28280, length 4: HTTP</font></p>
+</div><div class="cl-preview-section"><p><font color="#DC143C" size="1">13. 10:57:10.519120 IP 113.200.43.134.18967 &gt; 10.9.50.2.80: Flags [P.], seq 16:21, ack 13, win 64228, length 5: HTTP</font></p>
+</div><div class="cl-preview-section"><p><font color="#DC143C" size="1">14. 10:57:10.519153 IP 113.200.43.134.18967 &gt; 10.9.50.2.80: Flags [.], ack 13, win 64228, length 0</font></p>
+</div><div class="cl-preview-section"><p>在上面的实验结果中，用不同的颜色标出了客户端和服务端的交互数据流。1-3 行是三次握手过程，4-14 是双方交互数据流。不管是<strong>三次握手</strong>还是交互数据流都有<strong>通告窗口</strong>（win）和<strong>确认序列号</strong>。</p>
+</div><div class="cl-preview-section"><p>我们就先分析一下 TCP 的<strong>滑动窗口</strong>工作原理吧。</p>
+</div><div class="cl-preview-section"><h2 id="tcp-滑动窗口的工作原理">TCP 滑动窗口的工作原理</h2>
+</div><div class="cl-preview-section"><p><strong>滑动窗口</strong>只是一个算法，算法目的：</p>
+</div><div class="cl-preview-section"><ul>
+<li>保证数据传输的可靠性；</li>
+<li>保证数据发送的有序性；</li>
+<li>提供流量控制机制，即发送端发送的流量不能超过接收端的接收能力；</li>
+<li>保证数据不重复。</li>
+</ul>
+</div><div class="cl-preview-section"><p>在上一节，我们讲过 TCP Header 的<strong>窗口</strong>（Window）字段是用于向对端通告本端的接收能力，通常把这个字段叫做<strong>通告窗口</strong>（ Advertised Window）。<strong>通告窗口</strong>不仅是在连接建立的过程中要通告对方，要在发送的每一个报文段中都携带 Window 字段，以便发送方实时的对发送流量进行控制。Window 字段占用 16 个 bit 长度，最大可以表示 65535 字节大小的窗口，即 64K。通过上面 tcpdump 抓包结果可以证实这一点。</p>
+</div><div class="cl-preview-section"><p>如果某一端的接收能力过超过 64K，换句话说 TCP 能支持超过 64K 大小的窗口吗？答案是肯定的。具体实现是在连接建立阶段，在 SYN 或者 SYN + ACK 报文段中通过<strong>窗口比例因子（WSOPT）</strong> 选项字段来指定。<strong>窗口比例因子</strong>表示对窗口进行左移的位数。比如，Window 字段的取值是 4096，WSOPT 取值是 8，那么最终窗口大小计算方法是 4096 &lt;&lt; 8，即 1048576。</p>
+</div><div class="cl-preview-section"><p>TCP 的接收端和发送端都维护了一个<strong>滑动窗口</strong>，窗口只是一个形象的比喻，本质上是关于序列号的一个算法。为了便于理解，我们看一下<strong>滑动窗口</strong>的图示。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed9a4530001129807490669.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>上图包含了<strong>发送端窗口</strong>和<strong>接收端窗口</strong>，图中用到的几个参数是和 TCP 实现相关的，这些参数是保存在 TCP 的数据结构<strong>传输控制块</strong>（TCB，Transmission Control Block）中的，用伪代码描述如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token keyword">struct</span> TCB
+<span class="token punctuation">{</span>
+    <span class="token comment">// 发送相关字段</span>
+    <span class="token keyword">int</span> SND<span class="token punctuation">.</span>WND<span class="token punctuation">;</span><span class="token comment">// 发送窗口大小，具体取值是 TCP 根据对方通告的接收窗口和本地的拥塞窗口计算得来。</span>
+    SEQ_T SND<span class="token punctuation">.</span>UNA<span class="token punctuation">;</span><span class="token comment">// 已经发送等待确认窗口指示器。</span>
+    SEQ_T SND<span class="token punctuation">.</span>NXT<span class="token punctuation">;</span><span class="token comment">// 下一个要发送的序列号。</span>
+    MBUF SNDBUFF<span class="token punctuation">;</span><span class="token comment">// 发送缓冲区。</span>
+
+    <span class="token comment">// 接收相关字段</span>
+    <span class="token keyword">int</span> RCV<span class="token punctuation">.</span>WND<span class="token punctuation">;</span><span class="token comment">// 接收窗口大小。</span>
+    SEQ_T RCV<span class="token punctuation">.</span>NXT<span class="token punctuation">;</span><span class="token comment">// 最新接收的连续序列号指示器。也是在 ACK 对方的时候填写的 ACK 序列号。</span>
+    SEQ_T ReadByAPP<span class="token punctuation">;</span><span class="token comment">// 应用程序已经读取的窗口指示器。</span>
+    SEQ_T LastRecv<span class="token punctuation">;</span><span class="token comment">// 最近一次接收的最大序列号。</span>
+    SEQ_T RCV<span class="token punctuation">.</span>ADV<span class="token punctuation">;</span><span class="token comment">// 接收窗口大小通告指示器。通过和本地接收缓冲一起来计算通过窗口大小。</span>
+    MBUF RCVBUFF<span class="token punctuation">;</span><span class="token comment">// 接收缓冲区</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><strong>滑动窗口</strong>是到底如何滑动的呢？首先需要澄清的是：不管是接收窗口还是发送窗口，都是从左边滑向右边的。左边不断的收缩，右边不断的扩张，也可以理解为“从小序列号向大序列号方向滑动”。</p>
+</div><div class="cl-preview-section"><p>发送窗口的工作原理解释如下：</p>
+</div><div class="cl-preview-section"><p>SND.WND 表示发送窗口，记录了 TCP 最大发送的字节数，是根据对方<strong>通告窗口</strong>和本地的<strong>拥塞窗口</strong>计算而来。关于<strong>拥塞窗口</strong>的概念我们在下一篇专栏会详细介绍。</p>
+</div><div class="cl-preview-section"><p>SND.UNA 记录了对方最新的 ACK 序列号，随着对方 ACK 序列号的更新，SND.UNA 就会向右边滑动。此时，如果 SND.WND 如果没变小的话，整个发送窗口向右滑动，图中标注的“窗口内待发送区域”就会变大。</p>
+</div><div class="cl-preview-section"><p>“窗口内待发送区域”是 SND.UNA 和 SND.UNA + SND.WND 划定的范围。</p>
+</div><div class="cl-preview-section"><p>SND.NXT 是下一个要发送的序列号。如果 SND.NXT 大于 SND.UNA + SND.WND，表示发送窗口已经用完，不能在发送。这样可以保证发送不超过对方的接收能力。</p>
+</div><div class="cl-preview-section"><p>“待发送部分”是应用程序调用 send() 函数保存在 TCP 发送缓冲区的数据。</p>
+</div><div class="cl-preview-section"><p>接收窗口的工作原理解释如下：</p>
+</div><div class="cl-preview-section"><p>RCV.WND 记录了 TCP 的接收窗口大小，包含已经接收但是没有被应用程序读取的字节序列和未接收的字节序列两部分。</p>
+</div><div class="cl-preview-section"><p>RCV.NXT 记录了最新已经接收、已经确认的序列号，用于填写 ACK 序列号。</p>
+</div><div class="cl-preview-section"><p>LastRecv 记录了最新接收序列号。RCV.NXT 和 LastRecv 之间的部分表示接收端可能发生了丢包。</p>
+</div><div class="cl-preview-section"><p>“应用程序接收位置”(ReadByApp)，表示应用程序当前在<strong>接收窗口中</strong>的读取位置，即协议栈已经接收但应用程序还没有读取的部分。没有读取的部分也占用接收窗口，应用程序读取快慢会影响到<strong>通告窗口</strong>大小的计算。当应用程序接收位置更新以后，接收窗口就会向右移动，通告窗口大小就会变大。当应用程序一直没有读取数据，通告窗口就会变成 0。</p>
+</div><div class="cl-preview-section"><p>RCV.ADV 记录的是通告窗口指示器。<strong>通告窗口</strong>大小是通过本地接收缓冲去大小和 RCV.ADV 一起计算而来。TCP 不会接收处于通告窗口之外的序列号。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：</p>
+<ol>
+<li>发送窗口计算是参考接收端<strong>通告窗口</strong>大小，但是发送窗口和接收窗口大小没有直接关系；</li>
+<li>图中<strong>接收窗口</strong>中序列号为 4、5、6、7 的报文段是已经确认的，但是发送端可能没有收到 ACK，所以<strong>发送窗口</strong>中仍然是未确认状态。我想告诉你的是：我们只展示了双方窗口的一种可能状态，不要认为“接收窗口已经确认的报文段，发送窗口还没有确认”是图画错了；</li>
+<li>图中我们还演示一种丢包状态，你可以自行观察一下。</li>
+</ol>
+</blockquote>
+</div><div class="cl-preview-section"><p>现在假设接收端已经收到了序列号为 7、8、9、10 的四个报文段，并且应用程序已经取走了序列号为 4、5、6 的三个报文段下的窗口状态。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed9a4790001f7e708970680.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>图中滑动窗口的细节就不再一一解释了，我相信你很容易就看懂了。</p>
+</div><div class="cl-preview-section"><p>下来我们看一下滑动窗口的几个概念。</p>
+</div><div class="cl-preview-section"><h3 id="零窗口（zero-window）">零窗口（Zero Window）</h3>
+</div><div class="cl-preview-section"><p>当 TCP 发送端的发送速率很快，接收端的应用程序读取很慢的时候，会出现接收端的<strong>通告窗口</strong>为 0 的现象。为了模拟这种场景，我们通过 nwchecker 做一个比较极端的实验，核心思想是发送端快速发送，接收端不接收数据，然后让接收端的<strong>通告窗口</strong>变为 0。实验步骤如下：</p>
+</div><div class="cl-preview-section"><p><strong>1.</strong> 在客户端命令行输入：</p>
+</div><div class="cl-preview-section"><pre><code>$ ./nwc.exe -c -a 117.50.1.178 -p 80 -i 20 -e 5 -g 1024 -m 2
+</code></pre>
+</div><div class="cl-preview-section"><p>-m 2 选项表示不接收服务器数据。</p>
+</div><div class="cl-preview-section"><p><strong>2.</strong> 在服务端命令行输入：</p>
+</div><div class="cl-preview-section"><pre><code>sudo ./nwc -s -p 80 -i 30 -m 3
+</code></pre>
+</div><div class="cl-preview-section"><p>-m 3 选项表示不接收客户端数据。</p>
+</div><div class="cl-preview-section"><p><strong>3.</strong> 用 tcpdump 抓包，大概几秒就会出现服务端的<strong>通告窗口</strong>为 0 的现象，并且客户端通告的窗口也在不断变小。</p>
+</div><div class="cl-preview-section"><pre><code>17:41:03.122811 IP 113.200.43.134.21354 &gt; 10.9.50.2.80: Flags [.], ack 3888763820, win 64200, length 0
+17:41:03.122842 IP 10.9.50.2.80 &gt; 113.200.43.134.21354: Flags [P.], seq 1:13, ack 0, win 0, length 12: HTTP
+17:41:03.201486 IP 113.200.43.134.21354 &gt; 10.9.50.2.80: Flags [.], ack 13, win 64188, length 0
+17:41:03.201522 IP 10.9.50.2.80 &gt; 113.200.43.134.21354: Flags [P.], seq 13:25, ack 0, win 0, length 12: HTTP
+17:41:03.280234 IP 113.200.43.134.21354 &gt; 10.9.50.2.80: Flags [.], ack 25, win 64176, length 0
+17:41:03.280271 IP 10.9.50.2.80 &gt; 113.200.43.134.21354: Flags [P.], seq 25:33, ack 0, win 0, length 8: HTTP
+17:41:03.357449 IP 113.200.43.134.21354 &gt; 10.9.50.2.80: Flags [.], ack 33, win 64168, length 0
+</code></pre>
+</div><div class="cl-preview-section"><p>出现了 <strong>零窗口</strong>以后，TCP 会采取什么措施呢？TCP 采用了 Zero Window Probe 机制来解决此问题。发送端得知<strong>通告窗口</strong>变成 0 后，会发<strong>零窗口</strong>探测包给接收方，包的大小是 1 字节长度，期望接收方能发送<strong>窗口更新</strong>的 ACK，如果持续 30 秒到 60 秒窗口还不能打开，TCP 可能会发送 RST 断开连接。</p>
+</div><div class="cl-preview-section"><h3 id="糊涂窗口综合症（silly-window-syndrome）">糊涂窗口综合症（Silly Window Syndrome）</h3>
+</div><div class="cl-preview-section"><p>糊涂窗口综合症是连接上交换的都是长度较小的报文段。由于接收端总是通告<strong>小窗口</strong>或者是发送端发送了很多小报文段，导致发送能力下降的一种现象。</p>
+</div><div class="cl-preview-section"><p>解决此问题，有两种方案：</p>
+</div><div class="cl-preview-section"><ol>
+<li>
+<p>通过 Nagle 算法来避免小报文段。核心思想就是 TCP 发送端只允许 1 个长度小于 MSS 的未被确认的报文段，从而避免网络中大量小包的出现；</p>
+</li>
+<li>
+<p>当发送端探测到对方的接收窗口至少打开到最大接收窗口（历史统计出的最大接收窗口）的一半，才发送报文段。</p>
+</li>
+</ol>
+</div><div class="cl-preview-section"><p>了解完了 TCP 的窗口工作机制，下来我们再看看 TCP 的 ACK 机制。</p>
+</div><div class="cl-preview-section"><h2 id="ack-机制">ACK 机制</h2>
+</div><div class="cl-preview-section"><p>TCP 有<strong>立即 ACK</strong>、<strong>延迟 ACK</strong>、<strong>捎带 ACK</strong>之分。</p>
+</div><div class="cl-preview-section"><p><strong>立即 ACK</strong> 也叫 Quik AcK，是收到对方的报文段以后马上回复 ACK；</p>
+</div><div class="cl-preview-section"><p><strong>延迟（Delayed）ACK</strong> 是指收到对方的报文段以后并不是马上回复 ACK，而是要等待一个超时时间。TCP 协议栈早期都是采用 200ms 的延迟，Linux 是采用 60ms 的延迟。经过实际测试，Windows 7 是 200ms 的延迟 ACK，Windows 10 是 60ms 的延迟 ACK；</p>
+</div><div class="cl-preview-section"><p><strong>捎带（Piggy back）ACK</strong> 是指当应用程序有数据发送给对方的时候顺便带上 ACK。<strong>延迟 ACK</strong> 的目的就是期盼着应用层有数据发送到对方实现<strong>捎带 ACK</strong>，这样可以避免大量的空 ACK 带来网络带���的浪费。</p>
+</div><div class="cl-preview-section"><p>在我们第一小结的实验中，报文段 4-16 展示了三种 ACK 类型，为了更直观，我们通过图来展示，如下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed9a4870001924808360708.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>图中 113.200.43.134.21354 是客户端的 Endpoint， 10.9.50.2.80 是服务端的 Endpoint。由于报文是在服务端抓的，所以报文段的时间都显示在服务端一列，单位是微秒（us）。</p>
+</div><div class="cl-preview-section"><p>从图中可以看出：</p>
+</div><div class="cl-preview-section"><ul>
+<li>前三个报文段是<strong>三次握手</strong>过程；</li>
+<li>客户端在报文段 4 发送了 5 字节长的数据，服务端在报文段 5 发送了<strong>立即 ACK</strong>；</li>
+<li>服务端在报文段 6 发送了 4 字节长的数据，客户端大约过了 60ms 才在报文段 7 发送了 ACK，这是一个<strong>延迟 ACK</strong>；</li>
+<li>客户端在报文段 8 发送了 5 字节长的数据，此时服务端并没有发送<strong>立即 ACK</strong>，而是过了大约 30 ms 发送报文段 9，即通过发送的数据<strong>捎带 ACK</strong>。</li>
+</ul>
+</div><div class="cl-preview-section"><p>前面交代过，服务端是在 Ubuntu 18.04 上运行，不知道你是否发现，服务器开始是<strong>立即 ACK</strong>，后来转为<strong>捎带 ACK</strong>。这是为什么呢？因为 Linux TCP 连接建立的初始阶段执行的是 QUICK ACK 模式，当 TCP 发现双方是交互数据流就会转为<strong>延迟 ACK</strong> 模式，目的是实现<strong>捎带 ACK</strong>。</p>
+</div><div class="cl-preview-section"><p>ACK 介绍完了，那你是否注意到在<strong>三次握手</strong>过程中，通信双方在 SYN 和 SYN+ACK 报文中通过 TCP 选项汇报了 MSS 呢？下来我们就看看 MSS 的概念。</p>
+</div><div class="cl-preview-section"><h2 id="关于-mss-的概念">关于 MSS 的概念</h2>
+</div><div class="cl-preview-section"><p>MSS 全拼是 Maximum Segment Size，即最大报文段长度。这是什么概念呢？通过一张图你就明白了一切。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed9a4940001529708690227.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>其实 MSS 就是 TCP Payload 的最大长度。从抓包可以看出，MSS 的取值一般都是 1460，通过 1500-20-20=1460 而来。当 Ethernet 头中带有 VLAN 或者 MPLS 标签的时候，MSS 的值可能会小于 1460。</p>
+</div><div class="cl-preview-section"><p>那为什么需要限制 TCP 的 Payload 最大长度为 MSS 呢？IP 层不是可以支持 65535 字节的 Payload 吗？再说了 IP 层不是还有分片功能吗？</p>
+</div><div class="cl-preview-section"><p>你说的都没错。但是以太网网卡最大支持 1500 字节长度的 Payload，如果 Payload 超过 1500 字节长度，传输肯定会失败，这样 IP 层必须进行发送端分片才能通过，这意味着接收端必须对分片进行重组。IP层的分片和重组会导致 TCP 性能下降，在实际应用中应该尽量避免 IP 分片。</p>
+</div><div class="cl-preview-section"><p>这样我们应该在 TCP 层或者应用层就限制报文段的最大长度不超过 1460。</p>
+</div><div class="cl-preview-section"><h2 id="nagle-算法和延迟-ack">Nagle 算法和延迟 ACK</h2>
+</div><div class="cl-preview-section"><p>Nagle 算法我们说过了，就是不允许大量的未确认的小报文段在网络上游离，目的是避免小包对路由器的冲击。然而当 Nagle 算法和延迟 ACK 一起生效的时候，对于小报文段较多、实时性要求高的应用场景就是灾难，会带来很大的延迟。比如用 TCP 来传输语音数据包，对语音质量影响非常大。</p>
+</div><div class="cl-preview-section"><p>在实际应用中解决这一问题是通过 TCP_NODELAY 选项来禁止 Nagle 算法。这样的做法引起了 Nagle 本人强烈地不满，Nagle 认为“延迟 ACK 是糟糕的机制，TCP 不应该有延迟 ACK 这样的机制，因此导致延迟增大的锅不应该由他来背”。</p>
+</div><div class="cl-preview-section"><p>然而 Delay ACK 是 TCP 的默认行为，并没有提供用户接口来禁止此功能，应用程序员只能委屈 Nagle，选择 TCP_NODELAY 了。在作者本人看来 Nagle 确实委屈了。</p>
+</div><div class="cl-preview-section"><p>在后来很多协议栈实现中，对 Delay ACK 的时间进行了调整。比如，Linux 的延迟 ACK 时间是 60ms，相比 200ms 的延迟时间得到了极大的改善。另外 linux TCP 连接建立初期是 Quick ACK 模式，只有探测到交互数据流才会进入延迟 ACK 模式。从我们的 nwchecker 实验结果可以看到这一点。</p>
+</div><div class="cl-preview-section"><p>关于 ACK 相关的故事介绍完了。我们说过接收端的 ACK 驱动 TCP 的发送端<strong>滑动窗口</strong>向右滑动，假如 TCP 的发送端没有收到接收端的 ACK，滑动窗口是不能滑动的，那么 TCP 会采取什么措施呢？下来让我们在分析一下<strong>TCP 超时重传机制</strong>。</p>
+</div><div class="cl-preview-section"><h2 id="tcp-超时重传机制">TCP 超时重传机制</h2>
+</div><div class="cl-preview-section"><p><strong>TCP 超时重传</strong>是指：当 TCP 发送端在<strong>特定的时间</strong>内没有收到对端对已经发送报文段的 ACK，那么就要重传已经发送过的报文段。概念非常简单，也很容易理解，核心思想就是“我觉得在一段时间内，你没有对我发的包进行反馈，我就认为你没有收到，所以我就再发一遍”。</p>
+</div><div class="cl-preview-section"><p>在 TCP 中把这个<strong>特定的时间</strong>叫做<strong>重传超时时间</strong>（RTO，Retransmission Timeout）。</p>
+</div><div class="cl-preview-section"><p>那么这个 RTO 到底该多长呢？如何来计算这个时间呢？</p>
+</div><div class="cl-preview-section"><p>要想分析 RTO 是如何计算的，我们就先得制造一种超时重传的场景。在局域网中不通过工具限制是不好制造<strong>超时重传</strong>场景的，通过浏览器访问互联网上的 Web 网站，尤其是国外的网站，很容易出现<strong>超时重传</strong>的场景。请看下面展示的一种<strong>超时重传</strong>场景。</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token number">1</span><span class="token punctuation">.</span> <span class="token operator">|</span><span class="token number">7.758959</span><span class="token operator">|</span> <span class="token number">63151</span> <span class="token operator">&gt;</span> <span class="token number">80</span> <span class="token punctuation">[</span>PSH<span class="token punctuation">,</span> ACK<span class="token punctuation">]</span> Seq<span class="token operator">=</span><span class="token number">1446</span> Ack<span class="token operator">=</span><span class="token number">1</span> Win<span class="token operator">=</span><span class="token number">64819</span> Len<span class="token operator">=</span><span class="token number">455</span>
+<span class="token number">2</span><span class="token punctuation">.</span> <span class="token operator">|</span><span class="token number">7.939876</span><span class="token operator">|</span> <span class="token number">80</span> <span class="token operator">&gt;</span> <span class="token number">63151</span> <span class="token punctuation">[</span>ACK<span class="token punctuation">]</span> Seq<span class="token operator">=</span><span class="token number">1</span> Ack<span class="token operator">=</span><span class="token number">1901</span> Win<span class="token operator">=</span><span class="token number">65535</span> Len<span class="token operator">=</span><span class="token number">0</span>
+<span class="token number">3</span><span class="token punctuation">.</span> <span class="token operator">|</span><span class="token number">8.770415</span><span class="token operator">|</span> <span class="token number">63151</span> <span class="token operator">&gt;</span> <span class="token number">80</span> <span class="token punctuation">[</span>ACK<span class="token punctuation">]</span> Seq<span class="token operator">=</span><span class="token number">1901</span> Ack<span class="token operator">=</span><span class="token number">1</span> Win<span class="token operator">=</span><span class="token number">64819</span> Len<span class="token operator">=</span><span class="token number">1420</span>
+<span class="token number">4</span><span class="token punctuation">.</span> <span class="token operator">|</span><span class="token number">8.770422</span><span class="token operator">|</span> <span class="token number">63151</span> <span class="token operator">&gt;</span> <span class="token number">80</span> <span class="token punctuation">[</span>PSH<span class="token punctuation">,</span> ACK<span class="token punctuation">]</span> Seq<span class="token operator">=</span><span class="token number">3321</span> Ack<span class="token operator">=</span><span class="token number">1</span> Win<span class="token operator">=</span><span class="token number">64819</span> Len<span class="token operator">=</span><span class="token number">32</span>
+<span class="token number">5</span><span class="token punctuation">.</span> <span class="token operator">|</span><span class="token number">8.770649</span><span class="token operator">|</span> <span class="token number">63151</span> <span class="token operator">&gt;</span> <span class="token number">80</span> <span class="token punctuation">[</span>PSH<span class="token punctuation">,</span> ACK<span class="token punctuation">]</span> Seq<span class="token operator">=</span><span class="token number">3353</span> Ack<span class="token operator">=</span><span class="token number">1</span> Win<span class="token operator">=</span><span class="token number">64819</span> Len<span class="token operator">=</span><span class="token number">52</span>
+<span class="token number">6</span><span class="token punctuation">.</span> <span class="token operator">|</span><span class="token number">8.951952</span><span class="token operator">|</span> <span class="token number">80</span> <span class="token operator">&gt;</span> <span class="token number">63151</span> <span class="token punctuation">[</span>ACK<span class="token punctuation">]</span> Seq<span class="token operator">=</span><span class="token number">1</span> Ack<span class="token operator">=</span><span class="token number">1901</span> Win<span class="token operator">=</span><span class="token number">65535</span> Len<span class="token operator">=</span><span class="token number">0</span> SLE<span class="token operator">=</span><span class="token number">3353</span> SRE<span class="token operator">=</span><span class="token number">3405</span> <span class="token punctuation">[</span>TCP Dup ACK<span class="token punctuation">]</span>
+<span class="token number">7</span><span class="token punctuation">.</span> <span class="token operator">|</span><span class="token number">8.951952</span><span class="token operator">|</span> <span class="token number">80</span> <span class="token operator">&gt;</span> <span class="token number">63151</span> <span class="token punctuation">[</span>ACK<span class="token punctuation">]</span> Seq<span class="token operator">=</span><span class="token number">1</span> Ack<span class="token operator">=</span><span class="token number">1901</span> Win<span class="token operator">=</span><span class="token number">65535</span> Len<span class="token operator">=</span><span class="token number">0</span> SLE<span class="token operator">=</span><span class="token number">3321</span> SRE<span class="token operator">=</span><span class="token number">3405</span> <span class="token punctuation">[</span>TCP Dup ACK<span class="token punctuation">]</span>
+<span class="token number">8</span><span class="token punctuation">.</span> <span class="token operator">|</span><span class="token number">8.951952</span><span class="token operator">|</span> <span class="token number">80</span> <span class="token operator">&gt;</span> <span class="token number">63151</span> <span class="token punctuation">[</span>ACK<span class="token punctuation">]</span> Seq<span class="token operator">=</span><span class="token number">1</span> Ack<span class="token operator">=</span><span class="token number">3405</span> Win<span class="token operator">=</span><span class="token number">65535</span> Len<span class="token operator">=</span><span class="token number">0</span>
+<span class="token number">9</span><span class="token punctuation">.</span> <span class="token operator">|</span><span class="token number">8.952018</span><span class="token operator">|</span> <span class="token number">63151</span> <span class="token operator">&gt;</span> <span class="token number">80</span> <span class="token punctuation">[</span>ACK<span class="token punctuation">]</span> Seq<span class="token operator">=</span><span class="token number">1901</span> Ack<span class="token operator">=</span><span class="token number">1</span> Win<span class="token operator">=</span><span class="token number">64819</span> Len<span class="token operator">=</span><span class="token number">1420</span> <span class="token punctuation">[</span>TCP Retransmission<span class="token punctuation">]</span>
+<span class="token number">10</span><span class="token punctuation">.</span> <span class="token operator">|</span><span class="token number">8.952112</span><span class="token operator">|</span> <span class="token number">63151</span> <span class="token operator">&gt;</span> <span class="token number">80</span> <span class="token punctuation">[</span>PSH<span class="token punctuation">,</span> ACK<span class="token punctuation">]</span> Seq<span class="token operator">=</span><span class="token number">3321</span> Ack<span class="token operator">=</span><span class="token number">1</span> Win<span class="token operator">=</span><span class="token number">64819</span> Len<span class="token operator">=</span><span class="token number">32</span> <span class="token punctuation">[</span>TCP Retransmission<span class="token punctuation">]</span>
+<span class="token number">11</span><span class="token punctuation">.</span> <span class="token operator">|</span><span class="token number">9.133889</span><span class="token operator">|</span> <span class="token number">80</span> <span class="token operator">&gt;</span> <span class="token number">63151</span> <span class="token punctuation">[</span>ACK<span class="token punctuation">]</span> Seq<span class="token operator">=</span><span class="token number">1</span> Ack<span class="token operator">=</span><span class="token number">3405</span> Win<span class="token operator">=</span><span class="token number">65535</span> Len<span class="token operator">=</span><span class="token number">0</span> SLE<span class="token operator">=</span><span class="token number">1901</span> SRE<span class="token operator">=</span><span class="token number">3353</span> <span class="token punctuation">[</span>TCP Dup ACK<span class="token punctuation">]</span>
+<span class="token number">12</span><span class="token punctuation">.</span> <span class="token operator">|</span><span class="token number">9.771851</span><span class="token operator">|</span> <span class="token number">63151</span> <span class="token operator">&gt;</span> <span class="token number">80</span> <span class="token punctuation">[</span>PSH<span class="token punctuation">,</span> ACK<span class="token punctuation">]</span> Seq<span class="token operator">=</span><span class="token number">3405</span> Ack<span class="token operator">=</span><span class="token number">1</span> Win<span class="token operator">=</span><span class="token number">64819</span> Len<span class="token operator">=</span><span class="token number">516</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在上面抓包片段中，第一列数字是包的编号，第二列是时间，63151 &gt; 80 表示通信双方的端口号，为了节省篇幅，我省去了 IP。63151 是客户端端口，80 是 Web 服务器端口。</p>
+</div><div class="cl-preview-section"><p>你仔细观察会发现，3 号包是 63151 发给 80 的，序列号是 1901，长度是 1420，结果 9 号包又是 63151 发给 80 的，序列号是 1901，长度是 1420。3 号包和 9 号包是内容相同，但是发送时间不同，分别是 8.770415 和 8.952018，前后相差大概 180 ms，所以 9号包就是 3 号包的重传包。</p>
+</div><div class="cl-preview-section"><p>你现在试着想一下，如果你能知道报文段从发送端到接收端的<strong>发送时间</strong>，以及对应的 ACK 包从接收端到发送端的<strong>响应时间</strong>，如果这一来一回的时间都已经过去了，但是还没有收到对方的 ACK，是不是可以决定进行重传呢？</p>
+</div><div class="cl-preview-section"><h3 id="rtt-与-rto">RTT 与 RTO</h3>
+</div><div class="cl-preview-section"><p>我们首先需要明确一个概念就是 RTT。假定 Endpoint1 发送一个数据包到 Endpoint2，Endpoint2 对此数据包做出响应，我们把数据包的发送时间以及响应时间之和叫做 RTT（Round-trip time）。我们看一下更直观的图示。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed9a4a40001d5c207500559.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>图中演示了 TCP 三次握手阶段过程中 RTT 的计算，以及客户端发送了一个报文段服务器进行了 ACK 以后 RTT 的计算，非常容易理解。RTT 和应用程序的处理时间，通信子网中队列缓存时间，链路传输时间三部分相关。</p>
+</div><div class="cl-preview-section"><p>由于网络瞬息万变，RTT 的变化也是非常频繁的，比如网络繁忙、路由节点拥塞，会导致 RTT 变大。无线信号减弱，也会导致 RTT 变大。</p>
+</div><div class="cl-preview-section"><p>我们把像上图中 Client 一端的 RTT1、RTT2 叫做 <strong>RTT 采样</strong>（Sample），当然把 Server 一端的 RTT 也叫做 <strong>RTT 采样</strong>。他们的特点就是根据瞬时报文段计算的瞬时值。</p>
+</div><div class="cl-preview-section"><p>由于 RTT 采样变化很大，TCP 通过计算 RTT 的<strong>标准偏差</strong>（Standard deviation）来估算出接近真实的 RTT 叫做 Smooth RTT，简写为 SRTT。</p>
+</div><div class="cl-preview-section"><p>RTO 是根据 SRTT 计算而来的。</p>
+</div><div class="cl-preview-section"><p>在数学上，标准偏差需要计算平方根，而 SRTT 的计算又是非常频繁的，为了提高效率，用<strong>均值偏差</strong>（Mean deviation）来代替<strong>标准偏差</strong>。</p>
+</div><div class="cl-preview-section"><p>关于 SRTT 的计算有很多方法，我们分析几种常见的方法。</p>
+</div><div class="cl-preview-section"><p>第一种叫做<strong>经典方法</strong>，计算公式：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c">srtt <span class="token operator">=</span> alpha <span class="token operator">*</span> srtt <span class="token operator">+</span> <span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">-</span>alpha<span class="token punctuation">)</span> <span class="token operator">*</span> RTT
+</code></pre>
+</div><div class="cl-preview-section"><p>alpha 是一个系数，取值一般是在 0.8~0.9 之间；RTT 是实际瞬时样本。</p>
+</div><div class="cl-preview-section"><p>这种方法叫 EWMA(exponential weighted moving average) 或者是 low-pass filter。</p>
+</div><div class="cl-preview-section"><p>RTO 计算公式：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c">RTO <span class="token operator">=</span> <span class="token function">min</span><span class="token punctuation">(</span>ubound<span class="token punctuation">,</span> <span class="token function">max</span><span class="token punctuation">(</span>lbound<span class="token punctuation">,</span> beta <span class="token operator">*</span> srtt<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>beta 也是一个系数，取值一般在 1.3～2.0 之间；ubound 的建议值是 1 分钟，lbound 的建议值是 1 秒。</p>
+</div><div class="cl-preview-section"><p>第二种叫做<strong>标准方法</strong>，计算公式：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c">srtt <span class="token operator">&lt;</span><span class="token operator">-</span> <span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">-</span>g<span class="token punctuation">)</span>srtt <span class="token operator">+</span> gM
+rttvar <span class="token operator">&lt;</span><span class="token operator">-</span> <span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">-</span>h<span class="token punctuation">)</span>rttvar <span class="token operator">+</span> <span class="token function">h</span><span class="token punctuation">(</span><span class="token operator">|</span>M<span class="token operator">-</span>srtt<span class="token operator">|</span><span class="token punctuation">)</span>
+RTO <span class="token operator">=</span> srtt <span class="token operator">+</span> <span class="token function">4</span><span class="token punctuation">(</span>rttvar<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>令 Err = M-srtt，对上面的公式做一个变形，得到如下公式：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c">srtt <span class="token operator">&lt;</span><span class="token operator">-</span> srtt <span class="token operator">+</span> <span class="token function">g</span><span class="token punctuation">(</span>Err<span class="token punctuation">)</span>
+rttvar <span class="token operator">&lt;</span><span class="token operator">-</span> rttvar <span class="token operator">+</span> <span class="token function">h</span><span class="token punctuation">(</span><span class="token operator">|</span>Err<span class="token operator">|</span><span class="token operator">-</span>rttvar<span class="token punctuation">)</span>
+RTO <span class="token operator">=</span> srtt <span class="token operator">+</span> <span class="token function">4</span><span class="token punctuation">(</span>rttvar<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>rttvar 是 srtt 的变化率，srtt 的初始值是第一个 M 取值，rttvar 的初始值是 M/2，M 也是第一个样本值；</li>
+<li>Err 是样本 M 的<strong>均值偏差</strong>(mean deviation)；</li>
+<li>M 是 RTT 的实时样本；</li>
+<li>g 取值是 1/8；</li>
+<li>h 取值是 1/4。</li>
+</ul>
+</div><div class="cl-preview-section"><p>第三种叫做 <strong>linux 方法</strong>，计算公式：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c">mdev <span class="token operator">=</span> <span class="token function">mdev</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token operator">/</span><span class="token number">4</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token operator">|</span>m<span class="token operator">-</span>srtt<span class="token operator">|</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">/</span><span class="token number">4</span><span class="token punctuation">)</span>
+mdev_max <span class="token operator">=</span> <span class="token function">max</span><span class="token punctuation">(</span>mdev_max<span class="token punctuation">,</span> mdev<span class="token punctuation">)</span>
+srtt <span class="token operator">=</span> <span class="token function">srtt</span><span class="token punctuation">(</span><span class="token number">7</span><span class="token operator">/</span><span class="token number">8</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token function">m</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">/</span><span class="token number">8</span><span class="token punctuation">)</span>
+rttvar <span class="token operator">=</span> mdev_max
+RTO <span class="token operator">=</span> srtt <span class="token operator">+</span> <span class="token function">4</span><span class="token punctuation">(</span>rttvar<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>m 是 RTT 样本值；</li>
+<li>srtt 的初始值是第一个 RTT 样本值的 8 倍；</li>
+<li>mdev 的初始值是第一个 RTT 样本值的 2 倍；</li>
+<li>mdev_max 的初始值是 min(mdev, rto_min)。</li>
+</ul>
+</div><div class="cl-preview-section"><p>关于 RTO 的计算就是一些具体的公式，我们也介绍完了。下来就是看一下重传有哪些规则限制。</p>
+</div><div class="cl-preview-section"><h2 id="重传规则限制">重传规则限制</h2>
+</div><div class="cl-preview-section"><p>当某个已经发送的报文段经过了 RTO 时间，还没有收到对方的 ACK，发送端就要选择重传。重传是有一定的限制，并不是所有报文段都重传。</p>
+</div><div class="cl-preview-section"><h3 id="重传普遍规则">重传普遍规则</h3>
+</div><div class="cl-preview-section"><ul>
+<li>只有带有数据的报文段，也就是 length 大于 0 的报文段会重传；</li>
+<li>SYN 报文段会重传；</li>
+<li>FIN 报文段会重传；</li>
+<li>length 为 0 的 专门用于 ACK 的报文段不会被重传。</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="重传二义性">重传二义性</h3>
+</div><div class="cl-preview-section"><p>重传对 RTT 的计算有影响吗？假如一个 TCP Segment 发生了重传，当次 Segement 被重传以后，发送端收到了此 Segment的 ACK，那么此 ACK 是对 重传 Segment 的 ACK呢，还是对第一次发送的 Segment 的 ACK 呢？对于发送端来说是无法分辨的，这叫做<strong>重传二异性</strong>。</p>
+</div><div class="cl-preview-section"><p><strong>重传二异性</strong>会影响 RTO 的计算，该如何解决此问题呢？有个叫 karn 的人提出的解决办法是：对于发生了重传的 Segment，它的 ACK 不参与 RTT 的估值计算，这叫做 <strong>karn 算法</strong>。</p>
+</div><div class="cl-preview-section"><p>当然 <strong>Karn 算法</strong>也指出了重传的一种策略，叫做<strong>指数退避策略</strong>（binary exponential backoff）。当某个 Segment 发生了多次重传以后，每一次重传的时间是上一次重传时间间隔的 2 倍，直到收到了一个对非重传 Segment 的 ACK。</p>
+</div><div class="cl-preview-section"><h4 id="重传门限值-r1-和-r2">重传门限值 R1 和 R2</h4>
+</div><div class="cl-preview-section"><p><a href="https://tools.ietf.org/html/rfc1122" title="rfc1122">RFC1122</a> 描述了两个 TCP 重传的门限值 R1 和 R2, R1 表示重传的次数；R2 表示重传失败后断开连接的时间。</p>
+</div><div class="cl-preview-section"><p>在 Linux 中 R1 和 R2 通过如下参数表示：</p>
+</div><div class="cl-preview-section"><pre><code>net.ipv4.tcp_retries1 = 3
+net.ipv4.tcp_retries2 = 15
+</code></pre>
+</div><div class="cl-preview-section"><p>在 Windows 中是通过注册表来表示：</p>
+</div><div class="cl-preview-section"><pre><code>HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Tcpip\Parameters
+HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\TCPIP6\Parameters
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="快速重传">快速重传</h3>
+</div><div class="cl-preview-section"><p>在<strong>超时重传</strong>的实验中，我们发现编号为 6 和 7 的两个报文段是被标识为“TCP Dup ACK”，这是什么意思呢？你仔细观察会发现：</p>
+</div><div class="cl-preview-section"><ul>
+<li>服务端在报文段 2 中已经 ACK 了 1901</li>
+<li>服务端在报文段 6 和 7 中的 ACK 序列号还是 1901</li>
+<li>而客户端在报文段 3 中发送了 1901</li>
+<li>在报文段 4 中发送了 3321</li>
+<li>在报文段 5 中发送了 3353</li>
+</ul>
+</div><div class="cl-preview-section"><p>按理说服务端在报文段 6 中应该 ACK 3321，在报文段 7 中 ACK 3353 才对。现在确实是重复 ACK 1901。</p>
+</div><div class="cl-preview-section"><p>你现在仔细想想，重复的 ACK 能否说明有丢包发生呢？请你再仔细想想上面的场景，客户端已经发送了 1901、3321、3353，服务端还请求 1901，这是不是可以说明有可能发生丢包了呢？</p>
+</div><div class="cl-preview-section"><p>TCP 利用重复 ACK 做了一点儿文章，把所有的重复 ACK 做一个计数，如果重复 ACK 计数达到了<strong>快速重传门限值</strong>（dupthresh），就认为发送的 Segment 已经丢失了，TCP 不会等到重传定时器超时，而是立即重传，这叫做<strong>快速重传</strong>。dupthresh 取值一般是 3。</p>
+</div><div class="cl-preview-section"><p>没有 SACK，重传的 Segment 不会超过 1 个，如果有 SACK，发送端会重传超过一个 Segment。</p>
+</div><div class="cl-preview-section"><h2 id="总结">总结</h2>
+</div><div class="cl-preview-section"><p>本文开篇做了一个实验，围绕实验结果介绍了 TCP 滑动窗口工作原理，TCP ACK 机制，Nagle 算法和延迟 ACK 导致延迟问题，最后介���了 TCP 超时重传机制。</p>
+</div><div class="cl-preview-section"><p>由于内容都是和 TCP 具体实现相关，内容比较抽象，理解起来比较困难。所以建议在学习的过程中采用理论和实践结合的方式，边做实验，边参考文档，必要的时候可以阅读一下 Linux 内核源码，这样更有利于知识的掌握。</p>
+</div><div class="cl-preview-section"><p>TCP 的实现细节和我们日常工作关系不是很大，你很少有机会去自己写一个 TCP 协议栈。TCP 的很多实现机制，比如 RTT 计算、滑动窗口机制，可以为你的工作提供一种思路，所以还是非常值得学习、研究的。</p>
+</div><div class="cl-preview-section"><p>下一篇我们将重点介绍 TCP 的拥塞控制算法。</p>
+</div><div class="cl-preview-section"><h2 id="思考时间">思考时间</h2>
+</div><div class="cl-preview-section"><ol>
+<li>
+<p>请通过 nwchecker 做实验，观察<strong>零窗口</strong>现象。（提示：用上 wireshark，netstat 等工具）</p>
+</li>
+<li>
+<p>模拟一个 TCP 超时重传的场景，通过 Wireshark 抓包分析重传过程，观察重复 ACK 现象。</p>
+</li>
+<li>
+<p>做一个 TCP 实现，观察三次握手过程中 MSS、窗口比例因子、SACK 选项。</p>
+</li>
+</ol>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=80">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '08 不辱使命：可靠传输协议 TCP 的数据传输原理',
+					'CID': '2097',
+					'Teacher': '陈子兴'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "08 不辱使命：可靠传输协议 TCP 的数据传输原理",
+                    desc: "学好通用知识，提升技术竞争力",
+                    imgUrl: 'https:https://img1.mukewang.com/5ed8c1c600015fc805400720.jpg',
+                    otherImgUrl: 'https://img1.mukewang.com/5ed8c1c600015fc805400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/80',
+                    link: 'https://m.imooc.com/read/80'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>42 描述下Scrapy框架运行的机制</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="以问带学摸透面试套路">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "1";
+	var chapter_id = "1966";
+	var chapter_title = "42 描述下Scrapy框架运行的机制";
+	var aid = "69";
+	var a_name = "高薪之路--Python 面试题精选集";
+	var a_price = "68.00";
+	var a_pic = "https://img.mukewang.com/5e4602ff000143af05400720.jpg";
+	var userId = 0;
+
+	var column_id = '69';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-06-05&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			42 描述下Scrapy框架运行的机制
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img1.mukewang.com/5ec3b53900011a2e06400426.jpg')"></div>
+	
+	
+		<a href="/read/69">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5e40f87d0001fdeb20001328-40-40.jpg" alt="Jarvinia">
+				<h3>高薪之路--Python 面试题精选集</h3>
+				<p>Jarvinia · 资深Python工程师，全栈工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">立志是事业的大门，工作是登堂入室的旅程。<p class="author">——巴斯德</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="问题：描述下scrapy框架运行的机制">问题：描述下Scrapy框架运行的机制?</h2>
+</div><div class="cl-preview-section"><h3 id="面试官想从这道题中考察面试人什么？">面试官想从这道题中考察面试人什么？</h3>
+</div><div class="cl-preview-section"><p>Scrapy 框架是一个比较通用的爬虫框架，功能完善。它在爬虫领域的地位就等同于 Django 在 web 开发的定位。如果你要面爬虫的职位，且想要知道为什么面试官要问这个问题，那么，我倒想知道面试官有什么理由不去问这个问题。</p>
+</div><div class="cl-preview-section"><h4 id="答案">答案</h4>
+</div><div class="cl-preview-section"><ol>
+<li>从start_urls里获取第一批url并发送请求，请求由引擎交给调度器入请求队列，获取完毕后，调度器将请求队列里的请求交给下载器去获取请求对应的响应资源，并将响应交给自己编写的解析方法做提取处理，如果提取出需要的数据，则交给管道文件处理；</li>
+<li>如果提取出url，则继续执行之前的步骤（发送 url 请求，并由引擎将请求交给调度器入队列…)，直到请求队列里没有请求，程序结束。</li>
+</ol>
+</div><div class="cl-preview-section"><h4 id="拓展">拓展</h4>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eccb73c0001229206310421.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>Scrapy 框架中 有8 个主要组件：</p>
+</div><div class="cl-preview-section"><ol>
+<li><strong>Scrapy引擎(Scrapy engine)</strong>：这是框架的核心，用来处理整个系统的数据流处理，触发事务；</li>
+<li><strong>调度器(Scheduler)</strong>：接受引擎发来的请求，压入队列中，并在引擎再次请求的时候返回。这个调度器决定URL的优先队列，并且做了去重处理；</li>
+<li><strong>下载器(Downloader)</strong>：用于下载网页内容, 并将网页内容返回给爬虫(Scrapy下载器是建立在twisted这个高效的异步模型上的)；</li>
+<li><strong>爬虫(Spiders)</strong>：用于从特定的网页中提取自己需要的信息, 即所谓的实体(Item)。用户也可以从中提取出链接，让Scrapy引擎继续抓取下一个页面；</li>
+<li><strong>项目管道(Pipeline)</strong>：负责处理爬虫从网页中抽取的实体，主要的功能是持久化实体、验证实体的有效性、清除不需要的信息。当页面被爬虫解析后，将被发送到项目管道，并经过几个特定的次序处理数据；</li>
+<li><strong>下载器中间件(Downloader Middlewares)</strong>：位于Scrapy引擎和下载器之间的中间件，主要是处理Scrapy引擎与下载器之间的请求及响应；</li>
+<li><strong>爬虫中间件(Spider Middlewares)</strong>：介于Scrapy引擎和爬虫之间的中间件，主要工作是处理爬虫的响应输入和请求输出；</li>
+<li><strong>调度中间件(Scheduler Middewares)</strong>：介于Scrapy引擎和调度器之间的中间件，从Scrapy引擎发送到调度的请求和响应。</li>
+</ol>
+</div><div class="cl-preview-section"><h3 id="scrapy运行流程：">Scrapy运行流程：</h3>
+</div><div class="cl-preview-section"><ol>
+<li>首先，引擎从调度器中取出一个链接(URL)用于接下来的抓取；</li>
+<li>引擎把URL封装成一个请求(Request)传给下载器，下载器把资源下载下来，并封装成应答包(Response)；</li>
+<li>然后，爬虫解析Response；</li>
+<li>若是解析出实体（Item）,则交给实体管道进行进一步的处理；</li>
+<li>若是解析出的是链接（URL）,则把URL交给Scheduler等待抓取。</li>
+</ol>
+</div><div class="cl-preview-section"><h2 id="问题：写爬虫是用多进程好？还是多线程好？-为什么？">问题��写爬虫是用多进程好？还是多线程好？ 为什么？</h2>
+</div><div class="cl-preview-section"><h3 id="面试官想从这道题中考察面试人什么？-1">面试官想从这道题中考察面试人什么？</h3>
+</div><div class="cl-preview-section"><p>这个问题主要看面试者是否知道多进程和多线程的优势所在，并且能够从实际问题去分析爬虫的爬取速率瓶颈。所以，回答这道题，多从面试官那里了解问题的关键所在，然后对症下药。</p>
+</div><div class="cl-preview-section"><h4 id="答案-1">答案</h4>
+</div><div class="cl-preview-section"><p>IO 密集型代码(文件处理、网络爬虫等)，多线程能够有效提升效率(单线程下有 IO 操作会进行 IO 等待，造成不必要的时间浪费，而开启多线程能在线程A等待时，自动切换到线程B，可以不浪费 CPU 的资源，从而能提升程序执行效率)。<strong>在实际的数据采集过程中，既考虑网速和响应的问题，也需要考虑自身机器的硬件情况，来设置多进程或多线程。</strong></p>
+</div><div class="cl-preview-section"><h4 id="拓展-1">拓展</h4>
+</div><div class="cl-preview-section"><p>在上一个章节中，我们提到过<strong>决定是否在Python中使用线程的经验法则是取决于将要执行的任务是CPU密集型还是IO密集型</strong>。如果答案是IO密集型，则可以使用多线程。</p>
+</div><div class="cl-preview-section"><p>由于存在 GIL，Python 解释器一次只能运行一个线程。如果线程正在执行某些 I/O，它将阻止等待数据变为可用（例如，从网络连接或磁盘获得），与此同时，解释器将上下文切换到另一个线程。另一方面，如果线程正在执行 CPU 密集型任务，则其他线程将不得不等待，直到解释器决定运行它们为止。</p>
+</div><div class="cl-preview-section"><p>网络爬网主要是一个面向 I/O 的任务，需要建立 HTTP 连接，发送请求，等待响应。获得响应后，需要花费一些 CPU 来解析它，但是除此之外，它主要是 IO 工作。因此，写爬虫，线程是合适的选择。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eccb7e600015a3611540753.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>我用 Jupyter 写了一个简单的比对单线程和多线程爬取多个网页的 notebook，每次都使用<code>%%time</code>功能去显示运行 Python 代码的时间。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>大家可以使用<code>pip install jupyter</code>去安装Jupyter，然后调用<code>jupyter notebook</code>去运行本地的jupyter服务，随后电脑中的默认浏览器会自动打开一个页面窗口。大家可以创建<code>Python3 Notebook</code>，在新创建的笔记本中插入<code>Cell</code>，每个<code>Cell</code>可以是代码段，也可以是<code>markdown</code>文本。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>使用多个线程可以大大加快许多受 IO 约束的任务。在这里，读取 URL 所花费的大部分时间是由于网络延迟。I/O 密集程序花费了大部分时间来等待输入/输出（类似于向导如何等待他的一个或多个朋友转到滚动条中给出的位置并返回）。这可能是来自网络，数据库，文件甚至用户的 I/O。由于源本身可能需要在传递 I/O 之前执行自己的处理，因此该 I/O 往往会花费大量时间。例如，CPU 的工作速度比网络连接传输数据的速度快得多。</p>
+</div><div class="cl-preview-section"><p>我们再看看多进程对 CPU 密集任务的性能影响。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eccb7f70001fcc611480957.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><blockquote>
+<p>Tips: 感兴趣的同学们，可以动手试试去改线程数和进程数，看看性能有什么影响。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="小结">小结</h2>
+</div><div class="cl-preview-section"><p>随着互联网技术的发展与应用的普及，网络作为信息的载体，编写爬虫程序成为大数据时代信息收集的必备技能。这一节主要简单列举了几个主流的爬虫框架。而如何快速高效地爬取数据，仍然是爬虫最主要的问题。并且着重讲了一下 scrapy 的框架，以及它的分布式组件 scrapy-redis。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5ec3b53e00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/5574">
+						<img src="https://img4.mukewang.com/5381a34000015c5601000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">hello奔奔</h4>
+						<div class="comment-text">小结前面提到多进程对CPU密集任务的影响，但是没有具体内容。</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-23</span>
+						<a href="/read/commentdetail/5574">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="5574" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=69">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '42 描述下Scrapy框架运行的机制',
+					'CID': '1966',
+					'Teacher': 'Jarvinia'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "42 描述下Scrapy框架运行的机制",
+                    desc: "以问带学摸透面试套路",
+                    imgUrl: 'https:https://img.mukewang.com/5e4602ff000143af05400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5e4602ff000143af05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/69',
+                    link: 'https://m.imooc.com/read/69'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

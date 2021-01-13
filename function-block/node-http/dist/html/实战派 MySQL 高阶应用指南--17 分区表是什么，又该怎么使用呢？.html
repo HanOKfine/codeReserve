@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>17 分区表是什么，又该怎么使用呢？</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="打包 MySQL 常用高级技巧特性">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "1754";
+	var chapter_title = "17 分区表是什么，又该怎么使用呢？";
+	var aid = "71";
+	var a_name = "实战派 MySQL 高阶应用指南";
+	var a_price = "68.00";
+	var a_pic = "https://img3.mukewang.com/5e65bd6e0001444005400720.jpg";
+	var userId = 0;
+
+	var column_id = '71';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-04-10&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			17 分区表是什么，又该怎么使用呢？
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img1.mukewang.com/5e8db68d0001962206400426.jpg')"></div>
+	
+	
+		<a href="/read/71">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5c36c432000158e609600960-40-40.jpg" alt="勤一">
+				<h3>实战派 MySQL 高阶应用指南</h3>
+				<p>勤一 · BAT 高级研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">老骥伏枥，志在千里； 烈士暮年，壮心不已。 <p class="author">——曹操</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>随着业务不断发展，用户量不断增加，MySQL 表中保存的数据也会越来越多，而数据量膨胀带来的最大问题是查询和删除数据的性能。为了解决这一问题，MySQL 提出了分区表的概念，即把数据按照某一种规则分开存放，这样无论是查询还是删除都可以仅仅针对数据的子集进行操作，极大的减轻了数据库的压力。这一节里，我们就来看一看分区表的概念，以及应该怎样使用分区表。</p>
+</div><div class="cl-preview-section"><h2 id="分区表概述">1 分区表概述</h2>
+</div><div class="cl-preview-section"><p>数据分区是一种物理（与它相对的概念叫做逻辑）数据库的设计技术，它的目的是为了在特定的 SQL 操作中减少数据读写的总量以降低响应延迟。下面，我们就一起来看看关于它的详细说明、它的优势以及分类。</p>
+</div><div class="cl-preview-section"><h3 id="分区表的说明">1.1 分区表的说明</h3>
+</div><div class="cl-preview-section"><p>分区表并不是生成新的数据表，逻辑上仍然是一张表，但是物理数据却存储在多个文件中。在使用分区表之前，需要先确定你当前的 MySQL 是否支持分区表：</p>
+</div><div class="cl-preview-section"><pre class=" language-sql"><code class="prism  language-sql"><span class="token comment">-- 如果存在 Name 是 partition，Status 是 ACTIVE 的记录，则说明当前的 MySQL 支持分区表</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">SHOW</span> PLUGINS<span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">----------------------------+----------+--------------------+-----------------+---------+</span>
+<span class="token operator">|</span> Name                       <span class="token operator">|</span> <span class="token keyword">Status</span>   <span class="token operator">|</span> <span class="token keyword">Type</span>               <span class="token operator">|</span> Library         <span class="token operator">|</span> License <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">----------------------------+----------+--------------------+-----------------+---------+</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token operator">|</span> <span class="token keyword">partition</span>                  <span class="token operator">|</span> ACTIVE   <span class="token operator">|</span> STORAGE <span class="token keyword">ENGINE</span>     <span class="token operator">|</span> <span class="token boolean">NULL</span>            <span class="token operator">|</span> GPL     <span class="token operator">|</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token operator">+</span><span class="token comment">----------------------------+----------+--------------------+-----------------+---------+</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>MySQL 中的分区表只支持水平分区，即按行拆分，不支持垂直分区（按列拆分）。当然，拆分过程也不是随机的，MySQL 会根据用户定义的规则，将表中的数据行拆分到不同的分区中去。而这里所说的规则也就是分区表所支持的分类。</p>
+</div><div class="cl-preview-section"><h3 id="分区表的分类">1.2 分区表的分类</h3>
+</div><div class="cl-preview-section"><p>目前，MySQL 支持四种分区类型，下面，我先简单地对它们进行概念性讲解：</p>
+</div><div class="cl-preview-section"><ul>
+<li>RANGE：范围分区，这种分类将数据划分为连续的范围</li>
+<li>LIST：枚举分区，这种分类通过预定义的枚举值对数据进行划分</li>
+<li>HASH：哈希分区，这种分类按照哈希函数将数据散列到不同的分区中</li>
+<li>KEY：键值分区，是 HASH 分区的一种延伸，哈希值是由 MySQL 系统来产生</li>
+</ul>
+</div><div class="cl-preview-section"><p>在实际的应用中，RANGE 和 HASH 分区是最常被使用的，所以，对于接下来的内容，应该重点关注这两类分区。</p>
+</div><div class="cl-preview-section"><h3 id="分区表的优势">1.3 分区表的优势</h3>
+</div><div class="cl-preview-section"><p>需要知道，只有当前或预期表的数据量很大（这里的很大确实很难定义，这里我建议不低于100万行）时，才有必要对表进行分区。相对来说，分区之后会带来以下优势：</p>
+</div><div class="cl-preview-section"><ul>
+<li>分区表的数据可以分布在多个磁盘上，所以，它可以容纳更多的数据</li>
+<li>数据管理方便，对于不需要的数据可以直接删除分区</li>
+<li>查询数据不需要全表扫描，只需要查询对应的分区，大大提升检索效率</li>
+<li>涉及聚合（函数）查询时，可以非常简单的做到数据合并</li>
+</ul>
+</div><div class="cl-preview-section"><p>不过，分区表也只是在特定的场景下才会体现出这些优势。所以，不要盲目的使用分区表，确定需求的同时，也要理解分区表的意义。</p>
+</div><div class="cl-preview-section"><h2 id="range-分区">2 RANGE 分区</h2>
+</div><div class="cl-preview-section"><p>RANGE 分区是最常见的分区类型，它的规则和思想非常简单，而且普适性强。这里我首先讲解 RANGE 分区的思想和特性，再以实例的形式讲解应该怎样做到 RANGE 分区。</p>
+</div><div class="cl-preview-section"><h3 id="range-分区的特性">2.1 RANGE 分区的特性</h3>
+</div><div class="cl-preview-section"><p>RANGE 分区基于一个给定连续区间的列值，最常见的是基于时间字段，但是 MySQL 建议分区列最好是整型。所以，如果分区列是时间，需要转换成整型。例如，日期可以使用 TO_DAYS 函数、timestamp 可以使用 UNIX_TIMESTAMP 函数等等。</p>
+</div><div class="cl-preview-section"><p>可以知道，RANGE 分区的规则是非常简单的，下面，我对此做出总结：</p>
+</div><div class="cl-preview-section"><ul>
+<li>需要为每个分区指定分区范围</li>
+<li>所有的分区范围必须保证是连续的，并且不能存在交集</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="range-分区的实践">2.2 RANGE 分区的实践</h3>
+</div><div class="cl-preview-section"><p>关于 RANGE 分区的实践操作，我这里会讲解三个主题：创建分区、删除分区以及新增分区。首先，对于创建分区来说，又分为两种情况：创建表时指定分区、对已经存在的表进行分区。</p>
+</div><div class="cl-preview-section"><p>RANGE 分区最常见的应用是报表型数据存储，由于报表型数据通常按天存储（也可能按小时），那么，时间区间就是最好的分区键。首先，我们先去看创建表时指定分区的案例。如下所示：</p>
+</div><div class="cl-preview-section"><pre class=" language-sql"><code class="prism  language-sql"><span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token punctuation">`</span>ad_unit_cost<span class="token punctuation">`</span> <span class="token punctuation">(</span>
+  <span class="token punctuation">`</span>user_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联所属用户'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>plan_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联推广计划 id'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>unit_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联推广单元 id'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>cost<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'推广单元花费金额'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>date_<span class="token punctuation">`</span> <span class="token keyword">date</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">COMMENT</span> <span class="token string">'数据日期，精确到天，yyyy-MM-dd'</span>
+<span class="token punctuation">)</span> <span class="token keyword">ENGINE</span><span class="token operator">=</span><span class="token keyword">InnoDB</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CHARSET</span><span class="token operator">=</span>utf8
+<span class="token keyword">PARTITION</span> <span class="token keyword">BY</span> RANGE <span class="token punctuation">(</span>TO_DAYS<span class="token punctuation">(</span>date_<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>
+	<span class="token keyword">PARTITION</span> p0 <span class="token keyword">VALUES</span> LESS THAN <span class="token punctuation">(</span>TO_DAYS<span class="token punctuation">(</span><span class="token string">'2019-01-01'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token keyword">PARTITION</span> p1 <span class="token keyword">VALUES</span> LESS THAN <span class="token punctuation">(</span>TO_DAYS<span class="token punctuation">(</span><span class="token string">'2019-02-01'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token keyword">PARTITION</span> p2 <span class="token keyword">VALUES</span> LESS THAN <span class="token punctuation">(</span>TO_DAYS<span class="token punctuation">(</span><span class="token string">'2019-03-01'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token keyword">PARTITION</span> p3 <span class="token keyword">VALUES</span> LESS THAN <span class="token punctuation">(</span>TO_DAYS<span class="token punctuation">(</span><span class="token string">'2019-04-01'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token keyword">PARTITION</span> p4 <span class="token keyword">VALUES</span> LESS THAN <span class="token punctuation">(</span>TO_DAYS<span class="token punctuation">(</span><span class="token string">'2019-05-01'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token keyword">PARTITION</span> p5 <span class="token keyword">VALUES</span> LESS THAN <span class="token punctuation">(</span>TO_DAYS<span class="token punctuation">(</span><span class="token string">'2019-06-01'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token keyword">PARTITION</span> p6 <span class="token keyword">VALUES</span> LESS THAN <span class="token punctuation">(</span>MAXVALUE<span class="token punctuation">)</span>
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>我这里创建了 ad_unit_cost 表，它基于 date_ 按照时间范围分区，除了 p6 之外，其他的分区都很好理解。MAXVALUE 是一个无穷大的值，p6 是一个默认分区，如果插入的数据日期大于等于 2019-06-01（p5 分区所指定的区间上限）时，将会进入到这个分区。但是，需要注意，如果在定义表时没有指定默认分区，插入数据时间在所有分区之外时，将会报错。</p>
+</div><div class="cl-preview-section"><p>另外，可以看到，ad_unit_cost 表并没有定义主键，这并不是我忘记了，而是定义就会报错（你可以试一试给 ad_unit_cost 加上主键，再去创建分区表）。在 MySQL 中，创建分区表有一个限制条件：分区表中的唯一索引（包括主键），都必须包含分区表表达式中的所有列。</p>
+</div><div class="cl-preview-section"><p>创建完了分区表，我们可以去查看分区表的基本信息，这些信息保存在系统库 information_schema 的 PARTITIONS 表中。如下所示：</p>
+</div><div class="cl-preview-section"><pre class=" language-sql"><code class="prism  language-sql">mysql<span class="token operator">&gt;</span> <span class="token keyword">SELECT</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     TABLE_NAME<span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     PARTITION_NAME<span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     PARTITION_METHOD<span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     PARTITION_EXPRESSION<span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     PARTITION_DESCRIPTION
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token keyword">FROM</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     information_schema<span class="token punctuation">.</span><span class="token punctuation">`</span>PARTITIONS<span class="token punctuation">`</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token keyword">WHERE</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     table_name <span class="token operator">=</span> <span class="token string">'ad_unit_cost'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">--------------+----------------+------------------+----------------------+-----------------------+</span>
+<span class="token operator">|</span> TABLE_NAME   <span class="token operator">|</span> PARTITION_NAME <span class="token operator">|</span> PARTITION_METHOD <span class="token operator">|</span> PARTITION_EXPRESSION <span class="token operator">|</span> PARTITION_DESCRIPTION <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">--------------+----------------+------------------+----------------------+-----------------------+</span>
+<span class="token operator">|</span> ad_unit_cost <span class="token operator">|</span> p0             <span class="token operator">|</span> RANGE            <span class="token operator">|</span> TO_DAYS<span class="token punctuation">(</span>date_<span class="token punctuation">)</span>       <span class="token operator">|</span> <span class="token number">737425</span>                <span class="token operator">|</span>
+<span class="token operator">|</span> ad_unit_cost <span class="token operator">|</span> p1             <span class="token operator">|</span> RANGE            <span class="token operator">|</span> TO_DAYS<span class="token punctuation">(</span>date_<span class="token punctuation">)</span>       <span class="token operator">|</span> <span class="token number">737456</span>                <span class="token operator">|</span>
+<span class="token operator">|</span> ad_unit_cost <span class="token operator">|</span> p2             <span class="token operator">|</span> RANGE            <span class="token operator">|</span> TO_DAYS<span class="token punctuation">(</span>date_<span class="token punctuation">)</span>       <span class="token operator">|</span> <span class="token number">737484</span>                <span class="token operator">|</span>
+<span class="token operator">|</span> ad_unit_cost <span class="token operator">|</span> p3             <span class="token operator">|</span> RANGE            <span class="token operator">|</span> TO_DAYS<span class="token punctuation">(</span>date_<span class="token punctuation">)</span>       <span class="token operator">|</span> <span class="token number">737515</span>                <span class="token operator">|</span>
+<span class="token operator">|</span> ad_unit_cost <span class="token operator">|</span> p4             <span class="token operator">|</span> RANGE            <span class="token operator">|</span> TO_DAYS<span class="token punctuation">(</span>date_<span class="token punctuation">)</span>       <span class="token operator">|</span> <span class="token number">737545</span>                <span class="token operator">|</span>
+<span class="token operator">|</span> ad_unit_cost <span class="token operator">|</span> p5             <span class="token operator">|</span> RANGE            <span class="token operator">|</span> TO_DAYS<span class="token punctuation">(</span>date_<span class="token punctuation">)</span>       <span class="token operator">|</span> <span class="token number">737576</span>                <span class="token operator">|</span>
+<span class="token operator">|</span> ad_unit_cost <span class="token operator">|</span> p6             <span class="token operator">|</span> RANGE            <span class="token operator">|</span> TO_DAYS<span class="token punctuation">(</span>date_<span class="token punctuation">)</span>       <span class="token operator">|</span> MAXVALUE              <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">--------------+----------------+------------------+----------------------+-----------------------+</span>
+<span class="token number">7</span> <span class="token keyword">rows</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.02</span> sec<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>搞明白了创建表时指定分区的情况，下面我们来看一看对已经存在的表进行分区。假设我们创建了 ad_unit_cost 表，执行如下语句：</p>
+</div><div class="cl-preview-section"><pre class=" language-sql"><code class="prism  language-sql"><span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token punctuation">`</span>ad_unit_cost<span class="token punctuation">`</span> <span class="token punctuation">(</span>
+  <span class="token punctuation">`</span>user_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联所属用户'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>plan_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联推广计划 id'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>unit_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联推广单元 id'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>cost<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'推广单元花费金额'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>date_<span class="token punctuation">`</span> <span class="token keyword">date</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">COMMENT</span> <span class="token string">'数据日期，精确到天，yyyy-MM-dd'</span>
+<span class="token punctuation">)</span> <span class="token keyword">ENGINE</span><span class="token operator">=</span><span class="token keyword">InnoDB</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CHARSET</span><span class="token operator">=</span>utf8<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>之后，随着数据量不断增长，想要对它按照时间范围进行分区，可以这样：</p>
+</div><div class="cl-preview-section"><pre class=" language-sql"><code class="prism  language-sql"><span class="token keyword">ALTER</span> <span class="token keyword">TABLE</span> ad_unit_cost <span class="token keyword">PARTITION</span> <span class="token keyword">BY</span> RANGE <span class="token punctuation">(</span>TO_DAYS<span class="token punctuation">(</span>date_<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>
+	<span class="token keyword">PARTITION</span> p0 <span class="token keyword">VALUES</span> LESS THAN <span class="token punctuation">(</span>TO_DAYS<span class="token punctuation">(</span><span class="token string">'2019-01-01'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token keyword">PARTITION</span> p1 <span class="token keyword">VALUES</span> LESS THAN <span class="token punctuation">(</span>TO_DAYS<span class="token punctuation">(</span><span class="token string">'2019-02-01'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token keyword">PARTITION</span> p2 <span class="token keyword">VALUES</span> LESS THAN <span class="token punctuation">(</span>TO_DAYS<span class="token punctuation">(</span><span class="token string">'2019-03-01'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token keyword">PARTITION</span> p3 <span class="token keyword">VALUES</span> LESS THAN <span class="token punctuation">(</span>TO_DAYS<span class="token punctuation">(</span><span class="token string">'2019-04-01'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token keyword">PARTITION</span> p4 <span class="token keyword">VALUES</span> LESS THAN <span class="token punctuation">(</span>TO_DAYS<span class="token punctuation">(</span><span class="token string">'2019-05-01'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token keyword">PARTITION</span> p5 <span class="token keyword">VALUES</span> LESS THAN <span class="token punctuation">(</span>TO_DAYS<span class="token punctuation">(</span><span class="token string">'2019-06-01'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+	<span class="token keyword">PARTITION</span> p6 <span class="token keyword">VALUES</span> LESS THAN <span class="token punctuation">(</span>MAXVALUE<span class="token punctuation">)</span>
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>我们使用 <code>ALTER TABLE</code> 的方式实现了同样的效果（查看下 information_schema.<code>PARTITIONS</code> 表，验证下是否和我说的一致），MySQL 会自动按照规则将表中的数据分配到对应的分区中去。</p>
+</div><div class="cl-preview-section"><p>如果创建了多余的分区，实际上用不到，我们也可以手动把它删除。但是，需要注意，删除一个分区将会把它所有的数据都删除，即物理删除。我们可以尝试删除 ad_unit_cost 的 p3 分区，如下所示：</p>
+</div><div class="cl-preview-section"><pre class=" language-sql"><code class="prism  language-sql"><span class="token keyword">ALTER</span> <span class="token keyword">TABLE</span> ad_unit_cost <span class="token keyword">DROP</span> <span class="token keyword">PARTITION</span> p3<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>非常简单，直接 <code>ALTER TABLE DROP PARTITION</code> 就可以了。那么，想要增加分区又应该怎么办呢 ？MySQL 允许我们使用 <code>ALTER TABLE ADD PARTITION</code> 的语法增加分区，执行如下语句：</p>
+</div><div class="cl-preview-section"><pre class=" language-sql"><code class="prism  language-sql">mysql<span class="token operator">&gt;</span> <span class="token keyword">ALTER</span> <span class="token keyword">TABLE</span> ad_unit_cost <span class="token keyword">ADD</span> <span class="token keyword">PARTITION</span><span class="token punctuation">(</span><span class="token keyword">PARTITION</span> p3 <span class="token keyword">VALUES</span> LESS THAN <span class="token punctuation">(</span>TO_DAYS<span class="token punctuation">(</span><span class="token string">'2019-04-01'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ERROR <span class="token number">1481</span> <span class="token punctuation">(</span>HY000<span class="token punctuation">)</span>: MAXVALUE can only <span class="token number">be</span> used <span class="token operator">in</span> <span class="token keyword">last</span> <span class="token keyword">partition</span> definition
+</code></pre>
+</div><div class="cl-preview-section"><p>很遗憾，执行报错了。这是因为对于 RANGE 分区的表，只能添加新分区到分区列表的高端，且当前的分区不能带有 MAXVALUE 分区，否则无法增加分区。所以，增加分区的工作就交给你去完成（创建分区表时不要指定 MAXVALUE 分区即可）。</p>
+</div><div class="cl-preview-section"><h2 id="list-分区">3 LIST 分区</h2>
+</div><div class="cl-preview-section"><p>LIST 分区与 RANGE 分区在语法方面是高度相似的，区别在于 LIST 是枚举值列表的集合，RANGE 是连续的区间值集合。也正是因为 LIST 分区限制枚举值，它在实际的企业级开发中使用的并不多。</p>
+</div><div class="cl-preview-section"><h3 id="list-分区的特性">3.1 LIST 分区的特性</h3>
+</div><div class="cl-preview-section"><p>关于 LIST 分区的特性，你需要知道：创建 LIST 分区时，如果有主键，分区时主键必须在其中，不然就会报错；如果表中没有定义主键，分区则不会有限制。但是，如果定义的是联合主键索引（多个列构成主键），那么，分区键包含某一个列就可以，不要求整体的主键。</p>
+</div><div class="cl-preview-section"><p>最后，建议 LIST 分区键是 NOT NULL 的列，否则插入 NULL 值记录时，如果枚举值列表中没有定义 NULL 则会插入失败。这和之前所说的 RANGE 分区不同，RANGE 分区遇到这种情况，会把记录作为最小分区存储。</p>
+</div><div class="cl-preview-section"><h3 id="list-分区的实践">3.2 LIST 分区的实践</h3>
+</div><div class="cl-preview-section"><p>首先，我们先来使用如下的建表语句创建 LIST 分区表：</p>
+</div><div class="cl-preview-section"><pre class=" language-sql"><code class="prism  language-sql">mysql<span class="token operator">&gt;</span> <span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token punctuation">`</span>ad_unit_cost<span class="token punctuation">`</span> <span class="token punctuation">(</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token punctuation">`</span>id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">AUTO_INCREMENT</span> <span class="token keyword">COMMENT</span> <span class="token string">'主键 id'</span><span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token punctuation">`</span>user_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联所属用户'</span><span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token punctuation">`</span>plan_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联推广计划 id'</span><span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token punctuation">`</span>unit_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联推广单元 id'</span><span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token punctuation">`</span>cost<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'推广单元花费金额'</span><span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token punctuation">`</span>date_<span class="token punctuation">`</span> <span class="token keyword">date</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">COMMENT</span> <span class="token string">'数据日期，精确到天，yyyy-MM-dd'</span><span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token keyword">PRIMARY</span> <span class="token keyword">KEY</span> <span class="token punctuation">(</span><span class="token punctuation">`</span>id<span class="token punctuation">`</span><span class="token punctuation">)</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">)</span> <span class="token keyword">ENGINE</span><span class="token operator">=</span><span class="token keyword">InnoDB</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CHARSET</span><span class="token operator">=</span>utf8
+    <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token keyword">PARTITION</span> <span class="token keyword">BY</span> LIST <span class="token punctuation">(</span>user_id<span class="token punctuation">)</span> <span class="token punctuation">(</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token keyword">PARTITION</span> p0 <span class="token keyword">VALUES</span> <span class="token operator">IN</span> <span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token keyword">PARTITION</span> p1 <span class="token keyword">VALUES</span> <span class="token operator">IN</span> <span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">,</span> <span class="token number">6</span><span class="token punctuation">)</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">-- ERROR 1503 (HY000): A PRIMARY KEY must include all columns in the table's partitioning function</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>遗憾的事情又发生了，创建分区表失败了。这也就是我之前所说的：主键必须在分区键中，否则会报错。所以，我们换一种方式继续创建 LIST 分区表。如下所示：</p>
+</div><div class="cl-preview-section"><pre class=" language-sql"><code class="prism  language-sql">mysql<span class="token operator">&gt;</span> <span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token punctuation">`</span>ad_unit_cost<span class="token punctuation">`</span> <span class="token punctuation">(</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token punctuation">`</span>id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">AUTO_INCREMENT</span> <span class="token keyword">COMMENT</span> <span class="token string">'id'</span><span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token punctuation">`</span>user_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联所属用户'</span><span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token punctuation">`</span>plan_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联推广计划 id'</span><span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token punctuation">`</span>unit_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联推广单元 id'</span><span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token punctuation">`</span>cost<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'推广单元花费金额'</span><span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token punctuation">`</span>date_<span class="token punctuation">`</span> <span class="token keyword">date</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">COMMENT</span> <span class="token string">'数据日期，精确到天，yyyy-MM-dd'</span><span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token keyword">PRIMARY</span> <span class="token keyword">KEY</span> <span class="token punctuation">(</span><span class="token punctuation">`</span>id<span class="token punctuation">`</span><span class="token punctuation">,</span> <span class="token punctuation">`</span>user_id<span class="token punctuation">`</span><span class="token punctuation">)</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">)</span> <span class="token keyword">ENGINE</span><span class="token operator">=</span><span class="token keyword">InnoDB</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CHARSET</span><span class="token operator">=</span>utf8
+    <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token keyword">PARTITION</span> <span class="token keyword">BY</span> LIST <span class="token punctuation">(</span>user_id<span class="token punctuation">)</span> <span class="token punctuation">(</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token keyword">PARTITION</span> p0 <span class="token keyword">VALUES</span> <span class="token operator">IN</span> <span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token keyword">PARTITION</span> p1 <span class="token keyword">VALUES</span> <span class="token operator">IN</span> <span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">,</span> <span class="token number">6</span><span class="token punctuation">)</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">)</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.05</span> sec<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这一次我将主键设置为 id 和 user_id 的联合索引，符合 LIST 分区的限制，创建成功。同样，与 RANGE 分区类似，对于不再需要的分区，也可以直接删除掉（注意，删除分区也会删除该分区中所有的数据）。如下所示：</p>
+</div><div class="cl-preview-section"><pre class=" language-sql"><code class="prism  language-sql"><span class="token keyword">ALTER</span> <span class="token keyword">TABLE</span> ad_unit_cost <span class="token keyword">DROP</span> <span class="token keyword">PARTITION</span> p1<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>LIST 分区表增加分区的限制会比 RANGE 分区表弱一些，它在增加分区时，仅要求不包含现在分区值列表中的任意值。下面，我们验证这个说法并给 ad_unit_cost 表增加新的分区：</p>
+</div><div class="cl-preview-section"><pre class=" language-sql"><code class="prism  language-sql"><span class="token comment">-- 由于原来的 p0 分区中枚举值存在5，所以，重复定义报错了</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">ALTER</span> <span class="token keyword">TABLE</span> ad_unit_cost <span class="token keyword">ADD</span> <span class="token keyword">PARTITION</span><span class="token punctuation">(</span><span class="token keyword">PARTITION</span> p1 <span class="token keyword">VALUES</span> <span class="token operator">IN</span> <span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">,</span> <span class="token number">7</span><span class="token punctuation">,</span> <span class="token number">9</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ERROR <span class="token number">1495</span> <span class="token punctuation">(</span>HY000<span class="token punctuation">)</span>: Multiple definition <span class="token keyword">of</span> same constant <span class="token operator">in</span> list partitioning
+
+<span class="token comment">-- 与原来的分区枚举值不冲突，增加分区成功</span>
+mysql<span class="token operator">&gt;</span> <span class="token keyword">ALTER</span> <span class="token keyword">TABLE</span> ad_unit_cost <span class="token keyword">ADD</span> <span class="token keyword">PARTITION</span><span class="token punctuation">(</span><span class="token keyword">PARTITION</span> p1 <span class="token keyword">VALUES</span> <span class="token operator">IN</span> <span class="token punctuation">(</span><span class="token number">7</span><span class="token punctuation">,</span> <span class="token number">9</span><span class="token punctuation">,</span> <span class="token number">11</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.22</span> sec<span class="token punctuation">)</span>
+Records: <span class="token number">0</span>  Duplicates: <span class="token number">0</span>  <span class="token keyword">Warnings</span>: <span class="token number">0</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="hash-分区">4 HASH 分区</h2>
+</div><div class="cl-preview-section"><p>日常工作中，当我们提到哈希时，你第一时间会想到什么呢 ？我会想到的是负载均衡，把流量、数据等等按照哈希值打散，以减轻系统的整体压力。HASH 分区的应用理念也是类似的，接下来，我们就一起来看看。</p>
+</div><div class="cl-preview-section"><h3 id="hash-分区的特性">4.1 HASH 分区的特性</h3>
+</div><div class="cl-preview-section"><p>HASH 分区与之前介绍的 RANGE 和 LIST 有很大不同，它是基于给定的分区个数，将数据分配到不同的分区中。另外，HASH 分区只能针对整数进行 HASH，对于非整型的字段只能通过表达式（可以是 MySQL 中任意有效的函数或表达式）将其转换为整数。但是，对于非整型的哈希过程会多出一步表达式的计算操作，会影响数据库性能。</p>
+</div><div class="cl-preview-section"><p>HASH 分区的优点在于数据分布的比较均匀（但是，这也要看你实际存储的数据），且可以在分区之后重新定义分区的大小，MySQL 会将数据重新再分配（但是这会严重的影响数据库性能，应该谨慎使用）。</p>
+</div><div class="cl-preview-section"><h3 id="hash-分区的实践">4.2 HASH 分区的实践</h3>
+</div><div class="cl-preview-section"><p>想要创建 HASH 分区表，需要在 <code>CREATE TABLE</code> 语句之后添加 <code>PARTITION BY HASH(expr)</code> 子句，其中，expr 是一个返回一个整数的表达式。下面，我给出一个 HASH 分区表的示例：</p>
+</div><div class="cl-preview-section"><pre class=" language-sql"><code class="prism  language-sql"><span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token punctuation">`</span>ad_unit_cost<span class="token punctuation">`</span> <span class="token punctuation">(</span>
+  <span class="token punctuation">`</span>id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">AUTO_INCREMENT</span> <span class="token keyword">COMMENT</span> <span class="token string">'主键 id'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>user_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联所属用户'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>plan_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联推广计划 id'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>unit_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联推广单元 id'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>cost<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'推广单元花费金额'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>date_<span class="token punctuation">`</span> <span class="token keyword">date</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">COMMENT</span> <span class="token string">'数据日期，精确到天，yyyy-MM-dd'</span><span class="token punctuation">,</span>
+  <span class="token keyword">PRIMARY</span> <span class="token keyword">KEY</span> <span class="token punctuation">(</span><span class="token punctuation">`</span>id<span class="token punctuation">`</span><span class="token punctuation">,</span> <span class="token punctuation">`</span>user_id<span class="token punctuation">`</span><span class="token punctuation">)</span>
+<span class="token punctuation">)</span> <span class="token keyword">ENGINE</span><span class="token operator">=</span><span class="token keyword">InnoDB</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CHARSET</span><span class="token operator">=</span>utf8
+<span class="token keyword">PARTITION</span> <span class="token keyword">BY</span> <span class="token keyword">HASH</span><span class="token punctuation">(</span>user_id<span class="token punctuation">)</span>  
+PARTITIONS <span class="token number">4</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>“PARTITIONS 4” 标识创建4个分区，如果不显示的指定 PARTITIONS 子句，则默认分区数是1。但是，MySQL 不允许只写 PARTITIONS，而不指定分区数。执行创建语句完成创建之后，我们可以验证下结果是否符合预期：</p>
+</div><div class="cl-preview-section"><pre class=" language-sql"><code class="prism  language-sql">mysql<span class="token operator">&gt;</span> <span class="token keyword">SELECT</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     TABLE_NAME<span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     PARTITION_NAME<span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     PARTITION_METHOD<span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     PARTITION_EXPRESSION<span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     PARTITION_DESCRIPTION
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token keyword">FROM</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     information_schema<span class="token punctuation">.</span><span class="token punctuation">`</span>PARTITIONS<span class="token punctuation">`</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token keyword">WHERE</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>     table_name <span class="token operator">=</span> <span class="token string">'ad_unit_cost'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">--------------+----------------+------------------+----------------------+-----------------------+</span>
+<span class="token operator">|</span> TABLE_NAME   <span class="token operator">|</span> PARTITION_NAME <span class="token operator">|</span> PARTITION_METHOD <span class="token operator">|</span> PARTITION_EXPRESSION <span class="token operator">|</span> PARTITION_DESCRIPTION <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">--------------+----------------+------------------+----------------------+-----------------------+</span>
+<span class="token operator">|</span> ad_unit_cost <span class="token operator">|</span> p0             <span class="token operator">|</span> <span class="token keyword">HASH</span>             <span class="token operator">|</span> user_id              <span class="token operator">|</span> <span class="token boolean">NULL</span>                  <span class="token operator">|</span>
+<span class="token operator">|</span> ad_unit_cost <span class="token operator">|</span> p1             <span class="token operator">|</span> <span class="token keyword">HASH</span>             <span class="token operator">|</span> user_id              <span class="token operator">|</span> <span class="token boolean">NULL</span>                  <span class="token operator">|</span>
+<span class="token operator">|</span> ad_unit_cost <span class="token operator">|</span> p2             <span class="token operator">|</span> <span class="token keyword">HASH</span>             <span class="token operator">|</span> user_id              <span class="token operator">|</span> <span class="token boolean">NULL</span>                  <span class="token operator">|</span>
+<span class="token operator">|</span> ad_unit_cost <span class="token operator">|</span> p3             <span class="token operator">|</span> <span class="token keyword">HASH</span>             <span class="token operator">|</span> user_id              <span class="token operator">|</span> <span class="token boolean">NULL</span>                  <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">--------------+----------------+------------------+----------------------+-----------------------+</span>
+<span class="token number">4</span> <span class="token keyword">rows</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>正如我之前所说，可以给 HASH 分区表重新指定分区大小。可以执行以下语句，将 ad_unit_cost 表的分区个数增加到10个（自行验证结果）：</p>
+</div><div class="cl-preview-section"><pre class=" language-sql"><code class="prism  language-sql">mysql<span class="token operator">&gt;</span> <span class="token keyword">ALTER</span> <span class="token keyword">TABLE</span> ad_unit_cost <span class="token keyword">ADD</span> <span class="token keyword">PARTITION</span> PARTITIONS <span class="token number">6</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.80</span> sec<span class="token punctuation">)</span>
+Records: <span class="token number">0</span>  Duplicates: <span class="token number">0</span>  <span class="token keyword">Warnings</span>: <span class="token number">0</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>那么，如果想要缩减分区的个数呢 ？假如我只想让 ad_unit_cost 表保留2个分区，则可以使用 COALESCE 关键字。如下所示（同样，自行去验证结果）：</p>
+</div><div class="cl-preview-section"><pre class=" language-sql"><code class="prism  language-sql">mysql<span class="token operator">&gt;</span> <span class="token keyword">ALTER</span> <span class="token keyword">TABLE</span> ad_unit_cost <span class="token keyword">COALESCE</span> <span class="token keyword">PARTITION</span> <span class="token number">2</span><span class="token punctuation">;</span>
+Query OK<span class="token punctuation">,</span> <span class="token number">0</span> <span class="token keyword">rows</span> affected <span class="token punctuation">(</span><span class="token number">0.55</span> sec<span class="token punctuation">)</span>
+Records: <span class="token number">0</span>  Duplicates: <span class="token number">0</span>  <span class="token keyword">Warnings</span>: <span class="token number">0</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="key-分区">5 KEY 分区</h2>
+</div><div class="cl-preview-section"><p>相对来说，在实际的应用中，KEY 分区的出场率是最低频的。KEY 分区的语法和思想与 HASH 分区是极为相似的，只是在分区算法的实现上不同。接下来，一起简单的看一看吧。</p>
+</div><div class="cl-preview-section"><h3 id="key-分区的特性">5.1 KEY 分区的特性</h3>
+</div><div class="cl-preview-section"><p>由于 KEY 分区与 HASH 分区是类似的，所以，对于它的特性讲解主要集中在与 HASH 分区特性的对比。</p>
+</div><div class="cl-preview-section"><ul>
+<li>KEY 分区对象必须为数据列，不能是基于列的表达式</li>
+<li>如果表中存在主键或唯一键，KEY 分区的分区键可以不指定；如果没有，必须指定</li>
+<li>HASH 分区使用 MOD 算法实现分区，而 KEY 分区则使用的是 MD5</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="key-分区的实践">5.2 KEY 分区的实践</h3>
+</div><div class="cl-preview-section"><p>如果我们想要创建的 KEY 分区表定义了主键，则分区键可以不指定，默认即为主键。如下所示：</p>
+</div><div class="cl-preview-section"><pre class=" language-sql"><code class="prism  language-sql"><span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token punctuation">`</span>ad_unit_cost<span class="token punctuation">`</span> <span class="token punctuation">(</span>
+  <span class="token punctuation">`</span>id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">AUTO_INCREMENT</span> <span class="token keyword">COMMENT</span> <span class="token string">'主键 id'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>user_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联所属用户'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>plan_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联推广计划 id'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>unit_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联推广单元 id'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>cost<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'推广单元花费金额'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>date_<span class="token punctuation">`</span> <span class="token keyword">date</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">COMMENT</span> <span class="token string">'数据日期，精确到天，yyyy-MM-dd'</span><span class="token punctuation">,</span>
+  <span class="token keyword">PRIMARY</span> <span class="token keyword">KEY</span> <span class="token punctuation">(</span><span class="token punctuation">`</span>id<span class="token punctuation">`</span><span class="token punctuation">)</span>
+<span class="token punctuation">)</span> <span class="token keyword">ENGINE</span><span class="token operator">=</span><span class="token keyword">InnoDB</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CHARSET</span><span class="token operator">=</span>utf8
+<span class="token keyword">PARTITION</span> <span class="token keyword">BY</span> <span class="token keyword">KEY</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+PARTITIONS <span class="token number">4</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>但是，如果既没有主键，也没有唯一键，不指定的情况下就会报错。可以看到如下建表示例：</p>
+</div><div class="cl-preview-section"><pre class=" language-sql"><code class="prism  language-sql">mysql<span class="token operator">&gt;</span> <span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token punctuation">`</span>ad_unit_cost<span class="token punctuation">`</span> <span class="token punctuation">(</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token punctuation">`</span>id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">AUTO_INCREMENT</span> <span class="token keyword">COMMENT</span> <span class="token string">'主键 id'</span><span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token punctuation">`</span>user_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联所属用户'</span><span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token punctuation">`</span>plan_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联推广计划 id'</span><span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token punctuation">`</span>unit_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联推广单元 id'</span><span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token punctuation">`</span>cost<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'推广单元花费金额'</span><span class="token punctuation">,</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span>   <span class="token punctuation">`</span>date_<span class="token punctuation">`</span> <span class="token keyword">date</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">COMMENT</span> <span class="token string">'数据日期，精确到天，yyyy-MM-dd'</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">)</span> <span class="token keyword">ENGINE</span><span class="token operator">=</span><span class="token keyword">InnoDB</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CHARSET</span><span class="token operator">=</span>utf8
+    <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token keyword">PARTITION</span> <span class="token keyword">BY</span> <span class="token keyword">KEY</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token operator">-</span><span class="token operator">&gt;</span> PARTITIONS <span class="token number">4</span><span class="token punctuation">;</span>
+ERROR <span class="token number">1075</span> <span class="token punctuation">(</span><span class="token number">42000</span><span class="token punctuation">)</span>: Incorrect <span class="token keyword">table</span> definition<span class="token punctuation">;</span> there can <span class="token number">be</span> only one auto <span class="token keyword">column</span> <span class="token operator">and</span> it must <span class="token number">be</span> defined <span class="token keyword">as</span> <span class="token number">a</span> <span class="token keyword">key</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这种情况下，想要正确的创建 KEY 分区表，就必须显示的指定分区键。创建表的语句可以修改为（可以自行完成表的创建以及验证结果是否符合预期）：</p>
+</div><div class="cl-preview-section"><pre class=" language-sql"><code class="prism  language-sql"><span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token punctuation">`</span>ad_unit_cost<span class="token punctuation">`</span> <span class="token punctuation">(</span>
+  <span class="token punctuation">`</span>user_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联所属用户'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>plan_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联推广计划 id'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>unit_id<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'关联推广单元 id'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>cost<span class="token punctuation">`</span> <span class="token keyword">bigint</span><span class="token punctuation">(</span><span class="token number">20</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">DEFAULT</span> <span class="token string">'0'</span> <span class="token keyword">COMMENT</span> <span class="token string">'推广单元花费金额'</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>date_<span class="token punctuation">`</span> <span class="token keyword">date</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span> <span class="token keyword">COMMENT</span> <span class="token string">'数据日期，精确到天，yyyy-MM-dd'</span>
+<span class="token punctuation">)</span> <span class="token keyword">ENGINE</span><span class="token operator">=</span><span class="token keyword">InnoDB</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CHARSET</span><span class="token operator">=</span>utf8
+<span class="token keyword">PARTITION</span> <span class="token keyword">BY</span> <span class="token keyword">KEY</span><span class="token punctuation">(</span>user_id<span class="token punctuation">)</span>
+PARTITIONS <span class="token number">4</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>由于 HASH 分区与 KEY 分区的思想是一样的，所以，对于分区数量的管理（增加或减少）它们也保持一致。我们可以使用 <code>COALESCE</code> 减少分区的数量，也可以使用 <code>ALTER TABLE ADD PARTITION</code> 增加分区的数量。</p>
+</div><div class="cl-preview-section"><h2 id="总结">6 总结</h2>
+</div><div class="cl-preview-section"><p>分区表的使用频率确实是不高的，它通常仅仅应用于业务系统的报表型（OLAP）应用。但是，它却是 MySQL 对大数据量存储、管理的一种解决方案，也是需要你去理解和掌握的。至少要知道这个概念、MySQL 提供了这样一种技术，等遇到此类问题时，才不至于措手不及，一筹莫展。</p>
+</div><div class="cl-preview-section"><h2 id="问题">7 问题</h2>
+</div><div class="cl-preview-section"><p>你能给 RANGE 分区表增加新的分区吗 ？你是怎么做的呢 ？<br><br>
+如果我只是想清空分区，但是不删除分区，你知道应该怎么做吗 ？<br><br>
+你觉得对于分区表来说，查询会带来什么好处呢 ？可以使用 EXPLAIN 语句验证下你的想法。<br><br>
+你在工作中使用过分区表吗 ？是怎么使用的呢 ？或者谈一谈你理解的分区表的应用场景 ？</p>
+</div><div class="cl-preview-section"><h2 id="参考资料">8 参考资料</h2>
+</div><div class="cl-preview-section"><p>《高性能 MySQL（第三版）》<br><br>
+<a href="https://dev.mysql.com/doc/refman/5.7/en/partitioning.html">MySQL 官方文档：Partitioning</a></p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5e8db69200011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=71">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '17 分区表是什么，又该怎么使用呢？',
+					'CID': '1754',
+					'Teacher': '勤一'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "17 分区表是什么，又该怎么使用呢？",
+                    desc: "打包 MySQL 常用高级技巧特性",
+                    imgUrl: 'https:https://img3.mukewang.com/5e65bd6e0001444005400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5e65bd6e0001444005400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/71',
+                    link: 'https://m.imooc.com/read/71'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

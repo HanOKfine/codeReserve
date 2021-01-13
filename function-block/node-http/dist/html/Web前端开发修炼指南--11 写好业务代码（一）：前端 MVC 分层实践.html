@@ -1,0 +1,800 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>11 写好业务代码（一）：前端 MVC 分层实践</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="前端进阶必备，未来少走弯路">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "1662";
+	var chapter_title = "11 写好业务代码（一）：前端 MVC 分层实践";
+	var aid = "72";
+	var a_name = "Web前端开发修炼指南";
+	var a_price = "58.00";
+	var a_pic = "https://img4.mukewang.com/5e6af0f50001b61d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '72';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-04-22&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			11 写好业务代码（一）：前端 MVC 分层实践
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img4.mukewang.com/5e6edd5a000148d706400359.jpg')"></div>
+	
+	
+		<a href="/read/72">
+			<div class="course-entry">
+				<img src="https://img1.mukewang.com/5e6c7ecc00012eaa10000884-40-40.jpg" alt="sh22n">
+				<h3>Web前端开发修炼指南</h3>
+				<p>sh22n · 前携程高级前端工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">每个人都是自己命运的主宰。<p class="author">——斯蒂尔斯</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>前面我们讲了 JavaScript 面向对象编程，这篇文章我们会介绍一下面向对象中的经典编程模式 —— MVC。</p>
+</div><div class="cl-preview-section"><p>MVC、MVVM、MVP 这三个概念在前端领域是老生常谈了，但这节课不会只在概念层面讲述三者的区别，而是更偏向实践、从编写业务代码层面讨论一下 MVC 模式在前端开发中的意思。</p>
+</div><div class="cl-preview-section"><p>在 Angualr、Vue 等 MVVM 框架出现前，最火的前端框架当属 Backbone，这是一个典型的 MVC 框架。也许你会说 Backbone 不是过时了吗？那还在前端中讨论 MVC 还有什么意义？</p>
+</div><div class="cl-preview-section"><p>Backbone 的确过时了，但是过时是因为 Backbone 的 MVC 实现方式过时了，并非是 MVC 思想过时了。如果以 Vue/React 作为 View 层，Vuex/Redux 作为 Model 层，那么就可以实现新的 MVC 框架。</p>
+</div><div class="cl-preview-section"><p>MVC 分层有助于管理复杂的应用程序，因为你可以在一个时间内专门关注一个方面。例如，你可以在不依赖业务逻辑的情况下专注于视图设计。同时也让应用程序的测试更加容易。</p>
+</div><div class="cl-preview-section"><h2 id="mvc-的由来">MVC 的由来</h2>
+</div><div class="cl-preview-section"><p>MVC 是一种架构模式，最早由施乐的 Trygve Reenskaug 在 1978 年提出，原本是为了给程序语言 Smalltalk 提供架构，大大提高了程序的后期可维护性。</p>
+</div><div class="cl-preview-section"><p>那么什么是 MVC 呢？相信大家都对 MVC 比较熟悉了，不管是 Java 中的 spring mvc，还是前端里面的 Backbone，这些都是应用很广泛的 MVC 框架。</p>
+</div><div class="cl-preview-section"><p>我这里引用一下维基百科的解释：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>MVC 模式（Model–view–controller）是软件工程中的一种软件架构模式，把软件系统分为三个基本部分：模型（Model）、视图（View）和控制器（Controller）。</p>
+</blockquote>
+</div><div class="cl-preview-section"><blockquote>
+<p>MVC 模式最早由 Trygve Reenskaug 在 1978 年提出，是施乐帕罗奥多研究中心（Xerox PARC）在 20 世纪 80 年代为程序语言 Smalltalk 发明的一种软件架构。MVC 模式的目的是实现一种动态的程序设计，使后续对程序的修改和扩展简化，并且使程序某一部分的重复利用成为可能。除此之外，此模式通过对复杂度的简化，使程序结构更加直观。软件系统通过对自身基本部分分离的同时也赋予了各个基本部分应有的功能。专业人员可以通过自身的专长分组：</p>
+</blockquote>
+</div><div class="cl-preview-section"><blockquote>
+<p>控制器（Controller）：负责转发请求，对请求进行��理。<br>
+视图（View）：界面设计人员进行图形界面设计。<br>
+模型（Model）：程序员编写程序应有的功能（实现算法等等）、数据库专家进行数据管理和数据库设计 (可以实现具体的功能)。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>因此，我们可以知道 MVC 是由 Controller、Model 和 View 三部分组成，这三部分各司其职。</p>
+</div><div class="cl-preview-section"><ol>
+<li><strong>View:</strong> 展示给用户的界面，可以接受用户输入</li>
+<li><strong>Model:</strong> 存放应用的所有数据，数据来源可能是接口、本地缓存等等</li>
+<li><strong>Controller:</strong> 负责连接 Model 和 View，从 View 获得输入，修改相关 Model 的数据后，再去通知相关 View 进行更新</li>
+</ol>
+</div><div class="cl-preview-section"><h2 id="不同版本的-mvc">不同版本的 MVC</h2>
+</div><div class="cl-preview-section"><p>对于 MVC，业界有不同的定义，比如就有微软的版本、苹果的版本等等。</p>
+</div><div class="cl-preview-section"><h3 id="苹果版本">苹果版本</h3>
+</div><div class="cl-preview-section"><p>苹果版本的 MVC：</p>
+</div><div class="cl-preview-section"><p><img src="http://static.zybuluo.com/gyyin/162q9bb3q9zoufijj7w4vu4l/image_1df5q2h5q1t9b156vda41qkqfq19.png" alt="image_1df5q2h5q1t9b156vda41qkqfq19.png-35.4kB"></p>
+</div><div class="cl-preview-section"><p>整理一下苹果版本的 MVC，是这样的：</p>
+</div><div class="cl-preview-section"><ol>
+<li>View 发送用户的动作给 Controller</li>
+<li>Controller 去更新对应的 Model</li>
+<li>Model 改变后会去通知 Controller 更新 View</li>
+<li>Controller 收到通知后修改 View</li>
+</ol>
+</div><div class="cl-preview-section"><p>这个版本的 MVC 模式比较符合我们前端开发的直觉，因此本文也以苹果的版本来讲解。</p>
+</div><div class="cl-preview-section"><h3 id="微软版本">微软版本</h3>
+</div><div class="cl-preview-section"><p>微软的版本（图片来自微软 <a href="http://ASP.NET">ASP.NET</a> core 官网）：</p>
+</div><div class="cl-preview-section"><p><img src="http://static.zybuluo.com/gyyin/i05n4flfzsrdt1lfw2hsbxld/image_1df5q84hg1l1ftc2h1s1mgrsmdm.png" alt="image_1df5q84hg1l1ftc2h1s1mgrsmdm.png-38.8kB"></p>
+</div><div class="cl-preview-section"><p>微软的版本以 <a href="http://ASP.NET">ASP.NET</a> core MVC 为实现，可以这样理解：</p>
+</div><div class="cl-preview-section"><ol>
+<li>用户请求被路由到 Controller</li>
+<li>Controller 到 Model 执行用户操作和查询结果</li>
+<li>Controller 选择要显示给用户的 View</li>
+<li>Controller 为 View 提供所需的 Model 数据</li>
+</ol>
+</div><div class="cl-preview-section"><p>可以看得出来，微软版本的 MVC 比较难理解，因此这里不做太多介绍。</p>
+</div><div class="cl-preview-section"><h3 id="阮一峰版">阮一峰版</h3>
+</div><div class="cl-preview-section"><p>阮一峰的版本：</p>
+</div><div class="cl-preview-section"><p><img src="http://static.zybuluo.com/gyyin/b4fufprdlc2yt4ko4jrjr08u/image_1dfa1ubm37e7gevk03hb917p113.png" alt="image_1dfa1ubm37e7gevk03hb917p113.png-31kB"></p>
+</div><div class="cl-preview-section"><p>阮一峰版本的 MVC 可以这样理解：</p>
+</div><div class="cl-preview-section"><ol>
+<li>用户和应用交互</li>
+<li>控制器的事件处理器被触发</li>
+<li>控制器从模型中请求数据，并将其交给视图</li>
+<li>视图将数据呈现给用户</li>
+</ol>
+</div><div class="cl-preview-section"><h2 id="原生-js-实现-mvc">原生 JS 实现 MVC</h2>
+</div><div class="cl-preview-section"><p>这里我们使用原生 JS 来实现一个 MVC，我们以一个 todoList 为例子，将会用到 jQuery 和 Underscore 两个库，在业务代码中也可以使用这样的形式来组织项目。<br>
+首先，对于项目来说，我们应该以 app.js 为入口，这是一个业务模块。</p>
+</div><div class="cl-preview-section"><h3 id="model">Model</h3>
+</div><div class="cl-preview-section"><p>Model.js 对应 Model，这里定义了应用的数据模型，只做提供数据存储和修改。<br>
+这里还实现了一个发布-订阅功能，在 register 中保存待渲染的视图，在 notify 中通知所有相关视图重新渲染。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js">app<span class="token punctuation">.</span>Model <span class="token operator">=</span> <span class="token keyword">class</span> <span class="token class-name">Model</span> <span class="token punctuation">{</span>
+    <span class="token function">constructor</span><span class="token punctuation">(</span>todos <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>todos <span class="token operator">=</span> todos<span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>views <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">findTodoById</span><span class="token punctuation">(</span>id<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 根据id查找</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">getAll</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>todos<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">addTodo</span><span class="token punctuation">(</span>todo<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>todos<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>todo<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">updateTodo</span><span class="token punctuation">(</span>id<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 更新todo信息</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">removeTodoById</span><span class="token punctuation">(</span>id<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 根据id删除</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">getActiveTodo</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 拿到未完成的</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">getCompletedTodo</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 拿到已完成的</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">toggleStatusById</span><span class="token punctuation">(</span>id<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 这里可以对view做一个注册</span>
+    <span class="token function">register</span><span class="token punctuation">(</span>view<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>views<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>view<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 对所有监听的view进行通知</span>
+    <span class="token function">notify</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">var</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> views<span class="token punctuation">.</span>length<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span>views<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">render</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="view">View</h3>
+</div><div class="cl-preview-section"><p>View.js 对应 View 层，提供数据进行视图渲染，一般是 html 模板文件，也可以是 React/View 等现代化 UI 框架。这里我们以 underscore template 来举例子，希望大家提前了解一下 underscore template 的语法。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token comment">// 这是underscore的模板语法</span>
+<span class="token operator">&lt;</span>script type<span class="token operator">=</span><span class="token string">"text/template"</span> id<span class="token operator">=</span><span class="token string">"tpl"</span><span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span>ul id<span class="token operator">=</span><span class="token string">'todoList'</span><span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span><span class="token operator">%</span> <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">var</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> model<span class="token punctuation">.</span>todos<span class="token punctuation">.</span>length<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token operator">%</span><span class="token operator">&gt;</span>
+            <span class="token operator">&lt;</span>li data<span class="token operator">-</span>id<span class="token operator">=</span><span class="token string">'&lt;%=model.todos[i].id%&gt;'</span> <span class="token keyword">class</span><span class="token operator">=</span><span class="token string">'&lt;% model.todos[i].isActive ? '</span>active<span class="token string">' : '</span><span class="token string">''</span><span class="token operator">%</span><span class="token operator">&gt;</span>
+                <span class="token operator">&lt;</span><span class="token operator">%=</span>model<span class="token punctuation">.</span>todos<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>name<span class="token operator">%</span><span class="token operator">&gt;</span>
+            <span class="token operator">&lt;</span><span class="token operator">/</span>li<span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span><span class="token operator">%</span> <span class="token punctuation">}</span> <span class="token operator">%</span><span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span><span class="token operator">/</span>ul<span class="token operator">&gt;</span>
+<span class="token operator">&lt;</span><span class="token operator">/</span>script<span class="token operator">&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token comment">// 在render方法中对模板进行重新渲染</span>
+app<span class="token punctuation">.</span>View <span class="token operator">=</span> <span class="token keyword">class</span> <span class="token class-name">View</span> <span class="token punctuation">{</span>
+    <span class="token function">render</span><span class="token punctuation">(</span>model<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">const</span> template <span class="token operator">=</span> _<span class="token punctuation">.</span><span class="token function">template</span><span class="token punctuation">(</span><span class="token function">$</span><span class="token punctuation">(</span><span class="token string">'#tpl'</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">html</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> model<span class="token punctuation">)</span>
+        <span class="token function">$</span><span class="token punctuation">(</span><span class="token string">'body'</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">html</span><span class="token punctuation">(</span>template<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="controller">Controller</h3>
+</div><div class="cl-preview-section"><p>Controller.js 对应 Controller，主要是 Model 和 View 之间的纽带，提供事件绑定以及提醒视图渲染等功能。<br>
+在 events 属性中，我们将需要绑定的 DOM 元素、事件以及回调函数用键值对的形式进行映射，在 delegateEvents 中解析后进行事件绑定。这样的好处就是可以很清晰地看到项目中所有的绑定事件，后期维护起来更容易。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> events <span class="token operator">=</span> <span class="token punctuation">{</span>
+    <span class="token string">"click li"</span><span class="token punctuation">:</span> <span class="token string">"toggle"</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 解析上面的 events 属性</span>
+<span class="token keyword">const</span> <span class="token function">delegateEvents</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 正则表达式分组捕获</span>
+    <span class="token keyword">var</span> eventSplitter <span class="token operator">=</span>  <span class="token regex">/^(\w+)\s*(.*)$/</span><span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">var</span> key <span class="token keyword">in</span> events<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">var</span> methodName <span class="token operator">=</span> events<span class="token punctuation">[</span>key<span class="token punctuation">]</span><span class="token punctuation">;</span>
+        <span class="token keyword">var</span> match <span class="token operator">=</span> key<span class="token punctuation">.</span><span class="token function">match</span><span class="token punctuation">(</span>eventSplitter<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 解析出来的事件名和绑定的 DOM</span>
+        <span class="token keyword">var</span> eventName <span class="token operator">=</span> match<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> 
+            selector <span class="token operator">=</span> match<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+        <span class="token comment">// 如果没有要绑定的 DOM，那么绑定在根节点上</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>selector <span class="token operator">===</span> <span class="token string">''</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            el<span class="token punctuation">.</span><span class="token function">bind</span><span class="token punctuation">(</span>eventName<span class="token punctuation">,</span> methodName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+            el<span class="token punctuation">.</span><span class="token function">delegate</span><span class="token punctuation">(</span>selector<span class="token punctuation">,</span> eventName<span class="token punctuation">,</span> methodName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+</code></pre>
+</div><div class="cl-preview-section"><p>同时，在初始化以及每次操作之后，我们可以选择手动通知（执行 notify 方法）相关视图进行渲染。<br>
+最终的代码实现如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js">app<span class="token punctuation">.</span>Controller <span class="token operator">=</span> <span class="token keyword">class</span> <span class="token class-name">Controller</span> <span class="token punctuation">{</span>
+    events <span class="token operator">=</span> <span class="token punctuation">{</span>
+        <span class="token string">"click li"</span><span class="token punctuation">:</span> <span class="token string">"toggle"</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">constructor</span><span class="token punctuation">(</span>el<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>el <span class="token operator">=</span> el<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">init</span><span class="token punctuation">(</span>view<span class="token punctuation">,</span> model<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>view <span class="token operator">=</span> view<span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>model <span class="token operator">=</span> model<span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>model<span class="token punctuation">.</span><span class="token function">register</span><span class="token punctuation">(</span>view<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>model<span class="token punctuation">.</span><span class="token function">notify</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">delegateEvents</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 解析上面的 events 属性</span>
+    <span class="token function">delegateEvents</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">var</span> eventSplitter<span class="token punctuation">:</span> <span class="token regex">/^(\w+)\s*(.*)$/</span><span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">var</span> key <span class="token keyword">in</span> <span class="token keyword">this</span><span class="token punctuation">.</span>events<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">var</span> methodName <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>events<span class="token punctuation">[</span>key<span class="token punctuation">]</span><span class="token punctuation">;</span>
+            <span class="token keyword">var</span> match <span class="token operator">=</span> key<span class="token punctuation">.</span><span class="token function">match</span><span class="token punctuation">(</span>eventSplitter<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">var</span> eventName <span class="token operator">=</span> match<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> selector <span class="token operator">=</span> match<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>selector <span class="token operator">===</span> <span class="token string">''</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span>el<span class="token punctuation">.</span><span class="token function">bind</span><span class="token punctuation">(</span>eventName<span class="token punctuation">,</span> method<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span>el<span class="token punctuation">.</span><span class="token function">delegate</span><span class="token punctuation">(</span>selector<span class="token punctuation">,</span> eventName<span class="token punctuation">,</span> method<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">toggle</span><span class="token punctuation">(</span>event<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">const</span> id <span class="token operator">=</span> event<span class="token punctuation">.</span>dataset<span class="token punctuation">.</span>id<span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>view<span class="token punctuation">.</span><span class="token function">toggleStatusById</span><span class="token punctuation">(</span>id<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>model<span class="token punctuation">.</span><span class="token function">notify</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// app.js</span>
+<span class="token keyword">new</span> <span class="token class-name">TodoController</span><span class="token punctuation">(</span><span class="token string">'#todoList'</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">init</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">app<span class="token punctuation">.</span>View</span><span class="token punctuation">(</span><span class="token punctuation">)</span>）<span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">app<span class="token punctuation">.</span>Model</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这样我们就实现了一个完整的 MVC 骨架。这种形式可以适用于很多项目，甚至不需要依赖框架，后续还可以将 underscore template 替换成 React/Vue 等框架，增加了项目的可维护性，层次结构更加清晰。</p>
+</div><div class="cl-preview-section"><h2 id="其他分层">其他分层</h2>
+</div><div class="cl-preview-section"><p>如果遇到更复杂的业务逻辑，上面的 MVC 分层是远远不够的，部分逻辑可以从 Controller 和 Model 层中剥离出来，也许你还需要下面的这些分层。</p>
+</div><div class="cl-preview-section"><h3 id="service">Service</h3>
+</div><div class="cl-preview-section"><p>Service 层一般是封装了和请求数据相关的操作，比如 Ajax 请求、localStorage、indexDB，甚至是 JS Bridge等等。<br>
+比如向后端请求数据我们可以这么来写：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">Service</span> <span class="token punctuation">{</span>
+    <span class="token keyword">async</span> <span class="token function">getList</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">const</span> <span class="token punctuation">{</span>
+            data <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+        <span class="token punctuation">}</span> <span class="token operator">=</span> <span class="token keyword">await</span> <span class="token function">http</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+            method<span class="token punctuation">:</span> <span class="token string">'post'</span><span class="token punctuation">,</span>
+            url<span class="token punctuation">:</span> <span class="token string">'/getList'</span><span class="token punctuation">,</span>
+            data<span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> data<span class="token punctuation">.</span>list<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在需要用到这个接口的地方（一般是 Controller 层）导入对应的 Service 文件，将接口请求的操作放到 Service 中统一处理，方便后期维护。</p>
+</div><div class="cl-preview-section"><h3 id="format">format</h3>
+</div><div class="cl-preview-section"><p>在将数据请求回来后，往往会出现接口的数据和前端要展示的数据结构不一致的情况。这个时候，从 <code>api -&gt; model</code> 就需要一层额外的转化，这就是 format 层存在的意义。<br>
+理论上，format 函数全都应该是纯函数，接收从接口获取的数据，返回需要传给 model 的数据。<br>
+下面举个例子，这是一个将接口返回的时间戳转换为 YYYY-MM-DD 格式日期的 format 函数。</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">const</span> <span class="token function-variable function">formatDate</span> <span class="token operator">=</span> <span class="token punctuation">(</span>datespan<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">let</span> date <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Date</span><span class="token punctuation">(</span>datespan<span class="token punctuation">)</span><span class="token punctuation">,</span>
+        year <span class="token operator">=</span> date<span class="token punctuation">.</span><span class="token function">getFullYear</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        month <span class="token operator">=</span> date<span class="token punctuation">.</span><span class="token function">getMonth</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">,</span>
+        day <span class="token operator">=</span> date<span class="token punctuation">.</span><span class="token function">getDate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">const</span> <span class="token function-variable function">addPrefix</span> <span class="token operator">=</span> <span class="token punctuation">(</span>num<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> num <span class="token operator">&gt;</span> <span class="token number">9</span> <span class="token operator">?</span> num <span class="token punctuation">:</span> <span class="token template-string"><span class="token string">`0</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>num<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">`</span></span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    month <span class="token operator">=</span> <span class="token function">addPrefix</span><span class="token punctuation">(</span>month <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    day <span class="token operator">=</span> <span class="token function">addPrefix</span><span class="token punctuation">(</span>day<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token template-string"><span class="token string">`</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>year<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">-</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>month<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">-</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>day<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">`</span></span>
+<span class="token punctuation">}</span>
+<span class="token function">formatDate</span><span class="token punctuation">(</span><span class="token number">1572781090844</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// "2019-11-03"</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="utils">utils</h3>
+</div><div class="cl-preview-section"><p>除了数据请求和格式化之外，往往项目中也会出现一些共用的工具函数，比如日期格式化、埋点、DOM 相关的方法等等。</p>
+</div><div class="cl-preview-section"><h3 id="目录">目录</h3>
+</div><div class="cl-preview-section"><p>因此，一个完整的项目目录结构应当是这样的（加号代表文件夹，减号代表文件）：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token operator">+</span> project
+    <span class="token operator">+</span> pages
+        <span class="token operator">+</span> home
+            <span class="token operator">+</span> css
+                <span class="token operator">-</span> index<span class="token punctuation">.</span>scss
+            <span class="token operator">-</span> model<span class="token punctuation">.</span>js
+            <span class="token operator">-</span> view<span class="token punctuation">.</span>js
+            <span class="token operator">-</span> controller<span class="token punctuation">.</span>js
+        <span class="token operator">-</span> app<span class="token punctuation">.</span>js
+    <span class="token operator">+</span> components
+    <span class="token operator">+</span> share
+        <span class="token operator">+</span> utils
+        <span class="token operator">+</span> service
+        <span class="token operator">+</span> formatter
+</code></pre>
+</div><div class="cl-preview-section"><p>service 到底是放到每个页面下面维护还是放到全局维护，这个主要看你的接口是否会经常在多个页面使用，这样的话更推荐你放到全局。<br>
+最后，一个完整的流程应当是这样，Controller 层调用 Service 层的方法去获取数据，将拿到的数据传给 format 和 utils 等函数进行转换，最后将转换的数据存入到 Model 中。</p>
+</div><div class="cl-preview-section"><p><img src="http://static.zybuluo.com/gyyin/o61fstxjgfeco9eb2pjgue51/image_1dooi085a3afmg7175ab1u8du9.png" alt="image_1dooi085a3afmg7175ab1u8du9.png-17.7kB"></p>
+</div><div class="cl-preview-section"><h2 id="总结">总结</h2>
+</div><div class="cl-preview-section"><p>虽历经几十年的洗礼，MVC 架构依然没有过时，在各种语言中我们也经常能看到对应的 MVC 框架。<br>
+在前端开发中，我们也可以借鉴 MVC 的思想来对项目进行重新组织和解耦，这样可以大大提高项目的灵活性。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img.mukewang.com/5e6edd5e000158e806700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=72">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '11 写好业务代码（一）：前端 MVC 分层实践',
+					'CID': '1662',
+					'Teacher': 'sh22n'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "11 写好业务代码（一）：前端 MVC 分层实践",
+                    desc: "前端进阶必备，未来少走弯路",
+                    imgUrl: 'https:https://img4.mukewang.com/5e6af0f50001b61d05400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5e6af0f50001b61d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/72',
+                    link: 'https://m.imooc.com/read/72'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

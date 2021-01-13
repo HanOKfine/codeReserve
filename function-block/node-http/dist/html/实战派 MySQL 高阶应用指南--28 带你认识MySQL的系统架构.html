@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>28 带你认识MySQL的系统架构</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="打包 MySQL 常用高级技巧特性">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "2";
+	var chapter_id = "1943";
+	var chapter_title = "28 带你认识MySQL的系统架构";
+	var aid = "71";
+	var a_name = "实战派 MySQL 高阶应用指南";
+	var a_price = "68.00";
+	var a_pic = "https://img2.mukewang.com/5e65bd6e0001444005400720.jpg";
+	var userId = 0;
+
+	var column_id = '71';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-13&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			28 带你认识MySQL的系统架构
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5eb8aa540001959a06400426.jpg')"></div>
+	
+	
+		<a href="/read/71">
+			<div class="course-entry">
+				<img src="https://img2.mukewang.com/5c36c432000158e609600960-40-40.jpg" alt="勤一">
+				<h3>实战派 MySQL 高阶应用指南</h3>
+				<p>勤一 · BAT 高级研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">什么是路？就是从没路的地方践踏出来的，从只有荆棘的地方开辟出来的。 <p class="author">—— 鲁迅</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>我们几乎每天都会接触 MySQL，大概也能说出几个构成 MySQL 的组件，但是，你知道各个组件之间是如何协同工作的吗（这也称之为 MySQL 的逻辑架构）？数据库就是用于实现对数据的读写，那么，你知道 MySQL 是怎么组织存储文件的吗（这也称之为 MySQL 的物理架构）？最后，从一条 SQL 语句的输入、执行到返回结果，你知道这里面都经历了些什么吗 ？想要搞清楚这些问题，就来看一看这一节的内容吧。</p>
+</div><div class="cl-preview-section"><h2 id="mysql-的物理架构">1. MySQL 的物理架构</h2>
+</div><div class="cl-preview-section"><p>数据库的核心目的即实现对数据的读写，而数据最终一定会以文件的形式保存在磁盘上，所以，MySQL 的物理架构指的就是文件的存储结构。另外，MySQL 又会以不同的文件存储不同类型的数据，而这些不同类型的数据又会以不同的方式存储在磁盘上。当然，你不需要记住所有的文件及类型，重要的是理解它的设计思想。</p>
+</div><div class="cl-preview-section"><h3 id="mysql-base-目录">1.1 MySQL Base 目录</h3>
+</div><div class="cl-preview-section"><p>MySQL 中的文件主要存储于两个目录中：Base 目录和数据目录。Base 目录主要包含库文件和可执行文件，即系统数据文件。关于这个目录，我们可以看看官网对它的描述：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>Path to installation directory. All paths are usually resolved relative to this.</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>它的意思是：Base 目录指定了 MySQL 的安装路径（也就是 MySQL 的安装目录），而这个全路径可以解决相对路径所造成的问题。MySQL 使用 basedir 参数来记录 Base 目录，我们可以查看这个变量，从而确定目录的绝对路径。如下所示：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql">mysql<span class="token operator">&gt;</span> <span class="token keyword">SHOW</span> VARIABLES <span class="token operator">LIKE</span> <span class="token string">'basedir'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">---------------+--------------------------------------------+</span>
+<span class="token operator">|</span> Variable_name <span class="token operator">|</span> <span class="token keyword">Value</span>                                      <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">---------------+--------------------------------------------+</span>
+<span class="token operator">|</span> basedir       <span class="token operator">|</span> <span class="token operator">/</span>usr<span class="token operator">/</span><span class="token keyword">local</span><span class="token operator">/</span>mysql<span class="token number">-5.7</span><span class="token punctuation">.</span><span class="token number">28</span><span class="token operator">-</span>macos10<span class="token number">.14</span><span class="token operator">-</span>x86_64<span class="token operator">/</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">---------------+--------------------------------------------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>Base 目录中最核心的就是 MySQL 提供的可执行文件（位于 bin 目录下面），例如：mysql 可以用于登录服务器、mysqladmin 可以用来检查服务器的配置和当前状态、mysqldump 可以导出数据表文件等等。</p>
+</div><div class="cl-preview-section"><h3 id="mysql-数据目录">1.2 MySQL 数据目录</h3>
+</div><div class="cl-preview-section"><p>与 Base 目录类似，MySQL 也使用一个参数来标记数据目录，我们也可以查询它。如下所示：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql">mysql<span class="token operator">&gt;</span> <span class="token keyword">SHOW</span> VARIABLES <span class="token operator">LIKE</span> <span class="token string">'datadir'</span><span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">---------------+------------------------+</span>
+<span class="token operator">|</span> Variable_name <span class="token operator">|</span> <span class="token keyword">Value</span>                  <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">---------------+------------------------+</span>
+<span class="token operator">|</span> datadir       <span class="token operator">|</span> <span class="token operator">/</span>usr<span class="token operator">/</span><span class="token keyword">local</span><span class="token operator">/</span>mysql<span class="token operator">/</span><span class="token keyword">data</span><span class="token operator">/</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">---------------+------------------------+</span>
+<span class="token number">1</span> <span class="token keyword">row</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.00</span> sec<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在搞清楚数据目录存储了哪些文件之前，我们先去看一看 <code>/usr/local/</code> 目录（Base 目录和数据目录的上一级目录），以此把 Base 目录和数据目录的关系搞清楚。如下所示：</p>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash">➜ ~ ll /usr/local
+total 0
+lrwxr-xr-x   1 root        30 10 24 11:02 mysql -<span class="token operator">&gt;</span> mysql-5.7.28-macos10.14-x86_64
+drwxr-xr-x  13 root       416 10 24 11:02 mysql-5.7.28-macos10.14-x86_64
+</code></pre>
+</div><div class="cl-preview-section"><p>所以，<code>/usr/local/mysql/</code> 只是一个 “软链接”，它最终指向了 MySQL 的 Base 目录。而数据目录则位于 Base 目录中的 <code>/data/</code> 目录中，这也是 MySQL 的默认存储结构。</p>
+</div><div class="cl-preview-section"><p>数据目录主要存储两类文件：日志文件和数据文件。同时，这两类文件又可以细分为很多种类。对于日志文件，主要有：</p>
+</div><div class="cl-preview-section"><ul>
+<li>错误日志文件：以 err 结尾，记录 MySQL 服务器启动、关闭和运行过程中产生的重大错误信息</li>
+<li>二进制日志文件：默认以 mysql-bin 开头，数字结尾。记录所有数据库、表的更新事件</li>
+<li>慢查询日志文件：以 slow.log 结尾，记录执行时间超过 long_query_time 变量指定时间的 SQL 语句</li>
+</ul>
+</div><div class="cl-preview-section"><p>我们在 MySQL 中创建的每一个数据库都会在数据目录下面创建同名的目录，这里面存储了数据表对应的数据（文件）和索引（文件）。例如：我当前的数据库中存在 imooc_mysql 和 sbtest 两个库，相对应的，它们就会有同名目录存在。</p>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash">➜  ~ <span class="token function">ls</span> -l /usr/local/mysql/data/
+drwxr-x---  39 _mysql _mysql     1248 12 27 11:11 imooc_mysql
+drwxr-x---   3 _mysql _mysql       96 12  4 13:44 sbtest
+</code></pre>
+</div><div class="cl-preview-section"><p>我们进入到任何一个存在表的数据库目录中，可以发现，每一张表都对应着两个文件（也是两种类型），即 frm 文件和 ibd 文件（以后缀结尾）。这其中：</p>
+</div><div class="cl-preview-section"><ul>
+<li>frm 文件：存储数据表的结构信息，它与操作系统和存储引擎无关，即对于任何环境下安装的 MySQL，都会存在这个文件</li>
+<li>ibd 文件：存储数据表中的数据和索引信息，它是与存储引擎相关的</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="mysql-逻辑架构">2. MySQL 逻辑架构</h2>
+</div><div class="cl-preview-section"><p>MySQL 的物理架构主要是 “各种” 文件的存储结构，而逻辑架构则是 MySQL 中的各个组件，以及组件之间的协作关系。理解物理架构能够搞清楚 MySQL 怎样组织系统所需的文件，而理解逻辑架构则是为了搞清楚 MySQL 的工作方式（过程）。</p>
+</div><div class="cl-preview-section"><h3 id="逻辑架构分层">2.1 逻辑架构分层</h3>
+</div><div class="cl-preview-section"><p>MySQL 是典型的 C/S 系统，它的逻辑架构中定义了很多组件，每个组件负责数据库复杂功能的一部分。通常，我们会把这个整体的逻辑架构分为三层：服务层、核心层和存储层。分层（自顶向下每个虚线框都是一层）的逻辑架构如下图所示：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ebb510d000187bd06900405.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>每一层实现的功能总结如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>服务层</strong>：所谓服务，即服务于客户端，主要是接受客户端的连接请求，并对请求进行授权认证</li>
+<li><strong>核心层</strong>：这一层提供了 MySQL 的核心功能服务，包括查询解析、分析、优化、缓存。另外，对于跨存储引擎的功能也在这一层实现，例如：存储过程、视图等等</li>
+<li><strong>存储层</strong>：存储引擎，负责数据存取，且对于 InnoDB 来说还需要做事务处理</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="服务层">2.2 服务层</h3>
+</div><div class="cl-preview-section"><p>服务层是 MySQL 逻辑架构的最上层（即连接器），它直接 “暴露” 给客户端，主要实现了三点功能：</p>
+</div><div class="cl-preview-section"><ul>
+<li>客户端连接到来时，连接器会从线程池中分配一个线程（如果没有达到最大连接数限制）进行连接，此后，客户端的所有操作都会在这个线程上进行</li>
+<li>连接器会对发起连接请求的用户进行鉴权处理，包括：用户名、密码、主机或 ip 地址等等</li>
+<li>连接器会根据用户的权限来判断用户是否有权限执行某项操作</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="核心层">2.3 核心层</h3>
+</div><div class="cl-preview-section"><p>核心层提供了 MySQL 服务器的所有逻辑功能，当然包含的组件也较多。除了图中所绘的之外，这一层还承担了 MySQL 系统管理的角色（同样也是由组件提供）。系统管理组件实现的功能主要包括以下四点：</p>
+</div><div class="cl-preview-section"><ul>
+<li>数据库的备份与恢复</li>
+<li>数据库集群管理</li>
+<li>数据库分区、分库、分表的管理</li>
+<li>数据库元数据的管理</li>
+</ul>
+</div><div class="cl-preview-section"><p>接下来，按照各个组件的工作顺序，我们依次来看一看核心层中的各个组件都实现了怎样的功能：</p>
+</div><div class="cl-preview-section"><ul>
+<li>分析器
+<ul>
+<li>首先它会对查询语句进行语法分析，如果存在错误，立即返回错误信息</li>
+<li>语法检查通过后，分析器会询问 “查询缓存”，如果命中缓存，直接返回结果</li>
+<li>否则，生成语法树，并为每个查询语句生成 SQL_ID</li>
+</ul>
+</li>
+<li>查询缓存
+<ul>
+<li>它在所有的客户端会话之间共享，基于 SQL_ID 执行查询，且只有完全相同的 SQL 语句才可能会命中（缓存的换入换出导致历史缓存失效）</li>
+<li>如果命中了缓存，则查询语句直接从缓存中取数据，不再 “经历” 下面的组件</li>
+</ul>
+</li>
+<li>优化器
+<ul>
+<li>主要作用是对查询语句进行优化，包括调整字段顺序、决定表的读取顺序以及挑选合适的索引等等</li>
+<li>虽然优化器是与存储引擎分离的，但是不同的存储引擎会影响优化效果</li>
+</ul>
+</li>
+<li>执行器
+<ul>
+<li>执行查询语句（这里面会调用存储引擎的接口），返回结果给客户端</li>
+</ul>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>总的来说，MySQL 通过分析器知道了查询语句想要做什么、通过优化器知道了应该怎样做、最后通过执行器决定执行，返回结果。其中，如果查询缓存 “已经有了结果”，则不再需要优化器和执行器 “那样做”。</p>
+</div><div class="cl-preview-section"><h3 id="存储层">2.4 存储层</h3>
+</div><div class="cl-preview-section"><p>虽然表面上说存储引擎是 MySQL 逻辑架构中的一层，但其实它才是真正与文件打交道的子系统。那么，关于存储层，我们这里简单的做三点说明：</p>
+</div><div class="cl-preview-section"><ul>
+<li>MySQL 区别于其他数据库最大的地方就是插件式的表存储引擎，存储引擎供应商根据 MySQL 提供的文件访问抽象接口来定制文件访问的规则</li>
+<li>MySQL 服务器则通过其定义的 API 与存储引擎进行通信，且这种通信过程是 “透明的”</li>
+<li>存储引擎的实现过程也就是适配 MySQL 读写接口的过程</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="sql-语句在-mysql-中的执行过程">3. SQL 语句在 MySQL 中的执行过程</h2>
+</div><div class="cl-preview-section"><p>到目前为止，我们已经理清了 MySQL 的物理和逻辑架构，但是，以上的内容也确实太偏重于理论化。所以，为了更好的理解 MySQL 的 “内涵”，接下来，我们去看一看一条 SQL 语句在 MySQL 中是怎样被执行的。</p>
+</div><div class="cl-preview-section"><h3 id="查询语句的执行过程">3.1 查询语句的执行过程</h3>
+</div><div class="cl-preview-section"><p>我们日常编写的 SQL 语句可以分为两类：查询（SELECT）语句和更新（INSERT、UPDATE、DELETE）语句。我们先来看一看相对比较简单的查询语句，举个例子，执行：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">SELECT</span> <span class="token operator">*</span> <span class="token keyword">FROM</span> worker <span class="token keyword">WHERE</span> name <span class="token operator">=</span> <span class="token string">'pony'</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>MySQL 执行这条查询语句的过程如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>校验当前的会话是否有执行权限，如果没有，直接返回错误信息</li>
+<li>权限条件满足，询问 “查询缓存”（以当前的 SQL 语句为 KEY 去 Map 中查询），如果命中，返回结果</li>
+<li>没有命中缓存，则查询语句交给分析器，提取 SQL 语句中的关键元素，构造语法树（包含对语法错误的校验）。其中，关键元素包含
+<ul>
+<li>SELECT 关键字，确定是查询请求</li>
+<li>worker 可以确定查询的数据表以及数据列（还会对列进行校验）</li>
+<li><code>name = 'pony'</code> 设定为查询条件</li>
+</ul>
+</li>
+<li>优化器确定执行方案，对于当前的查询语句主要是选择合适的索引</li>
+<li>执行器调用存储引擎接口，执行查询，并返回引擎的执行结果</li>
+</ul>
+</div><div class="cl-preview-section"><p>可见，执行过程中发挥最大作用、也是最复杂的组件是分析器和优化器。特别地，优化器会制定出很多执行方案，并根据自己的优化算法选择执行效率最高的一个方案（需要特别注意，这是优化器自身认定的最优）。</p>
+</div><div class="cl-preview-section"><h3 id="更新语句的执行过程">3.2 更新语句的执行过程</h3>
+</div><div class="cl-preview-section"><p>更新语句的执行与查询语句是非常类似的，假设我们执行如下的插入语句：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">INSERT</span> <span class="token keyword">INTO</span> worker<span class="token punctuation">(</span><span class="token punctuation">`</span><span class="token keyword">type</span><span class="token punctuation">`</span><span class="token punctuation">,</span> <span class="token punctuation">`</span>name<span class="token punctuation">`</span><span class="token punctuation">,</span> <span class="token punctuation">`</span>salary<span class="token punctuation">`</span><span class="token punctuation">,</span> <span class="token punctuation">`</span>province<span class="token punctuation">`</span><span class="token punctuation">,</span> <span class="token punctuation">`</span>city<span class="token punctuation">`</span><span class="token punctuation">)</span> <span class="token keyword">VALUES</span><span class="token punctuation">(</span><span class="token string">'A'</span><span class="token punctuation">,</span> <span class="token string">'qinyi'</span><span class="token punctuation">,</span> <span class="token number">1000</span><span class="token punctuation">,</span> <span class="token string">'安徽省'</span><span class="token punctuation">,</span> <span class="token string">'宿州市'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>首先，执行这条语句时，同样会查询缓存，这是为了省去语法和词法分析的过程。如果没有命中缓存，那就继续走分析器和优化器的 “原有” 流程。最后，到达执行器：</p>
+</div><div class="cl-preview-section"><ul>
+<li>调用存储引擎的 API 接口，写入数据</li>
+<li>InnoDB 会把数据保存在内存中，并记录 redo log，此时，redo log 进入 prepare 状态</li>
+<li>执行器记录 Binlog，随后通知存储引擎，redo log 进入 commit 状态</li>
+</ul>
+</div><div class="cl-preview-section"><p>可见，更新过程与查询过程在执行时最大的不同点是日志（虽然查询时也会有查询日志和慢查询日志的产生）和事务。其中，InnoDB 使用 redo log 两阶段提交的方式解决了数据一致性的问题。</p>
+</div><div class="cl-preview-section"><h2 id="总结">4. 总结</h2>
+</div><div class="cl-preview-section"><p>想要完全搞清楚 MySQL 的系统架构，这无疑是一件非常难的事，如无必要，我也并不建议你去这样做。但是，你至少应该知道 MySQL 是如何组织���的内部文件，以及各个组件的基本功能。当然，最好在别人问你 SQL 语句是如何执行的，你能解释得出来。</p>
+</div><div class="cl-preview-section"><h2 id="问题">5. 问题</h2>
+</div><div class="cl-preview-section"><p>浏览 MySQL 的安装（Base）目录，搞清楚它的物理架构 ？<br><br>
+自己画一画 MySQL 的逻辑分层，并在这个过程中思考各个组件所提供的功能 ？<br><br>
+以你在工作中使用到的 SQL 语句为例，解释说明它在 MySQL 中的执行过程 ？</p>
+</div><div class="cl-preview-section"><h2 id="参考资料">6. 参考资料</h2>
+</div><div class="cl-preview-section"><p>《高性能 MySQL（第三版）》<br><br>
+<a href="https://dev.mysql.com/doc/refman/5.7/en/osx-installation.html">MySQL 官方文档：Installing MySQL on macOS</a><br><br>
+<a href="https://dev.mysql.com/doc/refman/5.7/en/introduction.html">MySQL 官方文档：General Information</a><br><br>
+<a href="https://dev.mysql.com/doc/refman/5.7/en/security.html">MySQL 官方文档：Security</a><br><br>
+<a href="https://dev.mysql.com/doc/refman/5.7/en/server-administration.html">MySQL 官方文档：MySQL Server Administration</a><br><br>
+<a href="https://dev.mysql.com/doc/refman/5.7/en/innodb-architecture.html">MySQL 官方文档：InnoDB Architecture</a></p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5eb8aa5a00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/5965">
+						<img src="https://img1.mukewang.com/5b8ce8bd0001d70d02000198-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕莱坞2212544</h4>
+						<div class="comment-text">请问下更新语句（文中insert）为什么要判断缓存中是否存在呢？</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-06-28</span>
+						<a href="/read/commentdetail/5965">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="5965" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5424">
+						<img src="https://img4.mukewang.com/545850bb0001979202200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">DangCode</h4>
+						<div class="comment-text">图片出不来</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-12</span>
+						<a href="/read/commentdetail/5424">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5424" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=71">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '28 带你认识MySQL的系统架构',
+					'CID': '1943',
+					'Teacher': '勤一'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "28 带你认识MySQL的系统架构",
+                    desc: "打包 MySQL 常用高级技巧特性",
+                    imgUrl: 'https:https://img2.mukewang.com/5e65bd6e0001444005400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5e65bd6e0001444005400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/71',
+                    link: 'https://m.imooc.com/read/71'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

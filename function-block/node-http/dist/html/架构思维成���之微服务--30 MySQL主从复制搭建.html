@@ -1,0 +1,807 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>30 MySQL主从复制搭建</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="轻量级项目，系统化经验">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "1742";
+	var chapter_title = "30 MySQL主从复制搭建";
+	var aid = "73";
+	var a_name = "架构思维成长之微服务";
+	var a_price = "68.00";
+	var a_pic = "https://img4.mukewang.com/5e86b0220001a99d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '73';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-15&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			30 MySQL主从复制搭建
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5e8c3afb0001514d06400359.jpg')"></div>
+	
+	
+		<a href="/read/73">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/5e6eebd60001a49207000933-40-40.jpg" alt="曼巴out">
+				<h3>架构思维成���之微服务</h3>
+				<p>曼巴out · 上市公司资深架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">天才就是百分之二的灵感，百分之九十八的汗水。<p class="author">——爱迪生</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">1. 前言</h1>
+</div><div class="cl-preview-section"><p>MySQL主从复制，是将数据库的DDL和DML操作通过二进制日志传输到从数据库的服务器，然后再从数据库上对这些日志重新执行，从而使得从库和主库的数据保持同步。一般情况下一台主库多台从库，但是从库也可以作为别的从库的主库，实现链状复制。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>思考：为什么需要做MySQL主从复制呢？</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>主要目的如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>第一：异地备份，如果某个服务器坏了数据丢失了，严重的是机房着火了，那么如果不做远程备份的话，数据将全部丢失。</li>
+<li>第二：基于主从复制的基础上，实现数据库的读写分离、负载均衡，提高系统的性能。</li>
+<li>第三：高可用，实现主节点的冗余备份节点，一旦主节点宕机，备份节点顶上并对外继续提供服务</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>MySQL主从复制的原理如下：</strong></p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ebd294d0001af5906300311.png" alt="图片描述"><br>
+从上图来看，主从主要分为以下三个步骤：</p>
+</div><div class="cl-preview-section"><ul>
+<li>MySQL master 将数据变更写入二进制日志( binary log, 其中记录叫做二进制日志事件binary log events，可以通过 show binlog events 进行查看)</li>
+<li>MySQL slave 将 master 的 binary log events 拷贝到它的中继日志(relay log)</li>
+<li>MySQL slave 重放 relay log 中事件，将数据变更反映它自己的数据</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>思考：真实环境，MySQL主从复制有什么用？MySQL的架构是什么样的呢？</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>系统架构图如下所示：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ebd293e000132fb06280363.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>一般情况下，对于数据库来说读的压力往往会比写的压力大很多。因此需要读写分离（主库写，从库读）；多个从库实现负载均衡对外提供读的服务。</li>
+<li>需要注意的是从节点数量不能过多，否则适得其反，因为数据的同步需要消耗更多的性能</li>
+</ul>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ebd29320001fd4507160467.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>如果主节点（写）是单节点的话，它一旦挂掉了，那么整个数据库写的部分就瘫痪了，因此需要做主节点的高可用备份，一般基于Keepalived来实现。</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="主从搭建">2. 主从搭建</h1>
+</div><div class="cl-preview-section"><h2 id="master节点配置">2.1 Master节点配置</h2>
+</div><div class="cl-preview-section"><p>第一步：开启binlog日志文件，位置（Windows的是my.ini文件，Linux的是my.cnf文件）</p>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash"><span class="token comment">#mysql 服务ID，保证整个集群环境中唯一的</span>
+server-id<span class="token operator">=</span>1
+
+<span class="token comment">#mysql binlog日志的存储路径和文件名</span>
+log-bin<span class="token operator">=</span>/usr/local/mysql/mysqlbin
+
+<span class="token comment">#是否只读，1只读，0读写</span>
+read-only<span class="token operator">=</span>0
+
+<span class="token comment">#指不需要被同步的数据库（mysql是管理的数据库）</span>
+binlog-ignore-db<span class="token operator">=</span>mysql
+
+<span class="token comment">#指定需要同步的数据库</span>
+<span class="token comment">#binlog-do-db=test1</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>第二步：重启MySQL</p>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash"><span class="token function">service</span> mysql restart
+</code></pre>
+</div><div class="cl-preview-section"><p>第三步：创建同步数据的账号，并且进行授权</p>
+</div><div class="cl-preview-section"><ul>
+<li>这个步骤可以省略，直接使用root账号进行操作也可以。</li>
+</ul>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash"><span class="token comment">#1.创建</span>
+create user <span class="token string">'test'</span>@<span class="token string">'%'</span> identified by <span class="token string">'123'</span><span class="token punctuation">;</span>
+
+<span class="token comment">#2.授权：test是账号，123是密码，ip指的是从节点的ip不是主节点ip（或者写%表示所有机器）</span>
+<span class="token comment"># replication表示：备份权限； *.*表示：所有的数据.所有的表</span>
+grant replication slave on *.* to <span class="token string">'test'</span>@<span class="token string">'192.168.1.9'</span> identified by <span class="token string">'123'</span><span class="token punctuation">;</span>
+
+<span class="token comment">#3.刷新</span>
+flush privileges<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>第四步：查看主节点的状态</p>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash"><span class="token comment">#注意：该命令必须登录mysql进入mysql命令行去执行</span>
+show master status<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ebd291e00014af209100145.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>File表示binlog日志文件</p>
+</li>
+<li>
+<p>Position表示从日志文件的哪个位置开始推送日志</p>
+</li>
+<li>
+<p>Binlog_Ignore_DB表示不需要推送的数据库</p>
+</li>
+<li>
+<p>Binlog_Do_DB表示被推送的数据库</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="slave节点配置">2.2 Slave节点配置</h2>
+</div><div class="cl-preview-section"><p>第一步：修改配置文件，位置（Windows的是my.ini文件，Linux的是my.cnf文件）</p>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash"><span class="token comment">#mysql 服务ID，保证整个集群环境中唯一的</span>
+server-id<span class="token operator">=</span>2
+
+<span class="token comment">#mysql binlog日志的存储路径和文件名</span>
+log-bin<span class="token operator">=</span>/usr/local/mysql/mysqlbin
+</code></pre>
+</div><div class="cl-preview-section"><p>第二步：重启MySQL</p>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash"><span class="token function">service</span> mysql restart
+</code></pre>
+</div><div class="cl-preview-section"><p>第三步：执行命令</p>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash">change master to master_host<span class="token operator">=</span><span class="token string">'192.168.1.8'</span>,master_user<span class="token operator">=</span><span class="token string">"test"</span>,master<span class="token operator">=</span><span class="token string">"123"</span> master_log_file<span class="token operator">=</span><span class="token string">"mysqlbin.000001"</span>,master_log_pos<span class="token operator">=</span>413<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>该命令的含义是给从节点指定主节点、主节点的日志文件、日志文件的行数；</li>
+<li>master_log_file和master_log_pos分别表示binlog日志文件名称、从第几行开始同步，登录主节点然后输入<code>show master status;</code>命令来查看。</li>
+</ul>
+</div><div class="cl-preview-section"><p>第四步：开始同步及状态查看</p>
+</div><div class="cl-preview-section"><pre class="  language-bash"><code class="prism  language-bash"><span class="token comment">#1.开始同步</span>
+start slave<span class="token punctuation">;</span>
+<span class="token comment">#2.停止同步</span>
+stop slave<span class="token punctuation">;</span>
+<span class="token comment">#3.查看状态</span>
+show slave status<span class="token punctuation">;</span><span class="token comment">#没有格式</span>
+show slave status\G<span class="token punctuation">;</span><span class="token comment">#有格式</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ebd2909000125e207650432.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>确保这两个地方是yes即可</p>
+</div><div class="cl-preview-section"><p>第五步：测试数据同步</p>
+</div><div class="cl-preview-section"><ul>
+<li>往master数据库创建一个数据库，创建一个表，插入一条数据，再去slave节点看是否同步过去即可。</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="手工实现读写分离">3. 手工实现读写分离</h1>
+</div><div class="cl-preview-section"><p>MySQL的主从复制它是MySQL自带的功能，如果光配置主从复制它没啥意思，只是把数据备份到从节点而已，我们需要做的是在主从复制的基础上实现更高级的功能，比如：读写分离、负载均衡等。然后读写分离常见的办法其实是有两种，第一种是基于Spring的动态数据源实现；第二种是依赖第三方中间件，比如：MyCat。（参考上面的架构图）。</p>
+</div><div class="cl-preview-section"><p>这里我们主要讲解的是如何基于Spring动态数据源实现读写分离，它的核心思想是调用Service方法之前，使用Aop的前置增强根据标识获取真正的数据源。</p>
+</div><div class="cl-preview-section"><h2 id="创建相关类">3.1 创建相关类</h2>
+</div><div class="cl-preview-section"><pre><code>disk-service-web
+	|-- com.micro.db.config
+	|  |-- DataSourceConfig.java			（配置类）
+	|  |-- DynamicDataSource.java			（动态数据源）
+	|  |-- SwitchDataSourceAOP.java         （Aop类）
+</code></pre>
+</div><div class="cl-preview-section"><p>核心思想如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>第一步：项目启动的时候，根据<code>DataSourceConfig</code>配置类的配置来创建<code>DynamicDataSource</code>实例，然而<code>DynamicDataSource</code>内部根据配置文件创建不同的<code>DataSource</code></li>
+<li>第二步：Aop拦截了Service的所有实现类的所有方法，Service实现类方法被调用之前，首先判断该方法属于读操作还是写操作（根据方法名称判断），根据判断结果获取一个标识。</li>
+<li>第三步：动态数据源路由根据<code>标识</code>获取真正的数据源，然后开启事务</li>
+<li>第四步：才是真正执行Service的目标方法</li>
+<li>第五步：执行完成，提交事务</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="配置文件">3.2 配置文件</h2>
+</div><div class="cl-preview-section"><pre class="  language-properties"><code class="prism  language-properties"><span class="token attr-name">datasource.type</span><span class="token punctuation">=</span><span class="token attr-value">read,write</span>
+
+<span class="token attr-name">spring.datasource.type</span><span class="token punctuation">=</span><span class="token attr-value">com.alibaba.druid.pool.DruidDataSource</span>
+
+<span class="token comment">#写数据库</span>
+<span class="token attr-name">spring.datasource.write.jdbc-url</span><span class="token punctuation">=</span><span class="token attr-value">jdbc:mysql://192.168.1.8:8066/mycat_testdb</span>
+<span class="token attr-name">spring.datasource.write.driver-class-name</span><span class="token punctuation">=</span><span class="token attr-value">com.mysql.jdbc.Driver</span>
+<span class="token attr-name">spring.datasource.write.username</span><span class="token punctuation">=</span><span class="token attr-value">root</span>
+<span class="token attr-name">spring.datasource.write.password</span><span class="token punctuation">=</span><span class="token attr-value">123456</span>
+        
+<span class="token comment">#读数据库</span>
+<span class="token attr-name">spring.datasource.read.jdbc-url</span><span class="token punctuation">=</span><span class="token attr-value">jdbc:mysql://192.168.1.9:8066/mycat_testdb</span>
+<span class="token attr-name">spring.datasource.read.driver-class-name</span><span class="token punctuation">=</span><span class="token attr-value">com.mysql.jdbc.Driver</span>
+<span class="token attr-name">spring.datasource.read.username</span><span class="token punctuation">=</span><span class="token attr-value">root</span>
+<span class="token attr-name">spring.datasource.read.password</span><span class="token punctuation">=</span><span class="token attr-value">123456</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="动态数据源类">3.3 动态数据源类</h2>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">DynamicDataSource</span> <span class="token keyword">extends</span> <span class="token class-name">AbstractRoutingDataSource</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> ThreadLocal<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span> contextHolder <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ThreadLocal</span><span class="token operator">&lt;</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">setDbType</span><span class="token punctuation">(</span>String dbType<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		contextHolder<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>dbType<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+	<span class="token keyword">public</span> <span class="token keyword">static</span> String <span class="token function">getDbType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		<span class="token keyword">return</span> contextHolder<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+	<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">clearDbType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		contextHolder<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+    
+    <span class="token comment">//根据标识获取真正的数据源</span>
+	<span class="token annotation punctuation">@Override</span>
+	<span class="token keyword">protected</span> Object <span class="token function">determineCurrentLookupKey</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		<span class="token keyword">return</span> <span class="token function">getDbType</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>核心1：定义ThreadLocal传递参数，在Aop传递参数，在这里获取</li>
+<li>核心2：determineCurrentLookupKey源码分析</li>
+</ul>
+</div><div class="cl-preview-section"><p>源码关键点：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ebd29ac000143d110080739.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="数据源配置类">3.4 数据源配置类</h2>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Configuration</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">DataSourceConfig</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Value</span><span class="token punctuation">(</span><span class="token string">"${datasource.type}"</span><span class="token punctuation">)</span>
+    <span class="token keyword">private</span> String datasourcetype<span class="token punctuation">;</span>
+    <span class="token annotation punctuation">@Autowired</span>
+    <span class="token keyword">private</span> Environment env<span class="token punctuation">;</span>
+    
+    <span class="token annotation punctuation">@Bean</span>
+    <span class="token annotation punctuation">@Primary</span>
+    <span class="token keyword">public</span> DynamicDataSource <span class="token function">dynamicDataSource</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+        DynamicDataSource dds<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">DynamicDataSource</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ 		Map<span class="token operator">&lt;</span>Object<span class="token punctuation">,</span> Object<span class="token operator">&gt;</span> map <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token operator">&lt;</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment">//动态创建数据源</span>
+        String<span class="token punctuation">[</span><span class="token punctuation">]</span> types<span class="token operator">=</span>datasourcetype<span class="token punctuation">.</span><span class="token function">split</span><span class="token punctuation">(</span><span class="token string">","</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        DruidDataSource defaultDataSource<span class="token operator">=</span>null<span class="token punctuation">;</span>
+        <span class="token keyword">for</span><span class="token punctuation">(</span>String type<span class="token operator">:</span>types<span class="token punctuation">)</span><span class="token punctuation">{</span>
+            String url<span class="token operator">=</span><span class="token string">"spring.datasource."</span><span class="token operator">+</span>type<span class="token operator">+</span><span class="token string">".jdbc-url"</span><span class="token punctuation">;</span>
+            String driverclass<span class="token operator">=</span><span class="token string">"spring.datasource."</span><span class="token operator">+</span>type<span class="token operator">+</span><span class="token string">".driver-class-name"</span><span class="token punctuation">;</span>
+            String username<span class="token operator">=</span><span class="token string">"spring.datasource."</span><span class="token operator">+</span>type<span class="token operator">+</span><span class="token string">".username"</span><span class="token punctuation">;</span>
+            String pwd<span class="token operator">=</span><span class="token string">"spring.datasource."</span><span class="token operator">+</span>type<span class="token operator">+</span><span class="token string">".password"</span><span class="token punctuation">;</span>
+            
+            <span class="token comment">//创建数据源</span>
+            DruidDataSource ds<span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">DruidDataSource</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            ds<span class="token punctuation">.</span><span class="token function">setDriverClassName</span><span class="token punctuation">(</span>env<span class="token punctuation">.</span><span class="token function">getProperty</span><span class="token punctuation">(</span>driverclass<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            ds<span class="token punctuation">.</span><span class="token function">setUrl</span><span class="token punctuation">(</span>env<span class="token punctuation">.</span><span class="token function">getProperty</span><span class="token punctuation">(</span>url<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            ds<span class="token punctuation">.</span><span class="token function">setUsername</span><span class="token punctuation">(</span>env<span class="token punctuation">.</span><span class="token function">getProperty</span><span class="token punctuation">(</span>username<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            ds<span class="token punctuation">.</span><span class="token function">setPassword</span><span class="token punctuation">(</span>env<span class="token punctuation">.</span><span class="token function">getProperty</span><span class="token punctuation">(</span>pwd<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            
+            <span class="token comment">//默认数据源</span>
+            <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token string">"write"</span><span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>type<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+                defaultDataSource<span class="token operator">=</span>ds<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+            
+            map<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>type<span class="token punctuation">,</span> ds<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>		
+        
+        <span class="token comment">//设置数据源</span>
+		dds<span class="token punctuation">.</span><span class="token function">setTargetDataSources</span><span class="token punctuation">(</span>map<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">//默认数据源（如果标识为空，则使用默认数据源）</span>
+		dds<span class="token punctuation">.</span><span class="token function">setDefaultTargetDataSource</span><span class="token punctuation">(</span>defaultDataSource<span class="token punctuation">)</span><span class="token punctuation">;</span> 
+        <span class="token keyword">return</span> dds<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="aop类">3.5 Aop类</h2>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Aspect</span>
+<span class="token annotation punctuation">@Component</span>
+<span class="token annotation punctuation">@Order</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token comment">// Order设定AOP执行顺序 使之在数据库事务上先执行</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SwitchDataSourceAOP</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> List<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span> lists<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">static</span><span class="token punctuation">{</span>
+        lists<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"find"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        lists<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"get"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+       
+    <span class="token comment">//提示：判断使用哪个数据源有两种模式</span>
+    <span class="token comment">//1）判断以常见关键字开头，比如：findXxxx、getXxxx</span>
+    <span class="token comment">//2）注解的模式</span>
+	<span class="token annotation punctuation">@Before</span><span class="token punctuation">(</span><span class="token string">"execution(* com.micro.service.*.*(..))"</span><span class="token punctuation">)</span>
+	<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">process</span><span class="token punctuation">(</span>JoinPoint joinPoint<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		String methodName <span class="token operator">=</span> joinPoint<span class="token punctuation">.</span><span class="token function">getSignature</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">boolean</span> isread<span class="token operator">=</span><span class="token boolean">false</span><span class="token punctuation">;</span>
+        <span class="token keyword">for</span><span class="token punctuation">(</span>String str<span class="token operator">:</span>lists<span class="token punctuation">)</span><span class="token punctuation">{</span>
+            <span class="token keyword">if</span><span class="token punctuation">(</span>methodName<span class="token punctuation">.</span><span class="token function">startWith</span><span class="token punctuation">(</span>str<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+                isread<span class="token operator">=</span><span class="token boolean">true</span><span class="token punctuation">;</span>
+                <span class="token keyword">break</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>        
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>isread<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment">//提示：这里如果多个读数据库，则可以实现负载均衡算法</span>
+			DynamicDataSource<span class="token punctuation">.</span><span class="token function">setDbType</span><span class="token punctuation">(</span><span class="token string">"read"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+			DynamicDataSource<span class="token punctuation">.</span><span class="token function">setDbType</span><span class="token punctuation">(</span><span class="token string">"write"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token punctuation">}</span>
+	<span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h1 id="小结">4. 小结</h1>
+</div><div class="cl-preview-section"><p>本节主要讲解MySQL主从复制的大概原理、MySQL的主从复制如何配置、最后讲解如何手工实现读写分离；这其实就是MySQL集群的核心思想了，希望大家能自己动手搭建和实现一遍。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5e86d8a400011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=73">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '30 MySQL主从复制搭建',
+					'CID': '1742',
+					'Teacher': '曼巴out'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "30 MySQL主从复制搭建",
+                    desc: "轻量级项目，系统化经验",
+                    imgUrl: 'https:https://img4.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/73',
+                    link: 'https://m.imooc.com/read/73'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

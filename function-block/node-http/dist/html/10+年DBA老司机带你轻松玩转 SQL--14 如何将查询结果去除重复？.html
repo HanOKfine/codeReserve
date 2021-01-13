@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>14 如何将查询结果去除重复？</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="0基础入门，掌握4大主流数据库的SQL技术">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "3";
+	var chapter_id = "2303";
+	var chapter_title = "14 如何将查询结果去除重复？";
+	var aid = "85";
+	var a_name = "10+年DBA老司机带你轻松玩转 SQL";
+	var a_price = "48.00";
+	var a_pic = "https://img3.mukewang.com/5f23b6e70001de8a05400720.jpg";
+	var userId = 0;
+
+	var column_id = '85';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-09-18&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			14 如何将查询结果去除重复？
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5f4318660001755206400426.jpg')"></div>
+	
+	
+		<a href="/read/85">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5f524cc00001990609600960-40-40.jpg" alt="简逸">
+				<h3>10+年DBA老司机带你轻松玩转 SQL</h3>
+				<p>简逸 · 资深数据库工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">成功＝艰苦的劳动＋正确的方法＋少谈空话。<p class="author">——爱因斯坦</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>日常见到的表数据中难免会有多个字段或者一个字段的数据重复，那么如何将这些重复数据去重呢，本节我们一起学习下SQL中数据去重的方法。</p>
+</div><div class="cl-preview-section"><h2 id="重复记录">14.1 重复记录</h2>
+</div><div class="cl-preview-section"><p>记录重复有两种意义上的重复，一种是表中所有字段完全重复的记录，这种场景比较少。第二种是只有表中部分字段存在重复记录，这种场景比较多。就像高校信息表 school 中，由于很多高校集中在同一座城市，所以表中的 cityid 有很多重复数据：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"> <span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> school 
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f43189b0001e13102740321.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>当然 cityid 属性的这些重复数据是��须的。</p>
+</div><div class="cl-preview-section"><h2 id="去除重复记录">14.2 去除重复记录</h2>
+</div><div class="cl-preview-section"><p>对于第一种重复，比较容易解决，我们可以使用类似下面的 SQL 来去重这些数据：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token keyword">distinct</span> <span class="token operator">*</span> <span class="token keyword">from</span> tableName
+</code></pre>
+</div><div class="cl-preview-section"><p>SQL中distinct的作用是过滤掉重复的记录，只将重复记录中的一条返回，这样就可以得到无重复记录的结果集。</p>
+</div><div class="cl-preview-section"><p>对于第二种重复数据，可以通过以下方法完成去重操作。<br>
+当使用下面查询语句获取数量超过5个高校的城市时:</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> cityid <span class="token punctuation">,</span><span class="token function">count</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token keyword">as</span>  counts <span class="token keyword">from</span> school s  <span class="token keyword">group</span> <span class="token keyword">by</span> cityid <span class="token keyword">having</span>  <span class="token function">count</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token operator">&gt;</span><span class="token number">5</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f4318a200019a6902320383.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>可以看到例句中 group by 具有分组作用的同时，本身也具有去重的作用，通过将高校信息表中的城市的 id 分组，并使用 having 关键字过滤最终获取无重复记录的结果集。</p>
+</div><div class="cl-preview-section"><p>平时去重操作使用较频繁的还是 <strong>distinct</strong> 关键字，当使用下面 SQL 获取所有存在高校的城市名称时：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span>  <span class="token keyword">distinct</span>  <span class="token number">c</span><span class="token punctuation">.</span>name   <span class="token keyword">from</span> school s <span class="token punctuation">,</span> city <span class="token number">c</span>  <span class="token keyword">where</span> <span class="token number">c</span><span class="token punctuation">.</span>id<span class="token operator">=</span>s<span class="token punctuation">.</span>cityid
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f4318a90001862c01080307.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>通过 distinct 关键字将 name 字段去除重复数据最终得到无重复记录的城市名称。</p>
+</div><div class="cl-preview-section"><h2 id="分组排序与去除重复">14.3 分组排序与去除重复</h2>
+</div><div class="cl-preview-section"><p>有时我们需要<strong>在某个或多个字段分组后，根据特定的排序规则从而获取一条或多条记录</strong>，这种获取数据的方式叫<strong>分组排序</strong>，比如下面希望根据城市 id 分组后，仅获取高校信息表中 id 最大的一条记录：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span>
+<span class="token punctuation">(</span><span class="token keyword">select</span> row_number<span class="token punctuation">(</span><span class="token punctuation">)</span>  <span class="token keyword">over</span><span class="token punctuation">(</span><span class="token keyword">partition</span> <span class="token keyword">by</span> cityid <span class="token keyword">order</span> <span class="token keyword">by</span>  id <span class="token keyword">desc</span><span class="token punctuation">)</span> <span class="token keyword">as</span> row_num<span class="token punctuation">,</span>t<span class="token punctuation">.</span><span class="token operator">*</span> 
+<span class="token keyword">from</span>  school  t <span class="token punctuation">)</span> tt
+<span class="token keyword">where</span> row_num<span class="token operator">=</span><span class="token number">1</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>结果集：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f4318b00001067003920344.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>这条 SQL 在 SQLServer ，Oracle，postgresql 上都可以运行。结果集中每个 cityid 仅获取一条记录，而且这条记录还是同一 cityid 中 id 最大的，从而达到去重的目的。当然如果上条 SQL 中 <code>row_num &lt;= N</code> 是获取每组数据中前 N 条序号记录，N 可以是大于等于 1 的整数。</p>
+</div><div class="cl-preview-section"><p>由于在 MySQL 中不支持 row_number()  over() 语法，要想实现上面 SQL 查询同样的功能，可以通过下面 SQL 来实现：</p>
+</div><div class="cl-preview-section"><pre class="  language-sql"><code class="prism  language-sql"><span class="token keyword">SELECT</span> 
+id<span class="token punctuation">,</span> cityid<span class="token punctuation">,</span> name<span class="token punctuation">,</span> rk 
+<span class="token keyword">FROM</span> <span class="token punctuation">(</span> 
+<span class="token keyword">SELECT</span> 
+tmp<span class="token punctuation">.</span>id<span class="token punctuation">,</span> tmp<span class="token punctuation">.</span>cityid<span class="token punctuation">,</span> tmp<span class="token punctuation">.</span>name<span class="token punctuation">,</span> <span class="token variable">@rownum</span>:<span class="token operator">=</span><span class="token variable">@rownum</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span> 
+<span class="token keyword">IF</span><span class="token punctuation">(</span><span class="token variable">@pdept</span><span class="token operator">=</span>tmp<span class="token punctuation">.</span>cityid<span class="token punctuation">,</span> <span class="token variable">@rank</span>:<span class="token operator">=</span><span class="token variable">@rank</span><span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token variable">@rank</span>:<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token keyword">AS</span> rk<span class="token punctuation">,</span>  <span class="token comment">--如果tmp.cityid与变量@pdept相等，变量@rank的值就会新增1，否则@rank的值为1</span>
+<span class="token variable">@pdept</span>:<span class="token operator">=</span>tmp<span class="token punctuation">.</span>cityid
+<span class="token keyword">FROM</span> <span class="token punctuation">(</span>
+  <span class="token keyword">select</span> cityid<span class="token punctuation">,</span>id<span class="token punctuation">,</span>name 
+  <span class="token keyword">from</span>  school  t <span class="token keyword">order</span> <span class="token keyword">by</span> cityid <span class="token keyword">asc</span><span class="token punctuation">,</span>id <span class="token keyword">desc</span> <span class="token keyword">limit</span> <span class="token number">10000000</span>
+   
+<span class="token punctuation">)</span> tmp<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">SELECT</span> <span class="token variable">@rownum</span>:<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token variable">@pdept</span>:<span class="token operator">=</span><span class="token boolean">null</span><span class="token punctuation">,</span> <span class="token variable">@rank</span>:<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token number">a</span> <span class="token comment">-- 子查询中初始化变量@rownum、 @rank 和 @pdept 的值</span>
+<span class="token punctuation">)</span> result <span class="token keyword">where</span> rk<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">;</span> 
+</code></pre>
+</div><div class="cl-preview-section"><p>limit 10000000 是起到了避免排序失效的作用，10000000 是根据数据中的条数确定的，所以尽量设置大点，以避免数据暴增导致数据获取不完全的情况，通过验证。</p>
+</div><div class="cl-preview-section"><h2 id="总结">14.4 总结</h2>
+</div><div class="cl-preview-section"><p>本节介绍了数据去重以及分组排序的概念和实现方法，特别是分组排序在日常的复杂查询中经常使用，分组排序顾名思义，就是分组后再排序。分组排序在不同数据库中实现方式稍有差别。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5f43186a00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6812">
+						<img src="https://img1.mukewang.com/545868c20001b8c402200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">HenryDong</h4>
+						<div class="comment-text">select * from
+(select row_number()  over(partition by cityid order by  id desc) as row_num,t.* 
+from  school  t ) tt
+where row_num=1
+这一块row）number over（...）这一块前文没讲的语法为啥不讲呢，另外为什么上文说Mysql可以运行，下文又说mysql不能运行了呀</div>
+						<div>
+							
+								<div class="reply">讲师回复：感谢您的反馈，ROW_NUMBER() Over 是根据Over 后面的规则（比如分组后组内排序或者只是排序），最终每行记录都会返回一个编号，后续考虑加上详细的说明。另外反馈的前后不一致的问题，已经反馈编辑老师及时更正。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-17</span>
+						<a href="/read/commentdetail/6812">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6812" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6719">
+						<img src="https://img4.mukewang.com/5b8cd8500001957002000187-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕莱坞5571957</h4>
+						<div class="comment-text">MySQL 中实现 row_number() over() 语法的sql没咋看懂，能详细解释下吗？</div>
+						<div>
+							
+								<div class="reply">讲师回复：下面的解释希望对你有帮助：最内层的查询先按照准备分组的字段和排序字段进行排序，外层查询对分组字段进行逐条判断，如果本条记录和上条记录的分组字段值相同，编号就加1，如果不同，说明是另外一个组，编号初始化1</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-04</span>
+						<a href="/read/commentdetail/6719">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6719" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6671">
+						<img src="https://img4.mukewang.com/53b4ea750001e76c01000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">甲骨文_0001</h4>
+						<div class="comment-text">14.3 分组排序与去除重复 这里的 row_num不好理解，这篇内容里就这14.3没消化，其它都很好理解</div>
+						<div>
+							
+								<div class="reply">讲师回复：row_number() over(PARTITION BY COL1 ORDER BY COL2) 表示根据字段COL1分组，在分组内部根据 COL2排序，最终的值就是组内每条记录排序后的编号，从1开始。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-29</span>
+						<a href="/read/commentdetail/6671">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6671" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥48.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=85">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '14 如何将查询结果去除重复？',
+					'CID': '2303',
+					'Teacher': '简逸'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "14 如何将查询结果去除重复？",
+                    desc: "0基础入门，掌握4大主流数据库的SQL技术",
+                    imgUrl: 'https:https://img3.mukewang.com/5f23b6e70001de8a05400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5f23b6e70001de8a05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/85',
+                    link: 'https://m.imooc.com/read/85'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

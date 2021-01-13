@@ -1,0 +1,1005 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>28 不得不说的线程安全问题</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="学习Java很重要，学会怎么学习Java更重要">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2002";
+	var chapter_title = "28 不得不说的线程安全问题";
+	var aid = "78";
+	var a_name = "再学经典：《Effective Java》独家解析";
+	var a_price = "68.00";
+	var a_pic = "https://img3.mukewang.com/5ecf522a00013a1d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '78';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-07-06&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			28 不得不说的线程安全问题
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img4.mukewang.com/5ece314d0001a0b106400359.jpg')"></div>
+	
+	
+		<a href="/read/78">
+			<div class="course-entry">
+				<img src="https://img3.mukewang.com/54dc328d0001b75e04630463-40-40.jpg" alt="明明如月">
+				<h3>再学经典：《Effective Java》独家解析</h3>
+				<p>明明如月 · 高级JAVA开发工程师 </p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">加紧学习，抓住中心，宁精勿杂，宁专勿多。 <p class="author">—— 周恩来</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">1.前言</h1>
+</div><div class="cl-preview-section"><p>《Effective Java》第 11 章第 78 条“同步访问共享的可变数据”； 第 79 条“避免过度同步”； 第 81 条“并发工具优于 wait 和  notify” 。这些都是在描述并发相关问题。</p>
+</div><div class="cl-preview-section"><p>为了更好地理解这些建议，我们还要思考下面几个问题：</p>
+</div><div class="cl-preview-section"><ul>
+<li>究竟什么是线程安全？</li>
+<li>实际工作中一般会遇到哪些线程安全问题？</li>
+<li>如何实现线程安全？</li>
+</ul>
+</div><div class="cl-preview-section"><p>本文将为你一一解答这些问题。</p>
+</div><div class="cl-preview-section"><h1 id="知识储备">2.知识储备</h1>
+</div><div class="cl-preview-section"><h2 id="线程安全">2.1 线程安全</h2>
+</div><div class="cl-preview-section"><p>JVM 为了提高应用程序的性能，提供了多线程支持，但尽管多线程给程序带来了诸多益处，但是也要付出一些代价。代价之一就是“线程安全”问题。</p>
+</div><div class="cl-preview-section"><p>关于线程安全有很多相似的定义：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>Thread-safe code is code that will work even if many Threads are executing it simultaneously.</p>
+<p>线程安全的代码是指多个线程同时执行时也可以正常工作。</p>
+<p>A piece of code is thread-safe if it only manipulates shared data structures in a manner that guarantees safe execution by multiple threads at the same time.</p>
+<p>一个一段代码可以保证多个线程可以同时安全地操作共享数据结构，那么它就是线程安全的。</p>
+<p>A class is thread-safe if it behaves correctly when accessed from multiple threads, regardless of the scheduling or interleaving of the execution of those threads by the runtime environment, and with no additional synchronization or other coordination on the part of the calling code<sup class="footnote-ref"><a href="#fn1" id="fnref1">1</a></sup>.</p>
+<p>如果一个类在从多个线程访问时表现正常，不用考虑调用执行期函式库的线程执行的调度或交错，也不用考虑调用代码部分的额外同步或其他协调，那么它就是线程安全的。</p>
+<p>Different threads can access the same resources without exposing erroneous behavior or producing unpredictable results. This programming methodology is known as “thread-safety”.</p>
+<p>不同的线程可以访问相同的资源，而不会暴露出错误的行为或产生不可预知的结果。这种编程方法叫做线程安全。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>通俗来讲就是<u>如何保证多个线程访问共享资源的正确性</u>问题。</p>
+</div><div class="cl-preview-section"><h2 id="java-内存模型">2.2 Java ��存模型</h2>
+</div><div class="cl-preview-section"><p>Java 语言通过虚拟机实现跨平台的特性，为了屏蔽不同硬件和操作系统的内存访问差异，Java 虚拟机规范提出了一种 <a href="https://download.oracle.com/otndocs/jcp/memory_model-1.0-pfd-spec-oth-JSpec/">Java 内存模型</a>。<br>
+<img src="https://img.mukewang.com/5efad1940001757c16160606.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>如上图所示，Java 内存模型规定，所有的变量都存储在主内存<sup class="footnote-ref"><a href="#fn2" id="fnref2">2</a></sup>。</p>
+</div><div class="cl-preview-section"><p>每个线程都有自己的工作内存，工作内存中存储了该线程使用到的变量的主内存的副本，线程对变量的所有操作都必须在工作内存中进行。</p>
+</div><div class="cl-preview-section"><p>不同的线程之间无法直接访问对方工作内存中的变量，线程之间的变量传递均需要通过主内存来完成。</p>
+</div><div class="cl-preview-section"><h2 id="原子性、可见性和有序性">2.3 原子性、可见性和有序性</h2>
+</div><div class="cl-preview-section"><h3 id="原子性">2.3.1 原子性</h3>
+</div><div class="cl-preview-section"><p>Java 内存模型直接保证了原子性变量的操作包括 read 、load、assign、 use、store 和 write 的原子性。</p>
+</div><div class="cl-preview-section"><p>基本类型中除了 long 和 double 外，都具备原子性。</p>
+</div><div class="cl-preview-section"><p>可以通过 synchronized 关键字实现更大范围的原子性。</p>
+</div><div class="cl-preview-section"><h3 id="可见性">2.3.2 可见性</h3>
+</div><div class="cl-preview-section"><p>可见性是指当一个线程修改了一个共享变量的值，其他线程能够立即得到这个修改。</p>
+</div><div class="cl-preview-section"><p>Java 中 volatile 关键字可以保证新值可以理解同步到主内存，每次使用前会从主内存刷新。</p>
+</div><div class="cl-preview-section"><p>除了 volatile 外 synchronized 和  final 关键字也可以保证可见性。</p>
+</div><div class="cl-preview-section"><p>synchronized 的可见性是通过 “对一个变量执行 unlock 操作之前，必须把此变量同步到主内存中（执行 store、write 操作）”获得的。</p>
+</div><div class="cl-preview-section"><p>final 的可见性是指被 final 修饰的变量，在构造器一旦初始化完成，并且构造器没有把 this 的阴影传递出去，那么其他线程就能看到 final 字段的值。</p>
+</div><div class="cl-preview-section"><h3 id="有序性">2.3.3 有序性</h3>
+</div><div class="cl-preview-section"><p>所谓有序性是指，在某个线程看来，自己的所有操作都是有序的，即程序的顺序性。</p>
+</div><div class="cl-preview-section"><p>由于指令重排和工作内存到主内存的同步延迟，会导致当前线程看其他线程的操作是无序的。</p>
+</div><div class="cl-preview-section"><p>volatile 通过禁止指令重排来保证有序性。 synchronized 关键字则是通过“同一个变量在同一时刻只允许一个线程对其进行 lock 操作” 实现了有序性。</p>
+</div><div class="cl-preview-section"><h3 id="java-主流锁的分类">3.4 Java 主流锁的分类</h3>
+</div><div class="cl-preview-section"><p><img src="./imgs/%E9%94%81%E5%88%86%E7%B1%BB.png" alt="锁分类"></p>
+</div><div class="cl-preview-section"><p>来源参考自《不可不说的Java “锁”事》[^3]</p>
+</div><div class="cl-preview-section"><p>锁是实现线程安全的一个重要手段，上图对 Java 主流锁的概念进行了区分。</p>
+</div><div class="cl-preview-section"><p>这里重点区分悲观锁和乐观锁的概念：</p>
+</div><div class="cl-preview-section"><p>乐观锁与悲观锁是一种广义上的概念，体现了看待线程同步的不同角度。在Java和数据库中都有此概念对应的实际应用。</p>
+</div><div class="cl-preview-section"><p>对于同一个数据的并发操作，<strong>悲观锁</strong>认为自己在使用数据的时候一定有别的线程来修改数据，因此在获取数据的时候会先加锁，确保数据不会被别的线程修改。Java中，synchronized 关键字和 Lock 的实现类都是悲观锁。</p>
+</div><div class="cl-preview-section"><p><strong>乐观锁</strong>认为自己在使用数据时不会有别的线程修改数据，所以不会添加锁，只是在更新数据的时候去判断之前有没有别的线程更新了这个数据。如果这个数据没有被更新，当前线程将自己修改的数据成功写入。如果数据已经被其他线程更新，则根据不同的实现方式执行不同的操作（例如报错或者自动重试）。乐观锁在Java中是通过使用无锁编程来实现，最常采用的是CAS算法，Java 原子类中的递增操作就通过CAS自旋实现的[^3]。</p>
+</div><div class="cl-preview-section"><h1 id="常见的线程安全问题">3. 常见的线程安全问题</h1>
+</div><div class="cl-preview-section"><p>下面结合实际的编程场景来讲述线程安全问题。</p>
+</div><div class="cl-preview-section"><h2 id="多线程操作共享资源">3.1 多线程操作共享资源</h2>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Counter</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">int</span> count<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">increase</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        count<span class="token operator">++</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token comment">// 省略 getter setter</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>定义线程：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">import</span> lombok<span class="token punctuation">.</span>SneakyThrows<span class="token punctuation">;</span>
+
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>CountDownLatch<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MyThread</span> <span class="token keyword">extends</span> <span class="token class-name">Thread</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> CountDownLatch countDownLatch<span class="token punctuation">;</span>
+
+    <span class="token keyword">private</span> Counter counter<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token function">MyThread</span><span class="token punctuation">(</span>Counter counter<span class="token punctuation">,</span> CountDownLatch countDownLatch<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>counter <span class="token operator">=</span> counter<span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>countDownLatch <span class="token operator">=</span> countDownLatch<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@SneakyThrows</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">1000</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            counter<span class="token punctuation">.</span><span class="token function">increase</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        countDownLatch<span class="token punctuation">.</span><span class="token function">countDown</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>错误案例：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>ArrayList<span class="token punctuation">;</span>
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>List<span class="token punctuation">;</span>
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>CountDownLatch<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">ThreadSafe</span> <span class="token punctuation">{</span>
+
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException <span class="token punctuation">{</span>
+        <span class="token keyword">int</span> total <span class="token operator">=</span> <span class="token number">10</span><span class="token punctuation">;</span>
+        Counter counter <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Counter</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        CountDownLatch countDownLatch <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">CountDownLatch</span><span class="token punctuation">(</span>total<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+       <span class="token comment">// 依次创建，依次执行</span>
+        List<span class="token operator">&lt;</span>MyThread<span class="token operator">&gt;</span> threads <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">&gt;</span><span class="token punctuation">(</span>total<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> total<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            threads<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">MyThread</span><span class="token punctuation">(</span>counter<span class="token punctuation">,</span>countDownLatch<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        threads<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>MyThread<span class="token operator">:</span><span class="token operator">:</span>start<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 等待所有线程执行完毕</span>
+        countDownLatch<span class="token punctuation">.</span><span class="token function">await</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>counter<span class="token punctuation">.</span><span class="token function">getCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>最后的执行结果本应该是 1000*10 即 10000，但是大概率都小于 10000。</p>
+</div><div class="cl-preview-section"><p>根据前面讲到的 Java 内存模型可知，每个线程操作的是自己工作线程的拷贝副本。</p>
+</div><div class="cl-preview-section"><p>由于前面的线程可能没有把最新的值写入到主内存，其他线程可能读到了旧值，因此最终结果可能不符合预期，非线程安全。</p>
+</div><div class="cl-preview-section"><p>这类还包括多线程操作共享非线程安全的集合等。</p>
+</div><div class="cl-preview-section"><h2 id="先查后插">3.2 先查后插</h2>
+</div><div class="cl-preview-section"><p>实际编码中比较典型的线程安全问题是先查询后插入：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">save</span><span class="token punctuation">(</span>User user<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    User userGet <span class="token operator">=</span> userDao<span class="token punctuation">.</span><span class="token function">getByMobile</span><span class="token punctuation">(</span>user<span class="token punctuation">.</span><span class="token function">getMobile</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 第 1 处</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>userGet <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token comment">// 第 2 处</span>
+        userDao<span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span>user<span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 第 3 处</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        userDao<span class="token punctuation">.</span><span class="token function">updateByMobile</span><span class="token punctuation">(</span>user<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如果之前没有数据，两个线程依次执行到第 1 处代码，依次获取到 userGet == null 成立，然后依次插入到数据库中，如果没有唯一键约束，很容易插入重复的数据。</p>
+</div><div class="cl-preview-section"><p>因此上述代码也是非线程安全的。</p>
+</div><div class="cl-preview-section"><h2 id="顺序性">3.3 顺序性</h2>
+</div><div class="cl-preview-section"><p>如下图所示，绿色表示A 服务的一些步骤，红色表示B 服务的一些步骤。</p>
+</div><div class="cl-preview-section"><p>A 服务有一个接口有 4 个核心步骤，分别修改参数对象的一些属性，然后通过消息队列发布更新事件消息 a。</p>
+</div><div class="cl-preview-section"><p>B 服务收到更新事件后，调用 A 服务的查询接口，查询A 服务 DB 中最新数据，然后更新到 ES 中。</p>
+</div><div class="cl-preview-section"><p>然后A 服务执行修改其他属性的的子函数，然后再次发布更新事件消息 b，然后B 服务再次调用 A服务的查询接口获取最新的数据，然后更新到 B 服务的 ES 存储中。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5efad17c0001be7513601080.png" alt="图片描述"><br>
+然而理想很丰满，现实很骨感。</p>
+</div><div class="cl-preview-section"><p>虽然两次更新事件是先后发出，然而消费者集群可能有多台机器，同一台机器也可能使用了线程池。</p>
+</div><div class="cl-preview-section"><p>很可能将 b 消息查询的结果先更新到 ES，然后 a 消息触发的结果后更新到 ES 中，导致旧数据覆盖新数据。</p>
+</div><div class="cl-preview-section"><p>这种问题如果在测试阶段没有发现，发布上线后很容易出现故障。</p>
+</div><div class="cl-preview-section"><h1 id="保证线程安全地几种方式">4 保证线程安全地几种方式</h1>
+</div><div class="cl-preview-section"><h2 id="无状态">4.1 无状态</h2>
+</div><div class="cl-preview-section"><p>既然大多数情况下的线程安全问题都是因共享状态产生的。</p>
+</div><div class="cl-preview-section"><p>如果我们的方法是无状态的，那么就不会有线程安全问题。</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java">  <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">int</span> <span class="token function">add</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">,</span> <span class="token keyword">int</span> b<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> a <span class="token operator">+</span> b<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如上面的示例代码，既不需要依赖外部的状态，也不需要维护状态，多线程他同时调用没有线程安全问题。</p>
+</div><div class="cl-preview-section"><p>再如 spring-data-redis （2.1.2.RELEASE）中就哟类似的做法</p>
+</div><div class="cl-preview-section"><p><code>org.springframework.data.redis.core.script.DigestUtils#getDigest</code></p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token comment">/**
+ * Creates a new {@link MessageDigest} with the given algorithm. Necessary because {@code MessageDigest} is not
+ * thread-safe.
+ */</span>
+<span class="token keyword">private</span> <span class="token keyword">static</span> MessageDigest <span class="token function">getDigest</span><span class="token punctuation">(</span>String algorithm<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+   <span class="token keyword">try</span> <span class="token punctuation">{</span>
+      <span class="token keyword">return</span> MessageDigest<span class="token punctuation">.</span><span class="token function">getInstance</span><span class="token punctuation">(</span>algorithm<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">NoSuchAlgorithmException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalStateException</span><span class="token punctuation">(</span><span class="token string">"Could not find MessageDigest with algorithm \""</span> <span class="token operator">+</span> algorithm <span class="token operator">+</span> <span class="token string">"\""</span><span class="token punctuation">,</span> ex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>因为 MessageDigest 非线程安全，所以每次获取都创建一个新的实例，因为线程私有，所以线程安全。</p>
+</div><div class="cl-preview-section"><h2 id="不可变">4.2 不可变</h2>
+</div><div class="cl-preview-section"><p>专栏前面讲过 String 的不可变性，不可变性带来的一个好处是线程安全。</p>
+</div><div class="cl-preview-section"><p>大家可以参考该节不可变对象的规则来构造不可变类，也可以通过  guava 工具类包构造不可变集合。</p>
+</div><div class="cl-preview-section"><pre class=" language-xml"><code class="prism  language-xml"><span class="token comment">&lt;!-- https://mvnrepository.com/artifact/com.google.guava/guava --&gt;</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>com.google.guava<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>guava<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">&gt;</span></span>27.0-jre<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p><code>com.google.common.collect.ImmutableCollection</code></p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token comment">/**
+ * Guaranteed to throw an exception and leave the collection unmodified.
+ *
+ * @throws UnsupportedOperationException always
+ * @deprecated Unsupported operation.
+ */</span>
+<span class="token annotation punctuation">@CanIgnoreReturnValue</span>
+<span class="token annotation punctuation">@Deprecated</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token keyword">final</span> <span class="token keyword">boolean</span> <span class="token function">removeIf</span><span class="token punctuation">(</span>Predicate<span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">super</span> E<span class="token operator">&gt;</span> filter<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">UnsupportedOperationException</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如  SimpleDateFormat 是非线程安全的 Java8 提供了一个不可变线程安全的替代类：<code>java.time.format.DateTimeFormatter</code>。</p>
+</div><div class="cl-preview-section"><h2 id="threadlocal">4.3 ThreadLocal</h2>
+</div><div class="cl-preview-section"><p>我们可以使用 ThreadLocal 创建不共享状态的对象。</p>
+</div><div class="cl-preview-section"><p>在开发中如果把 <code>java.text.SimpleDateFormat</code> 、<code>java.security.MessageDigest</code> 作为静态变量共享，则可能产生线程安全问题。</p>
+</div><div class="cl-preview-section"><p>我们可以改成下面这种写法：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span>  ThreadLocal<span class="token operator">&lt;</span>SimpleDateFormat<span class="token operator">&gt;</span> dateFormatThreadLocal <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ThreadLocal</span><span class="token operator">&lt;</span>SimpleDateFormat<span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">protected</span> SimpleDateFormat <span class="token function">initialValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">SimpleDateFormat</span><span class="token punctuation">(</span><span class="token string">"yyyy-MM-dd"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="同步集合">4.4 同步集合</h2>
+</div><div class="cl-preview-section"><p>可以借助 <code>java.util.Collections</code> 实现同步集合类。</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Test</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">test</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException <span class="token punctuation">{</span>
+    Collection<span class="token operator">&lt;</span>Integer<span class="token operator">&gt;</span> syncCollection <span class="token operator">=</span> Collections<span class="token punctuation">.</span><span class="token function">synchronizedCollection</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Thread thread1 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Thread</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> syncCollection<span class="token punctuation">.</span><span class="token function">addAll</span><span class="token punctuation">(</span>Arrays<span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Thread thread2 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Thread</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> syncCollection<span class="token punctuation">.</span><span class="token function">addAll</span><span class="token punctuation">(</span>Arrays<span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">,</span> <span class="token number">6</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    thread1<span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    thread2<span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    thread1<span class="token punctuation">.</span><span class="token function">join</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    thread2<span class="token punctuation">.</span><span class="token function">join</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Assert<span class="token punctuation">.</span><span class="token function">assertEquals</span><span class="token punctuation">(</span><span class="token number">6</span><span class="token punctuation">,</span> syncCollection<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>除了<code>synchronizedCollection</code>还提供了<code>synchronizedSet</code>、<code>synchronizedList</code>、<code>synchronizedMap</code>等同步工具函数。</p>
+</div><div class="cl-preview-section"><p>其核心原理：<strong>包装器设计模式</strong>。</p>
+</div><div class="cl-preview-section"><p><code>java.util.Collections.SynchronizedCollection</code> 通过同步代码块实现多线程的同步：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">static</span> <span class="token keyword">class</span> <span class="token class-name">SynchronizedCollection</span><span class="token operator">&lt;</span>E<span class="token operator">&gt;</span> <span class="token keyword">implements</span> <span class="token class-name">Collection</span><span class="token operator">&lt;</span>E<span class="token operator">&gt;</span><span class="token punctuation">,</span> Serializable <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">long</span> serialVersionUID <span class="token operator">=</span> 3053995032091335093L<span class="token punctuation">;</span>
+
+    <span class="token keyword">final</span> Collection<span class="token operator">&lt;</span>E<span class="token operator">&gt;</span> c<span class="token punctuation">;</span>  <span class="token comment">// Backing Collection</span>
+    <span class="token keyword">final</span> Object mutex<span class="token punctuation">;</span>     <span class="token comment">// Object on which to synchronize</span>
+
+    <span class="token function">SynchronizedCollection</span><span class="token punctuation">(</span>Collection<span class="token operator">&lt;</span>E<span class="token operator">&gt;</span> c<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>c <span class="token operator">=</span> Objects<span class="token punctuation">.</span><span class="token function">requireNonNull</span><span class="token punctuation">(</span>c<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        mutex <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> Iterator<span class="token operator">&lt;</span>E<span class="token operator">&gt;</span> <span class="token function">iterator</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> c<span class="token punctuation">.</span><span class="token function">iterator</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// Must be manually synched by user!</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">add</span><span class="token punctuation">(</span>E e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">synchronized</span> <span class="token punctuation">(</span>mutex<span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token keyword">return</span> c<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>e<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">remove</span><span class="token punctuation">(</span>Object o<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">synchronized</span> <span class="token punctuation">(</span>mutex<span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token keyword">return</span> c<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span>o<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+  <span class="token comment">// 省略其他</span>
+
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="并发集合">4.5 并发集合</h2>
+</div><div class="cl-preview-section"><p>如果需要多线程共享数据时，可以考虑使用并发集合，如 <code>CopyOnWriteArrayList</code>、<code>ConcurrentHashMap</code> 等。</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token comment">// CopyOnWriteArrayList</span>
+List<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span> list  <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">CopyOnWriteArrayList</span><span class="token operator">&lt;</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+list<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"one"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// ConcurrentHashMap</span>
+Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span>String<span class="token operator">&gt;</span> concurrentMap <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ConcurrentHashMap</span><span class="token operator">&lt;</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+concurrentMap<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span><span class="token string">"1"</span><span class="token punctuation">,</span> <span class="token string">"one"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+concurrentMap<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span><span class="token string">"2"</span><span class="token punctuation">,</span> <span class="token string">"two"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+concurrentMap<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span><span class="token string">"3"</span><span class="token punctuation">,</span> <span class="token string">"three"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="atomic-类">4.6 Atomic 类</h2>
+</div><div class="cl-preview-section"><p>可以使用原子类实现线程安全，如 <code>AtomicBoolean</code>、<code>AtomicInteger</code>、<code>AtomicReference</code>、<code>AtomicLong</code> 等。</p>
+</div><div class="cl-preview-section"><p>3.1 的示例代码可以作出如下修改：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>atomic<span class="token punctuation">.</span>AtomicInteger<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Counter</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">final</span> AtomicInteger counter <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AtomicInteger</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">increase</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        counter<span class="token punctuation">.</span><span class="token function">getAndIncrement</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">getCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> counter<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>Spring 源码中  <code>CustomizableThreadCreator</code> 就有用到 AtomicInteger 类：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">CustomizableThreadCreator</span> <span class="token keyword">implements</span> <span class="token class-name">Serializable</span> <span class="token punctuation">{</span>
+  
+   <span class="token keyword">private</span> <span class="token keyword">final</span> AtomicInteger threadCount <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AtomicInteger</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  
+   <span class="token keyword">protected</span> String <span class="token function">nextThreadName</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		  <span class="token keyword">return</span> <span class="token function">getThreadNamePrefix</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token keyword">this</span><span class="token punctuation">.</span>threadCount<span class="token punctuation">.</span><span class="token function">incrementAndGet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	 <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>底层是通过 <code>Unsafe</code> 来实现：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">AtomicInteger</span> <span class="token keyword">extends</span> <span class="token class-name">Number</span> <span class="token keyword">implements</span> <span class="token class-name">java<span class="token punctuation">.</span>io<span class="token punctuation">.</span>Serializable</span> <span class="token punctuation">{</span>
+
+    <span class="token comment">// setup to use Unsafe.compareAndSwapInt for updates</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> Unsafe unsafe <span class="token operator">=</span> Unsafe<span class="token punctuation">.</span><span class="token function">getUnsafe</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    
+        <span class="token keyword">public</span> <span class="token keyword">final</span> <span class="token keyword">int</span> <span class="token function">incrementAndGet</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> unsafe<span class="token punctuation">.</span><span class="token function">getAndAddInt</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> valueOffset<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="同步方法、同步代码块">4.7 同步方法、同步代码块</h2>
+</div><div class="cl-preview-section"><p>如 <code>java.lang.Thread#nextThreadNum</code> 类获取匿名线程名的函数：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token comment">/* For autonumbering anonymous threads. */</span>
+<span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">int</span> threadInitNumber<span class="token punctuation">;</span>
+<span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">synchronized</span> <span class="token keyword">int</span> <span class="token function">nextThreadNum</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> threadInitNumber<span class="token operator">++</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以将 3.1 中的 <code>increase</code> 函数通过同步关键字或者将函数内代码加上同步代码块实现：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Counter</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">int</span> count<span class="token punctuation">;</span>
+
+   <span class="token comment">// 同步方法</span>
+    <span class="token keyword">public</span> <span class="token keyword">synchronized</span> <span class="token keyword">void</span> <span class="token function">increase</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        count<span class="token operator">++</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">getCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> count<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setCount</span><span class="token punctuation">(</span><span class="token keyword">int</span> count<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>count <span class="token operator">=</span> count<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如 Spring 源码 <code>DefaultSingletonBeanRegistry#registerSingleton</code> 函数，就是通过同步代码块实现线程安全的：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token comment">/**
+ * Return the (raw) singleton object registered under the given name.
+ * &lt;p&gt;Checks already instantiated singletons and also allows for an early
+ * reference to a currently created singleton (resolving a circular reference).
+ * @param beanName the name of the bean to look for
+ * @param allowEarlyReference whether early references should be created or not
+ * @return the registered singleton object, or {@code null} if none found
+ */</span>
+<span class="token annotation punctuation">@Nullable</span>
+<span class="token keyword">protected</span> Object <span class="token function">getSingleton</span><span class="token punctuation">(</span>String beanName<span class="token punctuation">,</span> <span class="token keyword">boolean</span> allowEarlyReference<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+	Object singletonObject <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>singletonObjects<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>singletonObject <span class="token operator">==</span> null <span class="token operator">&amp;&amp;</span> <span class="token function">isSingletonCurrentlyInCreation</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 同步代码块</span>
+		<span class="token keyword">synchronized</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>singletonObjects<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+			singletonObject <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>earlySingletonObjects<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span>singletonObject <span class="token operator">==</span> null <span class="token operator">&amp;&amp;</span> allowEarlyReference<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+				ObjectFactory<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">&gt;</span> singletonFactory <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>singletonFactories<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+				<span class="token keyword">if</span> <span class="token punctuation">(</span>singletonFactory <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+					singletonObject <span class="token operator">=</span> singletonFactory<span class="token punctuation">.</span><span class="token function">getObject</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+					<span class="token keyword">this</span><span class="token punctuation">.</span>earlySingletonObjects<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>beanName<span class="token punctuation">,</span> singletonObject<span class="token punctuation">)</span><span class="token punctuation">;</span>
+					<span class="token keyword">this</span><span class="token punctuation">.</span>singletonFactories<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span>beanName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+				<span class="token punctuation">}</span>
+			<span class="token punctuation">}</span>
+		<span class="token punctuation">}</span>
+	<span class="token punctuation">}</span>
+	<span class="token keyword">return</span> singletonObject<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="外部锁">4.8 外部锁</h2>
+</div><div class="cl-preview-section"><p>上面讲到的  SynchronizedCollection 的做法非常相似，可以通过使用外部监视器所来改进线程安全。</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Counter</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">volatile</span> <span class="token keyword">int</span> count<span class="token punctuation">;</span>
+
+    <span class="token keyword">final</span> Object mutex<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token function">Counter</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>mutex <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  
+   <span class="token keyword">public</span> <span class="token function">Counter</span><span class="token punctuation">(</span>Object mutex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>mutex <span class="token operator">=</span> mutex<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">increase</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">synchronized</span> <span class="token punctuation">(</span>mutex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            count<span class="token operator">++</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span>
+
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="lock-类">4.9  Lock 类</h2>
+</div><div class="cl-preview-section"><p>可以使用 Java lock包提供的工具类，如 <code>ReentrantLock</code> 和 <code>ReentrantReadWriteLock</code> 等。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5efad15600011bdf18480854.png" alt="图片描述"><br>
+示例：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>locks<span class="token punctuation">.</span>ReentrantLock<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Counter</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">private</span>  <span class="token keyword">int</span> count<span class="token punctuation">;</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">final</span> ReentrantLock reLock <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ReentrantLock</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">increase</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        reLock<span class="token punctuation">.</span><span class="token function">lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            count<span class="token operator">++</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+            reLock<span class="token punctuation">.</span><span class="token function">unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="基于数据库的乐观锁">4.10 基于数据库的乐观锁</h2>
+</div><div class="cl-preview-section"><p>实际开发中还会通过添加 version 字段实现乐观锁，通过 update 语句返回的影响行数来判断执行是否成功。</p>
+</div><div class="cl-preview-section"><pre class=" language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>update</span> <span class="token attr-name">id</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>updateXXXCAS<span class="token punctuation">"</span></span> <span class="token attr-name">parameterType</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>XXX<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>  
+    <span class="token cdata">&lt;![CDATA[ 
+        update t_xxx 
+        set status=#{status},name=#{name},version=version+1 
+        where id=#{id} and version=#{version} 
+    ]]&gt;</span>  
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>update</span><span class="token punctuation">&gt;</span></span>  
+</code></pre>
+</div><div class="cl-preview-section"><p>判断s会否执行成功：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">int</span> updateResult1 <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>xxxDao<span class="token punctuation">.</span><span class="token function">updateXXXCAS</span><span class="token punctuation">(</span>goods1<span class="token punctuation">)</span><span class="token punctuation">;</span>  
+System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"修改"</span><span class="token operator">+</span><span class="token punctuation">(</span>updateResult1<span class="token operator">==</span><span class="token number">1</span><span class="token operator">?</span><span class="token string">"成功"</span><span class="token operator">:</span><span class="token string">"失败"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> 
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="分布式锁">4.11 分布式锁</h2>
+</div><div class="cl-preview-section"><p>现在微服务架构非常流行，大多数服务已经不再是单机，单纯使用 synchronized 关键字、Lock 类等无法实现跨 JVM 的同步，因此分布式锁便应运而生。</p>
+</div><div class="cl-preview-section"><p>实际开发中可以使用基于 Redis 的分布式锁，也可以使用基于 ZK 的分布式锁等。</p>
+</div><div class="cl-preview-section"><p>如可以使用 <a href="https://github.com/redisson/redisson">redisson</a> ，支持 <a href="https://github.com/redisson/redisson/wiki/8.-Distributed-locks-and-synchronizers">Lock, FairLock, MultiLock, RedLock, ReadWriteLock 等</a>，非常强大。</p>
+</div><div class="cl-preview-section"><p>使用起来非常简单，以下是一个简单的官方示例：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java">RLock lock <span class="token operator">=</span> redisson<span class="token punctuation">.</span><span class="token function">getLock</span><span class="token punctuation">(</span><span class="token string">"myLock"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// traditional lock method</span>
+lock<span class="token punctuation">.</span><span class="token function">lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// or acquire lock and automatically unlock it after 10 seconds</span>
+lock<span class="token punctuation">.</span><span class="token function">lock</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">,</span> TimeUnit<span class="token punctuation">.</span>SECONDS<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// or wait for lock aquisition up to 100 seconds </span>
+<span class="token comment">// and automatically unlock it after 10 seconds</span>
+<span class="token keyword">boolean</span> res <span class="token operator">=</span> lock<span class="token punctuation">.</span><span class="token function">tryLock</span><span class="token punctuation">(</span><span class="token number">100</span><span class="token punctuation">,</span> <span class="token number">10</span><span class="token punctuation">,</span> TimeUnit<span class="token punctuation">.</span>SECONDS<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">if</span> <span class="token punctuation">(</span>res<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+   <span class="token keyword">try</span> <span class="token punctuation">{</span>
+     <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+   <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+       lock<span class="token punctuation">.</span><span class="token function">unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>还有很多实现线程安全的方式，上述做法仅供参考。</p>
+</div><div class="cl-preview-section"><h1 id="总结">5 总结</h1>
+</div><div class="cl-preview-section"><p>本文主要讲述线程安全的相关概念，提出实际开发中常会遇到的线程安全问题并给出线程安全问题的一些解决方案。</p>
+</div><div class="cl-preview-section"><p>希望大家能够通过本节的学习对线程安全问题有一个更深入地认识，能够编写出更加安全的代码。</p>
+</div><div class="cl-preview-section"><h1 id="思考和练习">6 思考和练习</h1>
+</div><div class="cl-preview-section"><p>1、你还知道哪些可以保证线程安全的方式？</p>
+</div><div class="cl-preview-section"><p>2、实际开发中你们最常用的保证线程安全的方式是哪种？</p>
+</div><div class="cl-preview-section"><h1 id="参考资料">7 参考资料</h1>
+<hr class="footnotes-sep">
+<section class="footnotes">
+<ol class="footnotes-list">
+<li id="fn1" class="footnote-item"><p>周志明.《深入理解 Java 虚拟机》.机械工业出版社.2018 <a href="#fnref1" class="footnote-backref">↩︎</a></p>
+</li>
+<li id="fn2" class="footnote-item"><p>不可不说的 Java “锁”事 <a href="#fnref2" class="footnote-backref">↩︎</a></p>
+</li>
+</ol>
+</section>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img.mukewang.com/5ece3153000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=78">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '28 不得不说的线程安全问题',
+					'CID': '2002',
+					'Teacher': '明明如月'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "28 不得不说的线程安全问题",
+                    desc: "学习Java很重要，学会怎么学习Java更重要",
+                    imgUrl: 'https:https://img3.mukewang.com/5ecf522a00013a1d05400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5ecf522a00013a1d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/78',
+                    link: 'https://m.imooc.com/read/78'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

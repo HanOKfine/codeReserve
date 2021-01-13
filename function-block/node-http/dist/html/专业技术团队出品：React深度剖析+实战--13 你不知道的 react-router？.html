@@ -1,0 +1,851 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>13 你不知道的 react-router？</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="基础+源码+实战三管齐下的 React 全解读">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "1";
+	var chapter_id = "2212";
+	var chapter_title = "13 你不知道的 react-router？";
+	var aid = "83";
+	var a_name = "专业技术团队出品：React深度剖析+实战";
+	var a_price = "58.00";
+	var a_pic = "https://img2.mukewang.com/5f0d82e10001220c05400720.jpg";
+	var userId = 0;
+
+	var column_id = '83';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-07-21&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			13 你不知道的 react-router？
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img1.mukewang.com/5f0e659a00018ba606400359.jpg')"></div>
+	
+	
+		<a href="/read/83">
+			<div class="course-entry">
+				<img src="https://img3.mukewang.com/5f16532e00018d6b10061006-40-40.jpg" alt="BetterFE">
+				<h3>专业技术团队出品：React深度剖析+实战</h3>
+				<p>BetterFE · 业务中台前端组</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">辛苦是获得一切的定律。<p class="author">——牛顿</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="引导语">引导语</h2>
+</div><div class="cl-preview-section"><p>我们知道不同路由一般会跳转不同的页面，可以认为一个 URL 对应一个 UI。对于多页面应用而言，一个 URL 对应的就是一个 HTML 页面，而对于单页面应用，一个 URL 对应的其实是一个组件的展示。我们可以通过 URL 来控制 UI 或者 HTML 的展示，这种方式就是路由的方式，通过本小节的学习，你会学习到如何在 React 中使用组件定义路由。</p>
+</div><div class="cl-preview-section"><h2 id="react-router">React Router</h2>
+</div><div class="cl-preview-section"><p>本小节使用的 React Router 大版本号是 V4，是目前的最新版本。<br>
+React Router 包含了三个库：react-router、react-router-dom 和 react-router-native。本小节 demo 使用的域名均为“<a href="http://www.react-router-dom.com">http://www.react-router-dom.com</a>”。</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>react-router</strong> 提供最基本的路由功能，实际使用中我们会根据应用运行的环境选择安装不同的库，并不会直接安装 react-router；</li>
+<li><strong>react-router-dom</strong> 在浏览器中使用；</li>
+<li><strong>react-router-native</strong> 在 react-native 中使用。</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>react-router-dom 和 react-router-native 都依赖 react-router，在安装这两个库时 react-router 也会自动安装。本小节主要讲 react-router-dom 的使用。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="环境准备">环境准备</h2>
+</div><div class="cl-preview-section"><ol>
+<li>UMD</li>
+</ol>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism =  language-javascript"><span class="token operator">&lt;</span>script src<span class="token operator">=</span><span class="token string">"https://unpkg.com/react-router-dom/umd/react-router-dom.min.js"</span><span class="token operator">&gt;</span><span class="token operator">&lt;</span><span class="token operator">/</span>script<span class="token operator">&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>此方式引入的 ReactRouterDOM 会挂载在 window 下，我们可以使用 window.ReactRouterDOM 找到这个库。</p>
+</div><div class="cl-preview-section"><ol start="2">
+<li>npm 安装</li>
+</ol>
+</div><div class="cl-preview-section"><pre class="  language-shell"><code class="prism  language-shell">npm install react-router-dom --save
+</code></pre>
+</div><div class="cl-preview-section"><p>此方式引入的库使用模块管理器方式引入：</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token comment">// 使用 ES6 的转译器，如 babel</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> HashRouter<span class="token punctuation">,</span> Route<span class="token punctuation">,</span> Switch <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">'react-router-dom'</span>
+
+<span class="token comment">// 不使用 ES6 的转译器</span>
+<span class="token keyword">const</span> ReactRouter <span class="token operator">=</span> <span class="token function">require</span><span class="token punctuation">(</span><span class="token string">'react-router-dom'</span><span class="token punctuation">)</span>
+<span class="token keyword">const</span> <span class="token punctuation">{</span> HashRouter<span class="token punctuation">,</span> Route<span class="token punctuation">,</span> Switch <span class="token punctuation">}</span> <span class="token operator">=</span> ReactRouter
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="browserrouter--hashrouter">BrowserRouter &amp; HashRouter</h2>
+</div><div class="cl-preview-section"><p>当我们准备为项目引入 router 路由时，首先要决定选择哪种路由。react-router-dom 提供了 BrowserRouter 和 HashRouter 两个组件来实现应用的 UI 和 URL 同步。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>BrowserRouter 创建的 URL 格式：<a href="http://xxx.com/path">http://xxx.com/path</a><br>
+HashRouter 创建的 URL 格式：<a href="http://xxx.com/#/path">http://xxx.com/#/path</a></p>
+</blockquote>
+</div><div class="cl-preview-section"><h3 id="browserrouter">BrowserRouter</h3>
+</div><div class="cl-preview-section"><p>它使用 HTML5 提供的 history API（pushState、replaceState 和 popstate 事件）来保持 UI 和 URL 的同步。</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>BrowserRouter</span>
+    <span class="token attr-name">basename</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>string<span class="token punctuation">}</span></span>
+    <span class="token attr-name">forceRefresh</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>bool<span class="token punctuation">}</span></span>
+    <span class="token attr-name">getUserConfirmation</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>func<span class="token punctuation">}</span></span>
+    <span class="token attr-name">keyLength</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>number<span class="token punctuation">}</span></span>
+<span class="token punctuation">/&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>basename 所有路由的基准 URL。basename 的正确格式是前面有一个前导斜杠，但不能有尾部斜杠；</li>
+</ul>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>BrowserRouter</span> <span class="token attr-name">basename</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>/calendar<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Link</span> <span class="token attr-name">to</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>/today<span class="token punctuation">"</span></span> <span class="token punctuation">/&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>BrowserRouter</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>等同于</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>a</span> <span class="token attr-name">href</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>/calendar/today<span class="token punctuation">"</span></span> <span class="token punctuation">/&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>forceRefresh 如果为 true，在导航的过程中整个页面将会刷新。一般情况下，只有在不支持 HTML5 history API 的浏览器中使用此功能；</li>
+<li>getUserConfirmation 用于确认导航的函数，默认使用 window.confirm。例如，当从 /a 导航至 /b 时，会使用默认的 confirm 函数弹出一个提示，用户点击确定后才进行导航，否则不做任何处理；</li>
+</ul>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token comment">// 这是默认的确认函数</span>
+<span class="token keyword">const</span> <span class="token function-variable function">getConfirmation</span> <span class="token operator">=</span> <span class="token punctuation">(</span>message<span class="token punctuation">,</span> callback<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+  <span class="token keyword">const</span> allowTransition <span class="token operator">=</span> window<span class="token punctuation">.</span><span class="token function">confirm</span><span class="token punctuation">(</span>message<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">callback</span><span class="token punctuation">(</span>allowTransition<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>BrowserRouter</span> <span class="token attr-name">getUserConfirmation</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>getConfirmation<span class="token punctuation">}</span></span> <span class="token punctuation">/&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>需要配合<code>&lt;Prompt&gt;</code> 一起使用。</p>
+</blockquote>
+</div><div class="cl-preview-section"><ul>
+<li>KeyLength 用来设置 Location.Key 的长度。</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="hashrouter">HashRouter</h3>
+</div><div class="cl-preview-section"><p>使用 URL 的 hash 部分（即 window.location.hash）来保持 UI 和 URL 的同步。</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>HashRouter</span>
+    <span class="token attr-name">basename</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>string<span class="token punctuation">}</span></span>
+    <span class="token attr-name">getUserConfirmation</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>func<span class="token punctuation">}</span></span>
+    <span class="token attr-name">hashType</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>string<span class="token punctuation">}</span></span>  
+<span class="token punctuation">/&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>basename, getUserConfirmation 和 <code>BrowserRouter</code> 功能一样；</li>
+<li>hashType window.location.hash 使用的 hash 类型，有如下几种：
+<ul>
+<li>slash - 后面跟一个斜杠，例如 #/ 和 #/sunshine/lollipops；</li>
+<li>noslash - 后面没有斜杠，例如 # 和 #sunshine/lollipops；</li>
+<li>hashbang - Google 风格的 ajax crawlable，例如 #!/ 和 #!/sunshine/lollipops。</li>
+</ul>
+</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>hashType 默认为 slash。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="route">Route</h2>
+</div><div class="cl-preview-section"><h3 id="语法">语法</h3>
+</div><div class="cl-preview-section"><p>Route 是 React Router 用于配置路由信息的组件，也是 React Router 中使用频率最高的组件。每当有一个组件需要根据 URL 决定是否渲染时，就需要创建一个 Route。</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Route</span>
+    <span class="token attr-name">exact</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>bool<span class="token punctuation">}</span></span>
+    <span class="token attr-name">path</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>string<span class="token punctuation">}</span></span>
+    <span class="token attr-name">component</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>Component<span class="token punctuation">}</span></span> <span class="token punctuation">/&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li><strong>exact</strong>：当 URL 完全匹配时，值为 true，否则为 false，它控制匹配到 / 路径时是否会再继续向下匹配；</li>
+<li><strong>path</strong>：构建嵌套路由时会使用到，每个 Route 都需要定一个 path 属性；</li>
+<li><strong>component</strong>：表示路径对应显示的组件。</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>URL 匹配到 Route 时，这个 Route 中的组件会被渲染出来。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>当 URL 和 Route 匹配时，Route 会创建一个 match 对象作为 props 中的一个属性传递给被渲染的组件。这个对象包含以下 4 个属性：</p>
+</div><div class="cl-preview-section"><ol>
+<li><strong>params</strong>: Route 的 path 可以包含参数，params 就是用于从匹配的 URL 中解析出 path 中的参数；</li>
+<li><strong>isExact</strong>：同 Route 的 exact；</li>
+<li><strong>path</strong>：同 Route 的 path；</li>
+<li><strong>url：URL</strong> 匹配的方式。</li>
+</ol>
+</div><div class="cl-preview-section"><h3 id="route-渲染组件的方式">Route 渲染组件的方式</h3>
+</div><div class="cl-preview-section"><p><strong>1. component 属性</strong><br>
+component 属性的值是一个组件，当 URL 和 Route 匹配时，component 属性定义的组件就会被渲染。</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Route</span> <span class="token attr-name">path</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">'</span>/foo<span class="token punctuation">'</span></span> <span class="token attr-name">component</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>Foo<span class="token punctuation">}</span></span> <span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>当 URL 为 “<a href="http://www.react-router-dom.com/foo%E2%80%9D">http://www.react-router-dom.com/foo”</a> 时，Foo 组件会被渲染。</p>
+</div><div class="cl-preview-section"><p><strong>2. render</strong><br>
+render 的值是一个函数，它返回的是一个 React 元素。这种方式方便地为待渲染的组件传递额外的属性。</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Route</span> 
+    <span class="token attr-name">path</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">'</span>/foo<span class="token punctuation">'</span></span> 
+    <span class="token attr-name">render</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span><span class="token punctuation">(</span>props<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+        <span class="token operator">&lt;</span>Foo <span class="token punctuation">{</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>props<span class="token punctuation">}</span> data<span class="token punctuation">=</span><span class="token punctuation">{</span>extraProps<span class="token punctuation">}</span></span> <span class="token punctuation">/&gt;</span></span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token operator">&gt;</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>Route</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>Foo 组件接收了一个额外的 <code>data</code> 属性。</p>
+</div><div class="cl-preview-section"><p><strong>3. children</strong><br>
+children 的值也是一个函数，函数返回要渲染的 React 元素。与前两种方式不同之处是，无论是否匹配成功，children 返回的组件都会被渲染。但是，当匹配不成功时，match 属性为 null。例如:</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Route</span>
+    <span class="token attr-name">path</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">'</span>/foo<span class="token punctuation">'</span></span> 
+    <span class="token attr-name">render</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span><span class="token punctuation">(</span>props<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+        <span class="token operator">&lt;</span>div className<span class="token punctuation">=</span><span class="token punctuation">{</span>props<span class="token punctuation">.</span>match <span class="token operator">?</span> <span class="token string">'active'</span><span class="token punctuation">:</span> <span class="token string">''</span><span class="token punctuation">}</span></span><span class="token punctuation">&gt;</span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Foo</span> <span class="token spread"><span class="token punctuation">{</span><span class="token punctuation">...</span><span class="token attr-value">props</span><span class="token punctuation">}</span></span> <span class="token attr-name">data</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>extraProps<span class="token punctuation">}</span></span> <span class="token punctuation">/&gt;</span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>div</span><span class="token punctuation">&gt;</span></span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token operator">&gt;</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>Route</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如果 Route 匹配当前 URL，待渲染元素的根节点 div 的 class 将设置成 active。</p>
+</div><div class="cl-preview-section"><h2 id="switch--exact">Switch &amp; exact</h2>
+</div><div class="cl-preview-section"><p>Switch 通常被用来包裹 Route，用于渲染与路径匹配的第一个子 <code>&lt;Route&gt;</code> 或 <code>&lt;Redirect&gt;</code>，它里面不能放其他元素。<br>
+<code>&lt;Switch&gt;</code> 只会渲染一个路由。相反，不加 <code>&lt;Switch&gt;</code> 会如何呢？</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token comment">//假设 Home、Login 是已经创建好的组件</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> Route <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">'react-router-dom'</span>
+
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Route</span> <span class="token attr-name">path</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>/<span class="token punctuation">"</span></span> <span class="token attr-name">component</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>Home<span class="token punctuation">}</span></span><span class="token punctuation">&gt;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>Route</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Route</span> <span class="token attr-name">path</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>/login<span class="token punctuation">"</span></span> <span class="token attr-name">component</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>Login<span class="token punctuation">}</span></span><span class="token punctuation">&gt;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>Route</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>当 URL 的 path 为 “/login” 时，<code>&lt;Route path="/" /&gt;</code>和<code>&lt;Route path="/login" /&gt;</code> 都会被匹配，因此页面会展示 Home 和 Login 两个组件，显然这不是我们期望的。这个时候我们需要借助 <code>&lt;Switch&gt;</code> 来做到只显示一个匹配组件。</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token comment">//假设 Home、Login 是已经创建好的组件</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> Switch<span class="token punctuation">,</span> Route<span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">'react-router-dom'</span>
+    
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Switch</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Route</span> <span class="token attr-name">path</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>/<span class="token punctuation">"</span></span> <span class="token attr-name">component</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>Home<span class="token punctuation">}</span></span><span class="token punctuation">&gt;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>Route</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Route</span> <span class="token attr-name">path</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>/login<span class="token punctuation">"</span></span> <span class="token attr-name">component</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>Login<span class="token punctuation">}</span></span><span class="token punctuation">&gt;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>Route</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>Switch</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>此时，再访问 “/login” 路径时，却只显示了 Home 组件。那要怎么处理呢？<br>
+机智的你肯定想到了调整 Home 与 Login 的顺序，就能第一个匹配到 <code>&lt;Route path="/login" /&gt;</code>，从而达到预期。这样做毫无疑问是可以的，那难道路由的顺序如此严格么？当然不是啦。这个时候 exact 就显得尤为重要。<br>
+exact 翻译过来就是“准确，精确”，在这里的作用就是精确匹配路径，经常与<code>&lt;Switch&gt;</code> 联合使用。只有当 URL 和该 <code>&lt;Route&gt;</code> 的 path 属性完全一致的情况下才能匹配上。</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token comment">//假设 Home、Login 是已经创建好的组件</span>
+<span class="token keyword">import</span> <span class="token punctuation">{</span> Switch<span class="token punctuation">,</span> Route<span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">'react-router-dom'</span>
+   
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Switch</span><span class="token punctuation">&gt;</span></span>
+   <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Route</span> <span class="token attr-name">exact</span> <span class="token attr-name">path</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>/<span class="token punctuation">"</span></span> <span class="token attr-name">component</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>Home<span class="token punctuation">}</span></span><span class="token punctuation">&gt;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>Route</span><span class="token punctuation">&gt;</span></span>
+   <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Route</span> <span class="token attr-name">exact</span> <span class="token attr-name">path</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>/login<span class="token punctuation">"</span></span> <span class="token attr-name">component</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>Login<span class="token punctuation">}</span></span><span class="token punctuation">&gt;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>Route</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>Switch</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="link--navlink">Link &amp; NavLink</h2>
+</div><div class="cl-preview-section"><p>Link 组件为我们的应用提供一个声明式的、可访问的导航链接。</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token keyword">import</span> <span class="token punctuation">{</span> Link <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">'react-router-dom'</span>  
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Link</span> <span class="token attr-name">to</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>/login<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>Login<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>Link</span><span class="token punctuation">&gt;</span></span> <span class="token comment">// 会被解析成：&lt;a href="/login"&gt;Login&lt;/a&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li><code>to: string | object</code><br>
+声明要导航到的链接地址，可以是一个字符串，也可以是一个对象。</li>
+</ul>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token keyword">import</span> <span class="token punctuation">{</span> Link <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">'react-router-dom'</span>  
+    
+<span class="token comment">// 字符串形式</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Link</span> <span class="token attr-name">to</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>/login?name=zhangsan#hash<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>Login<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>Link</span><span class="token punctuation">&gt;</span></span>
+
+<span class="token comment">// 对象形式</span>
+<span class="token operator">&lt;</span>Link to<span class="token operator">=</span>"<span class="token punctuation">{</span><span class="token punctuation">{</span>
+  pathname<span class="token punctuation">:</span><span class="token string">'/login'</span><span class="token punctuation">,</span>        <span class="token comment">// 要导航到的路径</span>
+  search<span class="token punctuation">:</span> <span class="token string">'?name=zhangsan'</span><span class="token punctuation">,</span> <span class="token comment">// 查询参数</span>
+  hash<span class="token punctuation">:</span> <span class="token string">'#hash'</span>             <span class="token comment">// 哈希</span>
+<span class="token punctuation">}</span><span class="token punctuation">}</span>"<span class="token operator">&gt;</span>Login<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>Link</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li><code>replace: boolean</code><br>
+该属性决定是将点击后的链接替换历史堆栈中的最新记录，还是添加一条新记录。设置为 true 时是替换，设置为 false 时是添加。默认值是 false。</li>
+</ul>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Link</span> <span class="token attr-name">to</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>/login<span class="token punctuation">"</span></span> <span class="token attr-name">replace</span><span class="token punctuation">&gt;</span></span>Login<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>Link</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>NavLink 是特殊的 Link，可以为与当前 URL 匹配的 Link 元素增加样式属性。</p>
+</div><div class="cl-preview-section"><ul>
+<li><code>activeClassName: string</code><br>
+表示当元素处于激活状态时的类名，默认为 active。</li>
+</ul>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token keyword">import</span> <span class="token punctuation">{</span> NavLink <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">'react-router-dom'</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>NavLink</span> <span class="token attr-name">to</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>/login<span class="token punctuation">"</span></span> <span class="token attr-name">activeClassName</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>active<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>Login<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>NavLink</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li><code>activeStyle: object</code><br>
+表示当元素处于激活状态时的样式。</li>
+</ul>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token keyword">import</span> <span class="token punctuation">{</span> NavLink <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">'react-router-dom'</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>NavLink</span> <span class="token attr-name">to</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>/login<span class="token punctuation">"</span></span> <span class="token attr-name">activeStyle</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span><span class="token punctuation">{</span>color<span class="token punctuation">:</span> <span class="token string">'red'</span><span class="token punctuation">}</span><span class="token punctuation">}</span></span><span class="token punctuation">&gt;</span></span>Login<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>NavLink</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li><code>exact: boolean</code><br>
+设置为 true 表示：当且仅当完全匹配时才应用 activeClassName 或 activeStyle。</li>
+</ul>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token keyword">import</span> <span class="token punctuation">{</span> NavLink <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">'react-router-dom'</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>NavLink</span> <span class="token attr-name">exact</span> <span class="token attr-name">to</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>/login<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>Login<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>NavLink</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li><code>isActive: function</code><br>
+我们可以通过 isActive 添加一些额外的逻辑来决定当前链接是否处于激活状态。</li>
+</ul>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token keyword">import</span> <span class="token punctuation">{</span> NavLink <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">'react-router-dom'</span>
+    
+<span class="token function">dealActive</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token operator">...</span>
+<span class="token punctuation">}</span>
+
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>NavLink</span> <span class="token attr-name">to</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>/login<span class="token punctuation">"</span></span> <span class="token attr-name">isActive</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>dealActive<span class="token punctuation">}</span></span><span class="token punctuation">&gt;</span></span>Login<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>NavLink</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>以上我们只讲解了 react-router-dom 提供的一些常用组件以及常用属性，其他组件及其更多属性见扩展阅读。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="嵌套路由">嵌套路由</h2>
+</div><div class="cl-preview-section"><p>嵌套路由是指在 Route 渲染的组件内部定义新的 Route，比如在上面的 Login 组件中可以再定义两个路由</p>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token keyword">const</span> Login <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">{</span>match<span class="token punctuation">}</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>
+        <span class="token comment">// 这里 match.url 等于 /login</span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>div</span><span class="token punctuation">&gt;</span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Route</span> <span class="token attr-name">path</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span><span class="token template-string"><span class="token string">`</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>match<span class="token punctuation">.</span>url<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">/:id`</span></span><span class="token punctuation">}</span></span> <span class="token attr-name">component</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>TestId<span class="token punctuation">}</span></span> <span class="token punctuation">/&gt;</span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Route</span> <span class="token attr-name">exact</span> <span class="token attr-name">path</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>match<span class="token punctuation">.</span>url<span class="token punctuation">}</span></span> <span class="token attr-name">component</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>Test<span class="token punctuation">}</span></span> <span class="token punctuation">/&gt;</span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>div</span><span class="token punctuation">&gt;</span></span>
+    <span class="token punctuation">)</span>    
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>嵌套路由是基于当前路由创建的路由，前缀是我们当前的路由。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h2 id="路由设计">路由设计</h2>
+</div><div class="cl-preview-section"><p>通过以上学习，我们可以总结出路由设计的步骤：<br>
+第一步：定义路由名称即 path；<br>
+第二步：组织 Route 的结构层次。</p>
+</div><div class="cl-preview-section"><h2 id="react-路由和-react-组件的关系">React 路由和 React 组件的关系</h2>
+</div><div class="cl-preview-section"><ol>
+<li>React 路由和 React 组件都遵循相同的事件循环：事件 =&gt; 状态变化 =&gt; 重新渲染;</li>
+<li>React 组件在相同路径但是参数不同的路由跳转不允许触发重新渲染，如果需要重新渲染，就需要设置一个名字叫做 RouteKey 的 boolean 属性，它将向组件传递一个唯一的键，该键是 <code>location.pathname</code> 和 <code>location.search</code> 的组合，在这个场景中，每当路由被请求，组件都能接受一个新的键；而且即使停留在同一个页面，页面也会重新渲染，没有任何副作用。</li>
+</ol>
+</div><div class="cl-preview-section"><pre class="  language-jsx"><code class="prism  language-jsx"><span class="token keyword">const</span> Login <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">{</span>match<span class="token punctuation">}</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>
+        <span class="token comment">// 这里 match.url 等于 /login</span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>div</span><span class="token punctuation">&gt;</span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Route</span> <span class="token attr-name">path</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span><span class="token template-string"><span class="token string">`</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>match<span class="token punctuation">.</span>url<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">/:id`</span></span><span class="token punctuation">}</span></span> <span class="token attr-name">component</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>TestId<span class="token punctuation">}</span></span> <span class="token attr-name">RouteKey</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span><span class="token boolean">true</span><span class="token punctuation">}</span></span> <span class="token punctuation">/&gt;</span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>Route</span> <span class="token attr-name">exact</span> <span class="token attr-name">path</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>match<span class="token punctuation">.</span>url<span class="token punctuation">}</span></span> <span class="token attr-name">component</span><span class="token script language-javascript"><span class="token punctuation">=</span><span class="token punctuation">{</span>Test<span class="token punctuation">}</span></span> <span class="token punctuation">/&gt;</span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>div</span><span class="token punctuation">&gt;</span></span>
+    <span class="token punctuation">)</span>    
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>上面代码中访问路由 <code>/login/:id</code> 时，参数不管是否发生变化，页面都会重新渲染。</p>
+</div><div class="cl-preview-section"><h2 id="小结">小结</h2>
+</div><div class="cl-preview-section"><p>本小节详细讲解了定义路由需要用到的一些 API，在我们的项目中，路由是必须的，这就要求我们必须储备设计路由的能力。通过本小节的学习，我们发现 React 中定义路由并没有那么复杂，结尾我们还总结了 React 路由和 React 组件之间的关系，希望大家通过本小节的学习，能熟练掌握路由的设计思想以及如何在 React 中优雅的定义它们。</p>
+</div><div class="cl-preview-section"><h2 id="demo-地址">demo 地址</h2>
+</div><div class="cl-preview-section"><p><a href="https://github.com/XJFM/imooc-react/tree/master/01_13.router">https://github.com/XJFM/imooc-react/tree/master/01_13.router</a></p>
+</div><div class="cl-preview-section"><h2 id="扩展阅读">扩展阅读</h2>
+</div><div class="cl-preview-section"><p><a href="https://reacttraining.com/react-router/web/api/BrowserRouter">react-router</a></p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5f0e659f000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6645">
+						<img src="https://img2.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">weixin_lsk_0</h4>
+						<div class="comment-text">请问Route,link,Switch都应该包裹在同一个Router下吧？如果是Router应该怎么写比较方便?写在index.js中包裹App组件？</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-26</span>
+						<a href="/read/commentdetail/6645">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6645" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=83">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '13 你不知道的 react-router？',
+					'CID': '2212',
+					'Teacher': 'BetterFE'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "13 你不知道的 react-router？",
+                    desc: "基础+源码+实战三管齐下的 React 全解读",
+                    imgUrl: 'https:https://img2.mukewang.com/5f0d82e10001220c05400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5f0d82e10001220c05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/83',
+                    link: 'https://m.imooc.com/read/83'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

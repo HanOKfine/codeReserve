@@ -1,0 +1,959 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>02 微服务架构的规划</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="轻量级项目，系统化经验">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "5";
+	var chapter_id = "1713";
+	var chapter_title = "02 微服务架构的规划";
+	var aid = "73";
+	var a_name = "架构思维成长之微服务";
+	var a_price = "68.00";
+	var a_pic = "https://img.mukewang.com/5e86b0220001a99d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '73';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-04-13&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			02 微服务架构的规划
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5e86c721000195c406400359.jpg')"></div>
+	
+	
+		<a href="/read/73">
+			<div class="course-entry">
+				<img src="https://img1.mukewang.com/5e6eebd60001a49207000933-40-40.jpg" alt="曼巴out">
+				<h3>架构思维成长之微服务</h3>
+				<p>曼巴out · 上市公司资深架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">人只有献身于社会，才能找出那短暂而有风险的生命的意义。<p class="author">——爱因斯坦</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="、前言">1、前言</h1>
+</div><div class="cl-preview-section"><p>本节主要跟大家聊聊如何去规划一个项目的架构，平时工作当中，很多同学接触到的项目都是现成的，由专门人员搭建好之后，自己在其基础上进行开发，自己也从来没想过为什么是这样的架构，这样的架构有什么缺点，有没有更好的方案等等，就只管编写自己的代码。时间长了，感觉写代码真的很简单，一旦你真感觉写代码很简单的时候，其实是在提醒你要学习了，否则很容易就会进入舒适区。有时候，你看似很简单的问题，但是真要自己动手去搭建一遍，发现遇到的问题很多。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>首先，我们梳理一个项目的完整开发流程大概是什么样的？</p>
+</blockquote>
+</div><div class="cl-preview-section"><p><strong>阶段 1：</strong> 需求的规划、原型图的设计；这部分工作一般是产品和美工完成的，主要目的是把虚拟的东西变成一个感观可见的东西。</p>
+</div><div class="cl-preview-section"><p><strong>阶段 2：</strong> 需求分析设计阶段，主要是把需求文档的文字梳理成各个模型，包括架构图设计、流程图设计等。这个环节非常的重要，如果跳过该环节直接进入代码实战，则往往事倍功半。</p>
+</div><div class="cl-preview-section"><p><strong>阶段 3：</strong> 代码实战，就是撸代码阶段</p>
+</div><div class="cl-preview-section"><p><strong>阶段 4：</strong> 功能测试，大家都是熟悉的。包括：接口联调、测试环境测试、灰度测试</p>
+</div><div class="cl-preview-section"><p><strong>阶段 5：</strong> 项目上线</p>
+</div><div class="cl-preview-section"><p>上面的流程大家应该都不陌生，作为开发人员，我们比较熟悉的应该是<code>阶段2</code> 和<code>阶段3</code>；我们的本节的重点就是<code>阶段2</code> 需求的分析和设计。其实在这个阶段，开发人员通过画项目的架构图、各个业务的详细流程图，很多难点都会在流程图上体现出来，再针对难点做技术方案的选型等；这个步骤做好之后，那么代码阶段就会非常的简单，只需要按照标准去实现即可。</p>
+</div><div class="cl-preview-section"><h2 id="思考：规划系统架构需要考虑哪些问题呢？">思考：规划系统架构需要考虑哪些问题呢？</h2>
+</div><div class="cl-preview-section"><p>①架构模式</p>
+</div><div class="cl-preview-section"><ul>
+<li>一般根据项目的预估并发量、项目的规模来选择合适的架构，通常分为单体架构、垂直架构、SOA 架构、微服务架构。</li>
+</ul>
+</div><div class="cl-preview-section"><p>②技术选型</p>
+</div><div class="cl-preview-section"><ul>
+<li>技术选型通常分为基础的开发框架（比如���ssm、SpringBoot+MyBatis 等）、分布式架构本身所引起的技术难点（比如：服务治理、网关、配置中心等等）、具体业务场景选择什么样的解决方案（这个实战部分会深入分析）。</li>
+<li>同种类型的框架如何选择，比如：消息队列的主流框架有 ActiveMQ、RabbitMQ、RocketMQ、Kafka 等，我们应该选择哪款框架。</li>
+<li>必须熟悉分布式架构常见的问题及解决方案，比如：服务治理问题、自动化部署、系统的稳定性（容错、限流）、分布式事务、分布式锁等等。</li>
+</ul>
+</div><div class="cl-preview-section"><p>③部署架构</p>
+</div><div class="cl-preview-section"><ul>
+<li>根据预估流量、接口压测，来选择具体的部署架构方案，是选择做单节点部署还是集群部署，是传统的部署还是容器化部署。</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="、项目架构的规划">2、项目架构的规划</h1>
+</div><div class="cl-preview-section"><h2 id="、架构模式">2.1、架构模式</h2>
+</div><div class="cl-preview-section"><p>了解一下单体模式：<br>
+<img src="https://img.mukewang.com/5e86b6110001c1c905460258.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>无论开发的时候，分多少个子项目，上线的时候，只打成一个包进行部署的项目就是单体项目。</p>
+</div><div class="cl-preview-section"><p>单体项目模式 1：</p>
+</div><div class="cl-preview-section"><pre><code>platform							（项目名称）
+	|-- src/main/java
+    |  |-- com.micro.utils			（工具包）
+	|  |-- com.micro.modules
+	|  |-- com.micro.modules.user	（用户模块）
+	|  |  |-- UserController.java
+	|  |  |-- UserService.java
+	|  |  |-- UserServiceImpl.java
+	|  |  |-- UserDao.java
+	|  |-- com.micro.modules.order	（订单模块）
+	|  |  |-- OrderController.java
+	|  |  |-- OrderService.java
+	|  |  |-- OrderServiceImpl.java
+	|  |  |-- OrderDao.java
+	|  |-- com.micro.modeules.goods	（商品模块）
+	|  |  |-- GoodsController.java
+	|  |  |-- GoodsService.java
+	|  |  |-- GoodsServiceImpl.java
+	|  |  |-- GoodsDao.java
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>描述：通过包名来区分不同的模块</li>
+<li>优点：项目架构简单</li>
+<li>缺点：①所有的模块代码严重耦合一起，代码非常的臃肿；②技术受限，不可以灵活的选择合适的开发语言；③整体运行性能较低</li>
+</ul>
+</div><div class="cl-preview-section"><p>单体项目模式 2：</p>
+</div><div class="cl-preview-section"><pre><code>platform
+	|-- platform-user	（用户工程）
+	|-- platform-order	（订单工程）
+	|-- platform-goods	（商品工程）
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>描述：开发过程中把一个大的项目拆分多个子项目；但是最后是打包成一个项目来进行部署</li>
+<li>优点：相比上面的模式，项目做了拆分，可以实现代码的重复性利用</li>
+<li>缺点：①还是技术受限，所有工程必须遵守统一技术规范，否则无法整合；②整体运行性能较低</li>
+</ul>
+</div><div class="cl-preview-section"><p>了解一下分布式（微服务）模式：<br>
+<img src="https://img.mukewang.com/5e86b6730001737504370791.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>描述：把一张完整项目拆分多个独立运行的服务，可以是每个服务独立自己的数据库、也可以共用一个数据库。</li>
+<li>优点：①每个服务的功能单一；②运行速度快；③开发和迭代周期短；④技术选型比较灵活</li>
+<li>缺点：①服务数量较多；②部署复杂度提高；③会引起很多的其他问题（下面详细分析）</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>大型项目都会选择微服务的架构模式，架构模式是，前后端分离 + 后端微服务架构，具体如下：</p>
+</blockquote>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e86b6af00012f7a06540250.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>相信很多老程序员都接触过 jsp 这玩意，它是一种模板引擎技术，前后端分离之前，基本上都是使用它来开发的页面。jsp 虽然内置了好多的标签，开发起来也比较方便。但是分工责任问题，让前端和后端开发人员合作起来相对比较麻烦。前端开发好 html 页面丢给后端整合成 jsp，这中间出现各种样式问题、兼容性问题等等。因此前后端分离让项目开发起来效率更加高，毕竟专业的人做专业的事。</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="思考：微服务架构会存在哪些问题呢？">思考：微服务架构会存在哪些问题呢？</h3>
+</div><div class="cl-preview-section"><p><strong>1）稳定性问题</strong></p>
+</div><div class="cl-preview-section"><p>服务网稳定性问题，主要来自于以下几个方面。</p>
+</div><div class="cl-preview-section"><p>①高并发访问、或者突发流量、恶意攻击等；</p>
+</div><div class="cl-preview-section"><ul>
+<li>可以采用限流、容错、防恶意攻击的方式保护服务，比如：前端加验证码、IP 控制、网关限流、消息队列限流、服务限流。</li>
+</ul>
+</div><div class="cl-preview-section"><p>②由于服务的数量很多、关系复杂，其中一个服务出问题，就可能导致雪崩效应。</p>
+</div><div class="cl-preview-section"><ul>
+<li>为了防止服务之间的雪崩效应，最常见解决方案就是，服务容错及降低，主要是当调用的服务出问题时，返回默认值。</li>
+</ul>
+</div><div class="cl-preview-section"><p>③分布式事务问题，这个是服务拆分必然引起的问题。</p>
+</div><div class="cl-preview-section"><ul>
+<li>原来单体项目模式，则所有操作属于同一个事务，数据一致性得到了保证，但是微服务模式下，则不在同一个事务下了，需要解决分布式事务的问题。</li>
+</ul>
+</div><div class="cl-preview-section"><p>④为了更好的保护我们的服务，我们需要在所有服务前面加上一层网关，它的核心功能是请求转发、认证、鉴权、限流。</p>
+</div><div class="cl-preview-section"><p>⑤接口调用幂等性问题，比如：接口消费方超时时间是 2s，但是此时接口提供方出现卡顿了，处理花了 5s，此时消费方会发起接口重试，就会导致重复执行。</p>
+</div><div class="cl-preview-section"><p>⑥网络延迟、连接假死等引起远程通讯问题</p>
+</div><div class="cl-preview-section"><p><strong>2）通讯问题</strong></p>
+</div><div class="cl-preview-section"><p>服务之间通讯，如果使用传统的 HttpClient、WebService 肯定是满足不了的，因为服务之间互相通讯，复杂度更加的高，比如：集群模式需要动态新增节点、负载均衡、服务容错等，一般得集成服务治理框架（Dubbo 等）。</p>
+</div><div class="cl-preview-section"><p><strong>3）部署问题</strong></p>
+</div><div class="cl-preview-section"><p>服务数量很多，并且服务器数量也很多的情况下，手工部署效率会非常的低，一般都是自动化部署和自动化扩容；然而项目部署肯定需要修改项目的配置信息，因此需要依赖一个叫配置中心的中间件。</p>
+</div><div class="cl-preview-section"><p><strong>4）错误定位问题</strong></p>
+</div><div class="cl-preview-section"><p>日志文件散落在各个服务器，如何快速定位异常信息呢？如果依靠手工去每台服务中查看日志信息，则效率非常的慢。因此需要集成日志采集、存储、分析框架，比如：ELK 技术栈。除此之外，为了提高效率，建议做以下两个小操作。</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>最好自定义异常类，这样可以更加快速的定位异常地方。</p>
+</li>
+<li>
+<p>很难筛出指定请求的全部相关日志，以及下游服务调用对应的日志，因此建议使用一个 traceId 跟踪请求的全部路径。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>5）链路追踪问题</strong></p>
+</div><div class="cl-preview-section"><p>服务之间互相依赖，方法之间调用，可能是层层调用，复杂度很高，导致系统上线之后，为如何定位异常、性能监控等带来难题，因此我们需要使用这方面的开源中间件来监控，比如：Zipkin 等。</p>
+</div><div class="cl-preview-section"><p>通过上面分析微服务存在的问题和解决方案，我来大致描绘一下微服务的架构图，具体如下：<br>
+<img src="https://img.mukewang.com/5e86b6c6000121bf08180401.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>架构图分析说明</p>
+</div><div class="cl-preview-section"><ul>
+<li>①绿色部分需要做限流，可以使用 RateLimiter 框架，也可以使用阿里 Sentinel 框架</li>
+<li>②红色部分<code>容错</code>，表示的是服务之间的接口调用（rpc 远程调用），需要容错机制，否则其中一个服务出问题了，可能引起一片服务产生问题，也就是常说的雪崩效应</li>
+<li>③红色部分<code>日志采集</code>，一般采用埋点的方式进行日志采集，也就是说提供一个 jar 给服务集成，底层采用 Aop 的模式进行收集信息，这个后面实战部分会详细讲解</li>
+<li>④配置中心，目的是把经常变动的配置信息由项目抽离到配置中心，方便后期在线修改，常见框架有 Nacos、Apollo</li>
+<li>⑤注册中心，目的是做服务地址管理，一般是跟 rpc 框架结合使用，例如：Dubbo</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="、技术选型">2.2、技术选型</h2>
+</div><div class="cl-preview-section"><p>上面我们了解完整个微服务的架构图了，这里我们主要讲解微服务涉及的技术栈及相应的解决方案是什么。</p>
+</div><div class="cl-preview-section"><p>目前主流的微服务技术方案，主要是 SpringCloudNetflix 和 SpringCloudAlibaba 两个派系，SpringCloudNetflix 的话，它会有针对每个场景都有具体的解决方案。这里主要讲解以阿里系为主的解决方案说明。</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>序号</th>
+<th>解决方案</th>
+<th>落地技术</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> 1</td>
+<td> 服务网关</td>
+<td> Nginx，注意的是 Zuul 和 Gateway 不适合 Dubbo，它依赖 Eureka</td>
+</tr>
+<tr>
+<td>2</td>
+<td> 限流框架</td>
+<td> Sentinel</td>
+</tr>
+<tr>
+<td>3</td>
+<td> 容错框架</td>
+<td> Sentinel</td>
+</tr>
+<tr>
+<td>4</td>
+<td> 配置中心</td>
+<td> Nacos</td>
+</tr>
+<tr>
+<td>5</td>
+<td> 分布式事务</td>
+<td> seata</td>
+</tr>
+<tr>
+<td>6</td>
+<td> 服务治理</td>
+<td> Dubbo+Zookeeper</td>
+</tr>
+<tr>
+<td>7</td>
+<td> 链路追踪</td>
+<td> Zipkin</td>
+</tr>
+<tr>
+<td>8</td>
+<td> 接口幂等性</td>
+<td>可以全局 ID 手工实现</td>
+</tr>
+<tr>
+<td> 9</td>
+<td> 日志管理</td>
+<td>一般使用 ELK 技术栈，进行日志的采集、存储、分析、展示</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>以上只是最基本的微服务技术栈，还有一些常见业务场景的解决方案，具体如下：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>序号</th>
+<th>业务点</th>
+<th>技术</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> 2</td>
+<td> 分布式文件系统</td>
+<td> FastDFS、HDFS</td>
+</tr>
+<tr>
+<td>2</td>
+<td> 分布式锁</td>
+<td> Zookeeper、Redis</td>
+</tr>
+<tr>
+<td>3</td>
+<td> 消息队列</td>
+<td> ActiveMQ、RabbitMQ、RocketMQ、Kafka</td>
+</tr>
+<tr>
+<td>4</td>
+<td> 全文检索引擎</td>
+<td> Solr、ElasticSearch</td>
+</tr>
+<tr>
+<td>5</td>
+<td> 分布式缓存</td>
+<td> Redis</td>
+</tr>
+<tr>
+<td>9</td>
+<td> 过期监听</td>
+<td> Redis 过期监听、延迟队列</td>
+</tr>
+<tr>
+<td> 10</td>
+<td> 消息推送</td>
+<td> WebSocket、Netty</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><h2 id="、部署架构">2.3、部署架构</h2>
+</div><div class="cl-preview-section"><p>一般情况下，高并发的系统部署架构都会采用分布式集群部署，主要核心是解决以下方面的问题</p>
+</div><div class="cl-preview-section"><ul>
+<li>①提高系统性能，一般需要使用多层负载均衡的方式解决流量分散，负载均衡的含义，其实就是把用户的请求，根据某种算法均摊到不同的服务器身上，减轻单台服务器的压力，是提高系统性能的常见手段。</li>
+<li>②节点容灾，也称为服务高可用，例如：只有一个 Nginx 对外提供服务，如果该 Nginx 挂掉之后，则整个项目无法对外提供正常服务，因此需要做节点高可用。特殊说明，负载均衡其实也是解决高可用其中一种方式；可以使用 Keepalived 来实现节点高可用，可以参考部署篇，里面有这部分的详细讲解。</li>
+<li>③服务器灾备，服务器是会宕机的，服务器宕机之后，里面的所有服务都失效了，一般使用 docker-swarm、k8s 去做灾备。</li>
+<li>④数据备份，数据安全是非常重要的，很多小公司做备份，使用人工备份或者定时备份，其实这是不够安全的，比如说：机房发生火灾，那么数据将全部丢失，因此需要做一个异地备份（双机房备份），参考后面 MySQL 主从章节。</li>
+</ul>
+</div><div class="cl-preview-section"><p>负载均衡部署架构图：<br>
+<img src="https://img.mukewang.com/5e86b6dd0001b96a08260947.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>①OSPF (开放式最短链路优先) 是一个内部网关协议 (Interior Gateway Protocol, 简称 IGP)。OSPF 通过路由器之间通告网络接口的状态来建立链路状态数据库，生成最短路径树，OSPF 会自动计算路由接口上的 Cost 值，但也可以通过手工指定该接口的 Cost 值，手工指定的优先于自动计算的值。</p>
+<p>OSPF 计算的 Cost，同样是和接口带宽成反比，带宽越高，Cost 值越小。到达目标相同 Cost 值的路</p>
+<p>径，可以执行负载均衡，最多 6 条链路同时执行负载均衡。</p>
+</li>
+<li>
+<p>②LVS 负载，Lvs 是第四层负载（tcp/ip 协议）</p>
+</li>
+<li>
+<p>③Nginx 负载，Nginx 主要是用于搭建 Tomcat 负载均衡集群，它是第七层负载（http 协议）</p>
+</li>
+<li>
+<p>如果有条件，也可以使用 F5 负载，成本比较高</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="、案例分析">3、案例分析</h1>
+</div><div class="cl-preview-section"><p>通过上面的分析，相信大家对微服务也有了一个了解了，这里主要是以网盘系统为案例讲解如何规划它的架构。</p>
+</div><div class="cl-preview-section"><p>首先大概了解网盘系统的核心功能（可以登录系统查看）。网盘主要分为三个核心部分：网盘后台、个人文件的管理、以及对接应用系统；它的客户端类型分为好多种（比如：网页版、h5 版本、app 版本等）。那么我们如何架构网盘的项目架构呢？</p>
+</div><div class="cl-preview-section"><p><strong>方案 1：垂直架构</strong><br>
+<img src="https://img.mukewang.com/5e86b70e0001add803260272.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>描述：网盘系统和后台管理系统都是独立的工程，操作同一份数据库；</li>
+<li>缺点：如果有相同的接口，则重复在两个工程里面实现；所有功能都在单体项目里面实现了。</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>方案 2：微服务架构 1</strong><br>
+<img src="https://img.mukewang.com/5e86b7240001fc1c05160248.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>描述：把 controller 工程和 service 工程独立，远程调用接口</li>
+<li>优点：共用同一个接口工程，controller 工程变的很薄</li>
+<li>缺点：Controller 工程拆分粒度比较粗</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>方案 3：微服务架构 2</strong><br>
+<img src="https://img.mukewang.com/5e86b7330001830204750317.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>描述：把 controller 工程和 service 工程独立，并且 controller 根据客户端类型再细分，远程调用接口</li>
+<li>优点：拆分粒度更细，controller 工程变的更薄</li>
+<li>缺点：工程数量比较多</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>方案 4：微服务架构 3</strong><br>
+<img src="https://img.mukewang.com/5e86b7420001109e06630328.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>描述：controller 根据客户端类型拆分，Service 也拆分成主要业务和非主要业务并通过 MQ 解耦，总体拆分粒度比较细</li>
+<li>优点：拆分粒度更细，整体性能更高</li>
+<li>缺点：工程数量比较多</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>总结：关于工程拆分粒度的总结</p>
+<p>①controller 拆分，一般根据根据业务来拆分（比如：订单、商品）；或者客户端类型来拆分</p>
+<p>②service 拆分，一般根据业务来拆分（比如：订单服务、商品服务）；或者根据主要业务和辅助业务拆分（主要目的是提高主要业务的处理速度，快速响应用户）</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>总结，其实项目的架构不一定是一步就到位的，我们按照项目的规模、按照项目的并发量来进行选择。以上四种模式就是架构的一个逐步升级的过程，根据实际情况来选择合适的架构。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>思考：比如，一个网站的首页应该怎么规划呢？网站首页的功能非常的多，涉及的服务非常的多。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p><strong>方案 1:</strong><br>
+<img src="https://img.mukewang.com/5e86b75000013da806920356.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>描述：整个网站只对应一个 Controller 工程，由 controller 工程再具体调用不同的服务；</li>
+<li>优点：只有一个 Controller，相对简单</li>
+<li>缺点：如果 Controller 挂了则整个网站就访问不了了（当然可以做集群）；无法很好解耦，比如说：秒杀压力很大，则所有模块都会受秒杀模块的影响；如果系统升级的时候，所有模块都受影响。</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>方案 2：</strong><br>
+<img src="https://img.mukewang.com/5e86b7600001b9b208560433.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ul>
+<li>描述：网站的不同模块对应不同的 Controller 工程，</li>
+<li>优点：这样压力也均摊到不同 Controller 上，每个 Controller 工程的后期迭代升级、项目部署都互不干扰。适合更加大型的项目</li>
+<li>缺点：架构变的更加庞大了和复杂了。</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="、小结">4、小结</h1>
+</div><div class="cl-preview-section"><p>本节主要介绍微服务架构的模式，微服务面临的问题及它的技术解决方案，微服务总体架构图，以及通过案例来分析微服务架构图。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5e86d6c9000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6914">
+						<img src="https://img3.mukewang.com/53cf62450001880601000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">7爷丶</h4>
+						<div class="comment-text">老师，这个有使用开发语言的限制吗，我用的PHP，对其它后端语言都不了解</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-10-06</span>
+						<a href="/read/commentdetail/6914">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6914" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5506">
+						<img src="https://img4.mukewang.com/5333a0600001f9ed02000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕后端6576068</h4>
+						<div class="comment-text">更新到第几章了？</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-18</span>
+						<a href="/read/commentdetail/5506">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5506" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5149">
+						<img src="https://img2.mukewang.com/5333a2a10001064f02000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕前端4335108</h4>
+						<div class="comment-text">专栏是在线看吗 有书吗</div>
+						<div>
+							
+								<div class="reply">讲师回复：没有书，主要是在线专栏+项目源码</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-04-24</span>
+						<a href="/read/commentdetail/5149">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5149" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5045">
+						<img src="https://img4.mukewang.com/545862f200018f4802200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕工程2592638</h4>
+						<div class="comment-text">请问适合前端人员学习了解吗</div>
+						<div>
+							
+								<div class="reply">讲师回复：没事，有什么我能帮到你的都可以留言，前端我也懂一些。zwyjavaee这是我微信，可以加一下沟通</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-04-16</span>
+						<a href="/read/commentdetail/5045">
+							<span class="icon r"><i class="imwap-comment"></i><em>5</em></span>
+						</a>
+						<span data-cid="5045" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/4957">
+						<img src="https://img1.mukewang.com/5cf606970001864c07400732-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">奋斗小菜鸟</h4>
+						<div class="comment-text">③Nginx负载，Nginx应该搭建都不模式，它是第七层负载（http协议）——这里是不是文字描述有误，是什么模式</div>
+						<div>
+							
+								<div class="reply">讲师回复：同学，谢谢你指出的错误，实在抱歉，更正如下：
+③Nginx负载，Nginx主要是用于搭建Tomcat负载均衡集群，它是第七层负载（http协议）</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-04-12</span>
+						<a href="/read/commentdetail/4957">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="4957" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=73">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '02 微服务架构的规划',
+					'CID': '1713',
+					'Teacher': '曼巴out'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "02 微服务架构的规划",
+                    desc: "轻量级项目，系统化经验",
+                    imgUrl: 'https:https://img.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/73',
+                    link: 'https://m.imooc.com/read/73'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>26 一个线程OOM后还能继续运行吗？</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="学习Java很重要，学会怎么学习Java更重要">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2000";
+	var chapter_title = "26 一个线程OOM后还能继续运行吗？";
+	var aid = "78";
+	var a_name = "再学经典：《Effective Java》独家解析";
+	var a_price = "68.00";
+	var a_pic = "https://img.mukewang.com/5ecf522a00013a1d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '78';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-07-02&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			26 一个线程OOM后还能继续运行吗？
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img.mukewang.com/5ece30a40001cb7706400359.jpg')"></div>
+	
+	
+		<a href="/read/78">
+			<div class="course-entry">
+				<img src="https://img1.mukewang.com/54dc328d0001b75e04630463-40-40.jpg" alt="明明如月">
+				<h3>再学经典：《Effective Java》独家解析</h3>
+				<p>明明如月 · 高级JAVA开发工程师 </p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">加紧学习，抓住中心，宁精勿杂，宁专勿多。 <p class="author">—— 周恩来</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">1. 前言</h1>
+</div><div class="cl-preview-section"><p>上一节深入讲解了异常的相关知识，本节将结合一个经典面试题来让 “理论照进现实”。</p>
+</div><div class="cl-preview-section"><p>一个经典的面试题 “一个线程 OOM 了，它还能继续运行吗？”</p>
+</div><div class="cl-preview-section"><p>网上有很多相关文章，通过实验给出了类似的结论：“当一个线程抛出 OOM 异常后，线程被终结，它所占据的内存资源会全部被释放掉，从而不会影响其他线程的运行”。</p>
+</div><div class="cl-preview-section"><p>那么某个线程发生了 <code>OutOfMemoryError</code>，是否想当然地就理解成 “线程被终结，内存被释放”，是否还可以继续运行呢？</p>
+</div><div class="cl-preview-section"><h1 id="分析">2. 分析</h1>
+</div><div class="cl-preview-section"><p>模拟 OOM 场景，虚拟机参数：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>-Xmx60m -Xms50m -Xmn50m -Xss168k -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>模拟代码（示例 1）：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">import</span> org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>commons<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>RandomStringUtils<span class="token punctuation">;</span>
+
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>ArrayList<span class="token punctuation">;</span>
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>List<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">StringOOMDemo</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span><span class="token punctuation">{</span>
+        List<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span> data <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+           String str <span class="token operator">=</span> RandomStringUtils<span class="token punctuation">.</span><span class="token function">random</span><span class="token punctuation">(</span><span class="token number">1024</span> <span class="token operator">*</span> <span class="token number">1024</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+           data<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>str<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>其中 RandomStringUtils 来自 commons-lang3</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token operator">&lt;</span><span class="token operator">!</span><span class="token operator">--</span> https<span class="token operator">:</span><span class="token operator">/</span><span class="token operator">/</span>mvnrepository<span class="token punctuation">.</span>com<span class="token operator">/</span>artifact<span class="token operator">/</span>org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>commons<span class="token operator">/</span>commons<span class="token operator">-</span>lang3 <span class="token operator">--</span><span class="token operator">&gt;</span>
+<span class="token operator">&lt;</span>dependency<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span>groupId<span class="token operator">&gt;</span>org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>commons<span class="token operator">&lt;</span><span class="token operator">/</span>groupId<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span>artifactId<span class="token operator">&gt;</span>commons<span class="token operator">-</span>lang3<span class="token operator">&lt;</span><span class="token operator">/</span>artifactId<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span>version<span class="token operator">&gt;</span><span class="token number">3.9</span><span class="token operator">&lt;</span><span class="token operator">/</span>version<span class="token operator">&gt;</span>
+<span class="token operator">&lt;</span><span class="token operator">/</span>dependency<span class="token operator">&gt;</span>
+
+</code></pre>
+</div><div class="cl-preview-section"><p>运行代码，我们会发现 Full GC (Allocation Failure) 后抛出 <code>Exception in thread "main" java.lang.OutOfMemoryError: Java heap space</code>。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>Full GC 表示既回收年轻代也回收老年代。</p>
+<p>Allocation Failure 表示垃圾回收的原因。</p>
+<p>Full GC (Allocation Failure)  表示 Full GC 后没有足够的内存来存放需要分配的对象而失败。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>而如果我们改成下面这种写法（示例 2）：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">import</span> org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>commons<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>RandomStringUtils<span class="token punctuation">;</span>
+
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>ArrayList<span class="token punctuation">;</span>
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>List<span class="token punctuation">;</span>
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>TimeUnit<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">StringOOMDemo2</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException <span class="token punctuation">{</span>
+        List<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span> data <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                String str <span class="token operator">=</span> RandomStringUtils<span class="token punctuation">.</span><span class="token function">random</span><span class="token punctuation">(</span><span class="token number">1024</span> <span class="token operator">*</span> <span class="token number">1024</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                data<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>str<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">OutOfMemoryError</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"发生了一次OOM"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                TimeUnit<span class="token punctuation">.</span>SECONDS<span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>页面输出：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>2020-03-28T20:24:47.899-0800: 0.881: [GC (Allocation Failure) [PSYoungGen: 36883K-&gt;6129K(44544K)] 36883K-&gt;15081K(54784K), 0.0100166 secs] [Times: user=0.01 sys=0.01, real=0.01 secs]</p>
+<p>// 省略部分输出</p>
+<p>2020-03-28T20:24:48.210-0800: 1.192: [Full GC (Allocation Failure) [PSYoungGen: 36915K-&gt;36727K(44544K)] [ParOldGen: 8193K-&gt;8193K(10240K)] 45109K-&gt;44921K(54784K), [Metaspace: 3771K-&gt;3771K(1056768K)], 0.0177050 secs] [Times: user=0.03 sys=0.00, real=0.01 secs]<br>
+发生了一次 OOM<br>
+java.lang.OutOfMemoryError: Java heap space<br>
+at java.util.Arrays.copyOf(Arrays.java:3332)<br>
+at java.lang.String.(String.java:166)<br>
+at org.apache.commons.lang.RandomStringUtils.random(RandomStringUtils.java:283)<br>
+at org.apache.commons.lang.RandomStringUtils.random(RandomStringUtils.java:165)<br>
+at org.apache.commons.lang.RandomStringUtils.random(RandomStringUtils.java:145)<br>
+at org.apache.commons.lang.RandomStringUtils.random(RandomStringUtils.java:71)<br>
+at com.imooc.effectivejava.exception.StringOOMDemo.main(StringOOMDemo.java:15)</p>
+<p>// 重复输出</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>运行代码我们发现，内存不足时，都会进行垃圾回收，Full GC (Allocation Failure) 后发生 OutOfMemoryError 异常之后，线程 sleep 10 秒后继续打印堆栈信息，线程并没有结束掉，依然会循环往复，再次垃圾回收，再次 OOM, …。</p>
+</div><div class="cl-preview-section"><p>我们再看下面一个案例（示例 3）:</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>Random<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Demo3</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span>  <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Random</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span><span class="token number">100</span><span class="token punctuation">)</span> <span class="token operator">&gt;</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalStateException</span><span class="token punctuation">(</span><span class="token string">"模拟错误"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"结束了"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>执行后发现发生了 <code>IllegalStateException</code>  然后主线程终结了。</p>
+</div><div class="cl-preview-section"><p>对上述代码进行类似改造后（示例 4）：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java">4import java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>Random<span class="token punctuation">;</span>
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>TimeUnit<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Demo4</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException <span class="token punctuation">{</span>
+
+        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Random</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span><span class="token number">100</span><span class="token punctuation">)</span> <span class="token operator">&gt;</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalStateException</span><span class="token punctuation">(</span><span class="token string">"模拟错误"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"结束了"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"发生了异常"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                TimeUnit<span class="token punctuation">.</span>SECONDS<span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>发现线程依然存活，不断打印 “发生了异常”。</p>
+</div><div class="cl-preview-section"><p>前面小节讲到：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>当异常发生时， JVM 会寻找当前函数匹配的处理器，如果找不到任何处理器，方法将会结束，当前方法的栈帧将会弹出，已经将会抛给调用它的方法（新的当前栈帧）。如果当前线程的所有栈帧都弹出还没找到异常处理器，当前线程就被终止。这也可以用来帮助 JVM ���断是否最后一个非守护线程，即主线程。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>示例 1 和示例 3 ，一个线程发生了 <code>OutOfMemoryError</code> 异常被终结和发生了 <code>IllegalStateException</code> 被终结核心原因是一致的，都是因为没有找到处理器，方法结束，栈帧被弹出。由于主线程终结，其他都是守护线程，JVM 退出。</p>
+</div><div class="cl-preview-section"><p>那么<strong>为什么示例 2 和示例 4 发生异常的线程没有终结呢</strong>？</p>
+</div><div class="cl-preview-section"><p>我们以示例 4 为例，结合上节所学知识，通过反汇编来解释背后的原因：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>effectivejava<span class="token punctuation">.</span>exception<span class="token punctuation">.</span>Demo4</span> <span class="token punctuation">{</span>
+  <span class="token keyword">public</span> com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>effectivejava<span class="token punctuation">.</span>exception<span class="token punctuation">.</span><span class="token function">Demo4</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Code<span class="token operator">:</span>
+       <span class="token number">0</span><span class="token operator">:</span> aload_0
+       <span class="token number">1</span><span class="token operator">:</span> invokespecial #<span class="token number">1</span>                  <span class="token comment">// Method java/lang/Object."&lt;init&gt;":()V</span>
+       <span class="token number">4</span><span class="token operator">:</span> <span class="token keyword">return</span>
+
+  <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>InterruptedException<span class="token punctuation">;</span>
+    Code<span class="token operator">:</span>
+       <span class="token number">0</span><span class="token operator">:</span> <span class="token keyword">new</span>           #<span class="token number">2</span>                  <span class="token comment">// class java/util/Random</span>
+       <span class="token number">3</span><span class="token operator">:</span> dup
+       <span class="token number">4</span><span class="token operator">:</span> invokespecial #<span class="token number">3</span>                  <span class="token comment">// Method java/util/Random."&lt;init&gt;":()V</span>
+       <span class="token number">7</span><span class="token operator">:</span> bipush        <span class="token number">100</span>
+       <span class="token number">9</span><span class="token operator">:</span> invokevirtual #<span class="token number">4</span>                  <span class="token comment">// Method java/util/Random.nextInt:(I)I</span>
+      <span class="token number">12</span><span class="token operator">:</span> iconst_m1
+      <span class="token number">13</span><span class="token operator">:</span> if_icmple     <span class="token number">26</span>
+      <span class="token number">16</span><span class="token operator">:</span> <span class="token keyword">new</span>           #<span class="token number">5</span>                  <span class="token comment">// class java/lang/IllegalStateException</span>
+      <span class="token number">19</span><span class="token operator">:</span> dup
+      <span class="token number">20</span><span class="token operator">:</span> ldc           #<span class="token number">6</span>                  <span class="token comment">// String 模拟错误</span>
+      <span class="token number">22</span><span class="token operator">:</span> invokespecial #<span class="token number">7</span>                  <span class="token comment">// Method java/lang/IllegalStateException."&lt;init&gt;":(Ljava/lang/String;)V</span>
+      <span class="token number">25</span><span class="token operator">:</span> athrow
+      <span class="token number">26</span><span class="token operator">:</span> getstatic     #<span class="token number">8</span>                  <span class="token comment">// Field java/lang/System.out:Ljava/io/PrintStream;</span>
+      <span class="token number">29</span><span class="token operator">:</span> ldc           #<span class="token number">9</span>                  <span class="token comment">// String 结束了</span>
+      <span class="token number">31</span><span class="token operator">:</span> invokevirtual #<span class="token number">10</span>                 <span class="token comment">// Method java/io/PrintStream.println:(Ljava/lang/String;)V</span>
+      <span class="token number">34</span><span class="token operator">:</span> <span class="token keyword">goto</span>          <span class="token number">0</span>
+      <span class="token number">37</span><span class="token operator">:</span> astore_1
+      <span class="token number">38</span><span class="token operator">:</span> getstatic     #<span class="token number">8</span>                  <span class="token comment">// Field java/lang/System.out:Ljava/io/PrintStream;</span>
+      <span class="token number">41</span><span class="token operator">:</span> ldc           #<span class="token number">12</span>                 <span class="token comment">// String 发生了异常</span>
+      <span class="token number">43</span><span class="token operator">:</span> invokevirtual #<span class="token number">10</span>                 <span class="token comment">// Method java/io/PrintStream.println:(Ljava/lang/String;)V</span>
+      <span class="token number">46</span><span class="token operator">:</span> getstatic     #<span class="token number">13</span>                 <span class="token comment">// Field java/util/concurrent/TimeUnit.SECONDS:Ljava/util/concurrent/TimeUnit;</span>
+      <span class="token number">49</span><span class="token operator">:</span> lconst_1
+      <span class="token number">50</span><span class="token operator">:</span> invokevirtual #<span class="token number">14</span>                 <span class="token comment">// Method java/util/concurrent/TimeUnit.sleep:(J)V</span>
+      <span class="token number">53</span><span class="token operator">:</span> <span class="token keyword">goto</span>          <span class="token number">0</span>
+    Exception table<span class="token operator">:</span>
+       from    to  target type
+           <span class="token number">0</span>    <span class="token number">34</span>    <span class="token number">37</span>   Class <span class="token class-name">java</span><span class="token operator">/</span>lang<span class="token operator">/</span>Exception
+<span class="token punctuation">}</span>
+
+</code></pre>
+</div><div class="cl-preview-section"><p>通过异常表（ Exception table ）可以看出，偏移为 [0 , 34) 行字节码指令如果发生 <code>Exception</code> 异常，则会跳转到偏移量为 37 行继续执行，执行到第 53 行会继续跳回第 0 行。</p>
+</div><div class="cl-preview-section"><p>那么大家继续看下面这个例子（示例 5），它的执行结果将如何呢？</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException <span class="token punctuation">{</span>
+
+    Thread t <span class="token operator">=</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">new</span> <span class="token class-name">Thread</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            TimeUnit<span class="token punctuation">.</span>SECONDS<span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            t<span class="token punctuation">.</span><span class="token function">interrupt</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">InterruptedException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Random</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span><span class="token number">100</span><span class="token punctuation">)</span> <span class="token operator">&gt;</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalStateException</span><span class="token punctuation">(</span><span class="token string">"模拟错误"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"结束了"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"发生了异常"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            TimeUnit<span class="token punctuation">.</span>SECONDS<span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>最终会因为抛出 <code>InterruptedException</code> 而终止。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>发生了异常<br>
+Exception in thread “main” java.lang.InterruptedException: sleep interrupted<br>
+at java.lang.Thread.sleep(Native Method)<br>
+at java.lang.Thread.sleep(Thread.java:340)<br>
+at java.util.concurrent.TimeUnit.sleep(TimeUnit.java:386)<br>
+at com.imooc.effectivejava.exception.Demo4.main(Demo4.java:29)</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>反编译：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>effectivejava<span class="token punctuation">.</span>exception<span class="token punctuation">.</span>Demo4</span> <span class="token punctuation">{</span>
+  <span class="token keyword">public</span> com<span class="token punctuation">.</span>imooc<span class="token punctuation">.</span>effectivejava<span class="token punctuation">.</span>exception<span class="token punctuation">.</span><span class="token function">Demo4</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Code<span class="token operator">:</span>
+       <span class="token number">0</span><span class="token operator">:</span> aload_0
+       <span class="token number">1</span><span class="token operator">:</span> invokespecial #<span class="token number">1</span>                  <span class="token comment">// Method java/lang/Object."&lt;init&gt;":()V</span>
+       <span class="token number">4</span><span class="token operator">:</span> <span class="token keyword">return</span>
+
+  <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>InterruptedException<span class="token punctuation">;</span>
+    Code<span class="token operator">:</span>
+       <span class="token number">0</span><span class="token operator">:</span> invokestatic  #<span class="token number">2</span>                  <span class="token comment">// Method java/lang/Thread.currentThread:()Ljava/lang/Thread;</span>
+       <span class="token number">3</span><span class="token operator">:</span> astore_1
+       <span class="token number">4</span><span class="token operator">:</span> <span class="token keyword">new</span>           #<span class="token number">3</span>                  <span class="token comment">// class java/lang/Thread</span>
+       <span class="token number">7</span><span class="token operator">:</span> dup
+       <span class="token number">8</span><span class="token operator">:</span> aload_1
+       <span class="token number">9</span><span class="token operator">:</span> invokedynamic #<span class="token number">4</span><span class="token punctuation">,</span>  <span class="token number">0</span>              <span class="token comment">// InvokeDynamic #0:run:(Ljava/lang/Thread;)Ljava/lang/Runnable;</span>
+      <span class="token number">14</span><span class="token operator">:</span> invokespecial #<span class="token number">5</span>                  <span class="token comment">// Method java/lang/Thread."&lt;init&gt;":(Ljava/lang/Runnable;)V</span>
+      <span class="token number">17</span><span class="token operator">:</span> invokevirtual #<span class="token number">6</span>                  <span class="token comment">// Method java/lang/Thread.start:()V</span>
+      <span class="token number">20</span><span class="token operator">:</span> <span class="token keyword">new</span>           #<span class="token number">7</span>                  <span class="token comment">// class java/util/Random</span>
+      <span class="token number">23</span><span class="token operator">:</span> dup
+      <span class="token number">24</span><span class="token operator">:</span> invokespecial #<span class="token number">8</span>                  <span class="token comment">// Method java/util/Random."&lt;init&gt;":()V</span>
+      <span class="token number">27</span><span class="token operator">:</span> bipush        <span class="token number">100</span>
+      <span class="token number">29</span><span class="token operator">:</span> invokevirtual #<span class="token number">9</span>                  <span class="token comment">// Method java/util/Random.nextInt:(I)I</span>
+      <span class="token number">32</span><span class="token operator">:</span> iconst_m1
+      <span class="token number">33</span><span class="token operator">:</span> if_icmple     <span class="token number">46</span>
+      <span class="token number">36</span><span class="token operator">:</span> <span class="token keyword">new</span>           #<span class="token number">10</span>                 <span class="token comment">// class java/lang/IllegalStateException</span>
+      <span class="token number">39</span><span class="token operator">:</span> dup
+      <span class="token number">40</span><span class="token operator">:</span> ldc           #<span class="token number">11</span>                 <span class="token comment">// String 模拟错误</span>
+      <span class="token number">42</span><span class="token operator">:</span> invokespecial #<span class="token number">12</span>                 <span class="token comment">// Method java/lang/IllegalStateException."&lt;init&gt;":(Ljava/lang/String;)V</span>
+      <span class="token number">45</span><span class="token operator">:</span> athrow
+      <span class="token number">46</span><span class="token operator">:</span> getstatic     #<span class="token number">13</span>                 <span class="token comment">// Field java/lang/System.out:Ljava/io/PrintStream;</span>
+      <span class="token number">49</span><span class="token operator">:</span> ldc           #<span class="token number">14</span>                 <span class="token comment">// String 结束了</span>
+      <span class="token number">51</span><span class="token operator">:</span> invokevirtual #<span class="token number">15</span>                 <span class="token comment">// Method java/io/PrintStream.println:(Ljava/lang/String;)V</span>
+      <span class="token number">54</span><span class="token operator">:</span> <span class="token keyword">goto</span>          <span class="token number">20</span>
+      <span class="token number">57</span><span class="token operator">:</span> astore_2
+      <span class="token number">58</span><span class="token operator">:</span> getstatic     #<span class="token number">13</span>                 <span class="token comment">// Field java/lang/System.out:Ljava/io/PrintStream;</span>
+      <span class="token number">61</span><span class="token operator">:</span> ldc           #<span class="token number">17</span>                 <span class="token comment">// String 发生了异常</span>
+      <span class="token number">63</span><span class="token operator">:</span> invokevirtual #<span class="token number">15</span>                 <span class="token comment">// Method java/io/PrintStream.println:(Ljava/lang/String;)V</span>
+      <span class="token number">66</span><span class="token operator">:</span> getstatic     #<span class="token number">18</span>                 <span class="token comment">// Field java/util/concurrent/TimeUnit.SECONDS:Ljava/util/concurrent/TimeUnit;</span>
+      <span class="token number">69</span><span class="token operator">:</span> lconst_1
+      <span class="token number">70</span><span class="token operator">:</span> invokevirtual #<span class="token number">19</span>                 <span class="token comment">// Method java/util/concurrent/TimeUnit.sleep:(J)V</span>
+      <span class="token number">73</span><span class="token operator">:</span> <span class="token keyword">goto</span>          <span class="token number">20</span>
+    Exception table<span class="token operator">:</span>
+       from    to  target type
+          <span class="token number">20</span>    <span class="token number">54</span>    <span class="token number">57</span>   Class <span class="token class-name">java</span><span class="token operator">/</span>lang<span class="token operator">/</span>Exception
+<span class="token punctuation">}</span>
+
+</code></pre>
+</div><div class="cl-preview-section"><p>通过异常表我们发现，代码偏移在 [20, 54) 区间发生异常会从 57 行开始执行，执行完毕后通过 <code>goto 20</code> 回到第 20 行重新执行。</p>
+</div><div class="cl-preview-section"><p>然而，通过查看 <code>java.util.concurrent.TimeUnit#sleep</code> 源码：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">/**
+ * Performs a {@link Thread#sleep(long, int) Thread.sleep} using
+ * this time unit.
+ * This is a convenience method that converts time arguments into the
+ * form required by the {@code Thread.sleep} method.
+ *
+ * @param timeout the minimum time to sleep. If less than
+ * or equal to zero, do not sleep at all.
+ * @throws InterruptedException if interrupted while sleeping
+ */</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">sleep</span><span class="token punctuation">(</span><span class="token keyword">long</span> timeout<span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>timeout <span class="token operator">&gt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">long</span> ms <span class="token operator">=</span> <span class="token function">toMillis</span><span class="token punctuation">(</span>timeout<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">int</span> ns <span class="token operator">=</span> <span class="token function">excessNanos</span><span class="token punctuation">(</span>timeout<span class="token punctuation">,</span> ms<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        Thread<span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span>ms<span class="token punctuation">,</span> ns<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>我们得知，当该线程的 sleep 被打断时会抛出 <code>InterruptedException</code>，在第 70 行，而此时并不在异常表的覆盖范围，因此主线程终结，JVM 退出。</p>
+</div><div class="cl-preview-section"><p>上述源码也符合《Effective Java》中  <strong>第 74 条 “每个方法抛出的所有异常都要建立文档”</strong> 的建议。</p>
+</div><div class="cl-preview-section"><h1 id="总结">3. 总结</h1>
+</div><div class="cl-preview-section"><p>本文结合具体的异常案例，帮助大家深刻理解异常的运行时处理和异常表的概念。</p>
+</div><div class="cl-preview-section"><p>希望大家在平时的学习过程中，能够灵活运用本专栏所学的知识，将理论和实际结合在一起学习。</p>
+</div><div class="cl-preview-section"><p>尽信书不如无书，尤其是非权威的书籍，大家不要轻信。</p>
+</div><div class="cl-preview-section"><h1 id="思考和练习">4. 思考和练习</h1>
+</div><div class="cl-preview-section"><p>1、你还遇到哪些对抛出的异常建立文档的源码？</p>
+</div><div class="cl-preview-section"><p>2、请动手对示例 1 和 示例 2 的代码进行反汇编，自行分析运行结果背后的根本原因。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5ece30a9000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=78">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '26 一个线程OOM后还能继续运行吗？',
+					'CID': '2000',
+					'Teacher': '明明如月'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "26 一个线程OOM后还能继续运行吗？",
+                    desc: "学习Java很重要，学会怎么学习Java更重要",
+                    imgUrl: 'https:https://img.mukewang.com/5ecf522a00013a1d05400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5ecf522a00013a1d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/78',
+                    link: 'https://m.imooc.com/read/78'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>41 真正理解 HTTPS</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="拉开你与普通面试者的差距">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "8";
+	var chapter_id = "2126";
+	var chapter_title = "41 真正理解 HTTPS";
+	var aid = "70";
+	var a_name = "解锁前端面试体系核心攻略  ";
+	var a_price = "78.00";
+	var a_pic = "https://img.mukewang.com/5e5c85e1000116c505400720.jpg";
+	var userId = 0;
+
+	var column_id = '70';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-10&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			41 真正理解 HTTPS
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5edee98700012bc306400426.jpg')"></div>
+	
+	
+		<a href="/read/70">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5e50a213000179ce12800720-40-40.jpg" alt="修言">
+				<h3>解锁前端面试体系核心攻略  </h3>
+				<p>修言 · 大型互联网公司业务线Owner</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">我们活着不能与草木同腐，不能醉生梦死，枉度人生，要有所作为。<p class="author">——方志敏</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>在前端面试中，总有一些话题，候选人说上半天也未必能说清楚、最后反而容易把自己绕到沟里去，HTTPS 就是这类问题的典型代表。</p>
+</div><div class="cl-preview-section"><p>一方面，它具备一定的理论性，乍一看比较枯燥，这导致很多人在学习 HTTP 协议的时候都选择性地忽略了还有 HTTPS 这个东西；另一方面，它又确实挺绕的，就算你今天记住了，明天还是可能会忘记。由此，HTTPS 相关的考题具备了令面试官欣喜若狂的区分度——你越怕，他就越考。</p>
+</div><div class="cl-preview-section"><p>一般来说，我们如果能对一样东西形成牢固的记忆，无非是两个原因：1.大量重复 2.印象深刻。</p>
+</div><div class="cl-preview-section"><p>这就好比，楼下的看门大叔，他虽然长着一张让人记不住的大众脸，但你每天从他身边经过、每天要被他量一次体温，这样持续上几个星期，你想不记住他��啥样也难——此之谓“大量重复”；而你们公司神似高圆圆的产品经理韩梅梅，美得惊心动魄，见过她的人想必一辈子也忘不掉自己人生中出现过这样一个仙女——这就是“印象深刻”。</p>
+</div><div class="cl-preview-section"><p>面向面试来说，各位当中恐怕极少有同学具备进行“大量重复”的时间资本。本着“效率为王”的原则，本节我们追求的就是一个“印象深刻”。因此咱们不直接罗列 HTTPS 相关的术语和理论知识，而是先来看一个贴近生活的小故事，从故事里去认知 HTTPS 中关键的知识点。</p>
+</div><div class="cl-preview-section"><h2 id="李雷和韩梅梅的故事">李雷和韩梅梅的故事</h2>
+</div><div class="cl-preview-section"><h4 id="顺利的第一次约会">顺利的第一次约会</h4>
+</div><div class="cl-preview-section"><p>18岁的蠢萌少年李雷，暗恋着班上神似高圆圆的学霸韩梅梅。这一天，他终于鼓起勇气写下了“你真好看，下课可以一起去食堂吗”的邀请邮件，发送给了韩梅梅。</p>
+</div><div class="cl-preview-section"><p>韩梅梅收到邮件一看，开心得不行，赶紧回复“好呀”。这是两人的第一次线上沟通，过程很顺利：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5edeec210001472b10260412.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h4 id="被邱小冬破坏的第二次约会">被邱小冬破坏的第二次约会</h4>
+</div><div class="cl-preview-section"><p>有了这一次对接成功的经历。第二天，李雷故技重施，又想约韩梅梅出去玩。于是他又写了一封邮件，满怀期待点了发送。没想到，班上喜欢韩梅梅的不止他一个人，还有住在他隔壁宿舍的邱小冬。邱小冬昨天眼睁睁看着李雷和韩梅梅开开心心一���去了食堂，心里很不爽。今天他在李雷宿舍的路由器上动了手脚，拦截李雷的网络请求。</p>
+</div><div class="cl-preview-section"><p>邱小冬打开拦截到的邮件一看，上面写着“晚上7点电影院不见不散”。他眼珠一转就是一个馊主意，把“晚上7点”前面加了俩字，改成了“明天晚上7点”。然后，他把这封错误的邮件转发给了韩梅梅。于是这个沟通过程变成了下面这样：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5edeec2d0001675d10140748.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h4 id="用密码来保护的第三次约会">用密码来保护的第三次约会</h4>
+</div><div class="cl-preview-section"><p>结果这天晚上李雷等到电影散场也没等到韩梅梅来，第二天见了韩梅梅，才知道事情原委。两人决定用一种新的方式来沟通——对邮件内��进行加密：由韩梅梅把密码告知李雷，随后两人每次发送邮件都用这个密码来做加密和解密。假设密码内容是123456，那么沟通过程就变成了下面这样：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5edeec3b00016e2910520624.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>但是仔细想想，邱小冬既然能拦截邮件，自然就能拦截邮件密码。这还是不够安全。李雷琢磨了一下，觉得当下主要需要解决的问题是要保证邮件的密码安全。如何保证呢？李雷提出：我们来给邮件密码做加密！</p>
+</div><div class="cl-preview-section"><h4 id="邱小冬再也没辙的第四次约会">邱小冬再也没辙的第四次约会</h4>
+</div><div class="cl-preview-section"><p>李雷想到，计算机课上，老师讲过一种组合加密的方式：公钥+私钥组合。公钥和私钥是多对一的关系。公钥加密过的信息，只有私钥能解开；私钥加密过的信息，所有和它有关系的公钥都能解开。完全可以让韩梅梅持有一个私钥，然后我用公钥把信息加密，这样被加密的信息就只有持有私钥的韩梅梅能解开了——就算邱小冬能拦截我的公钥，他手里没有私钥，到头来还是解不开。用这种方式，我们就可以保证邮件密码的安全了。这个过程如下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5edeec440001050312440698.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>看似没有问题，不过李雷可低估了邱小冬的阴险程度。邱小冬手里虽然没有真正的私钥，但是他的截获能力还在。现在他截获了韩梅梅发来的公钥之后，把自己编造的一个假的公钥发给了李雷。李雷傻乎乎地用邱小冬的假公钥给邮件密码加密后，邱小冬就能用自己的假私钥去解密这个邮件密码了。到头来，邱小冬还是拿到了邮件密码，可以对两人的邮件往来为所欲为：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5edeec510001614b11860826.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>李雷彻底被邱小冬折磨得没脾气了。这时学霸韩梅梅说话了：“邱小冬之所以能继续得手，是因为你感知不到他的身份。你要早知道那是邱小冬发的公钥，而不是我发的公钥，那你就不会上他的当了。要我说，咱们就差一个身份认证机制了。而且这个身份认证必须得由权威的人来做，这样才能完全地规避掉冒充的行为。”</p>
+</div><div class="cl-preview-section"><p>说话间，韩梅梅已经找来了一个可靠的第三方机构。在通信开始之前，韩梅梅首先会先把邮件密码发送给这个第三方。这个第三方会帮韩梅梅申请一个证书，然后用第三方自己的私钥来加密韩梅梅的公钥、再基于韩梅梅的服务端地址这些特殊的标识信息来为韩梅梅生成一个独特的签名，这些信息（包括第三方机构的名称、韩梅梅服务器的地址等信息）都会被写入到证书里、返回给韩梅梅。</p>
+</div><div class="cl-preview-section"><p>接下来，韩梅梅不再直接发送公钥，而是把这个证书发送给李雷。李雷这边呢，会提前维护好所有正规第三方机构的公钥。李雷首先会根据证书里第三方机构的名称，定位到正确的公钥，然后用这个公钥去解密出韩梅梅发来的公钥、同时解密韩梅梅发来的那个独特签名。</p>
+</div><div class="cl-preview-section"><p>注意，重点来了：<strong>李雷再也不会轻信任何人发来的公钥了，他现在还要验证对方的身份</strong>。如何验证呢？基于当前证书的签名生成算法，结合韩梅梅的服务器地址等信息，重新生成一遍证书签名，然后比对这个证书签名和韩梅梅发来的证书里的独特签名是不是同一个。如果是，那么万事大吉，李雷可以相信当前解密出的公钥就是韩梅梅发的公钥了。否则，那就很有可能是邱小冬伪造的证书，李雷直接拒绝通信即可。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5edeec5a0001425614080984.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="题眼点拨">题眼点拨</h2>
+</div><div class="cl-preview-section"><p>李雷和韩梅梅的故事中，“李雷”替换成“客户端”，“韩梅梅”替换成“服务端”，然后再把这个故事讲给面试官，其实就可以作为“谈谈你对 HTTPS 的理解”这个问题的完整答案了。</p>
+</div><div class="cl-preview-section"><p>不过在这个故事中，有几个过程是需要大家重点理解和记忆的，在面试中面试官可能会着重考察这些过程对应的计算机定义。这里我用计算机的语言来帮大家对号入座一下：</p>
+</div><div class="cl-preview-section"><h3 id="明文传输">明文传输</h3>
+</div><div class="cl-preview-section"><p>我们可以看到在第一次约会中，李雷和韩梅梅直接互通邮件，没有采取任何的加密措施。这就是所谓的“明文传输”。</p>
+</div><div class="cl-preview-section"><p>对应到网络传输中，就是客户端发送请求，服务端发送响应，双方都不对自己的请求/响应内容做加密的情况。这种情况下，请求/响应一旦被中间人（比如邱小冬）拦截，就可以对其中的内容一览无余、为所欲为。</p>
+</div><div class="cl-preview-section"><h3 id="对称加密">对称加密</h3>
+</div><div class="cl-preview-section"><p>第二次约会，李雷和韩梅梅约定了邮件密码。加密用这个密码，解密还是用这个密码。这就是所谓的“对称加密”。</p>
+</div><div class="cl-preview-section"><p>对应到网络传输中，就是客户端和服务器约定一个共同的“公钥”，加密和解密都依赖这一个公钥这种情况。这种情况下，一旦公钥失窃了，那么双方传输的密文信息就会再次进入裸奔状态，仍然无法规避中间人的攻击。</p>
+</div><div class="cl-preview-section"><h3 id="非对称加密">非对称加密</h3>
+</div><div class="cl-preview-section"><p>第三次约会，韩梅梅保留了一个私钥，并且把和这个私钥关联的公钥发送给了李雷。李雷用这个公钥对邮件密码做加密，韩梅梅收到邮件密码后再用私钥来解密，这个过程就是“非对称加密”。</p>
+</div><div class="cl-preview-section"><p>非对称加密，在这里指的是公钥+私钥配合加密这种手段。公钥和私钥是多对一的关系，公钥加密的内容，只有私钥可以解开，私钥加密的内容，所有的公钥都可以解开。</p>
+</div><div class="cl-preview-section"><p>这样一来，就算中间人截获了公钥，但由于手里没有私钥，仍然没法正确地对数据进行解密。</p>
+</div><div class="cl-preview-section"><p>注意，第三次约会时，两人只有第一次通信传输邮件密码时使用了非对称加密，后续仍然是通过一个邮件密码来进行加密&amp;解密的。这个过程，就是对称加密和非对称加密结合的一种用法——先用非对称加密确保公钥（邮件密码）的安全，再用安全的公钥（邮件密码）来进行对称加密。</p>
+</div><div class="cl-preview-section"><p>不过即便如此，仍然没办法规避中间人伪造公钥的这种场景，所以我们还需要第三方认证。</p>
+</div><div class="cl-preview-section"><h3 id="第三方认证">第三方认证</h3>
+</div><div class="cl-preview-section"><p>第四次约会，韩梅梅去找了第三方机构。这个第三方机构在现实中其实是真实存在的，叫做CA（Catificate Authority）。它的作用就是提供证书，证书中包含的主要信息有：</p>
+</div><div class="cl-preview-section"><ul>
+<li>域名</li>
+<li>公司信息</li>
+<li>序列号</li>
+<li>签名信息</li>
+</ul>
+</div><div class="cl-preview-section"><p>CA 机构有很多，客户端里会维护一套所有权威的 CA 机构的公钥用于解密。客户端获取到证书里的机构信息之后，就会取出对应机构的公钥来解析证书里的签名和服务器发来的公钥信息。用签名来校验对方的身份，若校验通过，就可以顺利地使用当前解读出的公钥进行通信了。这个过程，就是“第三方认证”。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5edee99000011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6954">
+						<img src="https://img.mukewang.com/533e4d5b0001d57502200203-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">精慕门9457844</h4>
+						<div class="comment-text">对称加密中用到的密钥叫做私钥，私钥表示个人私有的密钥，即该密钥不能被泄露。</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-10-11</span>
+						<a href="/read/commentdetail/6954">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6954" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6922">
+						<img src="https://img4.mukewang.com/558582e50001941601000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">杨成功</h4>
+						<div class="comment-text">好像有个小错误，是 Certificate Authority，不是 Catificate</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-10-07</span>
+						<a href="/read/commentdetail/6922">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6922" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6391">
+						<img src="https://img2.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">宁缺7815340</h4>
+						<div class="comment-text">有个小问题 其实网络安全的终极策略就是当面制定密码。。
+那么李雷和韩梅梅第二次的时候当面制定一个密码，随后都用这个密码加密。就绝对安全了</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-01</span>
+						<a href="/read/commentdetail/6391">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6391" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>2</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6275">
+						<img src="https://img4.mukewang.com/533e4c1500010baf02200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕婉清4321217</h4>
+						<div class="comment-text">那么问题来了，邱小东为什么不去第三方机构生成一个正式证书，拦截韩梅梅的证书，把自己的证书发给李雷？——因为这个证书是真实存在的，所以李雷验签肯定是可以通过的。（手动滑稽）</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-23</span>
+						<a href="/read/commentdetail/6275">
+							<span class="icon r"><i class="imwap-comment"></i><em>4</em></span>
+						</a>
+						<span data-cid="6275" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6159">
+						<img src="https://img4.mukewang.com/5899475a0001db3801000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">EdonPlus</h4>
+						<div class="comment-text">李雷，韩梅梅，又是你俩。</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-15</span>
+						<a href="/read/commentdetail/6159">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6159" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6144">
+						<img src="https://img.mukewang.com/558e792f0001e7ae01000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕慕白</h4>
+						<div class="comment-text">厉害厉害</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-15</span>
+						<a href="/read/commentdetail/6144">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6144" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6049">
+						<img src="https://img2.mukewang.com/5d8b85e90001964909700970-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">CregskiN</h4>
+						<div class="comment-text">讲的太棒了！本以为看《图解HTTP》够清晰了，没想到作者写的更棒！</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-04</span>
+						<a href="/read/commentdetail/6049">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6049" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6014">
+						<img src="https://img.mukewang.com/545868550001f60202200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">vincents</h4>
+						<div class="comment-text">精辟啊。真的很形象</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-02</span>
+						<a href="/read/commentdetail/6014">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6014" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥78.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=70">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '41 真正理解 HTTPS',
+					'CID': '2126',
+					'Teacher': '修言'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "41 真正理解 HTTPS",
+                    desc: "拉开你与普通面试者的差距",
+                    imgUrl: 'https:https://img.mukewang.com/5e5c85e1000116c505400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5e5c85e1000116c505400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/70',
+                    link: 'https://m.imooc.com/read/70'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

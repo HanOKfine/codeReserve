@@ -1,0 +1,882 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>15 Netty服务如何写出数据</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="全面掌握迈向高级工程师的必备技能">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "1";
+	var chapter_id = "2174";
+	var chapter_title = "15 Netty服务如何写出数据";
+	var aid = "82";
+	var a_name = "网络编程之Netty一站式精讲";
+	var a_price = "68.00";
+	var a_pic = "https://img4.mukewang.com/5f052aa90001f15b05400720.jpg";
+	var userId = 0;
+
+	var column_id = '82';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-07-29&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			15 Netty服务如何写出数据
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img4.mukewang.com/5f0595c100012d9f06400359.jpg')"></div>
+	
+	
+		<a href="/read/82">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5d9c91f40001dcac05000500-40-40.jpg" alt="彤哥读源码">
+				<h3>网络编程之Netty一站式精讲</h3>
+				<p>彤哥读源码 · 互联网大厂项目经理</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">天才就是长期劳动的结果。<p class="author">——牛顿</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">前言</h1>
+</div><div class="cl-preview-section"><p>你好，我是彤哥。</p>
+</div><div class="cl-preview-section"><p>上一节，我们一起学习了 Netty 接收新数据过程的源码剖析，我们又发现了一个有趣的现象，Netty 的 ByteBuf 竟然也是对 Java 原生 ByteBuffer 的包装。</p>
+</div><div class="cl-preview-section"><p>经过前面的学习，我想你一定迫不及待地想知道 Netty 中写出数据的过程了吧，也有可能，你自己已经根据我们前面的调试方法自己看了，也有可能，睿智的你已经猜测 Netty 中写出数据，肯定也是调用 Java 原生 SocketChannel 的写出数据。</p>
+</div><div class="cl-preview-section"><p>那么，是不是如你所猜测呢？让我们进入今天的学习吧。</p>
+</div><div class="cl-preview-section"><h1 id="问题">问题</h1>
+</div><div class="cl-preview-section"><p>我们知道，Java 原生 NIO 写出数据是从 ByeBuffer 中写出的，也就是下面这样的代码：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">send</span><span class="token punctuation">(</span>SocketChannel socketChannel<span class="token punctuation">,</span> String msg<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+        ByteBuffer writeBuffer <span class="token operator">=</span> ByteBuffer<span class="token punctuation">.</span><span class="token function">allocate</span><span class="token punctuation">(</span><span class="token number">1024</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        writeBuffer<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>msg<span class="token punctuation">.</span><span class="token function">getBytes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        writeBuffer<span class="token punctuation">.</span><span class="token function">flip</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 调用SocketChannel的写出方法</span>
+        socketChannel<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>writeBuffer<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>那么，今天的问题是：</p>
+</div><div class="cl-preview-section"><ol>
+<li>Netty 底层是不是调用的 SocketChannel 的 write () 方法呢？</li>
+<li>写出数据在 ChannelPipeline 中的传递顺序是怎样的？</li>
+<li>写出为什么还有一个叫做 <code>flush</code> 的过程？之前写出的数据又在哪里呢？</li>
+</ol>
+</div><div class="cl-preview-section"><p>好了，让我们带着这些问题进入今天的探索吧。</p>
+</div><div class="cl-preview-section"><h1 id="服务写出数据过程">服务写出数据过程</h1>
+</div><div class="cl-preview-section"><p>今天的内容调试起来比较简单，我们继续使用 EchoServer 这个案例，为了便于讲解，我们先把 StringDecoder/StringEncoder 相关的内容注释掉，直接在 EchoServerHandler 的 channelRead () 方法中打个断点即可：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">EchoServerHandler</span> <span class="token keyword">extends</span> <span class="token class-name">ChannelInboundHandlerAdapter</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 省略其它代码</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">channelRead</span><span class="token punctuation">(</span>ChannelHandlerContext ctx<span class="token punctuation">,</span> Object msg<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 读取数据后写回客户端</span>
+        <span class="token comment">// key1，断点在此处</span>
+        ctx<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">channelReadComplete</span><span class="token punctuation">(</span>ChannelHandlerContext ctx<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// key2，这里也需要个断点</span>
+        ctx<span class="token punctuation">.</span><span class="token function">flush</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>不过，一般来说，服务端发送数据不会在每次 write () 的时候就发送出去，而是先缓存起来，等到一定量之后或者显式地说明要发送的时候再真正地发送出去，这样能在一定程度上提高效率。</p>
+</div><div class="cl-preview-section"><p>就像快递公司一般都会在各个地方设置网点一样，快递小哥并不是收取完快递就给你发出去了，而是，先集成存放在网点，等达到一定量之后，或者到晚上八九点钟之后，再装车发送出去。快递小哥往网点投放快递就类似于 write (msg) 的过程，而装车拉走就类似于 flush () 的过程。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f1f812d0001d6e410350472.png" alt="图片描述"><br>
+所以，上面的代码，如果仅仅调用了 <code>ctx.write(msg)</code>，客户端可能并不能及时地收取到消息，我们还需要调用一个叫做 <code>ctx.flush()</code> 的方法，才能真正地把数据发送给客户端。为了与读取消息的过程一致，我们这里把 <code>ctx.flush()</code> 方法的调用放在了 <code>channelReadComplete()</code> 方法中，因此，这里也需要打个断点。</p>
+</div><div class="cl-preview-section"><p>好了，让我们先跟踪第一个方法 ——<code>ctx.write(msg)</code> 吧。</p>
+</div><div class="cl-preview-section"><p>清除其它断点，只保留这两个断点，启动服务，使用 XSHELL 模拟客户端发送一条消息过来，我们还是以 <code>12345</code> 为例，可以发现，断点成功停留在了 <code>ctx.write(msg)</code> 这一行，跟踪进去看看：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// 1. io.netty.channel.AbstractChannelHandlerContext#write</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> ChannelFuture <span class="token function">write</span><span class="token punctuation">(</span>Object msg<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token function">write</span><span class="token punctuation">(</span>msg<span class="token punctuation">,</span> <span class="token function">newPromise</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 2. io.netty.channel.AbstractChannelHandlerContext#write</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> ChannelFuture <span class="token function">write</span><span class="token punctuation">(</span><span class="token keyword">final</span> Object msg<span class="token punctuation">,</span> <span class="token keyword">final</span> ChannelPromise promise<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 第二个参数为flush，这里传入的是false</span>
+    <span class="token comment">// 也就是默认不进行真正地发送</span>
+    <span class="token function">write</span><span class="token punctuation">(</span>msg<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> promise<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">return</span> promise<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 3. io.netty.channel.AbstractChannelHandlerContext#write</span>
+<span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">write</span><span class="token punctuation">(</span>Object msg<span class="token punctuation">,</span> <span class="token keyword">boolean</span> flush<span class="token punctuation">,</span> ChannelPromise promise<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 检查参数，可以跳过</span>
+    ObjectUtil<span class="token punctuation">.</span><span class="token function">checkNotNull</span><span class="token punctuation">(</span>msg<span class="token punctuation">,</span> <span class="token string">"msg"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">isNotValidPromise</span><span class="token punctuation">(</span>promise<span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            ReferenceCountUtil<span class="token punctuation">.</span><span class="token function">release</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">// cancelled</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">RuntimeException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        ReferenceCountUtil<span class="token punctuation">.</span><span class="token function">release</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">throw</span> e<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// key1，寻找下一个可用的outbound类型的ChannelHandlerContext</span>
+    <span class="token comment">// 在ChannelPipeline中也就是prev指针标记的那个</span>
+    <span class="token comment">// 这里找到的就是LoggingHandler对应的那个ChannelHandlerContext</span>
+    <span class="token keyword">final</span> AbstractChannelHandlerContext next <span class="token operator">=</span> <span class="token function">findContextOutbound</span><span class="token punctuation">(</span>flush <span class="token operator">?</span>
+                                                                   <span class="token punctuation">(</span>MASK_WRITE <span class="token operator">|</span> MASK_FLUSH<span class="token punctuation">)</span> <span class="token operator">:</span> MASK_WRITE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// touch()可以先不管，可以把这里返回的对象看作与msg是一个对象</span>
+    <span class="token keyword">final</span> Object m <span class="token operator">=</span> pipeline<span class="token punctuation">.</span><span class="token function">touch</span><span class="token punctuation">(</span>msg<span class="token punctuation">,</span> next<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    EventExecutor executor <span class="token operator">=</span> next<span class="token punctuation">.</span><span class="token function">executor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>executor<span class="token punctuation">.</span><span class="token function">inEventLoop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>flush<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            next<span class="token punctuation">.</span><span class="token function">invokeWriteAndFlush</span><span class="token punctuation">(</span>m<span class="token punctuation">,</span> promise<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+            <span class="token comment">// key2，flush为false，所以走到了这里</span>
+            <span class="token comment">// 调用context的invokeWrite()方法</span>
+            next<span class="token punctuation">.</span><span class="token function">invokeWrite</span><span class="token punctuation">(</span>m<span class="token punctuation">,</span> promise<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        <span class="token keyword">final</span> WriteTask task <span class="token operator">=</span> WriteTask<span class="token punctuation">.</span><span class="token function">newInstance</span><span class="token punctuation">(</span>next<span class="token punctuation">,</span> m<span class="token punctuation">,</span> promise<span class="token punctuation">,</span> flush<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">safeExecute</span><span class="token punctuation">(</span>executor<span class="token punctuation">,</span> task<span class="token punctuation">,</span> promise<span class="token punctuation">,</span> m<span class="token punctuation">,</span> <span class="token operator">!</span>flush<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            task<span class="token punctuation">.</span><span class="token function">cancel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 4. io.netty.channel.AbstractChannelHandlerContext#invokeWrite</span>
+<span class="token keyword">void</span> <span class="token function">invokeWrite</span><span class="token punctuation">(</span>Object msg<span class="token punctuation">,</span> ChannelPromise promise<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">invokeHandler</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token function">invokeWrite0</span><span class="token punctuation">(</span>msg<span class="token punctuation">,</span> promise<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        <span class="token function">write</span><span class="token punctuation">(</span>msg<span class="token punctuation">,</span> promise<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 5. io.netty.channel.AbstractChannelHandlerContext#invokeWrite0</span>
+<span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">invokeWrite0</span><span class="token punctuation">(</span>Object msg<span class="token punctuation">,</span> ChannelPromise promise<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 调用Handler的write()方法</span>
+        <span class="token punctuation">(</span><span class="token punctuation">(</span>ChannelOutboundHandler<span class="token punctuation">)</span> <span class="token function">handler</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> msg<span class="token punctuation">,</span> promise<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Throwable</span> t<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token function">notifyOutboundHandlerException</span><span class="token punctuation">(</span>t<span class="token punctuation">,</span> promise<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 6. io.netty.handler.logging.LoggingHandler#write</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">write</span><span class="token punctuation">(</span>ChannelHandlerContext ctx<span class="token punctuation">,</span> Object msg<span class="token punctuation">,</span> ChannelPromise promise<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>logger<span class="token punctuation">.</span><span class="token function">isEnabled</span><span class="token punctuation">(</span>internalLevel<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        logger<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>internalLevel<span class="token punctuation">,</span> <span class="token function">format</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> <span class="token string">"WRITE"</span><span class="token punctuation">,</span> msg<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 又调回了第2步中的方法，继续寻找下一个可用的outbound类型的ChannelHandlerContext</span>
+    ctx<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>msg<span class="token punctuation">,</span> promise<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>所以，到这里，第 2 个问题我们倒是先解决了，数据在 ChannelPipeline 中的传递，也是通过 ChannelHandlerContext 进行的，每次寻找下一个可用的 outbound 类型的 ChannelHandlerContext，调用它里面的 ChannelHandler 的 write () 方法，然后，在 ChannelHandler 里面调用 <code>ctx.write(msg, promise)</code> 才能让这个链往下传递，继续寻找下一个可用的 outbound 类型的 ChannelHandlerContext。F</p>
+</div><div class="cl-preview-section"><p>因此，我们可以把上一节的图补全为下面这样：<br>
+<img src="https://img.mukewang.com/5f1f814400018d0710350283.png" alt="图片描述"><br>
+为了便于理解，我特意把箭头区分成两种颜色，并标上数字：</p>
+</div><div class="cl-preview-section"><ul>
+<li>红色表示接收数据的过程，蓝色表示写出数据的过程；</li>
+<li>1 表示调用 ctx.fireChannelRead (msg) 方法，触发下一个 ChannelHandlerContext 的调用；</li>
+<li>2 表示调用 next.invokeChannelRead (m) 方法，调用到下一个 ChannelHandlerContext；</li>
+<li>3 表示调用 ((ChannelInboundHandler) handler ()).channelRead (this, msg) 方法，调用 ChannelHandler 的 channelRead () 方法；</li>
+<li>4 表示调用 ctx.write (msg) 或者 ctx.write (msg, promise) 方法，触发下一个 ChannelHandlerContext 的调用；</li>
+<li>5 表示调用 next.invokeWrite (m, promise) 方法，调用到下一个 ChannelHandlerContext；</li>
+<li>6 表示调用 ((ChannelOutboundHandler) handler ()).write (this, msg, promise) 方法，调用 ChannelHandler 的 write () 方法；</li>
+</ul>
+</div><div class="cl-preview-section"><p>所以，对于接收数据，如果需要数据在 ChannelPipeline 中传递，就调用 <code>ctx.fireChannelRead(msg)</code> 方法；对于写出数据，如果需要数据在 ChannelPipeline 中传递，就调用 <code>ctx.write(msg)</code> 或者 <code>ctx.write(msg, promise)</code> 方法。</p>
+</div><div class="cl-preview-section"><p>通过上面的图，我们知道， 最后一定会走到 ChannelPipeline 的 HeadContext 类的 write () 方法，所以，直接在这个方法中打一个断点，或者慢慢一步一步走到这里都可以：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// io.netty.channel.DefaultChannelPipeline.HeadContext#write</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">write</span><span class="token punctuation">(</span>ChannelHandlerContext ctx<span class="token punctuation">,</span> Object msg<span class="token punctuation">,</span> ChannelPromise promise<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 调用unsafe的write()方法</span>
+    unsafe<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>msg<span class="token punctuation">,</span> promise<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// io.netty.channel.AbstractChannel.AbstractUnsafe#write</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token keyword">final</span> <span class="token keyword">void</span> <span class="token function">write</span><span class="token punctuation">(</span>Object msg<span class="token punctuation">,</span> ChannelPromise promise<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">assertEventLoop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// key，看起来像是一个缓存的东西</span>
+    ChannelOutboundBuffer outboundBuffer <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>outboundBuffer<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>outboundBuffer <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token function">safeSetFailure</span><span class="token punctuation">(</span>promise<span class="token punctuation">,</span> <span class="token function">newClosedChannelException</span><span class="token punctuation">(</span>initialCloseCause<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        ReferenceCountUtil<span class="token punctuation">.</span><span class="token function">release</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">int</span> size<span class="token punctuation">;</span>
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 过滤消息</span>
+        msg <span class="token operator">=</span> <span class="token function">filterOutboundMessage</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 计算消息的大小</span>
+        size <span class="token operator">=</span> pipeline<span class="token punctuation">.</span><span class="token function">estimatorHandle</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>size <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            size <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Throwable</span> t<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token function">safeSetFailure</span><span class="token punctuation">(</span>promise<span class="token punctuation">,</span> t<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        ReferenceCountUtil<span class="token punctuation">.</span><span class="token function">release</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// key，添加到缓存中</span>
+    outboundBuffer<span class="token punctuation">.</span><span class="token function">addMessage</span><span class="token punctuation">(</span>msg<span class="token punctuation">,</span> size<span class="token punctuation">,</span> promise<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// io.netty.channel.ChannelOutboundBuffer#addMessage</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">addMessage</span><span class="token punctuation">(</span>Object msg<span class="token punctuation">,</span> <span class="token keyword">int</span> size<span class="token punctuation">,</span> ChannelPromise promise<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    Entry entry <span class="token operator">=</span> Entry<span class="token punctuation">.</span><span class="token function">newInstance</span><span class="token punctuation">(</span>msg<span class="token punctuation">,</span> size<span class="token punctuation">,</span> <span class="token function">total</span><span class="token punctuation">(</span>msg<span class="token punctuation">)</span><span class="token punctuation">,</span> promise<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 典型的单链表添加元素的过程</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>tailEntry <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        flushedEntry <span class="token operator">=</span> null<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        Entry tail <span class="token operator">=</span> tailEntry<span class="token punctuation">;</span>
+        tail<span class="token punctuation">.</span>next <span class="token operator">=</span> entry<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    tailEntry <span class="token operator">=</span> entry<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>unflushedEntry <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        unflushedEntry <span class="token operator">=</span> entry<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token function">incrementPendingOutboundBytes</span><span class="token punctuation">(</span>entry<span class="token punctuation">.</span>pendingSize<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>所以，<code>ctx.write()</code> 方法最终只是把消息添加到了一个叫做 <code>ChannelOutboundBuffer</code> 的缓存中，并没有真正地发送出去。</p>
+</div><div class="cl-preview-section"><p>那么，我们要怎么寻找在哪里真正发送数据出去的呢？</p>
+</div><div class="cl-preview-section"><p>好了，我们在 EchoServerHandler 中打的第二个断点要登场了，<code>ctx.flush();</code> 的调用过程跟 <code>ctx.write(msg)</code> 是类似的，我们就不再赘述了，直接来到 HeadContext 的 <code>flush()</code> 方法。</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token comment">// io.netty.channel.DefaultChannelPipeline.HeadContext#flush</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">flush</span><span class="token punctuation">(</span>ChannelHandlerContext ctx<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    unsafe<span class="token punctuation">.</span><span class="token function">flush</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// io.netty.channel.AbstractChannel.AbstractUnsafe#flush</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token keyword">final</span> <span class="token keyword">void</span> <span class="token function">flush</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">assertEventLoop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    ChannelOutboundBuffer outboundBuffer <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>outboundBuffer<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>outboundBuffer <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    outboundBuffer<span class="token punctuation">.</span><span class="token function">addFlush</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// key，不知道大家发现没，这种带0结尾的��般也是干正事的方法</span>
+    <span class="token function">flush0</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// io.netty.channel.nio.AbstractNioChannel.AbstractNioUnsafe#flush0</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">protected</span> <span class="token keyword">final</span> <span class="token keyword">void</span> <span class="token function">flush0</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">isFlushPending</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">flush0</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// io.netty.channel.AbstractChannel.AbstractUnsafe#flush0</span>
+<span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">flush0</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 省略其它代码</span>
+
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+        <span class="token function">doWrite</span><span class="token punctuation">(</span>outboundBuffer<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Throwable</span> t<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// // 省略其它代码</span>
+    <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+        inFlush0 <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// io.netty.channel.socket.nio.NioSocketChannel#doWrite</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">doWrite</span><span class="token punctuation">(</span>ChannelOutboundBuffer in<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+    SocketChannel ch <span class="token operator">=</span> <span class="token function">javaChannel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">int</span> writeSpinCount <span class="token operator">=</span> <span class="token function">config</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getWriteSpinCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">do</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>in<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token function">clearOpWrite</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token comment">// Ensure the pending writes are made of ByteBufs only.</span>
+        <span class="token keyword">int</span> maxBytesPerGatheringWrite <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>NioSocketChannelConfig<span class="token punctuation">)</span> config<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getMaxBytesPerGatheringWrite</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// key1，从ChannelOutboundBuffer中取出ByteBuffer</span>
+        <span class="token comment">// 前面分析write()的时候放里面放的实际是ByeBuf</span>
+        <span class="token comment">// 因为ByteBuf实际上是对ByteBuffer的包装</span>
+        <span class="token comment">// 所以这里取出来的时候直接就转换成ByteBuffer了</span>
+        ByteBuffer<span class="token punctuation">[</span><span class="token punctuation">]</span> nioBuffers <span class="token operator">=</span> in<span class="token punctuation">.</span><span class="token function">nioBuffers</span><span class="token punctuation">(</span><span class="token number">1024</span><span class="token punctuation">,</span> maxBytesPerGatheringWrite<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">int</span> nioBufferCnt <span class="token operator">=</span> in<span class="token punctuation">.</span><span class="token function">nioBufferCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// Always us nioBuffers() to workaround data-corruption.</span>
+        <span class="token comment">// See https://github.com/netty/netty/issues/2761</span>
+        <span class="token keyword">switch</span> <span class="token punctuation">(</span>nioBufferCnt<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">case</span> <span class="token number">0</span><span class="token operator">:</span>                
+                writeSpinCount <span class="token operator">-=</span> <span class="token function">doWrite0</span><span class="token punctuation">(</span>in<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">break</span><span class="token punctuation">;</span>
+            <span class="token keyword">case</span> <span class="token number">1</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+                <span class="token comment">// 我们只写了一条数据，所以实际是走到了这里</span>
+                ByteBuffer buffer <span class="token operator">=</span> nioBuffers<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+                <span class="token keyword">int</span> attemptedBytes <span class="token operator">=</span> buffer<span class="token punctuation">.</span><span class="token function">remaining</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token comment">// key2，调用SocketChannel的write()方法写出数据</span>
+                <span class="token keyword">final</span> <span class="token keyword">int</span> localWrittenBytes <span class="token operator">=</span> ch<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>buffer<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>localWrittenBytes <span class="token operator">&lt;=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token function">incompleteWrite</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token keyword">return</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                <span class="token function">adjustMaxBytesPerGatheringWrite</span><span class="token punctuation">(</span>attemptedBytes<span class="token punctuation">,</span> localWrittenBytes<span class="token punctuation">,</span> maxBytesPerGatheringWrite<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                in<span class="token punctuation">.</span><span class="token function">removeBytes</span><span class="token punctuation">(</span>localWrittenBytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token operator">--</span>writeSpinCount<span class="token punctuation">;</span>
+                <span class="token keyword">break</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+            <span class="token keyword">default</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+                <span class="token keyword">long</span> attemptedBytes <span class="token operator">=</span> in<span class="token punctuation">.</span><span class="token function">nioBufferSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token comment">// key2，调用SocketChannel的write()方法写出数据</span>
+                <span class="token keyword">final</span> <span class="token keyword">long</span> localWrittenBytes <span class="token operator">=</span> ch<span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span>nioBuffers<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> nioBufferCnt<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>localWrittenBytes <span class="token operator">&lt;=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    <span class="token function">incompleteWrite</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token keyword">return</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                <span class="token function">adjustMaxBytesPerGatheringWrite</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> attemptedBytes<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> localWrittenBytes<span class="token punctuation">,</span>
+                                                maxBytesPerGatheringWrite<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                in<span class="token punctuation">.</span><span class="token function">removeBytes</span><span class="token punctuation">(</span>localWrittenBytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token operator">--</span>writeSpinCount<span class="token punctuation">;</span>
+                <span class="token keyword">break</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span> <span class="token keyword">while</span> <span class="token punctuation">(</span>writeSpinCount <span class="token operator">&gt;</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token function">incompleteWrite</span><span class="token punctuation">(</span>writeSpinCount <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这里有两个关键方法：</p>
+</div><div class="cl-preview-section"><ul>
+<li>先从 ChannelOutboundBuffer 中取出 ByteBuffer；</li>
+<li>再通过 Java 原生的 SocketChannel 写出数据。</li>
+</ul>
+</div><div class="cl-preview-section"><p>至此，写出数据过程的源码剖析就讲完了，让我们再来总结一下：</p>
+</div><div class="cl-preview-section"><ol>
+<li>调用 ctx.write () 方法时，只是把数据添加到 ChannelOutboundBuffer 缓存中；</li>
+<li>调用 ctx.flush () 方法时，才把数据从 ChannelOutboundBuffer 取出来；</li>
+<li>调用 Java 原生的 SocketChannel 把数据发送出去。</li>
+</ol>
+</div><div class="cl-preview-section"><h1 id="后记">后记</h1>
+</div><div class="cl-preview-section"><p>本节，我们一起学习了 Netty 中服务写出数据过程的源码剖析，通过阅读源码，我们知道，Netty 中写出数据实际上分成了两步：ctx.write () 和 ctx.flush ()，write () 的时候只是把数据添加到缓存中，flush () 才真正把数据发送出去，之所以要分成两步，也是基于效率来考虑的，大家可以类比快递网点的生活案例进行对比，如果没有网点，则需要接收到快递就装车拉走，将要耗费巨大的人力物力财力。</p>
+</div><div class="cl-preview-section"><p>到这里，数据流向角度的源码分析就快结束了，下一节，我们将看看 Netty 是如何做到优雅关闭的，敬请期待。</p>
+</div><div class="cl-preview-section"><h1 id="思维导图">思维导图</h1>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f1f815a0001735c14780681.png" alt="图片描述"></p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5f0543de00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6635">
+						<img src="https://img2.mukewang.com/533e505f00011ad102000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">Jussi_Lee</h4>
+						<div class="comment-text">彤哥，我想了解下快递的全生命周期</div>
+						<div>
+							
+								<div class="reply">讲师回复：你已经知道了。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-25</span>
+						<a href="/read/commentdetail/6635">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6635" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=82">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '15 Netty服务如何写出数据',
+					'CID': '2174',
+					'Teacher': '彤哥读源码'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "15 Netty服务如何写出数据",
+                    desc: "全面掌握迈向高级工程师的必备技能",
+                    imgUrl: 'https:https://img4.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/82',
+                    link: 'https://m.imooc.com/read/82'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

@@ -1,0 +1,987 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>30 nwchecker：架构设计</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="学好通用知识，提升技术竞争力">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2119";
+	var chapter_title = "30 nwchecker：架构设计";
+	var aid = "80";
+	var a_name = "零基础学透网络编程";
+	var a_price = "58.00";
+	var a_pic = "https://img3.mukewang.com/5ed8c1c600015fc805400720.jpg";
+	var userId = 0;
+
+	var column_id = '80';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-06-24&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			30 nwchecker：架构设计
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img3.mukewang.com/5ef3233000011dac06400359.jpg')"></div>
+	
+	
+		<a href="/read/80">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/5458620000018a2602200220-40-40.jpg" alt="陈子兴">
+				<h3>零基础学透网络编程</h3>
+				<p>陈子兴 · 资深软件架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">天才就是长期劳动的结果。<p class="author">——牛顿</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h3 id="前言">前言</h3>
+</div><div class="cl-preview-section"><p>到目前为止，你已经学完了网络编程的所有关键知识点，如果能将这些知识点灵活应用的项目中，那么完全可以从事网络编程相关工作了。为了巩固你之前所学的知识点，接下来的两篇专栏，我们将开发一个小项目，即对之前编写的 nwchecker 程序进行重构。</p>
+</div><div class="cl-preview-section"><p>本文尝试按照简易软件开发流程展开，会经历需求分析、架构设计、编码实现、测试交付四个阶段。本篇更像是完成项目的架构设计，下一篇更像是完成项目的详细设计，当然我们也会提供完整的代码实现。</p>
+</div><div class="cl-preview-section"><p>nwchecker 重构项目的需求如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>实现一个 C/S 架构的网络检测工具；</li>
+<li>实现网络 QoS 指标统计，包括带宽、延迟、丢包、抖动；</li>
+<li>需要应用到我们学过的 I/O 模型；</li>
+<li>需要支持 UDP、TCP 检测；</li>
+<li>需要支持命令选项参数灵活配置。</li>
+</ul>
+</div><div class="cl-preview-section"><p>完成了项目背景介绍，确定了项目目标，下来就可以进入<strong>需求分析</strong>阶段了。</p>
+</div><div class="cl-preview-section"><h3 id="需求分析">需求分析</h3>
+</div><div class="cl-preview-section"><p>软件需求可能来源于客户，也可能来源于公司的市场调研员，也可能来源于产品经理。需求的来源渠道是多样的，所谓软件需求就是客户对系统的最终期望。有时客户所提的需求并不是他真正所需要的，有时客户提的需求难以技术落地，这就要求技术人员接到客户需求以后进行分析，进行技术可行性调研，往往需要借助一些建模工具完成业务建模，形成一个可视化的模型，然后再反复地和用户进行沟通、讨论，最终形成系统需求。</p>
+</div><div class="cl-preview-section"><p>本项目的需求是由我们自己提出的，需求很简单，目标也很明确。我们只需要完成业务建模，分析清楚系统的所有功能点，做一个简单的可行性分析即可。需求分析往往需要通过 User-Case 图进行业务建模，这样更直观、更易于交流，如下：<br>
+<img src="https://img.mukewang.com/5ef3165a0001fcb306850423.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>观察 User-Case 图，我们将 nwchecker 的需求分为功能需求和技术实现需求两部分，即暗红色的椭圆所示部分。图中黄色的椭圆表示系统要实现的具体功能，说明如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>功能需求，是用户所期望的业务功能。nwchecker 包含如下几个业务功能：</p>
+<ul>
+<li><strong>延迟</strong>：能够计算一条通信链路上的网络延迟；</li>
+<li><strong>抖动</strong>：能够计算��条通信链路上的网络抖动；</li>
+<li><strong>丢包</strong>：能够统计一条通信链路上的网络丢包率；</li>
+<li><strong>带宽</strong>：能够计算一条通信链路的网络带宽；</li>
+<li><strong>UDP</strong>：能统计 UDP 协议的以上四个 QoS 指标；</li>
+<li><strong>TCP</strong>：能统计 TCP 协议的以上四个 QoS 指标；</li>
+<li><strong>统计输出</strong>：网络统计往往需要可视化输出，比如输出到文件，或者通过报表、图表的形式显示。</li>
+</ul>
+</li>
+<li>
+<p>技术实现需求，往往不是用户提出的，属于系统的技术实现部分。nwchecker 包含如下几个技术需求：</p>
+<ul>
+<li><strong>配置参数</strong>：nwchecker 需要支持命令行参数配置，这样更利于用户使用；</li>
+<li><strong>客户端</strong>：提供 nwchecker 客户端；</li>
+<li><strong>服务端</strong>：提供 nwchecker 服务端；</li>
+<li><strong>网络通信模块</strong>：必须开发一个网络通信模块，才能实现 QoS 指标的统计。</li>
+</ul>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>业务模型我们已经建立好了，如何将每一个功能转换成软件呢？下来就是进行顶层设计。</p>
+</div><div class="cl-preview-section"><h3 id="顶层设计">顶层设计</h3>
+</div><div class="cl-preview-section"><p>进行顶层设计就是画出系统组件图，将 User-Case 图中的需求功能转化到对应的组件中。每一个组件表示一个软件模块或者是一个子系统，根据系统复杂度的不同，每个组件的设计粒度也不同。要想将系统需求转化为软件组件，需要几个前提条件：</p>
+</div><div class="cl-preview-section"><ul>
+<li>首先，需要你深刻理解系统需求；</li>
+<li>其次，需要熟悉一些软件设计思想，比如面向对象设计（OOD）；</li>
+<li>再就是掌握一些建模工具；</li>
+<li>最后，需要一定的技术背景和设计经验。</li>
+</ul>
+</div><div class="cl-preview-section"><p>试想一下，nwchecker 的核心功能就是实现延迟、抖动、丢包、带宽的统计，然后输出给用户。通过前面 QoS 理论一张的学习，我们得知要想计算这些 QoS 指标，需要通信的两端互相发送数据包才能实现。为此，我们做出如下设想：</p>
+</div><div class="cl-preview-section"><ul>
+<li>抽象出一个<strong>网络通信组件</strong>，负责 Socket 通信。这很容易想到吧？我们已经学习了所有 Socket 通信的知识了；</li>
+<li>抽象出一个<strong>QoS 统计计算组件</strong>，负责四个 QoS 指标计算。这个也不难吧；</li>
+<li>抽象一个<strong>QoS 统计输出组件</strong>，负责 QoS 指标的输出；</li>
+<li>抽象一个<strong>主程序组件</strong>，这个很好理解，所有软件都有主程序；</li>
+<li>抽象一个<strong>命令行配置组件</strong>，负责命令行参数的解析工作。</li>
+</ul>
+</div><div class="cl-preview-section"><p>将我们的设想通过一个组件图来展示，如下：<br>
+<img src="https://img.mukewang.com/5ef3170a0001dd7104540176.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>现在需要说明的是，顶层设计产生的组件图必须包含 User-Case 图中的所有功能，对应关系如下：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>组件</th>
+<th>功能（user-case）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>QoS 统计计算组件</td>
+<td>延迟、抖动、丢包、带宽</td>
+</tr>
+<tr>
+<td>网络通信组件</td>
+<td>UDP、TCP、网络通信模层</td>
+</tr>
+<tr>
+<td>QoS 统计输出组件</td>
+<td>QoS 统计输出功能</td>
+</tr>
+<tr>
+<td>主程序组件</td>
+<td>客户端、服务器</td>
+</tr>
+<tr>
+<td>命令行配置组件</td>
+<td>命令行配置参数</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>因为 nwchecker 的功能比较简单，画出如上的组件图就可以了，不需要进行组件的进一步设计、拆分。下来，我们打算采用 OOD(Object-Oriented Design) 的思想进行设计，所以下一步就是画出系统类图。</p>
+</div><div class="cl-preview-section"><h3 id="系统类图">系统类图</h3>
+</div><div class="cl-preview-section"><p>在 OOD 的思想体系下，现实世界中无论是具体的、还是抽象的事物，都是<strong>对象</strong>，现实世界就是由<strong>对象</strong>组成的。<strong>对象</strong>有自己的<strong>属性</strong>和<strong>行为</strong>，对象之间可以产生联系。把具有相同<strong>属性</strong>和<strong>行为</strong>的对象叫做同一类对象，抽象出<strong>类</strong>。OOD 的思想非常符合人的思维方式，更容易建模和抽象。如果你对 OOD 不是很熟悉的话，可以查阅相关资料学习。</p>
+</div><div class="cl-preview-section"><p>我们现在的工作是要把顶层设计中的组件转化成一个或若干个类，对于功能简单的组件，一个组件对应一个类就可以；对于功能复杂的组件，一个组件可能需要抽象成多个类。我们顶层组件图抽象出的类如下：<br>
+<img src="https://img.mukewang.com/5ef317590001f98108000521.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>观察上图，每个组件所包含的类，一目了然，下来我们就解释一下每一个类的功能：</p>
+</div><div class="cl-preview-section"><ul>
+<li>命令配置组件</li>
+</ul>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>类名</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>configuration</td>
+<td>实现命令参数的解析和存储</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><ul>
+<li>主程序组件</li>
+</ul>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>类名</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>main</td>
+<td>程序的主函数，是程序的入口，包含客户端、服务器的公共逻辑</td>
+</tr>
+<tr>
+<td>nwc_client</td>
+<td>完成客户端逻辑</td>
+</tr>
+<tr>
+<td>nwc_server</td>
+<td>完成服务端逻辑</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><ul>
+<li>网络通信组件</li>
+</ul>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>类名</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>looper</td>
+<td>I/O 多路复用机制的封装，实现事件循环机制，是一个事件反应器，是一个抽象接口</td>
+</tr>
+<tr>
+<td>io_handler</td>
+<td>是 looper 的配套类，响应读、写事件，是一个抽象接口</td>
+</tr>
+<tr>
+<td>nwc_operation</td>
+<td>事件循环机制向应用层提供的一个回调接口，一般由 io_handler 调用</td>
+</tr>
+<tr>
+<td>epoll_looper</td>
+<td>epoll 相关功能的封装</td>
+</tr>
+<tr>
+<td>udp_handler</td>
+<td>UDP 客户端、服务器逻辑的封装</td>
+</tr>
+<tr>
+<td>tcp_handler</td>
+<td>TCP 客户端、服务器逻辑的封装</td>
+</tr>
+<tr>
+<td>nwc_connection</td>
+<td>应用层虚拟连接的抽象</td>
+</tr>
+<tr>
+<td>nwc_connection_manager</td>
+<td>负责管理所有 nwc_connection 实例对象，主要是用在服务端</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><ul>
+<li>QoS 统计计算组件</li>
+</ul>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>类名</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>qos_protocol</td>
+<td>定义了 QoS 统计的协议格式，实现 QoS 四大指标的计算、统计</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><ul>
+<li>QoS 统计输出组件</li>
+</ul>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>类名</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>qos_stat_output</td>
+<td>实现 QoS 四大统计指标的输出</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>在系统类图的设计过程中，有几个软件设计的原则需要讨论一下。软件设计最重要的思想就是实现模块化、组件化，目的是达到组件的可复用性。一个可复用的软件组件是可维护的、易扩展的。可复用的软件设计原则有哪些呢？</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>开放、闭合原则</strong>：对扩展开放，对修改闭合。我们所设计的 looper、io_handler、nwc_operation 是三个接口类，目的是提供统一接口，可以灵活扩展新功能，但是不需要修改接口；</li>
+<li><strong>依赖倒转原则</strong>：将复杂的业务控制逻辑封装起来，形成可复用的模块，可以简化应用编程逻辑。你应该知道 I/O 多路复用机制比较复杂，不仅不容易理解而且有很多编程细节，并且在不同的操作系统下实现机制都不一样。我们在 looper 中提供统一的接口，在子类中完成具体的 I/O 多路复用机制；</li>
+<li><strong>职责单一原则</strong>：软件模块的职责应该单一，一个模块只专注一个功能。比如，我们将 main 主函数的逻辑划分成客户端和服务端逻辑，就是为了实现职责单一；</li>
+<li><strong>组成聚合原则</strong>：这是模块之间的关联关系，能用组合、聚合，就不用要继承。因为继承会破会封装性。</li>
+</ul>
+</div><div class="cl-preview-section"><p>在上面的类图中，除了类的名字和类之间的关系，我们还为接口类设计出了函数接口，下来我们进入接口设计。</p>
+</div><div class="cl-preview-section"><h3 id="接口设计">接口设计</h3>
+</div><div class="cl-preview-section"><p>软件的接口是指软件模块对外提供的一组函数或者方法，目的是让别的模块访问本模块的功能，以达到组件复用的目的。根据模块逻辑复杂度的不同，接口由分为：系统接口、子系统接口、模块接口、子模块接口、类接口。关于模块、子模块、类的应用都非常灵活，我们这里认为类就是最小的模块。</p>
+</div><div class="cl-preview-section"><p>在上面的类图中，我们为每一个类设计了对外接口，现在将这些类的接口做一个说明。由于主程序模块，configuration、qos_stat_output 的接口非常简单，我们不再赘述。我们重点讲解 looper、io_handler、io_operation、qos_protocol 的接口。</p>
+</div><div class="cl-preview-section"><ul>
+<li>looper</li>
+</ul>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>类名</th>
+<th>接口名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>looper</td>
+<td>add_handler</td>
+<td>将 io_handler 实例添加到 looper</td>
+</tr>
+<tr>
+<td></td>
+<td>remove_handler</td>
+<td>将 io_handler 实例从 looper 移除</td>
+</tr>
+<tr>
+<td></td>
+<td>register_event</td>
+<td>将 io_handler 实例所关心的读、写事件，注册到 looper</td>
+</tr>
+<tr>
+<td></td>
+<td>cancel_event</td>
+<td>将 io_handler 实例所关心的读、写事件，从 looper 移除</td>
+</tr>
+<tr>
+<td></td>
+<td>start</td>
+<td>启动一个 looper 实例</td>
+</tr>
+<tr>
+<td></td>
+<td>stop</td>
+<td>停止一个 looper 实例</td>
+</tr>
+<tr>
+<td></td>
+<td>run</td>
+<td>looper 进入事件循环</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>looper 是一个抽象接口，epoll_looper 需要实现此接口，当然你也可以实现 kqueue_looper，select_looper。</p>
+</div><div class="cl-preview-section"><ul>
+<li>io_handler</li>
+</ul>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>类名</th>
+<th>接口名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>io_handler</td>
+<td>handle_input</td>
+<td>是一个回调函数，当 looper 监听到某个 io_handler 注册的<strong>读</strong>事件触发时，调用 handle_input</td>
+</tr>
+<tr>
+<td></td>
+<td>handle_output</td>
+<td>是一个回调函数，当 looper 监听到某个 io_handler 注册的<strong>写</strong>事件触发时，调用 handle_output</td>
+</tr>
+<tr>
+<td></td>
+<td>listen</td>
+<td>由服务器程序调用，启动一个监听服务</td>
+</tr>
+<tr>
+<td></td>
+<td>connect</td>
+<td>由客户端程序调用，连接一个服务器</td>
+</tr>
+<tr>
+<td></td>
+<td>recv</td>
+<td>用于接收对端数据，由 TCP 程序或者是调用了 connect 函数的 UDP 程序调用</td>
+</tr>
+<tr>
+<td></td>
+<td>send</td>
+<td>用于向对端发送数据，由 TCP 程序或者是调用了 connect 函数的 UDP 程序调用</td>
+</tr>
+<tr>
+<td></td>
+<td>recvfrom</td>
+<td>用于接收对端数据，由未调用 connect 函数的 UDP 程序调用</td>
+</tr>
+<tr>
+<td></td>
+<td>sendto</td>
+<td>用于向对端发送数据，由未调用 connect 函数的 UDP 程序调用</td>
+</tr>
+<tr>
+<td></td>
+<td>close</td>
+<td>用于关闭 io_handler 实例，释放资源</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>io_handler 是一个抽象接口，udp_handler 和 tcp_handler 需要实现此接口，当然你也可以实现其他协议，只需要扩展 io_handler 的接口即可。</p>
+</div><div class="cl-preview-section"><ul>
+<li>io_operation</li>
+</ul>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>类名</th>
+<th>接口名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>io_operation</td>
+<td>on_accept</td>
+<td>当 io_handler 收到一个新的 TCP 连接时，在 handle_input 中回调此函数</td>
+</tr>
+<tr>
+<td></td>
+<td>on_connect</td>
+<td>当 io_handler 完成异步连接时，在 handle_output 中回调此函数</td>
+</tr>
+<tr>
+<td></td>
+<td>on_recv</td>
+<td>io_handler 会在 handle_input 中回调此函数</td>
+</tr>
+<tr>
+<td></td>
+<td>on_send</td>
+<td>io_handler 会在 handle_output 中回调此函数</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>应用层需要实现 io_operation 的接口，在本项目中，是由 nwc_connection 来实现 io_operation 的接口。</p>
+</div><div class="cl-preview-section"><ul>
+<li>qos_protocol</li>
+</ul>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>类名</th>
+<th>接口名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>qos_protocol</td>
+<td>create</td>
+<td>创建一个 QoS 统计报文。</td>
+</tr>
+<tr>
+<td></td>
+<td>process</td>
+<td>处理接收到的 QoS 统计报文，主要是计算出延迟、抖动</td>
+</tr>
+<tr>
+<td></td>
+<td>stat</td>
+<td>定时统计输出延迟、抖动、带宽、丢包率</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><blockquote>
+<p>提示：<br>
+观察系统类图，类 looper、io_handler、io_operation 组成了<strong>事件循环模块</strong>。由于这三个模块逻辑比较复杂，我们并不想把这些类直接暴露给客户，为此我们为<strong>事件循环模块</strong>设计一组对外接口，接口定义在 nwc 中，在本项目中我们并不会抽象一个 nwc 类，而是定义一组 C 语言函数。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h3 id="qos-协议格式">QoS 协议格式</h3>
+</div><div class="cl-preview-section"><p>通过前面专栏的学习，我们知道计算机网络其实就是研究各种协议，在 TCP/IP 协议栈的四层协议模型中，操作系统内核协议栈实现了链路层、网络层、传输层，将应用层留给了应用程序来实现。</p>
+</div><div class="cl-preview-section"><p>本项目要进行 QoS 检测，所以我们需要定义一个应用层协议。由于本项目的目标是综合应用我们之前所学的知识，我们只是定义一个简单的 QoS 检测协议，只是体现 QoS 计算的思想，对于算法的精准性和实用性，超出了我们的范围，不会去详细讨论。我们的 QoS 计算策略如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>QoS 各项指标的统计在客户端完成。</li>
+<li>由客户端主动发送请求到服务器。</li>
+<li>服务器收到客户端的请求以后，立即做出响应。服务器不会去计算 QoS 指标。</li>
+<li>服务器只做简单的响应，不会主动发送请求给客户端。</li>
+</ul>
+</div><div class="cl-preview-section"><p>基于以上 QoS 协议规则，QoS 协议格式定义如下：<br>
+<img src="https://img.mukewang.com/5ef318b900019fa205530394.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>QoS 协议头包含四个字段，每个字段都是 4 字节长，消息头总长度是 12 字节。协议头的各个字段说明如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>Send Timestamp，表示消息发送时间戳，请求消息和响应消息都需要填充此字段；</li>
+<li>Acknowledge Timestamp，确认时间戳。客户端不需要填写此字段，只有当服务器发送响应消息的时候需要填写此字段。当服务器收到客户端的请求消息时，获取请求消息的 Send Timestamp，然后填充在响应消息的 Acknowledge Timestamp 字段中；</li>
+<li>Receiver Delay，表示接收端处理消息的时间。此字段只有服务器需要填充，假设服务器接收请求消息的时间是 T1，发送响应消息的时间是 T2，那么服务器需要将 T2-T1 填写在此字段；</li>
+<li>消息体的长度，注意不包含消息头。</li>
+</ul>
+</div><div class="cl-preview-section"><p>QoS 协议是一个应用层协议，对于 TCP 和 UDP 都适用。</p>
+</div><div class="cl-preview-section"><h3 id="总结">总结</h3>
+</div><div class="cl-preview-section"><p>本文的核心内容就是完成 nwchecker 项目的重构，我们经过需求分析、顶层设计、系统类设计、接口设计，最后完成了 QoS 协议格式的设计。所涉及网络编程相关的知识点都是我们已经学过的，你可能需要继续补充的知识点就是 OOD 的设计思想，再就是需要学习一款 UML 建模工具。</p>
+</div><div class="cl-preview-section"><p>贯穿全文的重点就是设计思想和设计经验，这需要在实际中不断的学习、总结，不断的形成自己的设计思维习惯。</p>
+</div><div class="cl-preview-section"><p>在完成接口设计以后，往往需要画出系统的时序图。因为类图是静态的结构，而时序图是函数调用过程的体现，是动态的，只有画出时序图才能知道你的接口设计是否合理。本项目比较简单，不再画出时序图，请你尝试完成一下吧。</p>
+</div><div class="cl-preview-section"><h3 id="思考时间">思考时间</h3>
+</div><div class="cl-preview-section"><ol>
+<li>
+<p>请学习一款 UML 建模软件，然后尝试画出本项目中组件图、类图。（本项目采用的建模工具是 StarUML）</p>
+</li>
+<li>
+<p>完成接口设计以后，往往需要画出时序图，请你尝试完成一下。（由于本项目比较简单，本文没有画出时序图）</p>
+</li>
+<li>
+<p>请尝试将 I/O 多路复用机制 select 封装成 select_looper。</p>
+</li>
+</ol>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img1.mukewang.com/5ef3233500011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=80">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '30 nwchecker：架构设计',
+					'CID': '2119',
+					'Teacher': '陈子兴'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "30 nwchecker：架构设计",
+                    desc: "学好通用知识，提升技术竞争力",
+                    imgUrl: 'https:https://img3.mukewang.com/5ed8c1c600015fc805400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5ed8c1c600015fc805400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/80',
+                    link: 'https://m.imooc.com/read/80'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

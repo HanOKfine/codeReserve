@@ -1,0 +1,1296 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>26 Windows IOCP 的工作机制是什么？</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="学好通用知识，提升技术竞争力">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2115";
+	var chapter_title = "26 Windows IOCP 的工作机制是什么？";
+	var aid = "80";
+	var a_name = "零基础学透网络编程";
+	var a_price = "58.00";
+	var a_pic = "https://img2.mukewang.com/5ed8c1c600015fc805400720.jpg";
+	var userId = 0;
+
+	var column_id = '80';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-06-15&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			26 Windows IOCP 的工作机制是什么？
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img.mukewang.com/5ed9fe120001137306400359.jpg')"></div>
+	
+	
+		<a href="/read/80">
+			<div class="course-entry">
+				<img src="https://img.mukewang.com/5458620000018a2602200220-40-40.jpg" alt="陈子兴">
+				<h3>零基础学透网络编程</h3>
+				<p>陈子兴 · 资深软件架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">勤能补拙是良训，一分辛劳一分才。<p class="author">——华罗庚</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="前言">前言</h2>
+</div><div class="cl-preview-section"><p>本文将要讨论 Windows 系统非常重要的 I/O 多路复用机制，叫做 <strong>IOCP</strong> 机制。也许你会有这样的疑问：“我们最近不都是在讨论 I/O 多路复用机制吗？难道还没有讨论完吗？”。其实 Windows 系统以外的 I/O 机制基本讨论完了，针对 Windows 系统，我们仅仅介绍了 WSASelect 的工作原理，然而这并不是 Windows 系统的核心机制，Windows 系统的核心 I/O 机制叫做<strong>重叠 I/O</strong>（Overlapped）模型。<strong>重叠 I/O</strong> 的特点是每一个 I/O 操作都是通过一个内核数据结构 <strong>OVERLAPPED</strong> 来跟踪它的 Pending 和 Completion 状态。Windows 系统提供了三种获取<strong>重叠 I/O</strong> 是否完成的方式，而 <strong>IOCP</strong> 就是其中最常用的一种。<strong>IOCP</strong> 的全称是 Input/Output Completion Port，中文叫做<strong>完成端口</strong>，是微软在 Winsock2 中引入的 I/O 机制。IOCP 适合在 Windows 系统上构建高性能服务器，比如著名的 <i class="chrome-extension-mutihighlight chrome-extension-mutihighlight-style-5">HTTP</i> 服务器 Apache 采用的就是 IOCP 机制，还有著名的网络库 libuv 也采用的是 IOCP 机制。本文将从如下几个方面展开介绍：</p>
+</div><div class="cl-preview-section"><ul>
+<li>重叠 I/O （Overlapped）介绍</li>
+<li>为什么选择 IOCP 机制</li>
+<li>什么是 IOCP 机制</li>
+<li>IOCP 相关 API 介绍</li>
+<li>IOCP 的工作原理</li>
+<li>IOCP 编程实践</li>
+</ul>
+</div><div class="cl-preview-section"><p>首先，我们一起了解一下 Windows 的<strong>重叠 I/O</strong> 机制。</p>
+</div><div class="cl-preview-section"><h2 id="重叠-io-（overlapped）介绍">重叠 I/O （Overlapped）介绍</h2>
+</div><div class="cl-preview-section"><p>Windows 是通过一个非常重要的数据结构 OVERLAPPED 来跟踪 I/O 操作的初始请求状态和 I/O 操作的最终完成状态的。OVERLAPPED 结构是 Windows 异步 I/O 的基石，Windows 的 AcceptEx、WSARecv、WSASend 函数都包含一个 OVERLAPPED 类型的参数，每次 I/O 调用都会向内核投递一个 OVERLAPPED 结构的实例对象，不同的 I/O 操作所包含的 OVERLAPPED 实例不能相同，系统就是通过不同的 OVERLAPPED 实例来识别不同的 I/O 操作，同一个文件句柄或者 Socket 句柄可以同时投递多个 OVERLAPPED 请求，这也许就是 <strong>重叠</strong>（Overlapped）这一名字的由来吧。</p>
+</div><div class="cl-preview-section"><p>windows 还提供了另外一个兼容 OVERLAPPED 的新结构叫做 WSAOVERLAPPED，在实际编程中二者都可以使用。下来我们就分析一下 OVERLAPPED 的具体结构，以注释的形式来展示：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token keyword">typedef</span> <span class="token keyword">struct</span> _OVERLAPPED <span class="token punctuation">{</span>
+  <span class="token comment">// 系统内部保留</span>
+  ULONG_PTR Internal<span class="token punctuation">;</span>
+  <span class="token comment">// 系统内部保留</span>
+  ULONG_PTR InternalHigh<span class="token punctuation">;</span>
+  <span class="token comment">// 下面这个 union 结构只有在文件操作的时候才有意义。</span>
+  <span class="token comment">// 如果是文件操作，由应用程序员来设置 Offset 和 OffsetHigh 的值。</span>
+  <span class="token keyword">union</span> <span class="token punctuation">{</span>
+    <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+      <span class="token comment">// 指定文件操作起始偏移量的低位字</span>
+      DWORD Offset<span class="token punctuation">;</span>
+      <span class="token comment">// 指定文件操作起始偏移量的高位字</span>
+      DWORD OffsetHigh<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> DUMMYSTRUCTNAME<span class="token punctuation">;</span>
+    PVOID Pointer<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span> DUMMYUNIONNAME<span class="token punctuation">;</span>
+
+  <span class="token comment">// 当 I/O 操作完成后，hEvent 被设置为 **signaled** 状态。</span>
+  <span class="token comment">// 使用者必须对此字段进行初始化，要么设置为 0，要么调用 CreateEvent 创建一个事件对象。</span>
+  HANDLE    hEvent<span class="token punctuation">;</span>
+<span class="token punctuation">}</span> OVERLAPPED<span class="token punctuation">,</span> <span class="token operator">*</span>LPOVERLAPPED<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：<br>
+必须对 OVERLAPPED 结构进行初始化，通过 memset 或者 ZeroMemory 来实现。<br>
+对 OVERLAPPED 结构的实例重用的时候要特别小心，不同的 I/O 操作不能共用同一个 OVERLAPPED 结构实例。<br>
+使用 Overalpped 机制时，Socket 句柄必须支持 Overlapped。通过 socket 函数创建的 Socket 句柄默认是支持 Overlapped 的。通过 WSASocket 函数创建时，需要传入 overlapped 标志。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>Windows 系统提供了三种获取<strong>重叠 I/O</strong>（Overlapped）是否完成的方式：</p>
+</div><div class="cl-preview-section"><ul>
+<li>第一，是基于事件通知机制。这种方式需要为 OVERLAPPED 的 hEvent 成员创建一个 Event 句柄，然后通过 WSAWaitForMultipleEvents 来监听事件状态。当 I/O 操作完成的时候，hEvent 会处于信号状态，可以通过 GetOverlappedResult 函数获取 I/O 操作完成状态；</li>
+<li>第二，是基于 APC（Asynchronous Procedure Calls）机制，这是一种回调机制。收发函数 WSARecv 和 WSASend 都带有一个回调函数，当 I/O 操作完成以后，回调函数会被调用；</li>
+<li>第三，是基于 IOCP 机制。这是本文重点要讨论的主题。</li>
+</ul>
+</div><div class="cl-preview-section"><p>下来我们就探讨一下为什么要选择 IOCP 机制。</p>
+</div><div class="cl-preview-section"><h2 id="为什么选择-iocp-机制">为什么选择 IOCP 机制</h2>
+</div><div class="cl-preview-section"><p>首先，我们分析一下“为什么不选择 <strong>WSASelect</strong> 机制？”。<strong>WSASelect</strong> 机制是通过 WSAWaitForMultipleEvents 来监听 Socket 句柄的，然而此函数对句柄的个数是有限制的，默认最多支持 64 个句柄。对于一个客户端或者是功能简单的服务器来说，<strong>WSASelect</strong> 机制也可以满足要求；但是对于业务复杂，规模庞大的系统来说，必须得采用 Windows 的<strong>重叠 I/O</strong> 模型。</p>
+</div><div class="cl-preview-section"><p>下来，再对<strong>重叠 I/O</strong>的三种方式做一个说明。如果采用<strong>事件通知机制</strong>，那么必须通过 WSAWaitForMultipleEvents 函数来监听事件状态，这同样存在“最大 64 个句柄的限制”问题，对于大规模应用来说，必须 pass 掉。如果采用 APC 机制，可以解决“最大 64 个句柄的限制”问题，然而还是存在局限性。首先，调用 WSARecv 和 WSASend 的请求线程和 APC 的回调线程必须是同一个线程，这会出现负载不均衡的问题；另外，在 APC 回调函数里面，编写业务处理逻辑，会因为嵌套调用增加逻辑复杂性，处理不好会引发很多逻辑错误，尽量不要采用这种方式。</p>
+</div><div class="cl-preview-section"><p>最后，我们选择 IOCP，那么 IOCP 就没有什么问题吗？当然有，编程复杂度很高，理解难度很大。下来，我们就正式进入 IOCP 相关主题介绍。</p>
+</div><div class="cl-preview-section"><h2 id="什么是-iocp-机制">什么是 IOCP 机制</h2>
+</div><div class="cl-preview-section"><p>回想之前学过的所有 I/O 多路复用机制，本质就是操作系统提供一种 <strong>I/O 事件监听</strong>机制，可以同时监听多个<strong>内核句柄</strong>上发生的 I/O 事件。这样，当应用程序调用一个 I/O 函数的时候，如果内核没有准备好要读取的数据或者是内核发送队列已满，函数会立即返回，应用程序的调用线程不会被阻塞。但是，I/O 操作处于<strong>pending</strong>状态，此状态由系统内核记录，当内核准备好要读取的数据，就会将 I/O 操作的完成状态通知给应用程序。总结起来就是四个步骤：</p>
+</div><div class="cl-preview-section"><ul>
+<li>创建一个 I/O 事件监听的内核对象，比如调用 epoll_create 创建一个 epoll 实例；</li>
+<li>将 Socket 的读、写事件注册到内核对象，比如调用 epoll_ctl 注册 Socket 事件到 epoll 实例；</li>
+<li>通过专有的 I/O 线程调用事件等待函数，比如调用 epoll_wait 函数；</li>
+<li>当事件等待函数返回以后，调用 I/O 函数读写数据，比如调用 recv/send 收发数据。</li>
+</ul>
+</div><div class="cl-preview-section"><p>当然 IOCP 也要完成这些目标，但是设计理念非常独特。对于 IOCP 机制来说，监听事件的内核对象叫做 <strong>I/O Completion Port</strong>，新创建的 Socket 句柄需要和 IOCP 进行绑定，当调用 WSARecv 和 WSASend 投递一个 OVERLAPPED 结构给 IOCP 的时候，IOCP 会监听 WSARecv 和 WSASend 操作的完成状态。为了更好的理解，我们通过下图进一步说明：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed9acb30001e7b010480693.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>观察上图，你会发现 IOCP 的工作主要包含两部分：<strong>投递</strong>一个操作，然后等待<strong>操作</strong>的完成。构建一个 IOCP 服务器大概需要如下几个步骤：</p>
+</div><div class="cl-preview-section"><ul>
+<li>创建一个 IOCP 内核对象；</li>
+<li>调用 AcceptEx 向 IOCP 投递 accept 请求；</li>
+<li>当接收到新连接以后，将连接的句柄（HANDLE）绑定到 IOCP；</li>
+<li>调用 WSARecv 向 IOCP 投递 recv 请求；</li>
+<li>等待 recv 请求完成；</li>
+<li>如果有数据要发送，调用 WSASend 向 IOCP 投递 send 请求。</li>
+</ul>
+</div><div class="cl-preview-section"><p>这样看来，IOCP 的工作原理也不是很难理解。上图中涉及到的 IOCP 的创建、WSARecv 和 WSASend 函数是我们接下来要介绍的内容。</p>
+</div><div class="cl-preview-section"><h2 id="iocp-相关-api-介绍">IOCP 相关 API 介绍</h2>
+</div><div class="cl-preview-section"><p>本节主要介绍 IOCP 中涉及到的 API 函数，我们根据 API 所在的模块，划分如下：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>函数名称</th>
+<th>头文件</th>
+<th>库名字</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AcceptEx</td>
+<td>Mswsock.h</td>
+<td>Mswsock.lib</td>
+</tr>
+<tr>
+<td>CreateIoCompletionPort、GetQueuedCompletionStatus、PostQueuedCompletionStatus</td>
+<td>Windows.h</td>
+<td>Kernel32.lib</td>
+</tr>
+<tr>
+<td>WSARecv 、WSASend</td>
+<td>winsock2.h</td>
+<td>Ws2_32.lib</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>现在我们就逐个介绍以上几个 API 的细节。</p>
+</div><div class="cl-preview-section"><h3 id="createiocompletionport">CreateIoCompletionPort</h3>
+</div><div class="cl-preview-section"><p>函数 CreateIoCompletionPort 的功能是创建一个 I/O Completion Port 内核对象，或者是将一个文件句柄关联到已经存在的 I/O Completion Port 上。</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c">HANDLE WINAPI <span class="token function">CreateIoCompletionPort</span><span class="token punctuation">(</span>
+  _In_     HANDLE    FileHandle<span class="token punctuation">,</span>
+  _In_opt_ HANDLE    ExistingCompletionPort<span class="token punctuation">,</span>
+  _In_     ULONG_PTR CompletionKey<span class="token punctuation">,</span>
+  _In_     DWORD     NumberOfConcurrentThreads
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>FileHandle 取值可以是已经打开的文件句柄，也可以是 INVALID_HANDLE_VALUE。如果 FileHandle 取值是已经打开的文件句柄，那么此文件句柄必须支持 Overlapped 功能。如果 FileHandle 的取值是 INVALID_HANDLE_VALUE，那么参数 ExistingCompletionPort 的取值必须是 NULL，此函数会创建一个新的 I/O Completion Port 内核对象；</li>
+<li>ExistingCompletionPort 可以是已经存在的 I/O Completion Port，也可以是 NULL。如果 ExistingCompletionPort 取值是一个已经存在的 I/O Completion Port，那么会将 FileHandle 关联到此 I/O Completion Port，并将其返回。如果 ExistingCompletionPort 取值是 NULL，那么此函数会创建一个新的 I/O Completion Port 内核对象。如果此时 FileHandle 取值不是 NULL，会将 FileHandle 关联到新创建的 I/O Completion Port 上；</li>
+<li>CompletionKey 是用于唯一标识一个 FileHandle，参数值是由使用者来设置，系统会将 CompletionKey 关联到 FileHandle，系统并不会使用此参数值。此参数的作用就是用于跟踪每一个 FileHandle 的 I/O 操作，在调用函数 GetQueuedCompletionStatus 的时候，系统会返回此参数值；</li>
+<li>NumberOfConcurrentThreads 表示并发执行 I/O 完成操作的线程数。如果 NumberOfConcurrentThreads 取值是 0，表示并发执行的线程数就是 CPU 的核数。如果参数 ExistingCompletionPort 的取值不是 NULL，参数 NumberOfConcurrentThreads 的取值会被忽略掉。</li>
+<li>函数返回值说明：
+<ul>
+<li>如果函数调用成功，返回值如下：
+<ul>
+<li>如果参数 ExistingCompletionPort 的取值不是 NULL，那么返回此参数的值；</li>
+<li>如果参数 ExistingCompletionPort 的取值是 NULL，那么返回新创建的 I/O Completion Port 句柄。</li>
+</ul>
+</li>
+<li>如果函数调用失败，那么返回 SOCKET_ERROR，可以调用 GetLastError 函数获取详细的错误信息。</li>
+</ul>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>总结一下，函数 CreateIoCompletionPort 完成的功能如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>创建新的 I/O Completion Port 对象，不会关联文件句柄；</li>
+<li>将文件句柄关联到已经存在的 I/O Completion Port 对象上；</li>
+<li>创建新的 I/O Completion Port 对象，同时将文件句柄关联到此 IOCP 对象上。</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="getqueuedcompletionstatus">GetQueuedCompletionStatus</h3>
+</div><div class="cl-preview-section"><p>函数 GetQueuedCompletionStatus 的作用是从指定的 I/O Completion Port 获取完成的 I/O packet。如果 I/O Completion Port 没有完成的 I/O packet，那么调用线程会被阻塞。</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c">BOOL <span class="token function">GetQueuedCompletionStatus</span><span class="token punctuation">(</span>
+  HANDLE       CompletionPort<span class="token punctuation">,</span>
+  LPDWORD      lpNumberOfBytesTransferred<span class="token punctuation">,</span>
+  PULONG_PTR   lpCompletionKey<span class="token punctuation">,</span>
+  LPOVERLAPPED <span class="token operator">*</span>lpOverlapped<span class="token punctuation">,</span>
+  DWORD        dwMilliseconds
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>CompletionPort 表示已经创建的 I/O Completion Port 句柄；</li>
+<li>lpNumberOfBytesTransferred 是一个输出参数，参数类型是 DWORD 指针。表示 I/O 操作完成后，收发的字节数；</li>
+<li>lpCompletionKey 是一个输出参数，返回 CompletionKey。这个值是在调用 CreateIoCompletionPort 时设置的；</li>
+<li>lpOverlapped 是一个输出参数，是一个指向 OVERLAPPED 指针类型的指针。用于返回 I/O 函数向 IOCP 投递的 OVERLAPPED 结构。AcceptEx、WSARecv、WSASend 都会投递 OVERLAPPED 结构；</li>
+<li>dwMilliseconds 是一个输入参数，表示调用此函数的线程要等待的毫秒数：
+<ul>
+<li>如果 dwMilliseconds 的取值大于 0，并且在 dwMilliseconds 时间内，I/O 操作还没有完成，那么函数返回 FALSE，参数 *lpOverlapped 的取值会设置为 NULL；</li>
+<li>如果 dwMilliseconds 的取值是 0，那么函数调用会立即返回，不管是否有 I/O 操作完成；</li>
+<li>如果 dwMilliseconds 的取值是 INFINITE，那么函数不会超时，直到有 I/O 操作完成。</li>
+</ul>
+</li>
+<li>如果函数调用成功，返回 TRUE；否则，返回 FALSE，可以通过 GetLastError 获取错误的详细信息。</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>如果需要返回多个完成的 I/O packet，可以调用 GetQueuedCompletionStatusEx 函数。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h3 id="postqueuedcompletionstatus">PostQueuedCompletionStatus</h3>
+</div><div class="cl-preview-section"><p>函数 PostQueuedCompletionStatus 的功能是向 IOCP 投递一个完成的 I/O packet。此函数主要是为应用程序员提供的，可以主动的向 IOCP 投递一些 packet，为设计提供了灵活的措施。</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c">BOOL WINAPI <span class="token function">PostQueuedCompletionStatus</span><span class="token punctuation">(</span>
+  _In_     HANDLE       CompletionPort<span class="token punctuation">,</span>
+  _In_     DWORD        dwNumberOfBytesTransferred<span class="token punctuation">,</span>
+  _In_     ULONG_PTR    dwCompletionKey<span class="token punctuation">,</span>
+  _In_opt_ LPOVERLAPPED lpOverlapped
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>CompletionPort 表示已经创建的 I/O Completion Port 句柄；</li>
+<li>dwNumberOfBytesTransferred 是一个输入参数，此参数值会被 GetQueuedCompletionStatus 函数返回；</li>
+<li>dwCompletionKey 是一个输入参数，此参数值会被 GetQueuedCompletionStatus 函数返回；</li>
+<li>lpOverlapped 是一个输入参数，此参数值会被 GetQueuedCompletionStatus 函数返回；</li>
+<li>如果函数调用成功，返回 TRUE；否则，返回 FALSE，可以通过 GetLastError 获取错误的详细信息。</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="acceptex">AcceptEx</h3>
+</div><div class="cl-preview-section"><p>函数 AcceptEx 的功能是接收一个新的连接，同时返回本地和远程 Socket 地址，返回客户端发送的第一个数据包。相比 accept 函数，AcceptEx 函数能够支持<strong>重叠 I/O</strong>机制。</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c">BOOL <span class="token function">AcceptEx</span><span class="token punctuation">(</span>
+  SOCKET       sListenSocket<span class="token punctuation">,</span>
+  SOCKET       sAcceptSocket<span class="token punctuation">,</span>
+  PVOID        lpOutputBuffer<span class="token punctuation">,</span>
+  DWORD        dwReceiveDataLength<span class="token punctuation">,</span>
+  DWORD        dwLocalAddressLength<span class="token punctuation">,</span>
+  DWORD        dwRemoteAddressLength<span class="token punctuation">,</span>
+  LPDWORD      lpdwBytesReceived<span class="token punctuation">,</span>
+  LPOVERLAPPED lpOverlapped
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>sListenSocket 表示监听 Socket 句柄；</p>
+</li>
+<li>
+<p>sAcceptSocket 表示新连接的 Socket 句柄。调用 AcceptEx 函数之前，必须要创建一个新的 Socket 句柄，并且句柄不能是绑定、或者是已经连接的。而 accept 函数是由系统创建新连接句柄，不需要程序员主动创建；</p>
+</li>
+<li>
+<p>lpOutputBuffer 是一个输出参数，类型参数是 void 指针类型。必须由应用程序员设置一个接收缓冲区，接收本地和远程 Socket 地址、以及客户端发送的第一个数据包；</p>
+</li>
+<li>
+<p>dwReceiveDataLength 表示 lpOutputBuffer 所指向的接收缓冲区的长度。</p>
+<blockquote>
+<p>提示：<br>
+参数 dwReceiveDataLength 的取值不能包含“本地地址和远程地址”的长度。<br>
+如果参数 dwReceiveDataLength 的取值是 0，那么此函数不会接收任何数据，函数调用会立即返回。</p>
+</blockquote>
+</li>
+<li>
+<p>dwLocalAddressLength 表示本地地址的长度，取值至少是 16 字节；</p>
+</li>
+<li>
+<p>dwRemoteAddressLength 表示远程地址的长度，取值至少是 16 字节；</p>
+</li>
+<li>
+<p>lpdwBytesReceived 表示接收的字节数。</p>
+</li>
+<li>
+<p>函数返回值说明：</p>
+<ul>
+<li>如果函数调用成功，返回 0；</li>
+<li>如果函数调用失败，返回 SOCKET_ERROR。此时，需要调用 WSAGetLastError 函数获取错误码，如果错误是 WSA_IO_PENDING，表示 I/O 操作处于正在执行的状态，需要调用 GetQueuedCompletionStatus 函数获取完成状态。</li>
+</ul>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>总结一下，AcceptEx 函数完成 3 个功能：</p>
+</div><div class="cl-preview-section"><ul>
+<li>接收新的连接请求；</li>
+<li>获取新连接的本地和远程 Socket 地址；</li>
+<li>接收客户端发送的第一个数据包。</li>
+</ul>
+</div><div class="cl-preview-section"><p>AcceptEx 有哪些优势呢？</p>
+</div><div class="cl-preview-section"><ul>
+<li>支持 Windows Overlapped I/O 机制；</li>
+<li>由于新连接的 Socket 句柄需要提前创建，你可以同时创建多个新连接句柄，这样可以同时接收多个客户端请求，极大地提高了连接接收效率；</li>
+<li>可以完美兼容 IOCP。否则，服务器接收新连接的功能还得采用 WSASelect 机制来实现。</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：<br>
+在实际编程过程中，一般不会直接调用 AcceptEx 函数，而是通过 WSAIoctl 获取 AcceptEx 的函数指针。</p>
+</blockquote>
+</div><div class="cl-preview-section"><h3 id="wsarecv">WSARecv</h3>
+</div><div class="cl-preview-section"><p>函数 WSARecv 的功能是用于接收 Socket 数据，是在 winsock2 中引入的，除了包含 recv 函数的所有功能以外，还支持 Overlapped 机制。另外，还支持接收多个数据块。</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token keyword">int</span> WSAAPI <span class="token function">WSARecv</span><span class="token punctuation">(</span>
+  SOCKET                             s<span class="token punctuation">,</span>
+  LPWSABUF                           lpBuffers<span class="token punctuation">,</span>
+  DWORD                              dwBufferCount<span class="token punctuation">,</span>
+  LPDWORD                            lpNumberOfBytesRecvd<span class="token punctuation">,</span>
+  LPDWORD                            lpFlags<span class="token punctuation">,</span>
+  LPWSAOVERLAPPED                    lpOverlapped<span class="token punctuation">,</span>
+  LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletIOnRoutine
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>s 是 SOCKET 句柄；</p>
+</li>
+<li>
+<p>lpBuffers 是 WSABUF 数组类型的参数。调用者可以同时传入多个接收缓冲区。WSABUF 的定义如下：</p>
+<pre class="  language-c"><code class="prism  language-c"><span class="token keyword">typedef</span> <span class="token keyword">struct</span> _WSABUF <span class="token punctuation">{</span>
+  ULONG len<span class="token punctuation">;</span>  <span class="token comment">// 表示接收缓冲区的长度</span>
+  CHAR  <span class="token operator">*</span>buf<span class="token punctuation">;</span> <span class="token comment">// 表示接收缓冲区的地址</span>
+<span class="token punctuation">}</span> WSABUF<span class="token punctuation">,</span> <span class="token operator">*</span>LPWSABUF<span class="token punctuation">;</span>
+</code></pre>
+</li>
+<li>
+<p>dwBufferCount 表示 lpBuffers 数组的长度；</p>
+</li>
+<li>
+<p>lpNumberOfBytesRecvd 表示 WSARecv 接收的字节数，是一个输出参数。如果 WSARecv 调用立即完成，那么就会返回接收的字节数；</p>
+</li>
+<li>
+<p>lpFlags 表示 WSARecv 所支持的控制标志，我们不再赘述；</p>
+</li>
+<li>
+<p>lpOverlapped 是一个指向 OVERLAPPED 结构的指针，用于跟踪 I/O 操作完成状态，是由调用者设置；</p>
+</li>
+<li>
+<p>lpCompletIOnRoutine 是一个函数指针类型，用于 APC 调用形式；</p>
+</li>
+<li>
+<p>函数返回值说明：</p>
+<ul>
+<li>如果函数调用成功，返回 0。此时，如果 lpNumberOfBytesRecvd 的值是 0，表示连接被对方关闭；</li>
+<li>如果函数调用失败，返回 SOCKET_ERROR。此时，需要调用 WSAGetLastError 函数获取错误码，如果错误码是 WSA_IO_PENDING，表示 I/O 操作处于正在执行的状态，需要调用 GetQueuedCompletionStatus 函数获取完成状态。</li>
+</ul>
+</li>
+</ul>
+</div><div class="cl-preview-section"><h3 id="wsasend">WSASend</h3>
+</div><div class="cl-preview-section"><p>函数 WSASend 的功能是用于向 Socket 发送数据，是在 winsock2 中引入的，除了包含 send 函数的所有功能以外，还支持 Overlapped 机制。另外，还支持发送多个数据块。</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token keyword">int</span> WSAAPI <span class="token function">WSASend</span><span class="token punctuation">(</span>
+  SOCKET                             s<span class="token punctuation">,</span>
+  LPWSABUF                           lpBuffers<span class="token punctuation">,</span>
+  DWORD                              dwBufferCount<span class="token punctuation">,</span>
+  LPDWORD                            lpNumberOfBytesSent<span class="token punctuation">,</span>
+  DWORD                              dwFlags<span class="token punctuation">,</span>
+  LPWSAOVERLAPPED                    lpOverlapped<span class="token punctuation">,</span>
+  LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletIOnRoutine
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>s 是 SOCKET 句柄；</li>
+<li>lpBuffers 是 WSABUF 数组类型的参数。调用者可以同时传入多个发送缓冲区；</li>
+<li>dwBufferCount 表示 lpBuffers 数组的长度；</li>
+<li>lpNumberOfBytesSent 表示 WSASend 发送的字节数，是一个输出参数。如果 WSASend 调用立即完成，那么就会返回发送的字节数；</li>
+<li>lpFlags 表示 WSASend 所支持的控制标志，我们不再赘述了；</li>
+<li>lpOverlapped 是一个指向 OVERLAPPED 结构的指针，用于跟踪 I/O 操作的完成状态，由调用者设置；</li>
+<li>lpCompletIOnRoutine 是一个函数指针类型，用于 APC 调用形式；</li>
+<li>函数返回值说明：
+<ul>
+<li>如果函数调用成功，返回 0；</li>
+<li>如果函数调用失败，返回 SOCKET_ERROR。此时，需要调用 WSAGetLastError 函数获取错误码，如果错误码是 WSA_IO_PENDING，表示 I/O 操作处于正在执行的状态，需要调用 GetQueuedCompletionStatus 函数获取完成状态。</li>
+</ul>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>介绍完了 IOCP 相关 API 的细节，我们进一步讨论一下 IOCP 的工作原理。</p>
+</div><div class="cl-preview-section"><h2 id="iocp-的工作原理">IOCP 的工作原理</h2>
+</div><div class="cl-preview-section"><p>首先，我们通过一张图来展示 IOCP 的工作原理：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed9acd400016c9211790623.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>仔细观察上图，在垂直方向上分为上、中、下三部分内容，最上层是用户空间、中间一层是内核空间、最下一层是网卡设备。在水平方向上也分为三个部分，分别是“<strong>创建 IOCP</strong>、<strong>向 IOCP 投递事件</strong>、<strong>获取 I/O 完成状态</strong>”，也是不同 API 的调用过程。</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>应用程序员首先得调用 CreateIoCompletionPort 函数，创建一个 IOCP 内核对象。我们应该创建多少个 IOCP 内核对象呢？可以根据具体的需求来定，没有定论；</p>
+<blockquote>
+<p>注意：<br>
+需要设计好 CompletionKey，此 Key 是用以唯一标识一个 Socket 句柄的。</p>
+</blockquote>
+</li>
+<li>
+<p>调用 AcceptEx、WSARecv、WSASend 向 IOCP 投递事件。此时，I/O 操作可能立即完成，也可能处于 PENDING 状态，等待 I/O 操作的完成。比如，调用 AcceptEx 函数，往往不能立即完成，因为需要被动等待客户端的连接。再比如，调用 WSARecv 函数，也往往不能立即完成，只有当内核协议栈的 Socket 的接收缓冲区收到对方的数据才能完成。</p>
+<blockquote>
+<p>注意：<br>
+需要投递 OVERLAPPED 结构的指针。</p>
+</blockquote>
+</li>
+<li>
+<p>调用 GetQueuedCompletionStatus 获取 I/O 操作是否完成。在 Windows 实现中，完成的 I/O 操作维护在一个**先进先出（FIFO）**的队列中，先完成的 I/O 操作会先执行。当队列为空的时候，调用 GetQueuedCompletionStatus 函数的线程会被阻塞。Windows 支持多个线程调用同一个 IOCP 的 GetQueuedCompletionStatus 函数。当有多个线程阻塞在同一个 IOCP 的完成队列上时，最后阻塞的线程会最先得到执行（LIFO）；</p>
+<blockquote>
+<p>提示：<br>
+此函数会读取三个重要的参数：收发字节数、CompletionKey、OVERLAPPED 结构。</p>
+</blockquote>
+</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：<br>
+Windows 还支持投递自定义的 I/O 操作，可以通过 PostQueuedCompletionStatus 函数完成。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>由于 IOCP 的设计理念比较独特，理解起来有些困难，所以我们花了很大的篇幅介绍 IOCP 的基本概念、相关 API 的使用、以及 IOCP 的基本原理，下来我们就通过一个例子，具体学习一下 IOCP 的编程方法。</p>
+</div><div class="cl-preview-section"><h2 id="iocp-编程实践">IOCP 编程实践</h2>
+</div><div class="cl-preview-section"><p>我们通过 IOCP 来实现 nwchecker Server 程序，修改以后的程序保存在 “imooc-sock-core-tech\04-25_Windows_IOCP 机制” 目录下面。</p>
+</div><div class="cl-preview-section"><p>开发环境是 Visual Studio 2017 社区版，Solution 名称是 iocp_server。我们只开发 nwchecker Server 程序，客户端还是采用 “imooc-sock-core-tech\03-21_理解 Windows_WSASelect 的工作原理\wsaselectdemo\wsaselectdemo_client”程序。</p>
+</div><div class="cl-preview-section"><p>由于 IOCP 相对来说复杂一些，所以我们进行了一个简单的设计。</p>
+</div><div class="cl-preview-section"><h4 id="nwcs_iocp-设计">nwcs_iocp 设计</h4>
+</div><div class="cl-preview-section"><p>对象结构图如下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ed9ace600012f7610300406.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>观察上图，我们一共抽象了 3 个类：</p>
+</div><div class="cl-preview-section"><ul>
+<li>nwcs_iocp 表示一个 IOCP 实例，负责管理 nwc_connection 对象的双向列表、管理监听连接对象、管理 IOCP 实例；</li>
+<li>nwc_connection 表示一个连接对象，负责维护客户端和服务器之间的连接。nwc_connection 也可以用作监听客户端连接；</li>
+<li>nwc_io_op 表示一个 I/O 操作对象，是对 OVERLAPPED 结构的封装。</li>
+</ul>
+</div><div class="cl-preview-section"><p>用 C 语言来实现，我们设计了 3 个头(.h)文件和 2 个源文件(.c)，说明如下：</p>
+</div><div class="cl-preview-section"><ul>
+<li>nwcs_iocp.h 是 nwcs_iocp 结构的声明；</li>
+<li>nwcs_iocp.c 是 nwchecker Server 的核心实现逻辑；</li>
+<li>nwc_connection.h 是 nwc_connection 结构和 nwc_io_op 结构的声明；</li>
+<li>nwc_connection.c 是辅助函数的实现逻辑；</li>
+<li>nwchecker_server.c 是主程序的实现逻辑。</li>
+</ul>
+</div><div class="cl-preview-section"><p>下来，我们重点介绍 nwc_connection.h 和 nwcs_iocp.h 中的结构声明和 nwcs_iocp.c 中的核心逻辑。</p>
+</div><div class="cl-preview-section"><h3 id="结构声明">结构声明</h3>
+</div><div class="cl-preview-section"><p>头文件 nwc_connection.h 说明。</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"> <span class="token number">20</span> <span class="token keyword">struct</span> nwc_io_op
+ <span class="token number">21</span> <span class="token punctuation">{</span>
+ <span class="token number">22</span>     OVERLAPPED olapped<span class="token punctuation">;</span><span class="token comment">// OVERLAPPED 结构，这是 Windows Overlapped 机制必须组成部分。</span>
+ <span class="token number">23</span>     <span class="token keyword">int</span> op<span class="token punctuation">;</span>            <span class="token comment">// 操作的具体类型，我们抽象了 ACCEPT、READ、WRITE 三种操作。</span>
+ <span class="token number">24</span>     SOCKET socket<span class="token punctuation">;</span>     <span class="token comment">// 保存 SOCKET 句柄。</span>
+ <span class="token number">25</span> <span class="token punctuation">}</span><span class="token punctuation">;</span>
+
+ <span class="token number">32</span> <span class="token keyword">struct</span> nwc_connection
+ <span class="token number">33</span> <span class="token punctuation">{</span>
+ <span class="token number">34</span>     <span class="token keyword">struct</span> nwc_connection <span class="token operator">*</span>next<span class="token punctuation">;</span><span class="token comment">// 列表的下一个节点指针。</span>
+ <span class="token number">35</span>     <span class="token keyword">struct</span> nwc_connection <span class="token operator">*</span>prev<span class="token punctuation">;</span><span class="token comment">// 列表的前一个节点指针。</span>
+ <span class="token number">36</span>
+ <span class="token number">37</span>     SOCKET socket<span class="token punctuation">;</span>              <span class="token comment">// 保存 SOCKET 句柄。</span>
+ <span class="token number">38</span>     LPFN_ACCEPTEX lpfnAcceptEx<span class="token punctuation">;</span> <span class="token comment">// AcceptEx 函数指针。</span>
+ <span class="token number">39</span>     <span class="token keyword">struct</span> sockaddr_in addr<span class="token punctuation">;</span>    <span class="token comment">// 客户端 Socket 地址。</span>
+ <span class="token number">40</span>     BYTE recv_buff<span class="token punctuation">[</span>RECV_BUFFER_LEN<span class="token punctuation">]</span><span class="token punctuation">;</span><span class="token comment">// 接收缓冲区</span>
+ <span class="token number">41</span>     DWORD rbytes<span class="token punctuation">;</span>                   <span class="token comment">// 接收的数据字节数</span>
+ <span class="token number">42</span>
+ <span class="token number">43</span>     WSABUF wsabuf<span class="token punctuation">;</span>                  <span class="token comment">// 这是 WSARecv 和 WSASend 需要的 buffer 类型。</span>
+ <span class="token number">44</span>     <span class="token keyword">int</span> pending_ops<span class="token punctuation">;</span>                <span class="token comment">// 用于记录处于 pending 状态的 nwc_io_op 的个数。</span>
+ <span class="token number">45</span> <span class="token punctuation">}</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>头文件 nwcs_iocp.h 说明。</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"> <span class="token number">11</span> <span class="token keyword">struct</span> nwcs_iocp
+ <span class="token number">12</span> <span class="token punctuation">{</span>        
+ <span class="token number">13</span>     HANDLE completion_port<span class="token punctuation">;</span> <span class="token comment">// 完成端口实例句柄</span>
+ <span class="token number">14</span>     <span class="token keyword">struct</span> nwc_connection accept_conn<span class="token punctuation">;</span> <span class="token comment">// 监听连接实例。</span>
+ <span class="token number">15</span>     <span class="token keyword">struct</span> nwc_connection client_conn_hdr<span class="token punctuation">;</span> <span class="token comment">// 双向列表表头，我们用双向列表来管理所有客户端连接。</span>
+ <span class="token number">16</span>     <span class="token keyword">struct</span> nwc_connection delete_client_conn_hdr<span class="token punctuation">;</span><span class="token comment">// 待删除列表的表头，用作连接资源释放。</span>
+ <span class="token number">17</span>     BOOL is_exit<span class="token punctuation">;</span> <span class="token comment">// 用于标识调用 GetQueuedCompletionStatus 函数的线程是否退出。</span>
+ <span class="token number">18</span> <span class="token punctuation">}</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如下是一组函数声明：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token comment">// IOCP 初始化逻辑，主要包含创建 IOCP 实例、创建监听 Socket、将监听 Socket 关联到 IOCP。</span>
+<span class="token number">20</span> <span class="token keyword">int</span> <span class="token function">nwcs_iocp_open</span><span class="token punctuation">(</span><span class="token keyword">struct</span> nwcs_iocp <span class="token operator">*</span>iocp<span class="token punctuation">,</span> <span class="token keyword">unsigned</span> <span class="token keyword">short</span> port<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// IOCP 关闭逻辑</span>
+<span class="token number">21</span> <span class="token keyword">int</span> <span class="token function">nwcs_iocp_close</span><span class="token punctuation">(</span><span class="token keyword">struct</span> nwcs_iocp <span class="token operator">*</span>iocp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 当有新客户端连接到服务器以后需要执行的逻辑，主要是将新连接的 Socket 关联到 IOCP、投递 WSARecv 事件。</span>
+<span class="token number">22</span> <span class="token keyword">int</span> <span class="token function">nwcs_accept_new_sock</span><span class="token punctuation">(</span><span class="token keyword">struct</span> nwcs_iocp <span class="token operator">*</span>iocp<span class="token punctuation">,</span> <span class="token keyword">struct</span> nwc_connection <span class="token operator">*</span>nwc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 将 AcceptEx 投递到 IOCP</span>
+<span class="token number">23</span> <span class="token keyword">int</span> <span class="token function">nwcs_accept_request</span><span class="token punctuation">(</span><span class="token keyword">struct</span> nwcs_iocp <span class="token operator">*</span>iocp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 事件循环逻辑，主要是调用 GetQueuedCompletionStatus 等待 I/O 操作完成。</span>
+<span class="token number">24</span> <span class="token keyword">void</span> <span class="token function">nwcs_run_loop</span><span class="token punctuation">(</span><span class="token keyword">struct</span> nwcs_iocp <span class="token operator">*</span>iocp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 业务处理逻辑</span>
+<span class="token number">25</span> <span class="token keyword">void</span> <span class="token function">nwcs_iocp_process_message</span><span class="token punctuation">(</span><span class="token keyword">struct</span> nwcs_iocp <span class="token operator">*</span>iocp<span class="token punctuation">,</span> <span class="token keyword">struct</span> nwc_connection <span class="token operator">*</span>nwc<span class="token punctuation">,</span> <span class="token keyword">struct</span> nwc_io_op <span class="token operator">*</span>ioop<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">26</span>
+
+<span class="token comment">// 将 WSARecv 投递到 IOCP</span>
+<span class="token number">27</span> <span class="token keyword">int</span> <span class="token function">nwcs_read_request</span><span class="token punctuation">(</span><span class="token keyword">struct</span> nwc_connection <span class="token operator">*</span>nwc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 将 WSASend 投递到 IOCP</span>
+<span class="token number">28</span> <span class="token keyword">int</span> <span class="token function">nwcs_write_request</span><span class="token punctuation">(</span><span class="token keyword">struct</span> nwc_connection <span class="token operator">*</span>nwc<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>buff<span class="token punctuation">,</span> <span class="token keyword">unsigned</span> <span class="token keyword">int</span> bulen<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>下来我们就对上面这组函数的实现逻辑进行分析。</p>
+</div><div class="cl-preview-section"><h3 id="核心实现逻辑分析">核心实现逻辑分析</h3>
+</div><div class="cl-preview-section"><p>函数 nwcs_iocp_open 实现逻辑分析：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c">  <span class="token number">4</span> <span class="token keyword">int</span> <span class="token function">nwcs_iocp_open</span><span class="token punctuation">(</span><span class="token keyword">struct</span> nwcs_iocp <span class="token operator">*</span>iocp<span class="token punctuation">,</span> <span class="token keyword">unsigned</span> <span class="token keyword">short</span> port<span class="token punctuation">)</span>
+  <span class="token number">5</span> <span class="token punctuation">{</span>
+  <span class="token number">6</span>     <span class="token keyword">int</span> rc <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+  <span class="token number">7</span>     SOCKET sock_fd <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+  <span class="token number">8</span>     <span class="token keyword">struct</span> sockaddr_in server_addr<span class="token punctuation">;</span>
+  <span class="token number">9</span>     GUID GuidAcceptEx <span class="token operator">=</span> WSAID_ACCEPTEX<span class="token punctuation">;</span>
+ <span class="token number">10</span>     DWORD dwBytes<span class="token punctuation">;</span>
+ <span class="token number">11</span>
+ <span class="token number">12</span>     <span class="token comment">// Create io completion port</span>
+ <span class="token number">13</span>     iocp<span class="token operator">-&gt;</span>completion_port <span class="token operator">=</span> <span class="token function">CreateIoCompletionPort</span><span class="token punctuation">(</span>INVALID_HANDLE_VALUE<span class="token punctuation">,</span>
+ <span class="token number">14</span>         <span class="token constant">NULL</span><span class="token punctuation">,</span>
+ <span class="token number">15</span>         <span class="token number">0</span><span class="token punctuation">,</span>
+ <span class="token number">16</span>         <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">17</span>     <span class="token keyword">if</span> <span class="token punctuation">(</span>iocp<span class="token operator">-&gt;</span>completion_port <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+ <span class="token number">19</span>         <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+ <span class="token number">20</span>     <span class="token punctuation">}</span>
+ <span class="token number">21</span>
+ <span class="token number">22</span>     <span class="token function">INIT_NWC</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>iocp<span class="token operator">-&gt;</span>client_conn_hdr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">23</span>     <span class="token function">INIT_NWC</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>iocp<span class="token operator">-&gt;</span>delete_client_conn_hdr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        。。。这里是监听 Socket 的创建、绑定过程 。。。
+
+ <span class="token number">63</span>     <span class="token function">INIT_NWC</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>iocp<span class="token operator">-&gt;</span>accept_conn<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">64</span>     iocp<span class="token operator">-&gt;</span>accept_conn<span class="token punctuation">.</span>socket <span class="token operator">=</span> sock_fd<span class="token punctuation">;</span>
+ <span class="token number">65</span>
+ <span class="token number">66</span>     HANDLE h <span class="token operator">=</span> <span class="token function">CreateIoCompletionPort</span><span class="token punctuation">(</span><span class="token punctuation">(</span>HANDLE<span class="token punctuation">)</span>sock_fd<span class="token punctuation">,</span> iocp<span class="token operator">-&gt;</span>completion_port<span class="token punctuation">,</span> <span class="token punctuation">(</span>ULONG_PTR<span class="token punctuation">)</span><span class="token operator">&amp;</span>iocp<span class="token operator">-&gt;</span>accept_conn<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">67</span>     <span class="token keyword">if</span> <span class="token punctuation">(</span>h <span class="token operator">!=</span> iocp<span class="token operator">-&gt;</span>completion_port<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+ <span class="token number">69</span>         <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+ <span class="token number">70</span>     <span class="token punctuation">}</span>
+ <span class="token number">71</span>
+ <span class="token number">72</span>     rc <span class="token operator">=</span> <span class="token function">WSAIoctl</span><span class="token punctuation">(</span>sock_fd<span class="token punctuation">,</span>
+ <span class="token number">73</span>         SIO_GET_EXTENSION_FUNCTION_POINTER<span class="token punctuation">,</span>
+ <span class="token number">74</span>         <span class="token operator">&amp;</span>GuidAcceptEx<span class="token punctuation">,</span><span class="token keyword">sizeof</span><span class="token punctuation">(</span>GuidAcceptEx<span class="token punctuation">)</span><span class="token punctuation">,</span>
+ <span class="token number">75</span>         <span class="token operator">&amp;</span>iocp<span class="token operator">-&gt;</span>accept_conn<span class="token punctuation">.</span>lpfnAcceptEx<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>iocp<span class="token operator">-&gt;</span>accept_conn<span class="token punctuation">.</span>lpfnAcceptEx<span class="token punctuation">)</span><span class="token punctuation">,</span>
+ <span class="token number">76</span>         <span class="token operator">&amp;</span>dwBytes<span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">77</span>     <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">==</span> SOCKET_ERROR<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+ <span class="token number">79</span>         <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+ <span class="token number">80</span>     <span class="token punctuation">}</span>
+ <span class="token number">81</span>
+ <span class="token number">82</span>     <span class="token function">nwcs_accept_request</span><span class="token punctuation">(</span>iocp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">83</span>     iocp<span class="token operator">-&gt;</span>is_exit <span class="token operator">=</span> FALSE<span class="token punctuation">;</span>
+ <span class="token number">84</span>
+ <span class="token number">85</span>     <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+ <span class="token number">86</span> <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>第 6 ~ 10 行是局部变量的声明；</li>
+<li>第 13 ~ 20 行创建一个 I/O Completion Port 对象。第一个参数传入的是 INVALID_HANDLE_VALUE，表示不绑定 FileHandle。第二个参数传入的是 NULL，表示新创建一个 I/O Completion Port 对象。将创建的 IOCP 句柄保存在 nwcs_iocp 的 completion_port ��段中；</li>
+<li>第 23 ~ 63 行是创建、绑定、监听 Socket，我们省略掉了代码细节；</li>
+<li>第 66 ~ 70 行是将新创建的监听 Socket 关联到 I/O Completion Port。第一个参数传入监听 Socket 的句柄，第二个参数传入刚创建好的 IOCP 句柄，第三个参数传入 nwc_connection 对象的指针作为 CompletionKey；</li>
+<li>第 72 ~ 80 行是获取 AcceptEx 函数指针，然后保存到 nwc_connection 的 lpfnAcceptEx 字段中。这是固定套路，遵照执行即可；</li>
+<li>第 82 行是向 IOCP 投递 AcceptEx。</li>
+</ul>
+</div><div class="cl-preview-section"><p>函数 nwcs_accept_request 实现逻辑分析：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"> <span class="token number">88</span> <span class="token keyword">int</span> <span class="token function">nwcs_accept_request</span><span class="token punctuation">(</span><span class="token keyword">struct</span> nwcs_iocp <span class="token operator">*</span>iocp<span class="token punctuation">)</span>
+ <span class="token number">89</span> <span class="token punctuation">{</span>
+ <span class="token number">90</span>     SOCKET newsock <span class="token operator">=</span> INVALID_SOCKET<span class="token punctuation">;</span>
+ <span class="token number">91</span>     BOOL bRetVal <span class="token operator">=</span> FALSE<span class="token punctuation">;</span>
+ <span class="token number">92</span>     DWORD dwBytes<span class="token punctuation">;</span>
+
+ <span class="token number">94</span>     newsock <span class="token operator">=</span> <span class="token function">socket</span><span class="token punctuation">(</span>AF_INET<span class="token punctuation">,</span> SOCK_STREAM<span class="token punctuation">,</span> IPPROTO_TCP<span class="token punctuation">)</span><span class="token punctuation">;</span>
+ <span class="token number">95</span>     <span class="token keyword">if</span> <span class="token punctuation">(</span>newsock <span class="token operator">==</span> INVALID_SOCKET<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+ <span class="token number">97</span>         <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+ <span class="token number">98</span>     <span class="token punctuation">}</span>
+ <span class="token number">99</span>
+<span class="token number">101</span>     <span class="token keyword">struct</span> nwc_io_op <span class="token operator">*</span>ioop <span class="token operator">=</span> <span class="token function">alloc_nwc_io_op</span><span class="token punctuation">(</span>OP_ACCEPT<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">102</span>
+<span class="token number">103</span>     bRetVal <span class="token operator">=</span> iocp<span class="token operator">-&gt;</span>accept_conn<span class="token punctuation">.</span><span class="token function">lpfnAcceptEx</span><span class="token punctuation">(</span>iocp<span class="token operator">-&gt;</span>accept_conn<span class="token punctuation">.</span>socket<span class="token punctuation">,</span> newsock<span class="token punctuation">,</span>
+<span class="token number">104</span>         iocp<span class="token operator">-&gt;</span>accept_conn<span class="token punctuation">.</span>recv_buff<span class="token punctuation">,</span>
+<span class="token number">105</span>         <span class="token number">0</span><span class="token punctuation">,</span>
+<span class="token number">106</span>         <span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token keyword">struct</span> sockaddr_in<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">16</span><span class="token punctuation">,</span>
+<span class="token number">107</span>         <span class="token keyword">sizeof</span><span class="token punctuation">(</span><span class="token keyword">struct</span> sockaddr_in<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">16</span><span class="token punctuation">,</span>
+<span class="token number">108</span>         <span class="token operator">&amp;</span>dwBytes<span class="token punctuation">,</span> <span class="token operator">&amp;</span>ioop<span class="token operator">-&gt;</span>olapped<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">109</span>     <span class="token keyword">if</span> <span class="token punctuation">(</span>bRetVal <span class="token operator">==</span> FALSE <span class="token operator">&amp;&amp;</span> <span class="token function">WSAGetLastError</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> ERROR_IO_PENDING<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token number">111</span>         <span class="token function">closesocket</span><span class="token punctuation">(</span>newsock<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">112</span>         <span class="token function">free_nwc_io_op</span><span class="token punctuation">(</span>ioop<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">113</span>         <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token number">114</span>     <span class="token punctuation">}</span>
+<span class="token number">115</span>
+<span class="token number">116</span>     ioop<span class="token operator">-&gt;</span>socket <span class="token operator">=</span> newsock<span class="token punctuation">;</span>
+<span class="token number">117</span>
+<span class="token number">118</span>     <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token number">119</span> <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>第 90 ~ 92 行是局部变量的声明；</li>
+<li>第 94 ~ 98 行是创建一个新的 Socket，这就是 IOCP 的特点，Accept 之前，需要预先创建 Socket；</li>
+<li>第 101 行是创建一个 nwc_io_op 对象，通过 AcceptEx 投递到 IOCP；</li>
+<li>第 103 ~ 114 行是 AcceptEx 函数的调用，目的是向 IOCP 投递一个 Accept 请求。第一个参数传入监听 Socket 句柄；第二个参数传入新创建的 Socket 句柄；第四个参数传入 0，表示 AcceptEx 不接收客户端的一个数据；最后一个参数必须传入 OVERLAPPED 结构的指针。</li>
+</ul>
+</div><div class="cl-preview-section"><p>函数 nwcs_accept_new_sock 实现逻辑分析：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token number">121</span> <span class="token keyword">int</span> <span class="token function">nwcs_accept_new_sock</span><span class="token punctuation">(</span><span class="token keyword">struct</span> nwcs_iocp <span class="token operator">*</span>iocp<span class="token punctuation">,</span> <span class="token keyword">struct</span> nwc_connection <span class="token operator">*</span>nwc<span class="token punctuation">)</span>
+<span class="token number">122</span> <span class="token punctuation">{</span>
+<span class="token number">123</span>     <span class="token keyword">int</span> iResult <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token number">126</span>     <span class="token keyword">int</span> flags <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token number">127</span>     <span class="token function">ioctlsocket</span><span class="token punctuation">(</span>nwc<span class="token operator">-&gt;</span>socket<span class="token punctuation">,</span> FIONBIO<span class="token punctuation">,</span> <span class="token punctuation">(</span>u_long<span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>flags<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token number">130</span>     iResult <span class="token operator">=</span> <span class="token function">setsockopt</span><span class="token punctuation">(</span>nwc<span class="token operator">-&gt;</span>socket<span class="token punctuation">,</span> SOL_SOCKET<span class="token punctuation">,</span> SO_UPDATE_ACCEPT_CONTEXT<span class="token punctuation">,</span>
+<span class="token function">131</span>         <span class="token punctuation">(</span><span class="token keyword">char</span> <span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>iocp<span class="token operator">-&gt;</span>accept_conn<span class="token punctuation">.</span>socket<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>iocp<span class="token operator">-&gt;</span>accept_conn<span class="token punctuation">.</span>socket<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">132</span>     <span class="token keyword">if</span> <span class="token punctuation">(</span>iResult <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token number">135</span>         <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token number">136</span>     <span class="token punctuation">}</span>
+<span class="token number">137</span>
+<span class="token number">139</span>     HANDLE h <span class="token operator">=</span> <span class="token function">CreateIoCompletionPort</span><span class="token punctuation">(</span><span class="token punctuation">(</span>HANDLE<span class="token punctuation">)</span>nwc<span class="token operator">-&gt;</span>socket<span class="token punctuation">,</span> iocp<span class="token operator">-&gt;</span>completion_port<span class="token punctuation">,</span> <span class="token punctuation">(</span>ULONG_PTR<span class="token punctuation">)</span>nwc<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">141</span>     <span class="token keyword">if</span> <span class="token punctuation">(</span>h <span class="token operator">!=</span> iocp<span class="token operator">-&gt;</span>completion_port<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token number">144</span>         <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token number">145</span>     <span class="token punctuation">}</span>
+<span class="token number">146</span>     <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token number">147</span> <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>第 123 ~ 126 行是定义局部变量；</li>
+<li>第 127 行是将新接收的 Socket 设置为<strong>非阻塞</strong>模式；</li>
+<li>第 130 ~ 136 行是为新接收的 Socket 设置 SO_UPDATE_ACCEPT_CONTEXT 选项，目的是为了继承监听 Socket 的所有属性；</li>
+<li>第 139 ~ 145 行是将新接收的 Socket 关联到之前创建的 IOCP。第一个参数传入的是新接收 Socket 的句柄，第三个参数是用 nwc_connection 对象的指针作为 CompletionKey。</li>
+</ul>
+</div><div class="cl-preview-section"><p>当 IOCP 检测到 Accept 操作完成以后，调用 nwcs_accept_new_sock 函数接收新的连接。</p>
+</div><div class="cl-preview-section"><p>函数 nwcs_read_request 实现逻辑分析：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token number">149</span> <span class="token keyword">int</span> <span class="token function">nwcs_read_request</span><span class="token punctuation">(</span><span class="token keyword">struct</span> nwc_connection <span class="token operator">*</span>nwc<span class="token punctuation">)</span>
+<span class="token number">150</span> <span class="token punctuation">{</span>
+<span class="token number">151</span>     <span class="token keyword">int</span> rc <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token number">152</span>     DWORD flags <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token number">153</span>     DWORD rbytes <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token number">154</span>     <span class="token keyword">struct</span> nwc_io_op <span class="token operator">*</span>ioop <span class="token operator">=</span> <span class="token function">alloc_nwc_io_op</span><span class="token punctuation">(</span>OP_READ<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">155</span>
+<span class="token number">156</span>     rc <span class="token operator">=</span> <span class="token function">WSARecv</span><span class="token punctuation">(</span>nwc<span class="token operator">-&gt;</span>socket<span class="token punctuation">,</span>
+<span class="token number">157</span>         <span class="token operator">&amp;</span>nwc<span class="token operator">-&gt;</span>wsabuf<span class="token punctuation">,</span>
+<span class="token number">158</span>         <span class="token number">1</span><span class="token punctuation">,</span>
+<span class="token number">159</span>         <span class="token operator">&amp;</span>rbytes<span class="token punctuation">,</span>
+<span class="token number">160</span>         <span class="token operator">&amp;</span>flags<span class="token punctuation">,</span>
+<span class="token number">161</span>         <span class="token operator">&amp;</span>ioop<span class="token operator">-&gt;</span>olapped<span class="token punctuation">,</span>
+<span class="token number">162</span>         <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">163</span>
+<span class="token number">164</span>     <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">==</span>  SOCKET_ERROR <span class="token operator">&amp;&amp;</span> <span class="token function">WSAGetLastError</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> ERROR_IO_PENDING<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token number">167</span>         <span class="token function">free_nwc_io_op</span><span class="token punctuation">(</span>ioop<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">168</span>         ioop <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+<span class="token number">169</span>
+<span class="token number">170</span>         <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token number">171</span>     <span class="token punctuation">}</span>
+<span class="token number">172</span>
+<span class="token number">173</span>     <span class="token comment">// socket recv eof</span>
+<span class="token number">174</span>     <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">==</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> rbytes <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token number">176</span>         <span class="token function">free_nwc_io_op</span><span class="token punctuation">(</span>ioop<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">177</span>         ioop <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+<span class="token number">178</span>
+<span class="token number">179</span>         <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token number">180</span>     <span class="token punctuation">}</span>
+<span class="token number">181</span>
+<span class="token number">182</span>     nwc<span class="token operator">-&gt;</span>pending_ops<span class="token operator">++</span><span class="token punctuation">;</span>
+<span class="token number">183</span>
+<span class="token number">184</span>     <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token number">185</span> <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>第 151 ~ 154 行是局部变量声明；</p>
+</li>
+<li>
+<p>第 156 ~ 162 行是调用 WSARecv 读取数据。注意第六个参数传入的是 OVERLAPPED 结构指针；</p>
+</li>
+<li>
+<p>第 164 ~ 171 行是处理 WSARecv 调用出错的情况。如果 WSARecv 返回值是 SOCKET_ERROR，但是 WSAGetLastError 函数返回的错误码不是 ERROR_IO_PENDING ，那么说明函数调用出现了异常，需要关闭连接；</p>
+<blockquote>
+<p>提示：<br>
+要释放相关资源。比如，关闭 Socket 句柄，释放内存资源。</p>
+</blockquote>
+</li>
+<li>
+<p>第 174 ~ 180 行是处理连接被对方关闭的情况。如果 WSARecv 返回值是 0，并且接收的字节数也是 0，说明连接被对方关闭了；</p>
+<blockquote>
+<p>提示：<br>
+要释放相关资源。比如，关闭 Socket 句柄，释放内存资源。</p>
+</blockquote>
+</li>
+<li>
+<p>第 182 行是 WSARecv 调用成功的情况下，对投递的 nwc_io_op 进行记录。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>函数 nwcs_write_request 实现逻辑分析：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token number">187</span> <span class="token keyword">int</span> <span class="token function">nwcs_write_request</span><span class="token punctuation">(</span><span class="token keyword">struct</span> nwc_connection <span class="token operator">*</span>nwc<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>buff<span class="token punctuation">,</span> <span class="token keyword">unsigned</span> <span class="token keyword">int</span> buflen<span class="token punctuation">)</span>
+<span class="token number">188</span> <span class="token punctuation">{</span>
+<span class="token number">189</span>     <span class="token keyword">int</span> rc <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token number">190</span>     DWORD sbytes <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token number">191</span>     WSABUF sbuf<span class="token punctuation">;</span>
+<span class="token number">192</span>     <span class="token keyword">struct</span> nwc_io_op <span class="token operator">*</span>ioop <span class="token operator">=</span> <span class="token function">alloc_nwc_io_op</span><span class="token punctuation">(</span>OP_WRITE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">193</span>
+<span class="token number">194</span>     sbuf<span class="token punctuation">.</span>buf <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">char</span><span class="token operator">*</span><span class="token punctuation">)</span>buff<span class="token punctuation">;</span>
+<span class="token number">195</span>     sbuf<span class="token punctuation">.</span>len <span class="token operator">=</span> buflen<span class="token punctuation">;</span>
+<span class="token number">196</span>
+<span class="token number">197</span>     rc <span class="token operator">=</span> <span class="token function">WSASend</span><span class="token punctuation">(</span>nwc<span class="token operator">-&gt;</span>socket<span class="token punctuation">,</span>
+<span class="token function">198</span>         <span class="token punctuation">(</span>WSABUF<span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>sbuf<span class="token punctuation">,</span>
+<span class="token number">199</span>         <span class="token number">1</span><span class="token punctuation">,</span>
+<span class="token number">200</span>         <span class="token operator">&amp;</span>sbytes<span class="token punctuation">,</span>
+<span class="token number">201</span>         <span class="token number">0</span><span class="token punctuation">,</span>
+<span class="token number">202</span>         <span class="token operator">&amp;</span>ioop<span class="token operator">-&gt;</span>olapped<span class="token punctuation">,</span>
+<span class="token number">203</span>         <span class="token constant">NULL</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">204</span>
+<span class="token number">205</span>     <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">==</span> SOCKET_ERROR <span class="token operator">&amp;&amp;</span> <span class="token function">WSAGetLastError</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> ERROR_IO_PENDING<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token number">207</span>         <span class="token function">free_nwc_io_op</span><span class="token punctuation">(</span>ioop<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">208</span>         ioop <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+<span class="token number">209</span>         <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token number">210</span>     <span class="token punctuation">}</span>
+<span class="token number">211</span>
+<span class="token number">212</span>     nwc<span class="token operator">-&gt;</span>pending_ops<span class="token operator">++</span><span class="token punctuation">;</span>
+<span class="token number">213</span>
+<span class="token number">214</span>     <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token number">215</span> <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>第 189 ~ 192 行是定义局部变量；</p>
+</li>
+<li>
+<p>第 194 ~ 195 行是构造 WSABUF。主要是结构转换；</p>
+</li>
+<li>
+<p>第 197 ~ 203 行是调用 WSASend 发送数据。注意第六个参数传入的是 OVERLAPPED 结构指针；</p>
+</li>
+<li>
+<p>第 205 ~ 210 行是处理 WSASend 调用失败的情况。如果 WSASend 返回值是 SOCKET_ERROR，但是函数 WSAGetLastError 返回的错误码不是 ERROR_IO_PENDING，说明连接出现了异常，需要关闭；</p>
+<blockquote>
+<p>提示：<br>
+注意要释放相关资源。</p>
+</blockquote>
+</li>
+<li>
+<p>第 212 行是 WSASend 调用成功，将投递的 nwc_io_op 对象个数加 1。</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>函数 nwcs_run_loop 实现逻辑分析：</p>
+</div><div class="cl-preview-section"><pre class="  language-c"><code class="prism  language-c"><span class="token number">216</span> <span class="token keyword">void</span> <span class="token function">nwcs_run_loop</span><span class="token punctuation">(</span><span class="token keyword">struct</span> nwcs_iocp <span class="token operator">*</span>iocp<span class="token punctuation">)</span>
+<span class="token number">217</span> <span class="token punctuation">{</span>
+<span class="token number">220</span>     <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">!</span>iocp<span class="token operator">-&gt;</span>is_exit<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token number">221</span>         DWORD rbytes <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token number">222</span>         <span class="token keyword">struct</span> nwc_connection <span class="token operator">*</span>nwc <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+<span class="token number">223</span>         LPOVERLAPPED overlapped <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+<span class="token number">224</span>         BOOL iRet <span class="token operator">=</span> FALSE<span class="token punctuation">;</span>
+<span class="token number">225</span>         <span class="token keyword">struct</span> nwc_io_op <span class="token operator">*</span>ioop <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+<span class="token number">226</span>
+<span class="token number">227</span>         iRet <span class="token operator">=</span> <span class="token function">GetQueuedCompletionStatus</span><span class="token punctuation">(</span>
+<span class="token number">228</span>             iocp<span class="token operator">-&gt;</span>completion_port<span class="token punctuation">,</span>
+<span class="token number">229</span>             <span class="token operator">&amp;</span>rbytes<span class="token punctuation">,</span>
+<span class="token function">230</span>             <span class="token punctuation">(</span>PULONG_PTR<span class="token punctuation">)</span><span class="token operator">&amp;</span>nwc<span class="token punctuation">,</span>
+<span class="token number">231</span>             <span class="token operator">&amp;</span>overlapped<span class="token punctuation">,</span>
+<span class="token number">232</span>             INFINITE<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">233</span>
+<span class="token number">234</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>iRet<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token number">236</span>             <span class="token keyword">if</span> <span class="token punctuation">(</span>overlapped<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token number">237</span>                 ioop <span class="token operator">=</span> <span class="token function">CONTAINING_RECORD</span><span class="token punctuation">(</span>overlapped<span class="token punctuation">,</span> <span class="token keyword">struct</span> nwc_io_op<span class="token punctuation">,</span> olapped<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">238</span>                 <span class="token function">free_nwc_io_op</span><span class="token punctuation">(</span>ioop<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">239</span>                 ioop <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+<span class="token number">240</span>             <span class="token punctuation">}</span>
+<span class="token number">241</span>             <span class="token keyword">if</span> <span class="token punctuation">(</span>nwc<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token number">242</span>                 <span class="token function">remove_nwc</span><span class="token punctuation">(</span>nwc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">243</span>                 <span class="token function">add_nwc_tail</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>iocp<span class="token operator">-&gt;</span>delete_client_conn_hdr<span class="token punctuation">,</span> nwc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">244</span>             <span class="token punctuation">}</span>
+<span class="token number">245</span>             <span class="token keyword">continue</span><span class="token punctuation">;</span>
+<span class="token number">246</span>         <span class="token punctuation">}</span>
+<span class="token number">247</span>
+<span class="token number">248</span>         <span class="token keyword">if</span> <span class="token punctuation">(</span>overlapped<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token number">249</span>             ioop <span class="token operator">=</span> <span class="token function">CONTAINING_RECORD</span><span class="token punctuation">(</span>overlapped<span class="token punctuation">,</span> <span class="token keyword">struct</span> nwc_io_op<span class="token punctuation">,</span> olapped<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">250</span>             <span class="token keyword">if</span> <span class="token punctuation">(</span>nwc<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token number">251</span>                 nwc<span class="token operator">-&gt;</span>rbytes <span class="token operator">=</span> rbytes<span class="token punctuation">;</span>
+<span class="token number">252</span>                 <span class="token function">nwcs_iocp_process_message</span><span class="token punctuation">(</span>iocp<span class="token punctuation">,</span> nwc<span class="token punctuation">,</span> ioop<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">253</span>             <span class="token punctuation">}</span>
+<span class="token number">254</span>
+<span class="token number">255</span>             <span class="token comment">// Free the oper memory</span>
+<span class="token number">256</span>             <span class="token function">free_nwc_io_op</span><span class="token punctuation">(</span>ioop<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">257</span>             ioop <span class="token operator">=</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+<span class="token number">258</span>             nwc<span class="token operator">-&gt;</span>pending_ops<span class="token operator">--</span><span class="token punctuation">;</span>
+<span class="token number">259</span>         <span class="token punctuation">}</span>
+<span class="token number">262</span>         <span class="token keyword">struct</span> nwc_connection <span class="token operator">*</span>d_nwc <span class="token operator">=</span> iocp<span class="token operator">-&gt;</span>delete_client_conn_hdr<span class="token punctuation">.</span>next<span class="token punctuation">;</span>
+<span class="token number">263</span>         <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token punctuation">;</span> d_nwc <span class="token operator">!=</span> <span class="token operator">&amp;</span>iocp<span class="token operator">-&gt;</span>delete_client_conn_hdr<span class="token punctuation">;</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token number">264</span>             <span class="token keyword">struct</span> nwc_connection <span class="token operator">*</span>next <span class="token operator">=</span> d_nwc<span class="token operator">-&gt;</span>next<span class="token punctuation">;</span>
+<span class="token number">265</span>             <span class="token keyword">if</span> <span class="token punctuation">(</span>d_nwc<span class="token operator">-&gt;</span>pending_ops <span class="token operator">&lt;=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<span class="token number">266</span>                 d_nwc<span class="token operator">-&gt;</span>prev<span class="token operator">-&gt;</span>next <span class="token operator">=</span> next<span class="token punctuation">;</span>
+<span class="token number">267</span>                 next<span class="token operator">-&gt;</span>prev <span class="token operator">=</span> d_nwc<span class="token operator">-&gt;</span>prev<span class="token punctuation">;</span>
+<span class="token number">269</span>                 <span class="token function">free_nwc_conn</span><span class="token punctuation">(</span>d_nwc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token number">270</span>             <span class="token punctuation">}</span>
+<span class="token number">271</span>
+<span class="token number">272</span>             d_nwc <span class="token operator">=</span> next<span class="token punctuation">;</span>
+<span class="token number">273</span>         <span class="token punctuation">}</span>
+<span class="token number">274</span>     <span class="token punctuation">}</span>
+<span class="token number">275</span> <span class="token punctuation">}</span>
+
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>第 220 行是线程循环入口；</li>
+<li>第 221 ~ 225 行是局部变量定义；</li>
+<li>第 227 ~ 232 行是调用 GetQueuedCompletionStatus 函数获取处于完成状态的 I/O 操作；</li>
+<li>第 234 ~ 246 行是处理出错的逻辑。第 236 ~ 240 行是当获取了有效的 OVERLAPPED 结构以后，释放 struct nwc_io_op 对象的内存。这里有一个重要的细节需要解释一下，我们知道 GetQueuedCompletionStatus 函数的第 4 个参数返回的是 OVERLAPPED 结构的指针，而此结构刚好是 struct nwc_io_op 结构的一个成员，所以 CONTAINING_RECORD 宏能够通过 OVERLAPPED 结构的指针得到 struct nwc_io_op 结构的指针。第 241 ~ 244 行是将产生错误的连接移除到待删除的列表中；</li>
+<li>第 248 ~ 259 行是处理 I/O 完成的逻辑。同样在第 259 行，通过 CONTAINING_RECORD 获取 struct nwc_io_op 结构的地址。第 250 ~ 253 行是处理业务逻辑。第 256 ~ 257 行是释放 struct nwc_io_op 结构的内存。我们采用的是一次性申请、一次性释放的策略，在商业产品中，为了提高系统性能，往往会采用对象池的技术，重复使用 struct nwc_io_op 的内存。第 258 行是将记录的 struct nwc_io_op 个数减 1；</li>
+<li>第 262 ~ 273 行是遍历待删除的连接列表，然后释放无效连接的资源。主要逻辑就是遍历双向列表。另外，我们释放连接的条件就是判断 nwc_connection 的 pending_ops 字段的取值是否小于等于 0，这就是记录 struct nwc_io_op 个数的原因。</li>
+</ul>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：<br>
+在网络编程中，非常重要的一项工作就是当连接异常以后释放资源。然而，一旦释放资源，可能会引发多线程访问、资源重复释放、资源泄漏等一系列问题，一定要在设计的时候，多加小心。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>关于 nwcs_iocp_process_message 函数的逻辑比较简单了，就是对上面分析的函数的调用，我们不再展开分析，我相信你看完代码就能理解。</p>
+</div><div class="cl-preview-section"><h2 id="总结">总结</h2>
+</div><div class="cl-preview-section"><p>本文花了很大的篇幅介绍 Windows IOCP 机制，足见其复杂性。然而，总结起来 IOCP 编程无外乎如下几步：</p>
+</div><div class="cl-preview-section"><ul>
+<li>第一，创建 IOCP；</li>
+<li>第二，采用 AcceptEx 函数接收客户端新连接，为此要将监听 Socket 句柄关联到 IOCP，并且要投递 AcceptEx；</li>
+<li>第三，当有新连接接入的时候，要将新连接的 Socket 句柄关联到 IOCP，并且投递 WSARecv；</li>
+<li>第四，调用 GetQueuedCompletionStatus 获取完成 I/O 操作。</li>
+</ul>
+</div><div class="cl-preview-section"><p>相比我们之前介绍的 epoll、kqueue，有很多相似之处，都是要创建内核对象，然后注册读、写事件，最后是等待事件发生。但是也有一些差异，比如 IOCP 是通过 WSARecv、WSASend 投递一个 OVERLAPPED 结构，I/O 操作可能会立即完成，也可能是稍后完成，并没有 epoll 注册事件的过程。这也是 Windows 的独特之处，Windows 很多 IO 框架的设计都采用了类似的思想，这种思想不容易理解，需要多加练习、多加琢磨才能掌握。</p>
+</div><div class="cl-preview-section"><h2 id="思考时间">思考时间</h2>
+</div><div class="cl-preview-section"><ol>
+<li>
+<p>IOCP 也不是非常完美的，有一个非常著名的问题就是 “WSAENOBUFS 错误”，请尝试重现此问题、并且解决。</p>
+</li>
+<li>
+<p>IOCP 多线程访问的时候，也有乱序问题，请尝试重现此问题、并且解决。</p>
+</li>
+</ol>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5ed9fe17000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=80">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '26 Windows IOCP 的工作机制是什么？',
+					'CID': '2115',
+					'Teacher': '陈子兴'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "26 Windows IOCP 的工作机制是什么？",
+                    desc: "学好通用知识，提升技术竞争力",
+                    imgUrl: 'https:https://img2.mukewang.com/5ed8c1c600015fc805400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5ed8c1c600015fc805400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/80',
+                    link: 'https://m.imooc.com/read/80'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

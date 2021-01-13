@@ -1,0 +1,967 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>15 基于FastDFS实现文件存储</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="轻量级项目，系统化经验">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "1726";
+	var chapter_title = "15 基于FastDFS实现文件存储";
+	var aid = "73";
+	var a_name = "架构思维成长之微服务";
+	var a_price = "68.00";
+	var a_pic = "https://img2.mukewang.com/5e86b0220001a99d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '73';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-04-29&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			15 基于FastDFS实现文件存储
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img1.mukewang.com/5e8c33f000019b5406400359.jpg')"></div>
+	
+	
+		<a href="/read/73">
+			<div class="course-entry">
+				<img src="https://img2.mukewang.com/5e6eebd60001a49207000933-40-40.jpg" alt="曼巴out">
+				<h3>架构思维成长之微服务</h3>
+				<p>曼巴out · 上市公司资深架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">散步促进我的思想。我的身体必须不断运动，脑筋才会开动起来。 <p class="author">—— 卢梭</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="、前言">1、前言</h1>
+</div><div class="cl-preview-section"><blockquote>
+<p>为什么需要使用分布式系统？做个大型项目的基本上都接触过分布式文件系统，我给大家举例子说清楚我们为什么需要使用分布式文件系统。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>平时我们的文件如何存储呢？存在什么地方呢？据我真实接触过的项目，相信很多同学也接触过类似的项目，大概分以下几种情况来存储文件。</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>方案一</strong>：把文件存储到数据库的 blob 字段里面</li>
+<li><strong>方案二</strong>：把文件存储到项目的某个目录下，也就是 Tomcat 下面</li>
+<li><strong>方案三</strong>：把文件存储到服务器的非 Tomcat 目录下，然后再通过 Tomcat、Nginx 做文件映射</li>
+<li><strong>方案四</strong>：文件上传到 Ftp，再然后通过 Tomcat、Nginx 做文件映射，当然这种模式相比前三种来说，还是可以接受的</li>
+</ul>
+</div><div class="cl-preview-section"><p>这四种模式我相信很多人都接触过，甚至当初自己就是这么干的，如果你还是停留在这四种模式上，那么希望本章内容对你能有一定的帮助。那么分析一下，以上四种模式的所存在的弊端到底是什么，为什么不提倡这么做。</p>
+</div><div class="cl-preview-section"><p>方案一：存储数据库的弊端</p>
+</div><div class="cl-preview-section"><ul>
+<li>把文件存储到数据库将是灾难性的，严重占用数据库的存储空间，数据库很容易就会爆满；</li>
+<li>影响数据库的查询性能，试想一如果 100 个人同时下载 10g 的文件，也就是从数据库读取文件，将是什么样的后果；</li>
+<li>同时数据库的备份和还原都非常的麻烦，浪费很长的时间；</li>
+<li>无法横向扩展容量，数据库满了，则再也无法上传文件了。</li>
+</ul>
+</div><div class="cl-preview-section"><p>方案二：存储把文件存储到项目的某个目录下的弊端</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>容易丢失文件，项目重新部署，很容易就丢失文件</p>
+</li>
+<li>
+<p>无法支持集群</p>
+</li>
+<li>
+<p>无法横向扩展容量，如果服务器磁盘满了，则再也无法上传文件了</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>方案三：把文件存储到服务器的非 Tomcat 目录下的弊端</p>
+</div><div class="cl-preview-section"><ul>
+<li>
+<p>无法支持集群</p>
+</li>
+<li>
+<p>无法横向扩展容量，如果服务器磁盘满了，则再也无法上传文件了</p>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>方案四：文件上传到 Ftp 的弊端</p>
+</div><div class="cl-preview-section"><ul>
+<li>这种模式支持集群，但是还是有弊端</li>
+<li>无法横向��展容量，如果服务器磁盘满了，则再也无法上传文件了</li>
+<li>不支持高级特性，比如：副本冗余，负载均衡等；</li>
+</ul>
+</div><div class="cl-preview-section"><p>这里，重点讲解一下无法支持集群的大概意思，具体如下图所示：<br>
+<img src="https://img.mukewang.com/5e9da28b0001339007300384.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>通过上面的架构图，大家应该能理解不使用分布式文件系统所存在的缺陷了，因此我们很有必要学习和使用分布式文件系统。它的好处很明显，给大家总结一下。</p>
+</div><div class="cl-preview-section"><ul>
+<li>第一：动态扩展服务器的容量，不需要一台特别牛逼的超级计算机，可以由若干普通服务器组成一个集群即可。</li>
+<li>第二：分布式文件系统支持冗余备份，或者叫副本冗余；就是把一份文件在不同服务器都备份一份，好处如下：
+<ul>
+<li><strong>容灾</strong>：如果其中一台服务器宕机了，其他节点还能正常对外提供服务，不至于整个集群瘫痪。</li>
+<li><strong>负载</strong>：一个文件在不同的服务器都有备份，那么当用户下载这份文件时，可以从不同的服务器进行下载。</li>
+</ul>
+</li>
+</ul>
+</div><div class="cl-preview-section"><p>那么，市面上主流的分布式文件系统到底有哪些呢？</p>
+</div><div class="cl-preview-section"><ul>
+<li>常见的应用级别（不是系统级别）的文件系统有：GFS、HDFS、Lustre 、Ceph 、GridFS 、mogileFS、TFS、FastDFS、NFS、MFS。但是目前比较常用的主要是阿里开源的 FastDFS、Hadoop 生态里的 HDFS，FastDFS 主要应用电商行业比较多，用于存储商品的图片；HDFS 主要运用大数据领域比较多。</li>
+</ul>
+</div><div class="cl-preview-section"><p>FastDFS和HDFS的简单对比：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>类型</th>
+<th>FastDFS</th>
+<th>HDFS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>开发语言</td>
+<td>c语言</td>
+<td>Java语言</td>
+</tr>
+<tr>
+<td>切块</td>
+<td>不支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>文件大小</td>
+<td>500M以内</td>
+<td>不限制</td>
+</tr>
+<tr>
+<td>领域</td>
+<td>一般用于电商领域</td>
+<td>一般用于大数据领域</td>
+</tr>
+<tr>
+<td>社区及API</td>
+<td>完善的API，国内用户量比较大</td>
+<td>完善的API，用户群体比较大</td>
+</tr>
+<tr>
+<td>性能</td>
+<td>读写速度比较快</td>
+<td>读写速度比较慢</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>既然FastDFS和 HDFS 都是主流，那么我们应该如何选择呢，带大家从以下几个方面来做选择。</p>
+</div><div class="cl-preview-section"><ul>
+<li>第一：FastDFS 不支持切块，大于 500M 的文件则读写性能比较差，但是 500M 以下性能非常的高。</li>
+<li>第二：HDFS 支持切块，无法高效的对大量小文件进行存储，原因是占用 NameNode 大量的内存来存储文件的目录和块信息，小文件存储的寻址时间会超过读取时间；不支持并发写入，一个文件只能有一个写，不允许多个线程同时写。</li>
+<li>那么由此，可知，如果想要速度快则选择 FastDFS，如果想上传大文件则选择 HDFS。由于我们的网盘是进行切块上传和切块存储的，单个切块不大（标准是5M），因此选择 FastDFS 是非常的合适的。</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="、fastdfs的原理分析">2、FastDFS的原理分析</h1>
+</div><div class="cl-preview-section"><p>FastDFS的架构图</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9da2780001512005600503.png" alt="图片描述"><br>
+FastDFS流程图</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9da25f0001ed4b08450303.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>根据上面两张图，我们可以清晰的知道 FastDFS 主要有两个部分组成，分别是 Tracker Server 和 Storage Server，其中 Tracker Server 是追踪服务，也就是管理节点，专门管理文件的存储的地址信息的，同时它会和 Storage Server 保持心跳；Storage Server 是存储服务，真实的存储文件的数据。</p>
+</div><div class="cl-preview-section"><p>文件上传流程剖析：</p>
+</div><div class="cl-preview-section"><ul>
+<li>第一步，客户端先去 Tracker Server 获取上传的服务器信息，Tracker Server 会根据那个 Storage 节点的文件数量比较少，哪个 Storage 比较空闲等，返回具体的 Storage Server 的服务器 IP 和 Port 信息给客户端。</li>
+<li>第二步，客户端再连接具体的 Storage Server 上传文件</li>
+</ul>
+</div><div class="cl-preview-section"><p>文件下载流程剖析：</p>
+</div><div class="cl-preview-section"><ul>
+<li>第一步，根据文件的信息去 Tracker Server 查询文件存储的服务器信息，Tracker Server 会查询文件所在服务器，由于文件会存在副本，因此通过负载策略把 Storage Server 的服务器 IP 和 Port 信息返回给客户端。</li>
+<li>第二步，客户端再连接具体的Storage Server下载文件</li>
+</ul>
+</div><div class="cl-preview-section"><p>通过上传、下载两个流程的分析，大家对 Storage Server 和 Tracker Server 的作用应该都能理解了吧。</p>
+</div><div class="cl-preview-section"><h1 id="、fastdfs的安装">3、FastDFS的安装</h1>
+</div><div class="cl-preview-section"><p>FastDFS 的安装步骤还是比较繁琐的，它主要包括五个部分的安装，依赖的基础环境、libfastcommon、FastDFS 的 tracker 和 storage、fastdfs-nginx-module（非必须）的安装。</p>
+</div><div class="cl-preview-section"><h2 id="、基础环境">3.1、基础环境</h2>
+</div><div class="cl-preview-section"><pre class="  language-shell"><code class="prism  language-shell">yum install make cmake gcc gcc-c++
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="、libfastcommon">3.2、libfastcommon</h2>
+</div><div class="cl-preview-section"><pre class="  language-shell"><code class="prism  language-shell">#1.下载：
+wget https://github.com/happyfish100/libfastcommon/archive/V1.0.7.tar.gz
+
+#2.解压：
+tar -zxvf V1.0.7.tar.gz
+
+#3.进入：
+cd libfastcommon-1.0.7
+
+#4.编译：
+./make.sh
+
+#5.安装：
+./make.sh install
+
+#6.拷贝文件
+cp /usr/lib64/libfastcommon.so /usr/lib
+
+#原因：libfastcommon安装好之后自动将库文件拷贝至/usr/lib64下，由于FastDFS程序引用/usr/lib目录，所以需要将/usr/lib64下的库文件拷贝至/usr/lib下
+
+
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="、fastdfs-tracker">3.3、FastDFS-Tracker</h2>
+</div><div class="cl-preview-section"><p><strong>1、Tracker的安装</strong></p>
+</div><div class="cl-preview-section"><pre class="  language-shell"><code class="prism  language-shell">#1.新建目录
+mkdir -p /usr/local/java/fastdfs/trackerdata
+
+#2.解压
+wget https://github.com/happyfish100/fastdfs/archive/V5.05.tar.gz
+tar -zxvf V5.05.tar.gz -C /usr/local/java/fastdfs
+
+#3.进入目录
+cd /usr/local/java/fastdfs/fastdfs-5.05
+
+#4.编译
+./make.sh
+
+#5.安装
+./make.sh install
+
+#6.安装自动生成/etc/fdfs目录，需要把文件拷贝到里面
+cd /usr/local/java/fastdfs/fastdfs-5.05/conf
+cp * /etc/fdfs
+
+#7.进入目录
+cd /etc/fdfs
+
+#8.配置tracker.conf
+vim /etc/fdfs/tracker.conf
+	base_path=/usr/local/java/fastdfs/trackerdata #软件运行产生的日志和数据
+</code></pre>
+</div><div class="cl-preview-section"><p><strong>2、Tracker的配置</strong></p>
+</div><div class="cl-preview-section"><pre class="  language-shell"><code class="prism  language-shell">#进入目录
+cd /etc/init.d
+
+#创建文件夹
+mkdir /usr/local/fdfs
+
+#拷贝文件
+cd /usr/local/java/fastdfs/fastdfs-5.05
+cp stop.sh restart.sh /usr/local/fdfs/
+
+#编辑（核心，一共7个地方需要修改）
+vim fdfs_trackerd
+	PRG=/usr/bin/fdfs_trackerd #改成/usr/bin
+	stop.sh和restart.sh的路径
+</code></pre>
+</div><div class="cl-preview-section"><p><strong>3、Tracker的启动</strong></p>
+</div><div class="cl-preview-section"><pre class="  language-shell"><code class="prism  language-shell">#启动（初次成功启动，会在/usr/local/java/fastdfs/trackerdata目录下创建data、logs两个目录）
+/etc/init.d/fdfs_trackerd start
+
+#状态：
+ps -ef | grep fdfs
+
+#停止：
+/etc/init.d/fdfs_trackerd stop
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="、fastdfs-storage">3.4、FastDFS-Storage</h2>
+</div><div class="cl-preview-section"><blockquote>
+<p>提示：tracker和storage可以在安装在同一台机器上，也可以安装在不同机器上；这里主要是讲解分别安装在不同的机器上面。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p><strong>1、Storage的安装</strong></p>
+</div><div class="cl-preview-section"><pre class="  language-shell"><code class="prism  language-shell">#1.新建目录
+mkdir -p /usr/local/java/fastdfs/storedata
+
+#2.解压
+wget https://github.com/happyfish100/fastdfs/archive/V5.05.tar.gz
+tar -zxvf V5.05.tar.gz -C /usr/local/java/fastdfs
+
+#3.进入目录
+cd /usr/local/java/fastdfs/fastdfs-5.05
+
+#4.编译
+./make.sh
+
+#5.安装
+./make.sh install
+
+#6.安装自动生成/etc/fdfs目录，需要把文件拷贝到里面
+cd /usr/local/java/fastdfs/fastdfs-5.05/conf
+cp * /etc/fdfs
+
+#7.进入目录
+cd /etc/fdfs
+
+#8.配置storage.conf
+vim /etc/fdfs/storage.conf
+	base_path=/usr/local/java/fastdfs/trackerdata #软件运行产生的日志和数据
+	store_path0=/usr/local/java/fastdfs/storedata #文件真实存储目录
+	tracker_server=192.168.1.8:22122 #IP是Tracker的IP
+</code></pre>
+</div><div class="cl-preview-section"><p>​</p>
+</div><div class="cl-preview-section"><p><strong>2、Storage的配置</strong></p>
+</div><div class="cl-preview-section"><pre class="  language-shell"><code class="prism  language-shell">#进入目录
+cd /etc/init.d
+
+#创建文件夹
+mkdir /usr/local/fdfs
+
+#拷贝文件
+cd /usr/local/java/fastdfs/fastdfs-5.05
+cp stop.sh restart.sh /usr/local/fdfs/
+
+#编辑（核心，一共7个地方需要修改）
+vim fdfs_storaged
+	PRG=/usr/bin/fdfs_storaged #改成/usr/bin
+	stop.sh和restart.sh的路径
+</code></pre>
+</div><div class="cl-preview-section"><p><strong>3、Storage的启动</strong></p>
+</div><div class="cl-preview-section"><pre class="  language-shell"><code class="prism  language-shell">#启动：
+/etc/init.d/fdfs_storaged start
+
+#状态：
+ps -ef | grep fdfs
+
+#停止：
+/etc/init.d/fdfs_storaged stop
+</code></pre>
+</div><div class="cl-preview-section"><h1 id="、fastdfs核心讲解">4、FastDFS核心讲解</h1>
+</div><div class="cl-preview-section"><p>1、端口说明</p>
+</div><div class="cl-preview-section"><ul>
+<li>Tracker 的端口，22122</li>
+<li>Storage 需要连接 Tracker，保持心跳，方便 Tracker 管理 Storage</li>
+</ul>
+</div><div class="cl-preview-section"><p>2、文件真实位置</p>
+</div><div class="cl-preview-section"><ul>
+<li>store_path0=/usr/local/java/fastdfs/storedata #文件真实存储目录</li>
+<li>Storage Server 安装好的时候，默认会生成很多的文件夹，自己可以进入目录查看</li>
+</ul>
+</div><div class="cl-preview-section"><p>3、组的概念（核心）</p>
+</div><div class="cl-preview-section"><p>FastDFS 对 Storage 进行分组，组名称相同，则存储的文件相同；组名称不同，则存储的文件不同。这句话可能光从字面意思理解会比较难理解，下面具体讲解。</p>
+</div><div class="cl-preview-section"><p>/etc/fdfs/tracker.conf 里面的核心配置，具体如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-shell"><code class="prism  language-shell">store_lookup=2      #0轮询、1指定group、2剩余最多的group
+store_group=group2   #如果store_lookup=1的时候，指定
+store_server=0   #指定服务器（一个group里面有多个server）
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>store_lookup，表示文件上传时，tracker 寻址具体 group 的策略</li>
+<li>store_group，指定组名，如果 store_lookup=1 时生效</li>
+<li>特殊业务场景使用，比如实现不同区域的用户上传的文件保存到其对应区域的服务器</li>
+</ul>
+</div><div class="cl-preview-section"><p>参考下面的架构图分析：</p>
+</div><div class="cl-preview-section"><ul>
+<li>第一：每个红色框是一个组，FastDFS 集群可以有很多的组</li>
+<li>第二：每个组里面会有很多的 Storage Server 存储节点，同一个组下面的 Storage 之间会做文件同步，目的就是对文件生成副本，可以进行容错、负载等等。</li>
+<li>第三：不同的组存储的文件不一样，如果集群容量满了，可以通过扩展一个组来进行集群容量的扩展</li>
+<li>总结，分析到这里，大家应该都理解 FastDFS 集群的含义了吧</li>
+</ul>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5e9da2430001f21907500519.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><blockquote>
+<p>思考：通过上面的分析，那么FastDFS扩展集群有几种类型呢？</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>**解答：**会有两种模式</p>
+</div><div class="cl-preview-section"><ul>
+<li>给某个组新增 Storage 节点，做副本备份</li>
+<li>扩展一个组，扩展集群整体总容量</li>
+</ul>
+</div><div class="cl-preview-section"><h1 id="、fastdfs快速入门">5、FastDFS快速入门</h1>
+</div><div class="cl-preview-section"><p>第一步：配置 Maven 坐标</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>com.luhuiguo<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>fastdfs-spring-boot-starter<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">&gt;</span></span>0.2.0<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>第二步：配置 application.properties</p>
+</div><div class="cl-preview-section"><pre class="  language-properties"><code class="prism  language-properties"><span class="token comment">#tracker地址</span>
+<span class="token attr-name">fdfs.tracker-list</span><span class="token punctuation">=</span><span class="token attr-value">192.168.1.8:22122</span>
+<span class="token comment">#连接超时时间</span>
+<span class="token attr-name">fdfs.connect-timeout</span><span class="token punctuation">=</span><span class="token attr-value">10000</span>
+<span class="token comment">#上传超时时间</span>
+<span class="token attr-name">fdfs.so-timeout</span><span class="token punctuation">=</span><span class="token attr-value">3000</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>第三步：上传代码</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Autowired</span>
+<span class="token keyword">private</span> FastFileStorageClient storageClient<span class="token punctuation">;</span>
+
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> String <span class="token function">upload</span><span class="token punctuation">(</span>String group<span class="token punctuation">,</span><span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> bytes<span class="token punctuation">,</span> String fileName<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+	String fileExtName <span class="token operator">=</span> FilenameUtils<span class="token punctuation">.</span><span class="token function">getExtension</span><span class="token punctuation">(</span>fileName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    StorePath sp<span class="token operator">=</span>storageClient<span class="token punctuation">.</span><span class="token function">uploadFile</span><span class="token punctuation">(</span>group<span class="token punctuation">,</span> bytes<span class="token punctuation">,</span> fileExtName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> sp<span class="token punctuation">.</span><span class="token function">getFullPath</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>第四步：下载代码</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Autowired</span>
+<span class="token keyword">private</span> FastFileStorageClient storageClient<span class="token punctuation">;</span>
+
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token function">download</span><span class="token punctuation">(</span>String group<span class="token punctuation">,</span>String path<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+	<span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> bytes<span class="token operator">=</span>storageClient<span class="token punctuation">.</span><span class="token function">downloadFile</span><span class="token punctuation">(</span>group<span class="token punctuation">,</span>path<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">return</span> bytes<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>第五步：删除代码</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Autowired</span>
+<span class="token keyword">private</span> FastFileStorageClient storageClient<span class="token punctuation">;</span>
+
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">delete</span><span class="token punctuation">(</span>String path<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+	storageClient<span class="token punctuation">.</span><span class="token function">deleteFile</span><span class="token punctuation">(</span>path<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h1 id="、网盘系统集成">6、网盘系统集成</h1>
+</div><div class="cl-preview-section"><p>第一步：首先在对应工程新建具体的类文件</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java">utils<span class="token operator">-</span>filestore			（文件存储组件工程）
+	<span class="token operator">|</span><span class="token operator">--</span> com<span class="token punctuation">.</span>micro<span class="token punctuation">.</span>store<span class="token punctuation">.</span>service
+	<span class="token operator">|</span>  <span class="token operator">|</span><span class="token operator">--</span> StoreService<span class="token punctuation">.</span>java			（定义一个接口）
+	<span class="token operator">|</span><span class="token operator">--</span> com<span class="token punctuation">.</span>micro<span class="token punctuation">.</span>store<span class="token punctuation">.</span>service<span class="token punctuation">.</span>impl
+	<span class="token operator">|</span>  <span class="token operator">|</span><span class="token operator">--</span> StoreServiceFastDFS<span class="token punctuation">.</span>java		（实现类）
+	<span class="token operator">|</span>  <span class="token operator">|</span><span class="token operator">--</span> StoreServiceHDFS<span class="token punctuation">.</span>java		（实现类）
+	<span class="token operator">|</span><span class="token operator">--</span> com<span class="token punctuation">.</span>micro<span class="token punctuation">.</span>store<span class="token punctuation">.</span>context
+	<span class="token operator">|</span>  <span class="token operator">|</span><span class="token operator">--</span> StoreContext<span class="token punctuation">.</span>java			（策略类）
+	
+</code></pre>
+</div><div class="cl-preview-section"><p>项目结构核心分析：</p>
+</div><div class="cl-preview-section"><ul>
+<li>我们不能写死说只用 FastDFS 作为我们的分布式文件存储，如果万一哪天领导说要换成 HDFS、换成 TFS 呢？所以我们需要使用策略模式去把它做灵活了，底层怎么切换，都不会影响到我们上层业务。</li>
+<li>那么，我们为什么把文件存储独立一个工程呢？为什么不在 Service 工程里面编写代码呢？文件存储这种是比较常用的功能，很多系统都会用的到的，那么我们尽量封装起来，哪个项目用到直接导入 jar 就能使用，而不是单纯的封装工具类。</li>
+</ul>
+</div><div class="cl-preview-section"><p>第二步：集成（坐标）</p>
+</div><div class="cl-preview-section"><p>在 netdisk-service-provider 工程的 pom.xml 导入坐标</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>com.micro<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>utils-filestore<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">&gt;</span></span>0.0.1-SNAPSHOT<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>第三步：策略模式的实现</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>思考：使用策略模式去调用底层的分布式文件系统，那么如何实现策略模式呢？</p>
+</blockquote>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Component</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">StoreContext</span><span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Autowire</span>
+    <span class="token keyword">private</span> SpringContentUtils springContentUtils<span class="token punctuation">;</span>
+    
+    <span class="token annotation punctuation">@NacosValue</span><span class="token punctuation">(</span><span class="token string">"${uploadtype}"</span><span class="token punctuation">)</span>
+    <span class="token keyword">private</span> String uploadtype<span class="token punctuation">;</span> <span class="token comment">//核心</span>
+    
+    <span class="token comment">//上传</span>
+	<span class="token keyword">public</span> String <span class="token function">upload</span><span class="token punctuation">(</span>String group<span class="token punctuation">,</span><span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> bytes<span class="token punctuation">,</span>String fileName<span class="token punctuation">)</span><span class="token punctuation">{</span>
+        <span class="token comment">//核心，根据uploadtype去Spring容器查询具体实现类</span>
+       	Object obj<span class="token operator">=</span>springContentUtils<span class="token punctuation">.</span><span class="token function">getBean</span><span class="token punctuation">(</span>uploadtype<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">if</span><span class="token punctuation">(</span>obj<span class="token operator">!=</span>null<span class="token punctuation">)</span><span class="token punctuation">{</span>
+            StoreService storeService<span class="token operator">=</span><span class="token punctuation">(</span>StoreService<span class="token punctuation">)</span>obj<span class="token punctuation">;</span>
+        	storeService<span class="token punctuation">.</span><span class="token function">upload</span><span class="token punctuation">(</span>group<span class="token punctuation">,</span>bytes<span class="token punctuation">,</span>fileName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>        
+    <span class="token punctuation">}</span>
+    <span class="token comment">//其他接口省略了</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>把<code>上传类型</code>的标识放到 Nacos 配置中心，这样的话我们切换底层，只需要在 Nacos 后台修改，项目都不用启动，非常的灵活。</li>
+</ul>
+</div><div class="cl-preview-section"><p>第四步：策略类的调用</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Component</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">FileServiceImpl</span> <span class="token keyword">implements</span> <span class="token class-name">FileService</span><span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Autowire</span>
+    <span class="token keyword">private</span> StoreContext storeContext<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">upload</span><span class="token punctuation">(</span>String group<span class="token punctuation">,</span><span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> bytes<span class="token punctuation">,</span>String fileName<span class="token punctuation">)</span><span class="token punctuation">{</span>
+        storeContext<span class="token punctuation">.</span><span class="token function">upload</span><span class="token punctuation">(</span>group<span class="token punctuation">,</span>bytes<span class="token punctuation">,</span>fileName<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h1 id="、小结">7、小结</h1>
+</div><div class="cl-preview-section"><p>本章节内容还是比较核心的，主要讲解了不用分布式文件系统所存在的缺点（重点理解）、主流分布式文件系统的比较、FastDFS 的原理、安装、使用、以及最后使用策略模式集成 FastDFS；大家尽量按照我上面的步骤搭建一遍 FastDFS，相对来说 FastDFS 的安装会比其他软安装复杂很多；</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5e86d98500011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=73">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '15 基于FastDFS实现文件存储',
+					'CID': '1726',
+					'Teacher': '曼巴out'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "15 基于FastDFS实现文件存储",
+                    desc: "轻量级项目，系统化经验",
+                    imgUrl: 'https:https://img2.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    otherImgUrl: 'https://img2.mukewang.com/5e86b0220001a99d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/73',
+                    link: 'https://m.imooc.com/read/73'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

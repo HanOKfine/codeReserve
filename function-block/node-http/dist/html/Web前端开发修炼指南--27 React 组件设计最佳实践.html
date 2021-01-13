@@ -1,0 +1,896 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>27 React 组件设计最佳实践</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="前端进阶必备，未来少走弯路">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "1678";
+	var chapter_title = "27 React 组件设计最佳实践";
+	var aid = "72";
+	var a_name = "Web前端开发修炼指南";
+	var a_price = "58.00";
+	var a_pic = "https://img3.mukewang.com/5e6af0f50001b61d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '72';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-13&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			27 React 组件设计最佳实践
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img.mukewang.com/5ebba1550001ee1406400359.jpg')"></div>
+	
+	
+		<a href="/read/72">
+			<div class="course-entry">
+				<img src="https://img1.mukewang.com/5e6c7ecc00012eaa10000884-40-40.jpg" alt="sh22n">
+				<h3>Web前端开发修炼指南</h3>
+				<p>sh22n · 前携程高级前端工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">每个人都是自己命运的主宰。<p class="author">——斯蒂尔斯</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="前言">前言</h2>
+</div><div class="cl-preview-section"><p>前端组件化一直是老生常谈的话题，在前面介绍 React 的时候我们已经提到过 React 的一些优势，今天则是带大家了解一下组件设计原则。</p>
+</div><div class="cl-preview-section"><h2 id="jquery-插件">jQuery 插件</h2>
+</div><div class="cl-preview-section"><p>在开始讲 React 组件之前，我们还是要先来聊聊 jQuery。在我看来，jQuery 插件就已经具备了组件化的雏形。</p>
+</div><div class="cl-preview-section"><p>在 jQuery 还大行其道的时代，我们在网上可以到处一些 jQuery 插件，里面有各种丰富的插件，比如轮播图、表单、选项卡等等。</p>
+</div><div class="cl-preview-section"><h3 id="组件？插件？">组件？插件？</h3>
+</div><div class="cl-preview-section"><p>组件和插件的区别是什么呢？插件是集成到某个平台上的，比如 Jenkins 插件、Chrome 插件等等，jQuery 插件也类似。平台只提供基础能力，插件则提供一些定制化的能力。</p>
+</div><div class="cl-preview-section"><p>而���件则是偏向于 UI 层面的，将 UI 和业务逻辑封装起来，供其他人使用。</p>
+</div><div class="cl-preview-section"><h3 id="封装-dom-结构">封装 DOM 结构</h3>
+</div><div class="cl-preview-section"><p>在一些最简单无脑的 jQuery 插件中，它们一般会将 DOM 结构直接写死到插件中，这样的插件拿来即用，但限制也比较大，我们无法修改插件的 DOM 结构。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token comment">// 轮播图插件</span>
+<span class="token function">$</span><span class="token punctuation">(</span><span class="token string">"#slider"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">slider</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+    config<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        showDot<span class="token punctuation">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span> <span class="token comment">// 是否展示小圆点</span>
+        showArrow<span class="token punctuation">:</span> <span class="token boolean">true</span> <span class="token comment">// 是否展示左右小箭头</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token comment">// 一些配置</span>
+    data<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token comment">// 数据</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>还有另一种极端的插件，它们完全���把 DOM 放到插件中，但会要求使用者按照某种固定格式的结构来组织代码。</p>
+</div><div class="cl-preview-section"><p>一旦结构不准确，就可能会造成插件内部获取 DOM 出错。但这种插件的好处在于可以由使用者自定义具体的 DOM 结构和样式。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token operator">&lt;</span>div id<span class="token operator">=</span><span class="token string">"slider"</span><span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span>ul <span class="token keyword">class</span><span class="token operator">=</span><span class="token string">"list"</span><span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span>li data<span class="token operator">-</span>index<span class="token operator">=</span><span class="token string">"0"</span><span class="token operator">&gt;</span><span class="token operator">&lt;</span>img src<span class="token operator">=</span><span class="token string">""</span> <span class="token operator">/</span><span class="token operator">&gt;</span><span class="token operator">&lt;</span><span class="token operator">/</span>li<span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span>li data<span class="token operator">-</span>index<span class="token operator">=</span><span class="token string">"1"</span><span class="token operator">&gt;</span><span class="token operator">&lt;</span>img src<span class="token operator">=</span><span class="token string">""</span> <span class="token operator">/</span><span class="token operator">&gt;</span><span class="token operator">&lt;</span><span class="token operator">/</span>li<span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span>li data<span class="token operator">-</span>index<span class="token operator">=</span><span class="token string">"2"</span><span class="token operator">&gt;</span><span class="token operator">&lt;</span>img src<span class="token operator">=</span><span class="token string">""</span> <span class="token operator">/</span><span class="token operator">&gt;</span><span class="token operator">&lt;</span><span class="token operator">/</span>li<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span><span class="token operator">/</span>ul<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span>a href<span class="token operator">=</span><span class="token string">"javascript:;"</span> <span class="token keyword">class</span><span class="token operator">=</span><span class="token string">"left-arrow"</span><span class="token operator">&gt;</span><span class="token operator">&lt;&lt;</span><span class="token operator">/</span>a<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span>a href<span class="token operator">=</span><span class="token string">"javascript:;"</span> <span class="token keyword">class</span><span class="token operator">=</span><span class="token string">"left-arrow"</span><span class="token operator">&gt;&gt;</span><span class="token operator">&lt;</span><span class="token operator">/</span>a<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span>div <span class="token keyword">class</span><span class="token operator">=</span><span class="token string">"dot"</span><span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span>span data<span class="token operator">-</span>index<span class="token operator">=</span><span class="token string">"0"</span><span class="token operator">&gt;</span><span class="token operator">&lt;</span><span class="token operator">/</span>span<span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span>span data<span class="token operator">-</span>index<span class="token operator">=</span><span class="token string">"1"</span><span class="token operator">&gt;</span><span class="token operator">&lt;</span><span class="token operator">/</span>span<span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span>span data<span class="token operator">-</span>index<span class="token operator">=</span><span class="token string">"2"</span><span class="token operator">&gt;</span><span class="token operator">&lt;</span><span class="token operator">/</span>span<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>
+<span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>
+
+<span class="token function">$</span><span class="token punctuation">(</span><span class="token string">"#slider"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">slider</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+    config<span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span> <span class="token comment">// 配置</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>当然，你也可以选择将 DOM 通过配置传给插件，插件内部去做这些渲染的工作，这样的插件比较灵活。有没有发现？这和 <code>render props</code> 模式非常相似。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token function">$</span><span class="token punctuation">(</span><span class="token string">"#slider"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">slider</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+    config<span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token comment">// 配置</span>
+    components<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        dot<span class="token punctuation">:</span> <span class="token punctuation">(</span>item<span class="token punctuation">,</span> index<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token template-string"><span class="token string">`&lt;span data-index=</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>index<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">&gt;&lt;/span&gt;`</span></span><span class="token punctuation">,</span>
+        item<span class="token punctuation">:</span> <span class="token punctuation">(</span>item<span class="token punctuation">,</span> index<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token template-string"><span class="token string">`&lt;li data-index=</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>index<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">&gt;&lt;img src="" /&gt;&lt;/li&gt;`</span></span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="react-组件设计">React 组件设计</h2>
+</div><div class="cl-preview-section"><p>前面讲了几种 jQuery 插件的设计模式，其实万变不离其宗，不管是 jQuery 还是 React，组件设计思想都是一样的。</p>
+</div><div class="cl-preview-section"><p><img src="http://static.zybuluo.com/gyyin/yr53hshf0iw38q1tmzelzqdn/image_1e5jq4juicms10ht1u51hbg1ek61s.png" alt="image_1e5jp360218jbi4amj918oin89m.png-39.4kB"></p>
+</div><div class="cl-preview-section"><p>个人觉得，组件设计应该遵循以下几个原则：</p>
+</div><div class="cl-preview-section"><ol>
+<li><strong>适当的组件粒度：</strong> 一个组件尽量只做一件事。</li>
+<li><strong>复用相同部分：</strong> 尽量复用不同组件相同的部分。</li>
+<li><strong>松耦合：</strong> 组件不应当依赖另一个组件。</li>
+<li><strong>数据解耦：</strong> 组件不应该依赖特定结构的数据。</li>
+<li><strong>结构自由：</strong> 组件不应该封闭固定的结构。</li>
+</ol>
+</div><div class="cl-preview-section"><h3 id="容器组件与展示组件">容器组件与展示组件</h3>
+</div><div class="cl-preview-section"><p>顾名思义，容器组件就是类似于“容器”的组件，它可以拥有状态，会做一些网络请求之类的副作用处理，一般是一个业务模块的入口，比如某个路由指向的组件。我们最常见的就是 Redux 中被 connect 包裹的组件。</p>
+</div><div class="cl-preview-section"><p>容器组件有这么几个特点：</p>
+</div><div class="cl-preview-section"><ol>
+<li>容器组件常常是和业务相关的。</li>
+<li>统一的数据管理，可以作为数据源给子组件提供数据。</li>
+<li>统一的通信管理，实现子组件之间的通信。</li>
+</ol>
+</div><div class="cl-preview-section"><p>展示组件就比较简单的多，在 React 中组件的设计理念是 <code>view = f(data)</code>，展示组件只接收外部传来的 props，一般内部没有状态，只有一个渲染的作用。</p>
+</div><div class="cl-preview-section"><p><img src="http://static.zybuluo.com/gyyin/bg0drh1cdj6s9luhs3kattqx/image_1e5813mbgbmvc623215qo6pf9.png" alt="image_1e5813mbgbmvc623215qo6pf9.png-29.5kB"></p>
+</div><div class="cl-preview-section"><h3 id="适当的组件粒度">适当的组件粒度</h3>
+</div><div class="cl-preview-section"><p>在项目开发中，可能你会看到懒同事一个几千行的文件，却只有一个组件，render 函数里面又臭又长，让人实在没有读下去的欲望。<br>
+在写 React 组件中，我见过最恐怖的代码是这样的：</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token keyword">function</span> <span class="token function">App</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">let</span> renderHeader<span class="token punctuation">,</span>
+        renderBody<span class="token punctuation">,</span>
+        renderHTML
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>xxxxx<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        renderHeader <span class="token operator">=</span> <span class="token operator">&lt;</span>h1<span class="token operator">&gt;</span>xxxxx<span class="token operator">&lt;</span><span class="token operator">/</span>h1<span class="token operator">&gt;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        renderHeader <span class="token operator">=</span> <span class="token operator">&lt;</span>header<span class="token operator">&gt;</span>xxxxx<span class="token operator">&lt;</span><span class="token operator">/</span>header<span class="token operator">&gt;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>yyyyy<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        renderBody <span class="token operator">=</span> <span class="token punctuation">(</span>
+            <span class="token operator">&lt;</span>div className<span class="token operator">=</span><span class="token string">"main"</span><span class="token operator">&gt;</span>
+                yyyyy
+            <span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>
+        <span class="token punctuation">)</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        <span class="token operator">...</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">...</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        renderHTML <span class="token operator">=</span> <span class="token operator">...</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        <span class="token operator">...</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> renderHTML
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>当我看到这个组件的时候，我想要搞清楚他最终都渲染了什么。看到 return 的时候发现只返回了 <code>renderHTML</code>，而这个 <code>renderHTML</code> 却是经过一系列的判断得来的，相信没人愿意去读这样的代码。</p>
+</div><div class="cl-preview-section"><h3 id="拆分-render">拆分 render</h3>
+</div><div class="cl-preview-section"><p>我们可以将 render 方法进行一系列的拆分，创建一系列的子 render 方法，将原来大的 render 进行分割。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">App</span> <span class="token keyword">extends</span> <span class="token class-name">Component</span> <span class="token punctuation">{</span>
+	<span class="token function">renderHeader</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+	<span class="token function">renderBody</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+	<span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		<span class="token keyword">return</span> <span class="token punctuation">(</span>
+			<span class="token operator">&lt;</span><span class="token operator">&gt;</span>
+				<span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">renderHeader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">}</span>
+				<span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">renderBody</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">}</span>
+			<span class="token operator">&lt;</span><span class="token operator">/</span><span class="token operator">&gt;</span>
+		<span class="token punctuation">)</span>
+	<span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>当然最好的方式还是拆分为更细粒度的组件，这样不仅方便测试，也可以配合 <code>memo/PureComponent/shouldComponentUpdate</code> 做进一步性能优化。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token keyword">const</span> <span class="token function-variable function">Header</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token keyword">const</span> <span class="token function-variable function">Body</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token keyword">const</span> <span class="token function-variable function">App</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">(</span>
+	<span class="token operator">&lt;</span><span class="token operator">&gt;</span>
+		<span class="token operator">&lt;</span>Header <span class="token operator">/</span><span class="token operator">&gt;</span>
+		<span class="token operator">&lt;</span>Body <span class="token operator">/</span><span class="token operator">&gt;</span>
+	<span class="token operator">&lt;</span><span class="token operator">/</span><span class="token operator">&gt;</span>
+<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="复用相同部分">复用相同部分</h2>
+</div><div class="cl-preview-section"><p>对于可复用的组件部分，我们要尽量做到复用。这部分可以是状态逻辑，也可以是 HTML 结构。</p>
+</div><div class="cl-preview-section"><p>以下面这个组件为例，这样写看上去的确没有大问题。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">App</span> <span class="token keyword">extends</span> <span class="token class-name">Component</span> <span class="token punctuation">{</span>
+    state <span class="token operator">=</span> <span class="token punctuation">{</span>
+        on<span class="token punctuation">:</span> props<span class="token punctuation">.</span>initial
+    <span class="token punctuation">}</span>
+    <span class="token function-variable function">toggle</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">setState</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+            on<span class="token punctuation">:</span> <span class="token operator">!</span><span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>on
+        <span class="token punctuation">}</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token operator">&lt;</span><span class="token operator">&gt;</span>
+            <span class="token operator">&lt;</span>Button type<span class="token operator">=</span><span class="token string">"primary"</span> onClick<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>toggle<span class="token punctuation">}</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>on <span class="token operator">?</span> <span class="token string">"Close"</span> <span class="token punctuation">:</span> <span class="token string">"Open"</span><span class="token punctuation">}</span> Modal <span class="token operator">&lt;</span><span class="token operator">/</span>Button<span class="token operator">&gt;</span>
+            <span class="token operator">&lt;</span>Modal visible<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>on<span class="token punctuation">}</span> onOk<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>toggle<span class="token punctuation">}</span> onCancel<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>toggle<span class="token punctuation">}</span><span class="token operator">/</span><span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span><span class="token operator">/</span><span class="token operator">&gt;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+</code></pre>
+</div><div class="cl-preview-section"><p>但如果我们有个 checkbox 的按钮，它也会有开关两种状态，完全可以复用上面的 <code>this.state.on</code> 和 <code>this.toggle</code>，那该怎么办呢？</p>
+</div><div class="cl-preview-section"><p><img src="http://static.zybuluo.com/gyyin/158h65ub3ropjhbvhaxryh58/timg.gif" alt="timg.gif-85.7kB"></p>
+</div><div class="cl-preview-section"><p>就像上一节讲的一样，我们可以利用 <code>render props</code> 来实现状态逻辑复用。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token comment">// 状态提取到 Toggle 组件里面</span>
+<span class="token keyword">class</span> <span class="token class-name">Toggle</span> <span class="token keyword">extends</span> <span class="token class-name">Component</span> <span class="token punctuation">{</span>
+    <span class="token function">constructor</span><span class="token punctuation">(</span>props<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>state <span class="token operator">=</span> <span class="token punctuation">{</span>
+            on<span class="token punctuation">:</span> props<span class="token punctuation">.</span>initial
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token function-variable function">toggle</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">setState</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+            on<span class="token punctuation">:</span> <span class="token operator">!</span><span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>on
+        <span class="token punctuation">}</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span><span class="token function">children</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+            on<span class="token punctuation">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>on<span class="token punctuation">,</span>
+            toggle<span class="token punctuation">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>toggle
+        <span class="token punctuation">}</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// Toggle 结合 Modal</span>
+<span class="token keyword">function</span> <span class="token function">App</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>
+        <span class="token operator">&lt;</span>Toggle initial<span class="token operator">=</span><span class="token punctuation">{</span><span class="token boolean">false</span><span class="token punctuation">}</span><span class="token operator">&gt;</span>
+            <span class="token punctuation">{</span><span class="token punctuation">(</span><span class="token punctuation">{</span> on<span class="token punctuation">,</span> toggle <span class="token punctuation">}</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">(</span>
+                <span class="token operator">&lt;</span><span class="token operator">&gt;</span>
+                    <span class="token operator">&lt;</span>Button type<span class="token operator">=</span><span class="token string">"primary"</span> onClick<span class="token operator">=</span><span class="token punctuation">{</span>toggle<span class="token punctuation">}</span><span class="token operator">&gt;</span> Open Modal <span class="token operator">&lt;</span><span class="token operator">/</span>Button<span class="token operator">&gt;</span>
+                    <span class="token operator">&lt;</span>Modal visible<span class="token operator">=</span><span class="token punctuation">{</span>on<span class="token punctuation">}</span> onOk<span class="token operator">=</span><span class="token punctuation">{</span>toggle<span class="token punctuation">}</span> onCancel<span class="token operator">=</span><span class="token punctuation">{</span>toggle<span class="token punctuation">}</span><span class="token operator">/</span><span class="token operator">&gt;</span>
+                <span class="token operator">&lt;</span><span class="token operator">/</span><span class="token operator">&gt;</span>
+            <span class="token punctuation">)</span><span class="token punctuation">}</span>
+        <span class="token operator">&lt;</span><span class="token operator">/</span>Toggle<span class="token operator">&gt;</span>
+    <span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// Toggle 结合 CheckBox</span>
+<span class="token keyword">function</span> <span class="token function">App</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>
+        <span class="token operator">&lt;</span>Toggle initial<span class="token operator">=</span><span class="token punctuation">{</span><span class="token boolean">false</span><span class="token punctuation">}</span><span class="token operator">&gt;</span>
+            <span class="token punctuation">{</span><span class="token punctuation">(</span><span class="token punctuation">{</span> on<span class="token punctuation">,</span> toggle <span class="token punctuation">}</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">(</span>
+                <span class="token operator">&lt;</span>CheckBox visible<span class="token operator">=</span><span class="token punctuation">{</span>on<span class="token punctuation">}</span> toggle<span class="token operator">=</span><span class="token punctuation">{</span>toggle<span class="token punctuation">}</span> <span class="token operator">/</span><span class="token operator">&gt;</span>
+            <span class="token punctuation">)</span><span class="token punctuation">}</span>
+        <span class="token operator">&lt;</span><span class="token operator">/</span>Toggle<span class="token operator">&gt;</span>
+    <span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>或者我们可以用上节讲过的 React Hooks 来抽离这个通用状态和方法。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token keyword">const</span> <span class="token function-variable function">useToggle</span> <span class="token operator">=</span> <span class="token punctuation">(</span>initialState<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> <span class="token punctuation">[</span>state<span class="token punctuation">,</span> setState<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">useState</span><span class="token punctuation">(</span>initialState<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">const</span> <span class="token function-variable function">toggle</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token function">setState</span><span class="token punctuation">(</span><span class="token operator">!</span>state<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> <span class="token punctuation">[</span>state<span class="token punctuation">,</span> toggle<span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>除了这种状态逻辑复用外，还有一种 HTML 结构复用。比如有两个页面，他们都有头部、轮播图、底部按钮，大体上的样式和布局也一致。如果我们对每个页面都写一遍，难免会有一些重复，像这种情况我们就可以利用高阶组件来复用相同部分的 HTML 结构。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token keyword">const</span> <span class="token function-variable function">PageLayoutHoC</span> <span class="token operator">=</span> <span class="token punctuation">(</span>WrappedComponent<span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token keyword">class</span> <span class="token class-name">extends</span> Component <span class="token punctuation">{</span>
+        <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">const</span> <span class="token punctuation">{</span>
+                title<span class="token punctuation">,</span>
+                sliderData<span class="token punctuation">,</span>
+                onSubmit<span class="token punctuation">,</span>
+                submitText
+                <span class="token operator">...</span>props
+            <span class="token punctuation">}</span> <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>props
+            <span class="token keyword">return</span> <span class="token punctuation">(</span>
+                <span class="token operator">&lt;</span>div className<span class="token operator">=</span><span class="token string">"main"</span><span class="token operator">&gt;</span>
+                    <span class="token operator">&lt;</span>Header title<span class="token operator">=</span><span class="token punctuation">{</span>title<span class="token punctuation">}</span> <span class="token operator">/</span><span class="token operator">&gt;</span>
+                    <span class="token operator">&lt;</span>Slider dataList<span class="token operator">=</span><span class="token punctuation">{</span>sliderData<span class="token punctuation">}</span> <span class="token operator">/</span><span class="token operator">&gt;</span>
+                    <span class="token operator">&lt;</span>WrappedComponent <span class="token punctuation">{</span><span class="token operator">...</span>props<span class="token punctuation">}</span> <span class="token operator">/</span><span class="token operator">&gt;</span>
+                    <span class="token operator">&lt;</span>Button onClick<span class="token operator">=</span><span class="token punctuation">{</span>onSubmit<span class="token punctuation">}</span><span class="token operator">&gt;</span><span class="token punctuation">{</span>submitText<span class="token punctuation">}</span><span class="token operator">&lt;</span><span class="token operator">/</span>Button<span class="token operator">&gt;</span>
+                <span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>
+            <span class="token punctuation">)</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="组件松耦合">组件松耦合</h2>
+</div><div class="cl-preview-section"><p>松耦合一般是和紧耦合相对立的，两者的区别在于：</p>
+</div><div class="cl-preview-section"><ol>
+<li>
+<p>多个组件之间互相了解、依赖彼此的实现和方法，破坏组件的独立性，这种叫做紧耦合。</p>
+</li>
+<li>
+<p>多个组件之间很少、甚至没有依赖彼此的实现，一个组件的改动不会影响到其他组件，这种叫做松耦合。</p>
+</li>
+</ol>
+</div><div class="cl-preview-section"><p>很明显，我们在开发中应当使用松耦合的方式来设计组件，这样不仅提供了复用性，还方便了测试。</p>
+</div><div class="cl-preview-section"><p>我们来看一下简单的紧耦合反面例子：</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">App</span> <span class="token keyword">extends</span> <span class="token class-name">Component</span> <span class="token punctuation">{</span>  
+  state <span class="token operator">=</span> <span class="token punctuation">{</span> count<span class="token punctuation">:</span> <span class="token number">0</span> <span class="token punctuation">}</span>
+	<span class="token function-variable function">increment</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+		<span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">setState</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+			count<span class="token punctuation">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>count <span class="token operator">+</span> <span class="token number">1</span>
+		<span class="token punctuation">}</span><span class="token punctuation">)</span>
+	<span class="token punctuation">}</span>
+	<span class="token function-variable function">decrement</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+		<span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">setState</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+			count<span class="token punctuation">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>count <span class="token operator">-</span> <span class="token number">1</span>
+		<span class="token punctuation">}</span><span class="token punctuation">)</span>
+	<span class="token punctuation">}</span>
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token operator">&lt;</span>Counter count<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>count<span class="token punctuation">}</span> parent<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">}</span> <span class="token operator">/</span><span class="token operator">&gt;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">class</span> <span class="token class-name">Counter</span> <span class="token keyword">extends</span> <span class="token class-name">Component</span> <span class="token punctuation">{</span>
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>
+      <span class="token operator">&lt;</span>div className<span class="token operator">=</span><span class="token string">"counter"</span><span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span>button onClick<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>parent<span class="token punctuation">.</span>increment<span class="token punctuation">}</span><span class="token operator">&gt;</span>
+          Increase
+        <span class="token operator">&lt;</span><span class="token operator">/</span>button<span class="token operator">&gt;</span> 
+        <span class="token operator">&lt;</span>div className<span class="token operator">=</span><span class="token string">"count"</span><span class="token operator">&gt;</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>count<span class="token punctuation">}</span><span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span>button onClick<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>parent<span class="token punctuation">.</span>decrement<span class="token punctuation">}</span><span class="token operator">&gt;</span>
+          Decrease
+        <span class="token operator">&lt;</span><span class="token operator">/</span>button<span class="token operator">&gt;</span>
+      <span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>
+    <span class="token punctuation">)</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以看到上面的 Counter 依赖了父组件的两个方法，一旦父组件的 <code>increment</code> 和 <code>decrement</code> 改了名字呢？那 Counter 组件只能跟着来修改，破坏了 Counter 的独立性，也不好拿去复用。</p>
+</div><div class="cl-preview-section"><p>所以正确的方式就是，组件之间的耦合数据我们应该通过 props 来传递，而非传递一个父组件的引用过来。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token keyword">class</span> <span class="token class-name">App</span> <span class="token keyword">extends</span> <span class="token class-name">Component</span> <span class="token punctuation">{</span>  
+  state <span class="token operator">=</span> <span class="token punctuation">{</span> count<span class="token punctuation">:</span> <span class="token number">0</span> <span class="token punctuation">}</span>
+	<span class="token function-variable function">increment</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+		<span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">setState</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+			count<span class="token punctuation">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>count <span class="token operator">+</span> <span class="token number">1</span>
+		<span class="token punctuation">}</span><span class="token punctuation">)</span>
+	<span class="token punctuation">}</span>
+	<span class="token function-variable function">decrement</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+		<span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">setState</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+			count<span class="token punctuation">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>count <span class="token operator">-</span> <span class="token number">1</span>
+		<span class="token punctuation">}</span><span class="token punctuation">)</span>
+	<span class="token punctuation">}</span>
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token operator">&lt;</span>Counter count<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>state<span class="token punctuation">.</span>count<span class="token punctuation">}</span> increment<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>increment<span class="token punctuation">}</span> decrement<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>decrement<span class="token punctuation">}</span><span class="token operator">/</span><span class="token operator">&gt;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">class</span> <span class="token class-name">Counter</span> <span class="token keyword">extends</span> <span class="token class-name">Component</span> <span class="token punctuation">{</span>
+  <span class="token function">render</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>
+      <span class="token operator">&lt;</span>div className<span class="token operator">=</span><span class="token string">"counter"</span><span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span>button onClick<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>increment<span class="token punctuation">}</span><span class="token operator">&gt;</span>
+          Increase
+        <span class="token operator">&lt;</span><span class="token operator">/</span>button<span class="token operator">&gt;</span> 
+        <span class="token operator">&lt;</span>div className<span class="token operator">=</span><span class="token string">"count"</span><span class="token operator">&gt;</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>count<span class="token punctuation">}</span><span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>
+        <span class="token operator">&lt;</span>button onClick<span class="token operator">=</span><span class="token punctuation">{</span><span class="token keyword">this</span><span class="token punctuation">.</span>props<span class="token punctuation">.</span>decrement<span class="token punctuation">}</span><span class="token operator">&gt;</span>
+          Decrease
+        <span class="token operator">&lt;</span><span class="token operator">/</span>button<span class="token operator">&gt;</span>
+      <span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>
+    <span class="token punctuation">)</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="数据解耦">数据解耦</h2>
+</div><div class="cl-preview-section"><p>我们的组件不应该依赖于特定格式的数据，组件中避免出现 <code>data.xxx</code> 这种数据。你可以通过 <code>render props</code> 的模式将要处理的对象传到外面，让使用者自行操作。</p>
+</div><div class="cl-preview-section"><p>举个栗子：<br>
+我设计了一个 Tabs 组件，我需要别人给我传入这样的结构：</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+        key<span class="token punctuation">:</span> <span class="token string">'Tab1'</span><span class="token punctuation">,</span>
+        content<span class="token punctuation">:</span> <span class="token string">'这是 Tab 1'</span><span class="token punctuation">,</span>
+        title<span class="token punctuation">:</span> <span class="token string">'Tab1'</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token punctuation">]</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这个 key 是我们用来关联所有 Tab 和当前选中的 Tab 关系的。比如我选中了 Tab1，当前的 Tab1 会有高亮显示，就通过 key 来关联。<br>
+而我们的组件可能会这样设计：</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token operator">&lt;</span>Tabs data<span class="token operator">=</span><span class="token punctuation">{</span>data<span class="token punctuation">}</span> currentTab<span class="token operator">=</span><span class="token punctuation">{</span><span class="token string">'Tab1'</span><span class="token punctuation">}</span> <span class="token operator">/</span><span class="token operator">&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这样的设计不够灵活，一个是耦合了数据的结构，大多数时候，接口不会返回上图中的 key 这种字段，title 也很可能没有，这就需要我们自己做一下数据格式化。</p>
+</div><div class="cl-preview-section"><p>另一个是封装了 DOM 结构，如果我们想定制化传入的 Tab 结构就会变得非常困难。</p>
+</div><div class="cl-preview-section"><p>我们不妨转换一下思路，当设计一个通用组件的时候，一定要只有一个组件吗？一定要把数据传给组件吗？</p>
+</div><div class="cl-preview-section"><p>那么来一起看看业界知名的组件库 Ant Design 是如何设计 Tabs 组件的。</p>
+</div><div class="cl-preview-section"><pre class=" language-js"><code class="prism  language-js"><span class="token operator">&lt;</span>Tabs defaultActiveKey<span class="token operator">=</span><span class="token string">"1"</span> onChange<span class="token operator">=</span><span class="token punctuation">{</span>callback<span class="token punctuation">}</span><span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span>TabPane tab<span class="token operator">=</span><span class="token string">"Tab 1"</span> key<span class="token operator">=</span><span class="token string">"1"</span><span class="token operator">&gt;</span>
+        Content <span class="token keyword">of</span> Tab Pane <span class="token number">1</span>
+    <span class="token operator">&lt;</span><span class="token operator">/</span>TabPane<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span>TabPane tab<span class="token operator">=</span><span class="token string">"Tab 2"</span> key<span class="token operator">=</span><span class="token string">"2"</span><span class="token operator">&gt;</span>
+        Content <span class="token keyword">of</span> Tab Pane <span class="token number">2</span>
+    <span class="token operator">&lt;</span><span class="token operator">/</span>TabPane<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span>TabPane tab<span class="token operator">=</span><span class="token string">"Tab 3"</span> key<span class="token operator">=</span><span class="token string">"3"</span><span class="token operator">&gt;</span>
+        Content <span class="token keyword">of</span> Tab Pane <span class="token number">3</span>
+    <span class="token operator">&lt;</span><span class="token operator">/</span>TabPane<span class="token operator">&gt;</span>
+<span class="token operator">&lt;</span><span class="token operator">/</span>Tabs<span class="token operator">&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>Ant Design 将数据和结构进行了解耦，我们不再传列表数据给 Tabs 组件，而是自行在外部渲染了所有的 TabPane，再将其作为 Children 传给 Tabs，这样的好处就是组件的结构更加灵活，TabPane 里面随便传什么结构都可以。</p>
+</div><div class="cl-preview-section"><h2 id="结构自由">结构自由</h2>
+</div><div class="cl-preview-section"><p>一个好的组件，结构应当是灵活自由的，不应该对其内部结构做过度封装。我们上面讲的 Tabs 组件其实就是结构自由的一种代表。</p>
+</div><div class="cl-preview-section"><p>考虑到这样一种业务场景，我们页面上有多个输入框，但这些输入框前面的 Icon 都是不一样的，代表着不同的含义。我相信肯定不会有人会对每个 Icon 都实现一个 Input 组件。</p>
+</div><div class="cl-preview-section"><p><img src="http://static.zybuluo.com/gyyin/hypd43ayz40nza8u1o54oe3j/image_1e5jq2o13qj0qmele81aahh6l13.png" alt="image_1e5jq2o13qj0qmele81aahh6l13.png-10.7kB"></p>
+</div><div class="cl-preview-section"><p>你可能会想到我们可以把图片的地址当做 props 传给组件，这样不就行了吗？但万一前面不是 Icon 呢？而是一个文字、一个符号呢？</p>
+</div><div class="cl-preview-section"><p>那我们是不是可以把元素当做 props 传给组件呢？组件来负责渲染，但渲染后长什么样还是使用者来控制的。这就是 Ant Design 的实现思路。</p>
+</div><div class="cl-preview-section"><p><img src="http://static.zybuluo.com/gyyin/rzsfxeikyyvp7xyvdrhsux5j/code.png" alt="code.png-111.5kB"></p>
+</div><div class="cl-preview-section"><p>在前面数据解耦中我们就讲过了类似的思路，实际上数据解耦和结构自由是相辅相成的。在设计一个组件的时候，很多人往往会陷入一种怪圈，那就是我该怎么才能封装更多功能？怎么才能兼容不同的渲染？</p>
+</div><div class="cl-preview-section"><p>这时候我们就不妨换一种思路，如果将渲染交给使用者来控制呢？渲染成什么样都由用户来决定，这样的组件结构是非常灵活自由的。</p>
+</div><div class="cl-preview-section"><p>当然，如果你把什么都交给用户来渲染，这个组件的使用复杂度就大大提高了，所以我们也应当提供一些默认的渲染，即使用户什么都不传也可以渲染默认的结构。</p>
+</div><div class="cl-preview-section"><h2 id="总结">总结</h2>
+</div><div class="cl-preview-section"><p>组件设计是一项重要的工作，好的组件我们直接拿来复用可以大大提高效率，不好的组件只会增加我们的复杂度。</p>
+</div><div class="cl-preview-section"><p>在组件设计的学习中，你需要多探索、实践，多去参考社区知名的组件库，比如 Ant Design、Element UI、iView 等等，去思考他们为什么会这样设计，有没有更好的设计？如果是自己来设计会怎么样？</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img.mukewang.com/5ebba15900011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=72">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '27 React 组件设计最佳实践',
+					'CID': '1678',
+					'Teacher': 'sh22n'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "27 React 组件设计最佳实践",
+                    desc: "前端进阶必备，未来少走弯路",
+                    imgUrl: 'https:https://img3.mukewang.com/5e6af0f50001b61d05400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5e6af0f50001b61d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/72',
+                    link: 'https://m.imooc.com/read/72'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

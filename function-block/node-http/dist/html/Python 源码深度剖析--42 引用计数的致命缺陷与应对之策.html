@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>42 引用计数的致命缺陷与应对之策</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="突破技术瓶颈，迈向更高岗位">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "3";
+	var chapter_id = "1938";
+	var chapter_title = "42 引用计数的致命缺陷与应对之策";
+	var aid = "76";
+	var a_name = "Python 源码深度剖析";
+	var a_price = "68.00";
+	var a_pic = "https://img.mukewang.com/5eb68ab400017cda05400720.jpg";
+	var userId = 0;
+
+	var column_id = '76';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-10-09&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			42 引用计数的致命缺陷与应对之策
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img.mukewang.com/5f5ed9640001634206400425.jpg')"></div>
+	
+	
+		<a href="/read/76">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/5e4a3ec90001ef8d04000400-40-40.jpg" alt="fasionchan">
+				<h3>Python 源码深度剖析</h3>
+				<p>fasionchan · 资深 Python 研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">困难只能吓倒懦夫懒汉，而胜利永远属于敢于等科学高峰的人。<p class="author">——茅以升</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>现代高级编程语言一般都内置垃圾回收机制，替程序员担起内存管理的重任，极大地提高了生产力。不同编程语言，采用的垃圾回收算法各有异同。那么，常见垃圾回收方法都有哪些呢？</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>引用计数法</strong> ( <em>reference count</em> )，对象记录引用次数，引用次数降为 <em>0</em> 时回收；</li>
+<li><strong>标记-清除法</strong> ( <em>mark-sweep</em> )，从根集合出发，遍历能访问到的对象并标记，将所有未标记的对象清除；</li>
+<li><strong>复制法</strong> ( <em>copying</em> )，将内存划分为大小相同的两块，一块用完后启用另一块并将存活的对象拷贝过去，原来那块则被整体回收；</li>
+<li><strong>标记-整理法</strong> ( <em>mark-compact</em> )，</li>
+<li><strong>分代回收法</strong> ( <em>generational-collection</em> )，根据存活时间将对象分为若干代(如新生代和老生代)，并按照不同代的特征采用最适合的回收策略；</li>
+<li><em>etc</em></li>
+</ul>
+</div><div class="cl-preview-section"><p>引用计数可以说是最简单的垃圾回收方法，它能够在第一时间回收不再需要的对象，而且不会导致程序长时间停顿。由于引用计数存在一个致命缺陷，无情地限制了它的应用场景。</p>
+</div><div class="cl-preview-section"><p>我们在前面章节提过，<em>Python</em> 对象依靠引用计数机制来回收。每个 <em>Python</em> 对象都包含 <em>ob_refcnt</em> 字段，这个字段记录对象的引用次数。那么，<em>Python</em> 是如何解决引用计数的致命缺陷的呢？它到底用了什么黑科技？</p>
+</div><div class="cl-preview-section"><p>让我们带着这些疑问，开始本节关于引用计数法的学习。为全面研究 <em>Python</em> 垃圾回收机制，打下坚实的基础。</p>
+</div><div class="cl-preview-section"><h2 id="引用计数">引用计数</h2>
+</div><div class="cl-preview-section"><p><strong>引用计数</strong> 是计算机编程语言中的一种 <strong>内存管理技术</strong> ，它将资源被引用的次数保存起来，当引用次数变为 <em>0</em> 时就将资源释放。它管理的资源并不局限于内存，还可以是对象、磁盘空间等等。</p>
+</div><div class="cl-preview-section"><p><em>Python</em> 也使用引用计数这种方式来管理内存，每个 <em>Python</em> 对象都包含一个公共头部，头部中的 <em>ob_refcnt</em> 字段便用于维护对象被引用次数。回忆对象模型部分内容，我们知道一个典型的 <em>Python</em> 对象结构如下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f5eda55000187c404160284.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>当创建一个对���实例时，先在堆上为对象申请内存，对象的引用计数被初始化为 <em>1</em> 。以 <em>Python</em> 为例，我们创建一个 <em>float</em> 对象保存圆周率，并把它赋值到变量 <em>pi</em> ：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> pi <span class="token operator">=</span> <span class="token number">3.14</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> pi
+<span class="token number">3.14</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>由于此时只有变量 <em>pi</em> 引用 <em>float</em> 对象，因此它的引用计数为 <em>1</em> ：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f5eda5d000106e707270293.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>当我们把 <em>pi</em> 赋值给 <em>f</em> 后，<em>float</em> 对象的引用计数就变成了 <em>2</em> ，因为现在有两个变量引用它：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> f <span class="token operator">=</span> pi
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> f
+<span class="token number">3.14</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f5eda640001cd0007310286.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>我们新建一个 <em>list</em> 对象，并把 <em>float</em> 对象保存在里面。这样一来，<em>float</em> 对象有多了一个来自 <em>list</em> 对象的引用，因此它的引用计数又加一，变成 <em>3</em> 了：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l <span class="token operator">=</span> <span class="token punctuation">[</span>f<span class="token punctuation">]</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> l
+<span class="token punctuation">[</span><span class="token number">3.14</span><span class="token punctuation">]</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f5eda720001a15c08700589.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>标准库 <em>sys</em> 模块中有一个函数 <em>getrefcount</em> 可以获取对象引用计数：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">import</span> sys
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> sys<span class="token punctuation">.</span>getrefcount<span class="token punctuation">(</span>pi<span class="token punctuation">)</span>
+<span class="token number">4</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>咦！引用计数不应该是 <em>3</em> 吗？为什么会是 <em>4</em> 呢？由于 <em>float</em> 对象被作为参数传给 <em>getrefcount</em> 函数，它在函数执行过程中作为函数的局部变量存在，因此又多了一个引用：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f5eda7b0001916418020543.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>随着 <em>getrefcount</em> 函数执行完毕并返回，它的栈帧对象将从调用链中解开并销毁，这时 <em>float</em> 对象的引用计数也跟着下降。因此，当一个对象作为参数传个函数后，它的引用计数将加一；当函数返回，局部名字空间销毁后，对象引用计数又加一。理解这些后，<em>getrefcount</em> 的行为也就解释得通了。</p>
+</div><div class="cl-preview-section"><p>引用计数就这样随着引用关系的变动，不断变化着。当所有引用都消除后，引用计数就降为零，这时 <em>Python</em> 就可以安全地销毁对象，回收内存了：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">del</span> l
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">del</span> f
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">del</span> pi
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f5eda8300019cec07420233.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="循环引用">循环引用</h2>
+</div><div class="cl-preview-section"><p>对象引用关系构成一张 <strong>有向图</strong> ，这张图可以很复杂。但如果图中有环，形成 <strong>循环应用</strong> 关系，引用计数法的表现就比较微妙了。先考察这个简单的例子：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token keyword">class</span> <span class="token class-name">Car</span><span class="token punctuation">:</span>
+    
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> factory<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>factory <span class="token operator">=</span> factory
+
+<span class="token keyword">class</span> <span class="token class-name">CarFactory</span><span class="token punctuation">:</span>
+    
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>cars <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        
+    <span class="token keyword">def</span> <span class="token function">build_car</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        car <span class="token operator">=</span> Car<span class="token punctuation">(</span>factory<span class="token operator">=</span>self<span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>cars<span class="token punctuation">.</span>append<span class="token punctuation">(</span>car<span class="token punctuation">)</span>
+        <span class="token keyword">return</span> car
+</code></pre>
+</div><div class="cl-preview-section"><p>这个例子定义了两个类，<em>Car</em> 表示一辆汽车，它有一个属性 <em>factory</em> 指向制造它的汽车工厂；<em>CarFactory</em> 表示一个汽车工厂，它有一个列表 <em>cars</em> ，保存它制造的每辆汽车。这样一来，<em>Car</em> 和 <em>CarFactory</em> 的实例对象构成了互相引用的关系。</p>
+</div><div class="cl-preview-section"><p>接下来，我们创建一个汽车工厂实例，并通过它建造两辆汽车，看看引用关系是怎样的：</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> factory <span class="token operator">=</span> CarFactory<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> car1 <span class="token operator">=</span> factory<span class="token punctuation">.</span>build_car<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> car2 <span class="token operator">=</span> factory<span class="token punctuation">.</span>build_car<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f5eda8a0001074010290527.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><em>CarFactory</em> 通过 <em>cars</em> 属性引用一个列表对象，列表对象又引用两个 <em>Car</em> 对象，而 <em>Car</em> 对象又通过 <em>factory</em> 属性引用 <em>CarFactory</em> 对象。因此，上面这个引用关系图中，形成了两个 <strong>环</strong> 。那么，环会导致什么问题呢？</p>
+</div><div class="cl-preview-section"><p>假设，我们将 <em>factory</em> 、<em>car1</em> 以及 <em>car2</em> 删掉，讲道理这 <em>3</em> 个对象应该回收，因为已经没有其他地方引用它们了。事实是不是这样的呢？</p>
+</div><div class="cl-preview-section"><pre class="  language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">del</span> factory
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">del</span> car1
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">del</span> car2
+</code></pre>
+</div><div class="cl-preview-section"><p>实际上，由于内部循环引用的存在，就算我们将外部变量删除，对象的引用计数也不为零，无法回收：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f5eda94000166df10280529.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>这个问题可就严重了，该回收的对象无法回收，不就内存泄露了吗？</p>
+</div><div class="cl-preview-section"><h2 id="标记-清除">标记-清除</h2>
+</div><div class="cl-preview-section"><p>那么，如何解决循环引用带来的问题呢？解决问题的思路主要有两个：</p>
+</div><div class="cl-preview-section"><ul>
+<li>精心设计程序，确保对象不会形成环状引用关系(被动避免)；</li>
+<li>实现算法定期检查识别需要回收的垃圾对象，进而将它们回收(主动回收)；</li>
+</ul>
+</div><div class="cl-preview-section"><p>被动避免的思路虽理论上可行，但基本没有可操作性。一方面，由于非循环引用这个约束存在，程序设计必然要牺牲一些灵活性；另一方面，由应用程序自己保证的做法并不可靠，稍有失误就会造成内存泄露，死无葬身之地。</p>
+</div><div class="cl-preview-section"><p>主动思路一般分为两步：<strong>垃圾识别</strong> 和 <strong>垃圾回收</strong> 。垃圾对象被识别出来后，回收就只是自然而然的工作了，因此垃圾识别是解决问题的关键。那么，有什么办法可以将垃圾对象识别出来呢？我们来考察一个一般化例子：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f5eda9e000113d413110449.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>这是一个对象引用关系图，其中灰色部分是需要回收但由于循环引用而无法回收的垃圾对象，绿色部分是被程序引用而不能回收的活跃对象。如果我们能够将活跃对象逐个遍历并标记，那么最后没有被标记的对象就是垃圾对象。</p>
+</div><div class="cl-preview-section"><p>遍历活跃对象，第一步需要找出 <strong>根对象</strong> ( <em>root object</em> )集合。所谓根对象，就是指被全局引用或者在栈中引用的对象，这部对象是不能被删除的。因此，我们将这部分对象标记为绿色，作为活跃对象遍历的起点。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f5edaa7000113d413110449.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>根对象本身是 <strong>可达的</strong> ( <em>reachable</em> )，不能删除；被根对象引用的对象也是可达的，同样不能删除；以此类推。我们从一个根对象出发，沿着引用关系遍历，遍历到的所有对象都是可达的，不能删除。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f5edabd0001dc2113270460.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>这样一来，当我们遍历完所有根对象，活跃对象也就全部找出来了：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f5edac6000149e513200455.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>而没有被标色的对象就是 <strong>不可达</strong> ( <em>unreachable</em> )的垃圾对象，可以被安全回收。循环引用的致命缺陷完美解决了！</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f5edace0001a59c13220457.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>这就是垃圾回收中常用的 <strong>标记清除法</strong> ，思想其实平白无奇。</p>
+</div><div class="cl-preview-section"><p><em>Python</em> 内部也采用这个办法来识别、回收垃圾对象，但细节略有差异。由于 <em>Python</em> 绝大部分对象都是在堆中分配的，根对象集合不太直观。因此，<em>Python</em> 先通过一个算法找出根对象，然后再从根对象出发遍历可达的活跃对象。此外，为提升垃圾回收效率，<em>Python</em> 还引入分代回收机制。当中来龙去脉，请听下回分解。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5f5ed96a00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6781">
+						<img src="https://img.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕九州5232177</h4>
+						<div class="comment-text">每期都在跟着学，马上就要讲完了，总有一种意犹未尽的感觉。希望能出更多python深层次理论及技术的文章。</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-14</span>
+						<a href="/read/commentdetail/6781">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6781" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=76">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '42 引用计数的致命缺陷与应对之策',
+					'CID': '1938',
+					'Teacher': 'fasionchan'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "42 引用计数的致命缺陷与应对之策",
+                    desc: "突破技术瓶颈，迈向更高岗位",
+                    imgUrl: 'https:https://img.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/76',
+                    link: 'https://m.imooc.com/read/76'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

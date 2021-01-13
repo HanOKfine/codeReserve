@@ -1,0 +1,1008 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>20 原来虚拟机是一颗软件 CPU</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="突破技术瓶颈，迈向更高岗位">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "4";
+	var chapter_id = "1916";
+	var chapter_title = "20 原来虚拟机是一颗软件 CPU";
+	var aid = "76";
+	var a_name = "Python 源码深度剖析";
+	var a_price = "68.00";
+	var a_pic = "https://img3.mukewang.com/5eb68ab400017cda05400720.jpg";
+	var userId = 0;
+
+	var column_id = '76';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-06-29&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			20 原来虚拟机是一颗软件 CPU
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img.mukewang.com/5ef94bf30001316206400426.jpg')"></div>
+	
+	
+		<a href="/read/76">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/5e4a3ec90001ef8d04000400-40-40.jpg" alt="fasionchan">
+				<h3>Python 源码深度剖析</h3>
+				<p>fasionchan · 资深 Python 研发工程师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">天才免不了有障碍，因为障碍会创造天才。<p class="author">——罗曼·罗兰</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>上一小节，我们研究了 <em>Python</em> 程序的编译过程，以及编译产物—— <strong>代码对象</strong> 。 <strong>编译器</strong> 依照语法规则对源码进行 <strong>作用域</strong> 划分，并以此为单位编译源码，最终为每个作用域生成一个代码对象。代码对象则保存了 <strong>字节码</strong> ，以及相关 <strong>名字</strong> 、 <strong>常量</strong> 等静态上下文信息。</p>
+</div><div class="cl-preview-section"><p><strong>编译器</strong> 将源码 <strong>编译</strong> 成代码对象后，便将接力棒传给 <strong>虚拟机</strong> ，由虚拟机负责 <strong>执行</strong> 。那么， <em>Python</em> 虚拟机如何解析并执行字节码指令呢？与语法作用域相对应的运行时 <strong>名字空间</strong> ，在虚拟机中又是如何动态维护的呢？带着这些疑问，我们开始本节关于 <strong>虚拟机</strong> 以及 <strong>字节码</strong> 执行过程的探索。</p>
+</div><div class="cl-preview-section"><h2 id="pyframeobject">PyFrameObject</h2>
+</div><div class="cl-preview-section"><p>由于代码对象是静态的， <em>Python</em> 虚拟机在执行代码对象时，需要由一个辅助对象来维护执行上下文。那么，这个执行上下文需要包含什么信息呢？我们先根据已经掌握的知识大开脑洞猜测一下：</p>
+</div><div class="cl-preview-section"><p>首先，我们需要一个动态容器，来存储代码对象作用域中的名字，这也就是 <strong>局部名字空间</strong> ( <em>Locals</em> )。同理，上下文信息还需要记录 <strong>全局名字空间</strong> ( <em>Globals</em> )以及 <strong>内建名字空间</strong> ( <em>Builtins</em> )的具体位置，确保相关名字查找顺畅。</p>
+</div><div class="cl-preview-section"><p>其次，虚拟机需要保存当前执行字节码指令的编号，就像 <em>CPU</em> 需要一个寄存器( <em>IP</em> )保存当前执行指令位置一样。</p>
+</div><div class="cl-preview-section"><p>因此，执行上下文理论上至少要包括以下这两方面信息：</p>
+</div><div class="cl-preview-section"><ul>
+<li>名字空间</li>
+<li>当前字节码位置</li>
+</ul>
+</div><div class="cl-preview-section"><p>接下来，我们请出执行上下文的真身—— <strong>栈帧对象</strong>  <em>PyFrameObject</em> ，看看我们有没有猜对。 <em>PyFrameObject</em> 在头文件 <em>Include/frameobject.h</em> 中定义：</p>
+</div><div class="cl-preview-section"><pre class=" language-c"><code class="prism  language-c"><span class="token keyword">typedef</span> <span class="token keyword">struct</span> _frame <span class="token punctuation">{</span>
+    PyObject_VAR_HEAD
+    <span class="token keyword">struct</span> _frame <span class="token operator">*</span>f_back<span class="token punctuation">;</span>      <span class="token comment">/* previous frame, or NULL */</span>
+    PyCodeObject <span class="token operator">*</span>f_code<span class="token punctuation">;</span>       <span class="token comment">/* code segment */</span>
+    PyObject <span class="token operator">*</span>f_builtins<span class="token punctuation">;</span>       <span class="token comment">/* builtin symbol table (PyDictObject) */</span>
+    PyObject <span class="token operator">*</span>f_globals<span class="token punctuation">;</span>        <span class="token comment">/* global symbol table (PyDictObject) */</span>
+    PyObject <span class="token operator">*</span>f_locals<span class="token punctuation">;</span>         <span class="token comment">/* local symbol table (any mapping) */</span>
+    PyObject <span class="token operator">*</span><span class="token operator">*</span>f_valuestack<span class="token punctuation">;</span>    <span class="token comment">/* points after the last local */</span>
+    <span class="token comment">/* Next free slot in f_valuestack.  Frame creation sets to f_valuestack.
+       Frame evaluation usually NULLs it, but a frame that yields sets it
+       to the current stack top. */</span>
+    PyObject <span class="token operator">*</span><span class="token operator">*</span>f_stacktop<span class="token punctuation">;</span>
+    PyObject <span class="token operator">*</span>f_trace<span class="token punctuation">;</span>          <span class="token comment">/* Trace function */</span>
+    <span class="token keyword">char</span> f_trace_lines<span class="token punctuation">;</span>         <span class="token comment">/* Emit per-line trace events? */</span>
+    <span class="token keyword">char</span> f_trace_opcodes<span class="token punctuation">;</span>       <span class="token comment">/* Emit per-opcode trace events? */</span>
+
+    <span class="token comment">/* Borrowed reference to a generator, or NULL */</span>
+    PyObject <span class="token operator">*</span>f_gen<span class="token punctuation">;</span>
+
+    <span class="token keyword">int</span> f_lasti<span class="token punctuation">;</span>                <span class="token comment">/* Last instruction if called */</span>
+    <span class="token comment">/* Call PyFrame_GetLineNumber() instead of reading this field
+       directly.  As of 2.3 f_lineno is only valid when tracing is
+       active (i.e. when f_trace is set).  At other times we use
+       PyCode_Addr2Line to calculate the line from the current
+       bytecode index. */</span>
+    <span class="token keyword">int</span> f_lineno<span class="token punctuation">;</span>               <span class="token comment">/* Current line number */</span>
+    <span class="token keyword">int</span> f_iblock<span class="token punctuation">;</span>               <span class="token comment">/* index in f_blockstack */</span>
+    <span class="token keyword">char</span> f_executing<span class="token punctuation">;</span>           <span class="token comment">/* whether the frame is still executing */</span>
+    PyTryBlock f_blockstack<span class="token punctuation">[</span>CO_MAXBLOCKS<span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token comment">/* for try and loop blocks */</span>
+    PyObject <span class="token operator">*</span>f_localsplus<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">;</span>  <span class="token comment">/* locals+stack, dynamically sized */</span>
+<span class="token punctuation">}</span> PyFrameObject<span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>哇，这么多字段！虽然代码很多，但目前我们需要研究的只有以下这些：</p>
+</div><div class="cl-preview-section"><div class="table-wrapper"><table>
+<thead>
+<tr>
+<th><strong>属性</strong></th>
+<th><strong>描述</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>f_back</td>
+<td>前一个栈帧对象，也就是调用者</td>
+</tr>
+<tr>
+<td>f_builtins</td>
+<td>内建名字空间</td>
+</tr>
+<tr>
+<td>f_code</td>
+<td>代码对象</td>
+</tr>
+<tr>
+<td>f_globals</td>
+<td>全局名字空间</td>
+</tr>
+<tr>
+<td>f_lasti</td>
+<td>上条已执行字节码指令编号</td>
+</tr>
+<tr>
+<td>f_lineno</td>
+<td>源码文件行数</td>
+</tr>
+<tr>
+<td>f_locals</td>
+<td>局部名字空间</td>
+</tr>
+<tr>
+<td>f_localsplus</td>
+<td>静态存储的局部名字空间和临时栈</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="cl-preview-section"><p>看上去，关键字段我们基本都猜对了。至此，我们搞清楚了栈帧对象的结构以及在运行时所起的作用：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ef94f830001dc2506580511.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>其中， <em>f_code</em> 字段保存了当前执行的代码对象，最核心的字节码就在代码对象中。而 <em>f_lasti</em> 字段则保存着上条已执行字节码的编号。虚拟机内部用一个 <em>C</em> 局部变量 <em>next_instr</em> 维护下条字节码的位置，并据此加载下一条待执行的字节码指令，原理跟 <em>CPU</em> 的 <strong>指令指针</strong> 寄存器（ <em>%rip</em> ）一样。</p>
+</div><div class="cl-preview-section"><p>另外，注意到 <em>f_back</em> 字段指向前一个栈帧对象，也就是 <strong>调用者</strong> 的栈帧对象。这样一来，栈帧对象按照 <strong>调用关系</strong> 串成一个 <strong>调用链</strong> ！这不是跟 <em>x86 CPU</em> 栈帧布局如出一辙吗？我们先花点时间回顾一下 <em>x86 CPU</em> 栈帧布局与函数调用之间的关系：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ef94f8e0001f3e806870798.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><em>x86</em> 体系处理器通过栈维护调用关系，每次函数调用时在栈上分配一个帧用于保存调用上下文以及临时存储。 <em>CPU</em> 中有两个关键寄存器， <em>%rsp</em> 指向当前栈顶，而 <em>%rbp</em> 则指向当前栈帧。每次调用函数时， <strong>调用者</strong> ( <em>Caller</em> )负责准备参数、保存返回地址，并跳转到被调用函数代码；作为 <strong>被调用者</strong> ( <em>Callee</em> )，函数先将当前 <em>%rbp</em> 寄存器压入栈（保存调用者栈帧位置），并将 <em>%rbp</em> 设置为当前栈顶（保存当前新栈帧位置）。由此， <em>%rbp</em> 寄存器与每个栈帧中保存的调用者栈帧地址一起完美地维护了函数调用关系链。</p>
+</div><div class="cl-preview-section"><p>现在，我们回过头来继续考察 <em>Python</em> 栈帧对象链以及函数调用之前的关系。请看下面这个例子（ <em><a href="http://demo.py">demo.py</a></em> ）：</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python">pi <span class="token operator">=</span> <span class="token number">3.14</span>
+
+<span class="token keyword">def</span> <span class="token function">square</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">return</span> r <span class="token operator">**</span> <span class="token number">2</span>
+
+<span class="token keyword">def</span> <span class="token function">circle_area</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">return</span> pi <span class="token operator">*</span> square<span class="token punctuation">(</span>r<span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span>circle_area<span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">'__main__'</span><span class="token punctuation">:</span>
+    main<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>当 <em>Python</em> 开始执行这个程序时，虚拟机先创建一个栈帧对象，用于执行模块代码对象：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ef94f9a0001726e03710286.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>当虚拟机执行到模块代码第 <em>13</em> 行时，发生了函数调用。这时，虚拟机新建一个栈帧对，并开始执行函数 <em>main</em> 的代码对象：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ef94fa3000134f806150291.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>随着函数调用逐层深入，当调用 <em>square</em> 函数时，调用链达到最长：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ef94fac0001ff4012440385.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>当函数调用完毕后，虚拟机通过 <em>f_back</em> 字段找到前一个栈帧对象并回到调用者代码中继续执行。</p>
+</div><div class="cl-preview-section"><h3 id="栈帧获取">栈帧获取</h3>
+</div><div class="cl-preview-section"><p>栈帧对象 <em>PyFrameObject</em> 中保存着 <em>Python</em> 运行时信息，在底层执行流控制以及程序调试中非常有用。那么，在 <em>Python</em> 代码层面，有没有办法获得栈帧对象呢？答案是肯定的。调用标准库 <em>sys</em> 模块中的 <em>_getframe</em> 函数，即可获得当前栈帧对象：</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">import</span> sys
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> frame <span class="token operator">=</span> sys<span class="token punctuation">.</span>_getframe<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> frame
+<span class="token operator">&lt;</span>frame at <span class="token number">0x10e3706a8</span><span class="token punctuation">,</span> <span class="token builtin">file</span> <span class="token string">'&lt;stdin&gt;'</span><span class="token punctuation">,</span> line <span class="token number">1</span><span class="token punctuation">,</span> code <span class="token operator">&lt;</span>module<span class="token operator">&gt;&gt;</span>
+<span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token builtin">dir</span><span class="token punctuation">(</span>frame<span class="token punctuation">)</span>
+<span class="token punctuation">[</span><span class="token string">'__class__'</span><span class="token punctuation">,</span> <span class="token string">'__delattr__'</span><span class="token punctuation">,</span> <span class="token string">'__dir__'</span><span class="token punctuation">,</span> <span class="token string">'__doc__'</span><span class="token punctuation">,</span> <span class="token string">'__eq__'</span><span class="token punctuation">,</span> <span class="token string">'__format__'</span><span class="token punctuation">,</span> <span class="token string">'__ge__'</span><span class="token punctuation">,</span> <span class="token string">'__getattribute__'</span><span class="token punctuation">,</span> <span class="token string">'__gt__'</span><span class="token punctuation">,</span> <span class="token string">'__hash__'</span><span class="token punctuation">,</span> <span class="token string">'__init__'</span><span class="token punctuation">,</span> <span class="token string">'__init_subclass__'</span><span class="token punctuation">,</span> <span class="token string">'__le__'</span><span class="token punctuation">,</span> <span class="token string">'__lt__'</span><span class="token punctuation">,</span> <span class="token string">'__ne__'</span><span class="token punctuation">,</span> <span class="token string">'__new__'</span><span class="token punctuation">,</span> <span class="token string">'__reduce__'</span><span class="token punctuation">,</span> <span class="token string">'__reduce_ex__'</span><span class="token punctuation">,</span> <span class="token string">'__repr__'</span><span class="token punctuation">,</span> <span class="token string">'__setattr__'</span><span class="token punctuation">,</span> <span class="token string">'__sizeof__'</span><span class="token punctuation">,</span> <span class="token string">'__str__'</span><span class="token punctuation">,</span> <span class="token string">'__subclasshook__'</span><span class="token punctuation">,</span> <span class="token string">'clear'</span><span class="token punctuation">,</span> <span class="token string">'f_back'</span><span class="token punctuation">,</span> <span class="token string">'f_builtins'</span><span class="token punctuation">,</span> <span class="token string">'f_code'</span><span class="token punctuation">,</span> <span class="token string">'f_globals'</span><span class="token punctuation">,</span> <span class="token string">'f_lasti'</span><span class="token punctuation">,</span> <span class="token string">'f_lineno'</span><span class="token punctuation">,</span> <span class="token string">'f_locals'</span><span class="token punctuation">,</span> <span class="token string">'f_trace'</span><span class="token punctuation">,</span> <span class="token string">'f_trace_lines'</span><span class="token punctuation">,</span> <span class="token string">'f_trace_opcodes'</span><span class="token punctuation">]</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>获取栈帧对象后，有什么作用呢？举个例子，我们可以顺着 <em>f_back</em> 字段将调用关系和相关运行时信息打印出来：</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token keyword">import</span> sys
+
+pi <span class="token operator">=</span> <span class="token number">3.14</span>
+
+<span class="token keyword">def</span> <span class="token function">square</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    frame <span class="token operator">=</span> sys<span class="token punctuation">.</span>_getframe<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">while</span> frame<span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'#'</span><span class="token punctuation">,</span> frame<span class="token punctuation">.</span>f_code<span class="token punctuation">.</span>co_name<span class="token punctuation">)</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'Locals:'</span><span class="token punctuation">,</span> <span class="token builtin">list</span><span class="token punctuation">(</span>frame<span class="token punctuation">.</span>f_locals<span class="token punctuation">.</span>keys<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'Globals:'</span><span class="token punctuation">,</span> <span class="token builtin">list</span><span class="token punctuation">(</span>frame<span class="token punctuation">.</span>f_globals<span class="token punctuation">.</span>keys<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+        frame <span class="token operator">=</span> frame<span class="token punctuation">.</span>f_back
+
+    <span class="token keyword">return</span> r <span class="token operator">**</span> <span class="token number">2</span>
+
+<span class="token keyword">def</span> <span class="token function">circle_area</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">return</span> pi <span class="token operator">*</span> square<span class="token punctuation">(</span>r<span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span>circle_area<span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">'__main__'</span><span class="token punctuation">:</span>
+    main<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>例子程序在 <em>square</em> 函数中获取栈帧对象，然后逐层输出函数名以及对应的局部名字空间以及全局名字空间。程序执行后，你将看到这样的输出：</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token comment"># square</span>
+Locals<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">'r'</span><span class="token punctuation">,</span> <span class="token string">'frame'</span><span class="token punctuation">]</span>
+Globals<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">'__name__'</span><span class="token punctuation">,</span> <span class="token string">'__doc__'</span><span class="token punctuation">,</span> <span class="token string">'__package__'</span><span class="token punctuation">,</span> <span class="token string">'__loader__'</span><span class="token punctuation">,</span> <span class="token string">'__spec__'</span><span class="token punctuation">,</span> <span class="token string">'__annotations__'</span><span class="token punctuation">,</span> <span class="token string">'__builtins__'</span><span class="token punctuation">,</span> <span class="token string">'__file__'</span><span class="token punctuation">,</span> <span class="token string">'__cached__'</span><span class="token punctuation">,</span> <span class="token string">'sys'</span><span class="token punctuation">,</span> <span class="token string">'pi'</span><span class="token punctuation">,</span> <span class="token string">'square'</span><span class="token punctuation">,</span> <span class="token string">'circle_area'</span><span class="token punctuation">,</span> <span class="token string">'main'</span><span class="token punctuation">]</span>
+
+<span class="token comment"># circle_area</span>
+Locals<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">'r'</span><span class="token punctuation">]</span>
+Globals<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">'__name__'</span><span class="token punctuation">,</span> <span class="token string">'__doc__'</span><span class="token punctuation">,</span> <span class="token string">'__package__'</span><span class="token punctuation">,</span> <span class="token string">'__loader__'</span><span class="token punctuation">,</span> <span class="token string">'__spec__'</span><span class="token punctuation">,</span> <span class="token string">'__annotations__'</span><span class="token punctuation">,</span> <span class="token string">'__builtins__'</span><span class="token punctuation">,</span> <span class="token string">'__file__'</span><span class="token punctuation">,</span> <span class="token string">'__cached__'</span><span class="token punctuation">,</span> <span class="token string">'sys'</span><span class="token punctuation">,</span> <span class="token string">'pi'</span><span class="token punctuation">,</span> <span class="token string">'square'</span><span class="token punctuation">,</span> <span class="token string">'circle_area'</span><span class="token punctuation">,</span> <span class="token string">'main'</span><span class="token punctuation">]</span>
+
+<span class="token comment"># main</span>
+Locals<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+Globals<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">'__name__'</span><span class="token punctuation">,</span> <span class="token string">'__doc__'</span><span class="token punctuation">,</span> <span class="token string">'__package__'</span><span class="token punctuation">,</span> <span class="token string">'__loader__'</span><span class="token punctuation">,</span> <span class="token string">'__spec__'</span><span class="token punctuation">,</span> <span class="token string">'__annotations__'</span><span class="token punctuation">,</span> <span class="token string">'__builtins__'</span><span class="token punctuation">,</span> <span class="token string">'__file__'</span><span class="token punctuation">,</span> <span class="token string">'__cached__'</span><span class="token punctuation">,</span> <span class="token string">'sys'</span><span class="token punctuation">,</span> <span class="token string">'pi'</span><span class="token punctuation">,</span> <span class="token string">'square'</span><span class="token punctuation">,</span> <span class="token string">'circle_area'</span><span class="token punctuation">,</span> <span class="token string">'main'</span><span class="token punctuation">]</span>
+
+<span class="token comment"># &lt;module&gt;</span>
+Locals<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">'__name__'</span><span class="token punctuation">,</span> <span class="token string">'__doc__'</span><span class="token punctuation">,</span> <span class="token string">'__package__'</span><span class="token punctuation">,</span> <span class="token string">'__loader__'</span><span class="token punctuation">,</span> <span class="token string">'__spec__'</span><span class="token punctuation">,</span> <span class="token string">'__annotations__'</span><span class="token punctuation">,</span> <span class="token string">'__builtins__'</span><span class="token punctuation">,</span> <span class="token string">'__file__'</span><span class="token punctuation">,</span> <span class="token string">'__cached__'</span><span class="token punctuation">,</span> <span class="token string">'sys'</span><span class="token punctuation">,</span> <span class="token string">'pi'</span><span class="token punctuation">,</span> <span class="token string">'square'</span><span class="token punctuation">,</span> <span class="token string">'circle_area'</span><span class="token punctuation">,</span> <span class="token string">'main'</span><span class="token punctuation">]</span>
+Globals<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">'__name__'</span><span class="token punctuation">,</span> <span class="token string">'__doc__'</span><span class="token punctuation">,</span> <span class="token string">'__package__'</span><span class="token punctuation">,</span> <span class="token string">'__loader__'</span><span class="token punctuation">,</span> <span class="token string">'__spec__'</span><span class="token punctuation">,</span> <span class="token string">'__annotations__'</span><span class="token punctuation">,</span> <span class="token string">'__builtins__'</span><span class="token punctuation">,</span> <span class="token string">'__file__'</span><span class="token punctuation">,</span> <span class="token string">'__cached__'</span><span class="token punctuation">,</span> <span class="token string">'sys'</span><span class="token punctuation">,</span> <span class="token string">'pi'</span><span class="token punctuation">,</span> <span class="token string">'square'</span><span class="token punctuation">,</span> <span class="token string">'circle_area'</span><span class="token punctuation">,</span> <span class="token string">'main'</span><span class="token punctuation">]</span>
+
+<span class="token number">78.5</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="栈帧获取面试题">栈帧获取面试题</h3>
+</div><div class="cl-preview-section"><p>如果面试官问你，能不能写个函数实现 <em>sys._getframe</em> 一样的功能，你能应付吗？</p>
+</div><div class="cl-preview-section"><p>我们知道，<em>Python</em> 程序抛异常时，会将执行上下文带出来，保存在异常中：</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token operator">&gt;&gt;</span><span class="token operator">&gt;</span> <span class="token keyword">try</span><span class="token punctuation">:</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>     <span class="token number">1</span> <span class="token operator">/</span> <span class="token number">0</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> <span class="token keyword">except</span> Exception <span class="token keyword">as</span> e<span class="token punctuation">:</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>     <span class="token keyword">print</span><span class="token punctuation">(</span>e<span class="token punctuation">.</span>__traceback__<span class="token punctuation">.</span>tb_frame<span class="token punctuation">)</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> 
+<span class="token operator">&lt;</span>frame at <span class="token number">0x1079713f8</span><span class="token punctuation">,</span> <span class="token builtin">file</span> <span class="token string">'&lt;stdin&gt;'</span><span class="token punctuation">,</span> line <span class="token number">4</span><span class="token punctuation">,</span> code <span class="token operator">&lt;</span>module<span class="token operator">&gt;&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>因此，我们自己的 <em>getframe</em> 函数可以这样来写：</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token keyword">def</span> <span class="token function">getframe</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">try</span><span class="token punctuation">:</span>
+        <span class="token number">1</span> <span class="token operator">/</span> <span class="token number">0</span>
+    <span class="token keyword">except</span> Exception <span class="token keyword">as</span> e<span class="token punctuation">:</span>
+        <span class="token keyword">return</span> e<span class="token punctuation">.</span>__traceback__<span class="token punctuation">.</span>tb_frame<span class="token punctuation">.</span>f_back
+</code></pre>
+</div><div class="cl-preview-section"><p>请注意， <em>getframe</em> 中通过异常获得的是 <em>getframe</em> 自己的栈帧对象，必须通过 <em>f_back</em> 字段找到调用者的栈帧。</p>
+</div><div class="cl-preview-section"><h2 id="字节码执行">字节码执行</h2>
+</div><div class="cl-preview-section"><p><em>Python</em> 虚拟机执行代码对象的代码位于 <em>Python/ceval.c</em> 中，主要函数有两个： <em>PyEval_EvalCodeEx</em> 是通用接口，一般用于函数这样带参数的执行场景； PyEval_EvalCode 是更高层封装，用于模块等无参数的执行场景。</p>
+</div><div class="cl-preview-section"><pre class=" language-c"><code class="prism  language-c">PyObject <span class="token operator">*</span>
+<span class="token function">PyEval_EvalCode</span><span class="token punctuation">(</span>PyObject <span class="token operator">*</span>co<span class="token punctuation">,</span> PyObject <span class="token operator">*</span>globals<span class="token punctuation">,</span> PyObject <span class="token operator">*</span>locals<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+PyObject <span class="token operator">*</span>
+<span class="token function">PyEval_EvalCodeEx</span><span class="token punctuation">(</span>PyObject <span class="token operator">*</span>_co<span class="token punctuation">,</span> PyObject <span class="token operator">*</span>globals<span class="token punctuation">,</span> PyObject <span class="token operator">*</span>locals<span class="token punctuation">,</span>
+                  PyObject <span class="token operator">*</span><span class="token keyword">const</span> <span class="token operator">*</span>args<span class="token punctuation">,</span> <span class="token keyword">int</span> argcount<span class="token punctuation">,</span>
+                  PyObject <span class="token operator">*</span><span class="token keyword">const</span> <span class="token operator">*</span>kws<span class="token punctuation">,</span> <span class="token keyword">int</span> kwcount<span class="token punctuation">,</span>
+                  PyObject <span class="token operator">*</span><span class="token keyword">const</span> <span class="token operator">*</span>defs<span class="token punctuation">,</span> <span class="token keyword">int</span> defcount<span class="token punctuation">,</span>
+                  PyObject <span class="token operator">*</span>kwdefs<span class="token punctuation">,</span> PyObject <span class="token operator">*</span>closure<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这两个函数最终调用 <em>_PyEval_EvalCodeWithName</em> 函数，初始化栈帧对象并调用 <em>PyEval_EvalFrame</em> 系列函数进行处理。栈帧对象将贯穿代码对象执行的始终，负责维护执行时所需的一切上下文信息。而 <em>PyEval_EvalFrame</em> 系列函数最终调用 <em>_PyEval_EvalFrameDefault</em> 函数，虚拟机执行的秘密就藏在这！</p>
+</div><div class="cl-preview-section"><pre class=" language-c"><code class="prism  language-c">PyObject <span class="token operator">*</span>
+<span class="token function">PyEval_EvalFrame</span><span class="token punctuation">(</span>PyFrameObject <span class="token operator">*</span>f<span class="token punctuation">)</span><span class="token punctuation">;</span>
+PyObject <span class="token operator">*</span>
+<span class="token function">PyEval_EvalFrameEx</span><span class="token punctuation">(</span>PyFrameObject <span class="token operator">*</span>f<span class="token punctuation">,</span> <span class="token keyword">int</span> throwflag<span class="token punctuation">)</span>
+
+PyObject<span class="token operator">*</span> _Py_HOT_FUNCTION
+<span class="token function">_PyEval_EvalFrameDefault</span><span class="token punctuation">(</span>PyFrameObject <span class="token operator">*</span>f<span class="token punctuation">,</span> <span class="token keyword">int</span> throwflag<span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ef94fbe0001200d09060576.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>虽然 <em>Python/ceval.c</em> 代码量很大(超过 <em>5000</em> 行)，但主体结构并不复杂，很好理解。由于篇幅关系，我们没有办���对  <em>_PyEval_EvalFrameDefault</em> 函数展开深入介绍，只能用伪代码描述该函数的处理结构：</p>
+</div><div class="cl-preview-section"><pre class=" language-c"><code class="prism  language-c">PyObject<span class="token operator">*</span> _Py_HOT_FUNCTION
+<span class="token function">_PyEval_EvalFrameDefault</span><span class="token punctuation">(</span>PyFrameObject <span class="token operator">*</span>f<span class="token punctuation">,</span> <span class="token keyword">int</span> throwflag<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+    <span class="token comment">// 逐条取出字节码来执行</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token punctuation">;</span><span class="token punctuation">;</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 读取下条字节码</span>
+        <span class="token comment">// 字节码位于： f-&gt;f_code-&gt;co_code, 偏移量由 f-&gt;f_lasti 决定</span>
+        opcode<span class="token punctuation">,</span> oparg <span class="token operator">=</span> <span class="token function">read_next_byte_code</span><span class="token punctuation">(</span>f<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>opcode <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">break</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token keyword">switch</span> <span class="token punctuation">(</span>opcode<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 加载常量</span>
+            <span class="token keyword">case</span> LOAD_CONST<span class="token punctuation">:</span>
+                <span class="token comment">// ....</span>
+                <span class="token keyword">break</span><span class="token punctuation">;</span>
+            <span class="token comment">// 加载名字</span>
+            <span class="token keyword">case</span> LOAD_NAME<span class="token punctuation">:</span>
+                <span class="token comment">// ...</span>
+                <span class="token keyword">break</span><span class="token punctuation">;</span>
+            <span class="token comment">// ...</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><ul>
+<li>函数主体是一个 <em>for</em> 循环，逐条读入字节码并执行；</li>
+<li><em>for</em> 循环体是一个很大的 <em>switch</em> ，判断字节码指令类型并分别处理；</li>
+</ul>
+</div><div class="cl-preview-section"><p>最后，我们以几个典型的字节码例子，演示虚拟机执行的过程。</p>
+</div><div class="cl-preview-section"><h3 id="顺序执行">顺序执行</h3>
+</div><div class="cl-preview-section"><p>我们以顺序执行的字节码开始，这类字节码不包含任何跳转指令，逐条执行。下面是一个例子：</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python">pi <span class="token operator">=</span> <span class="token number">3.14</span>
+r <span class="token operator">=</span> <span class="token number">3</span>
+area <span class="token operator">=</span> pi <span class="token operator">*</span> r <span class="token operator">**</span> <span class="token number">2</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>对这几行代码进行编译，我们可以得到这样的字节码：</p>
+</div><div class="cl-preview-section"><pre class=" language-bash"><code class="prism  language-bash">  1           0 LOAD_CONST               0 <span class="token punctuation">(</span>3.14<span class="token punctuation">)</span>
+              2 STORE_NAME               0 <span class="token punctuation">(</span>pi<span class="token punctuation">)</span>
+
+  2           4 LOAD_CONST               1 <span class="token punctuation">(</span>3<span class="token punctuation">)</span>
+              6 STORE_NAME               1 <span class="token punctuation">(</span>r<span class="token punctuation">)</span>
+
+  3           8 LOAD_NAME                0 <span class="token punctuation">(</span>pi<span class="token punctuation">)</span>
+             10 LOAD_NAME                1 <span class="token punctuation">(</span>r<span class="token punctuation">)</span>
+             12 LOAD_CONST               2 <span class="token punctuation">(</span>2<span class="token punctuation">)</span>
+             14 BINARY_POWER
+             16 BINARY_MULTIPLY
+             18 STORE_NAME               2 <span class="token punctuation">(</span>area<span class="token punctuation">)</span>
+             20 LOAD_CONST               3 <span class="token punctuation">(</span>None<span class="token punctuation">)</span>
+             22 RETURN_VALUE
+</code></pre>
+</div><div class="cl-preview-section"><p><em>Python</em> 虚拟机刚开始执行时，准备好栈帧对象用于保存执行上下文，关系如下(全局名字空间等信息省略)：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ef94fcc000134b510230473.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>由于 <em>next_instr</em> 初始状态指向字节码开头，虚拟机开始加载第一条字节码指令： <code>LOAD_CONST 0</code> 。字节码分为两部分，分别是 <strong>操作码</strong> ( <em>opcode</em> )和 <strong>操作数</strong> ( <em>oparg</em> ) 。<code>LOAD_CONST</code> 指令表示将常量加载进临时栈，常量下标由操作数给出。<code>LOAD_CONST</code> 指令在 <em>_PyEval_EvalFrameDefault</em> 函数 <em>switch</em> 结构的一个 <em>case</em> 分支中实现：</p>
+</div><div class="cl-preview-section"><pre class=" language-c"><code class="prism  language-c"><span class="token function">TARGET</span><span class="token punctuation">(</span>LOAD_CONST<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    PyObject <span class="token operator">*</span>value <span class="token operator">=</span> <span class="token function">GETITEM</span><span class="token punctuation">(</span>consts<span class="token punctuation">,</span> oparg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">Py_INCREF</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">PUSH</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">FAST_DISPATCH</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>虚拟机执行这个指令时，先以操作数为下标从常量表中找到待加载常量并压入位于栈帧对象尾部的临时栈：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ef94fd700016da010430482.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>接着虚拟机接着执行 <code>STORE_NAME 0</code> 指令，将栈顶元素弹出并保存到局部名字空间，名字下标由操作数给出：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ef94fe00001321410390501.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>你可能会问，变量赋值为啥不直接存取名字空间，而是到临时栈绕一圈？主要原因在于： <em>Python</em> 字节码只有一个操作数，另一个操作数只能通过临时栈给出。 <em>Python</em> 字节码设计思想跟 <em>CPU</em> <strong>精简指令集</strong> 类似，指令尽量简化，复杂操作由多条指令组合完成。紧接着的两条字节码指令也是类似的，不再赘述。</p>
+</div><div class="cl-preview-section"><p>接下的指令就不一条条展开介绍了，我们重点关注每条指令执行完毕后，临时栈的变化：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ef94fea0001975612570224.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>其中， <code>BINARY_POWER</code> 指令从栈上弹出两个操作数(底数 <em>3</em> 和 指数 <em>2</em> )进行 <strong>幂运算</strong> ，并将结果 <em>9</em> 压回栈中； <code>BINARY_MULTIPLY</code> 指令则进行 <strong>乘积运算</strong> ，步骤也是类似的。</p>
+</div><div class="cl-preview-section"><h3 id="if-判断">if 判断</h3>
+</div><div class="cl-preview-section"><p>接下来，我们继续研究 <em>Python</em> 控制流字节码，先看看最简单的 <em>if</em> 判断语句：</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python">value <span class="token operator">=</span> <span class="token number">1</span>
+<span class="token keyword">if</span> value <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">:</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'negative'</span><span class="token punctuation">)</span>
+<span class="token keyword">else</span><span class="token punctuation">:</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'positive'</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>对这几行代码进行编译，我们可以得到这样的字节码：</p>
+</div><div class="cl-preview-section"><pre class=" language-bash"><code class="prism  language-bash">  1           0 LOAD_CONST               0 <span class="token punctuation">(</span>1<span class="token punctuation">)</span>
+              2 STORE_NAME               0 <span class="token punctuation">(</span>value<span class="token punctuation">)</span>
+
+  2           4 LOAD_NAME                0 <span class="token punctuation">(</span>value<span class="token punctuation">)</span>
+              6 LOAD_CONST               1 <span class="token punctuation">(</span>0<span class="token punctuation">)</span>
+              8 COMPARE_OP               0 <span class="token punctuation">(</span><span class="token operator">&lt;</span><span class="token punctuation">)</span>
+             10 POP_JUMP_IF_FALSE       22
+
+  3          12 LOAD_NAME                1 <span class="token punctuation">(</span>print<span class="token punctuation">)</span>
+             14 LOAD_CONST               2 <span class="token punctuation">(</span><span class="token string">'negative'</span><span class="token punctuation">)</span>
+             16 CALL_FUNCTION            1
+             18 POP_TOP
+             20 JUMP_FORWARD             8 <span class="token punctuation">(</span>to 30<span class="token punctuation">)</span>
+
+  4     <span class="token operator">&gt;&gt;</span>   22 LOAD_NAME                1 <span class="token punctuation">(</span>print<span class="token punctuation">)</span>
+             24 LOAD_CONST               3 <span class="token punctuation">(</span><span class="token string">'positive'</span><span class="token punctuation">)</span>
+             26 CALL_FUNCTION            1
+             28 POP_TOP
+        <span class="token operator">&gt;&gt;</span>   30 LOAD_CONST               4 <span class="token punctuation">(</span>None<span class="token punctuation">)</span>
+             32 RETURN_VALUE
+</code></pre>
+</div><div class="cl-preview-section"><p>当执行到代码第 <em>2</em> 行 <em>if</em> 语句对应的字节码时，临时栈的变化如下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ef94ff50001431c10190231.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p><code>POP_JUMP_IF_FALSE</code> 指令将比较结果从栈顶弹出并判断真假，如果为假则跳到 <em>else</em> 分支对应的字节码执行；如果为真则继续执行，最终由 <code>JUMP_FORWARD</code> 指令完成跳转绕过 <em>else</em> 分支(跳过 <em>8</em> 个字节也就是 <em>4</em> 条字节码)。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ef94ffd0001474810020736.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h3 id="while-循环">while 循环</h3>
+</div><div class="cl-preview-section"><p>最后，我们快速过一遍循环控制结构，以 <em>while</em> 循环为例：</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python">values <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">]</span>
+
+<span class="token keyword">while</span> values<span class="token punctuation">:</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span>values<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>对这几行代码进行编译，我们可以得到这样的字节码：</p>
+</div><div class="cl-preview-section"><pre class=" language-bash"><code class="prism  language-bash">  1           0 LOAD_CONST               0 <span class="token punctuation">(</span>1<span class="token punctuation">)</span>
+              2 LOAD_CONST               1 <span class="token punctuation">(</span>2<span class="token punctuation">)</span>
+              4 LOAD_CONST               2 <span class="token punctuation">(</span>3<span class="token punctuation">)</span>
+              6 BUILD_LIST               3
+              8 STORE_NAME               0 <span class="token punctuation">(</span>values<span class="token punctuation">)</span>
+
+  3          10 SETUP_LOOP              20 <span class="token punctuation">(</span>to 32<span class="token punctuation">)</span>
+        <span class="token operator">&gt;&gt;</span>   12 LOAD_NAME                0 <span class="token punctuation">(</span>values<span class="token punctuation">)</span>
+             14 POP_JUMP_IF_FALSE       30
+
+  4          16 LOAD_NAME                1 <span class="token punctuation">(</span>print<span class="token punctuation">)</span>
+             18 LOAD_NAME                0 <span class="token punctuation">(</span>values<span class="token punctuation">)</span>
+             20 LOAD_METHOD              2 <span class="token punctuation">(</span>pop<span class="token punctuation">)</span>
+             22 CALL_METHOD              0
+             24 CALL_FUNCTION            1
+             26 POP_TOP
+             28 JUMP_ABSOLUTE           12
+        <span class="token operator">&gt;&gt;</span>   30 POP_BLOCK
+        <span class="token operator">&gt;&gt;</span>   32 LOAD_CONST               3 <span class="token punctuation">(</span>None<span class="token punctuation">)</span>
+             34 RETURN_VALUE
+</code></pre>
+</div><div class="cl-preview-section"><p>经过前面学习，我们轻易便可以读懂这些��节码，并画出以下流程图：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ef9500800019c9511630591.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><ol>
+<li><code>SETUP_LOOP</code> 指令拉开循环执行的序幕；</li>
+<li><code>POP_JUMP_IF_FALSE</code> 指令判断循环条件，成立则往下执行循环体，否则跳过循环体结束循环；</li>
+<li><code>JUMP_ABSOLUTE</code> 在循环体执行完毕后，跳回循环开头处，再次检查循环条件；</li>
+<li><code>POP_BLOCK</code> 指令在循环结束后，清理循环环境；</li>
+</ol>
+</div><div class="cl-preview-section"><h2 id="小结">小结</h2>
+</div><div class="cl-preview-section"><p>本节我们深入 <em>Python</em> 虚拟机源码，研究虚拟机执行字节码的全过程。虚拟机在执行代码对象前，需要先创建 <strong>栈帧对象</strong> ( <em>PyFrameObject</em> )，用于维护运行时的上下文信息。 <em>PyFrameObject</em> 关键信息包括：</p>
+</div><div class="cl-preview-section"><ul>
+<li>局部名字空间( <em>f_locals</em> )；</li>
+<li>全局名字空间( <em>f_globals</em> )；</li>
+<li>内建名字空间( <em>f_builtins</em> )；</li>
+<li>代码对象( <em>f_code</em> )；</li>
+<li>上条已执行指令编号( <em>f_lasti</em> )；</li>
+<li>调用者栈帧( <em>f_back</em> )；</li>
+<li>静态局部名字空间与临时栈( <em>f_localsplus</em> )；</li>
+</ul>
+</div><div class="cl-preview-section"><p>栈帧对象通过 <em>f_back</em> 串成���个 <strong>调用链</strong> ，与 <em>CPU</em> 栈帧调用链有异曲同工之妙。我们还借助 <em>sys</em> 模块成功取得栈帧对象，并在此基础上输出整个函数调用链。</p>
+</div><div class="cl-preview-section"><pre class=" language-python"><code class="prism  language-python"><span class="token keyword">import</span> sys
+frame <span class="token operator">=</span> sys<span class="token punctuation">.</span>_getframe<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>最后，我们研究了典型字节码的执行过程，发现这个过程跟 <em>CPU</em> 执行机器指令的过程非常类似。<strong>字节码就像是汇编语言，而虚拟机就像一颗软件</strong> <strong>CPU</strong> ！由此可见计算机知识间关系紧密，没有 <strong>计算机组成原理</strong> 、 <strong>操作系统</strong> 、 <strong>计算机网络</strong> 等基础知识加持，程序开发就像在沙子上盖大厦。</p>
+</div><div class="cl-preview-section"><p><em>Python</em> 虚拟机的代码量不小，而本节力求以最通俗的语言将虚拟机的原理讲清楚，因此没有深入源码的细枝末节。鼓励读者保持好奇心，深入到源码中，肯定会有所收获。修炼内功，从源码开始！</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5ef94bfd00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6875">
+						<img src="https://img1.mukewang.com/55d800cb00012bdb04190419-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">丨稻叶儿ooO</h4>
+						<div class="comment-text">老师，请问为什么栈帧对象只有 全局名字空间、局部名字空间和内建名字空间，没有闭包名字空间呢？</div>
+						<div>
+							
+								<div class="reply">讲师回复：也是有的。闭包名字空间也是静态的，也保存在f_localsplus中。f_localsplus包含3个东西：静态的局部名字空间，静态的闭包名字空间以及临时栈。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-28</span>
+						<a href="/read/commentdetail/6875">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6875" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6553">
+						<img src="https://img3.mukewang.com/533e4bec0001ae5302000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_六月的古明地觉_0</h4>
+						<div class="comment-text">老师，"顺序执行"这一节下面的变化图里面的co_names，个人感觉好像应该是co_varnames。
+因为co_names保存的是"当前作用域所使用的、在其它作用域中定义的变量"，而co_varnames保存的则是在当前作用域中定义的变量。</div>
+						<div>
+							
+								<div class="reply">讲师回复：co_varnames 表示函数局部变量名。因为函数参数个数在编译时就能确定，函数的局部名字空间是一个静态的数组，而不是字典对象。字节码通过数组下标引用局部变量，co_varnames记录下标与变量名的映射关系。与此类似，co_freevars记录自由变量名，及函数引用的外层函数的闭包变量；co_cellvars记录闭包变量名，表示被内层函数应用的闭包变量名。
+
+而顺序执行部分代码，是作为模块代码编译的，而不是作为函数体编译的。由于模块局部名字空间与函数局部名字空间不同，是通过字典来维护的，因此没有co_varnames。这点可以通过代码对象证实：
+
+&amp;gt;&amp;gt;&amp;gt; co.co_names
+('pi', 'r', 'area')
+&amp;gt;&amp;gt;&amp;gt; co.co_varnames
+()</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-16</span>
+						<a href="/read/commentdetail/6553">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6553" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6549">
+						<img src="https://img.mukewang.com/54584e460001e2dc02200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕侠5500214</h4>
+						<div class="comment-text">老师你好，我有两个问题，以原文中“if判断”控制流得到的字节码为例：（1）字节码中的POP_TOP指令是用来清除当前print函数调用所对应的栈帧吗？我不太确定（2）为什么流程最后要LOAD_CONST一个None值？有什么作用呢？</div>
+						<div>
+							
+								<div class="reply">讲师回复：(1)函数有返回值，如果某个函数没有显式提供return语句，它将返回None，等价于return None。当CALL_FUNCTION字节码完成print函数调用后，print函数的返回值将被保存在当前栈顶。POP_TOP这个指令就是用来将这个返回值弹出，因为我们不需要这个返回值。如果我们想将返回值保存到某个变量，例如result = print(xxxx)，编译结果将包含类似STORE_NAME这样的字节码，将栈顶返回值保存到某个名字空间，有兴趣的话可以自己编译看看。
+
+(2)最后的LOAD_CONST字节码是为RETURN_VALUE字节码服务的，即在代码块执行完毕后，返回一个值给调用者。对于函数，如果没有显示写return语句，它默认return None。不仅函数，类代码块和模块代码块执行完毕后也会返回一个值给调用者，这个值通常是None。</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-16</span>
+						<a href="/read/commentdetail/6549">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6549" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6378">
+						<img src="https://img4.mukewang.com/5b8cd6570001575102000200-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕UI0052680</h4>
+						<div class="comment-text">临时栈中的3.14执行完STORE_NAME后就已经出栈，为什么下方临时栈变化图里数值依然在栈中？</div>
+						<div>
+							
+								<div class="reply">讲师回复：请问是第几张图有错漏呢？</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-31</span>
+						<a href="/read/commentdetail/6378">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6378" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=76">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '20 原来虚拟机是一颗软件 CPU',
+					'CID': '1916',
+					'Teacher': 'fasionchan'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "20 原来虚拟机是一颗软件 CPU",
+                    desc: "突破技术瓶颈，迈向更高岗位",
+                    imgUrl: 'https:https://img3.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5eb68ab400017cda05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/76',
+                    link: 'https://m.imooc.com/read/76'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

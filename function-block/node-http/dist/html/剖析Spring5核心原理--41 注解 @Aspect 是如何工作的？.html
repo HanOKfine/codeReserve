@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>41 注解 @Aspect 是如何工作的？</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="Java工程师提升必修课">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "2055";
+	var chapter_title = "41 注解 @Aspect 是如何工作的？";
+	var aid = "77";
+	var a_name = "剖析Spring5核心原理";
+	var a_price = "68.00";
+	var a_pic = "https://img.mukewang.com/5ec1f3830001652c05400720.jpg";
+	var userId = 0;
+
+	var column_id = '77';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-24&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			41 注解 @Aspect 是如何工作的？
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img.mukewang.com/5ed0c1df0001d49406400359.jpg')"></div>
+	
+	
+		<a href="/read/77">
+			<div class="course-entry">
+				<img src="https://img2.mukewang.com/5cfe2ab00001bd1606380638-40-40.jpg" alt="David">
+				<h3>剖析Spring5核心原理</h3>
+				<p>David · 资深架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">如果说我比别人看得要远一点，那是因为我站在巨人的肩上。<p class="author">——牛顿</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="背景">背景</h2>
+</div><div class="cl-preview-section"><p>面试官：如何针对某个包下的所有类的方法打印日志？</p>
+</div><div class="cl-preview-section"><p>面试者：可以使用 Spring AOP 的 @Aspect 注解实现，底层由 JDK 动态代理和 CGLib 字节码生产代理实现。</p>
+</div><div class="cl-preview-section"><p>面试官追问：@Aspect 注解是如何工作的？</p>
+</div><div class="cl-preview-section"><p>面试者：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f431c4100017e8501760160.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="spring-aop-aspect-注解示例">Spring AOP @Aspect 注解示例</h2>
+</div><div class="cl-preview-section"><p>要拦截的目标</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">package</span> com<span class="token punctuation">.</span>davidwang456<span class="token punctuation">.</span>test<span class="token punctuation">;</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">HelloService</span> <span class="token punctuation">{</span>
+	<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">sayHello</span><span class="token punctuation">(</span>String world<span class="token punctuation">)</span> <span class="token punctuation">{</span>		
+		System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"hello "</span><span class="token operator">+</span> world<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>拦截逻辑</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">package</span> com<span class="token punctuation">.</span>davidwang456<span class="token punctuation">.</span>test<span class="token punctuation">;</span>
+<span class="token keyword">import</span> org<span class="token punctuation">.</span>aspectj<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>annotation<span class="token punctuation">.</span>Aspect<span class="token punctuation">;</span>
+<span class="token keyword">import</span> org<span class="token punctuation">.</span>aspectj<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>annotation<span class="token punctuation">.</span>Before<span class="token punctuation">;</span>
+<span class="token annotation punctuation">@Aspect</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">LogAspect</span> <span class="token punctuation">{</span>
+	<span class="token annotation punctuation">@Before</span><span class="token punctuation">(</span><span class="token string">"execution(* sayHello(..))"</span><span class="token punctuation">)</span>
+	<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">beforeHello</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"how are you !"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>配置 @Aspect 注解生效</p>
+</div><div class="cl-preview-section"><p>&lt;aop:aspectj-autoproxy /&gt;起作用。</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism  language-xml"><span class="token prolog">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>beans</span> <span class="token attr-name">xmlns</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>http://www.springframework.org/schema/beans<span class="token punctuation">"</span></span>
+	<span class="token attr-name"><span class="token namespace">xmlns:</span>xsi</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>http://www.w3.org/2001/XMLSchema-instance<span class="token punctuation">"</span></span>
+	<span class="token attr-name"><span class="token namespace">xmlns:</span>aop</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>http://www.springframework.org/schema/aop<span class="token punctuation">"</span></span>
+	<span class="token attr-name"><span class="token namespace">xsi:</span>schemaLocation</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+	http://www.springframework.org/schema/aop
+	http://www.springframework.org/schema/aop/spring-aop-3.0.xsd <span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token namespace">aop:</span>aspectj-autoproxy</span> <span class="token punctuation">/&gt;</span></span>
+	
+	<span class="token comment">&lt;!-- Target --&gt;</span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>bean</span> <span class="token attr-name">id</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>hello<span class="token punctuation">"</span></span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>com.davidwang456.test.HelloService<span class="token punctuation">"</span></span> <span class="token punctuation">/&gt;</span></span>
+
+	<span class="token comment">&lt;!-- Aspect --&gt;</span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>bean</span> <span class="token attr-name">id</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>logAspect<span class="token punctuation">"</span></span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>com.davidwang456.test.LogAspect<span class="token punctuation">"</span></span> <span class="token punctuation">/&gt;</span></span>
+
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>beans</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>测试类：实现 @Aspect 的功能有 3 种方式：</p>
+</div><div class="cl-preview-section"><ul>
+<li>一种方式是使用 XML 配置，利用配置 &lt;aop:aspectj-autoproxy /&gt; 生效注解；</li>
+<li>一种方式是使用 Java config 方式，使用注解 @EnableAspectJAutoProxy 配置；</li>
+<li>一种方式是直接利用代码 AspectJProxyFactory（或者 ProxyFactory/ProxyFactoryBean）生成代理。</li>
+</ul>
+</div><div class="cl-preview-section"><p>本篇采用 XML 配置方式，代码如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">package</span> com<span class="token punctuation">.</span>davidwang456<span class="token punctuation">.</span>test<span class="token punctuation">;</span>
+
+<span class="token keyword">import</span> org<span class="token punctuation">.</span>springframework<span class="token punctuation">.</span>aop<span class="token punctuation">.</span>aspectj<span class="token punctuation">.</span>annotation<span class="token punctuation">.</span>AspectJProxyFactory<span class="token punctuation">;</span>
+<span class="token keyword">import</span> org<span class="token punctuation">.</span>springframework<span class="token punctuation">.</span>context<span class="token punctuation">.</span>ApplicationContext<span class="token punctuation">;</span>
+<span class="token keyword">import</span> org<span class="token punctuation">.</span>springframework<span class="token punctuation">.</span>context<span class="token punctuation">.</span>support<span class="token punctuation">.</span>ClassPathXmlApplicationContext<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">AspectTest</span> <span class="token punctuation">{</span>
+	<span class="token annotation punctuation">@SuppressWarnings</span><span class="token punctuation">(</span><span class="token string">"resource"</span><span class="token punctuation">)</span>
+	<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		ApplicationContext context<span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ClassPathXmlApplicationContext</span><span class="token punctuation">(</span><span class="token string">"com/davidwang456/test/spring.xml"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		HelloService hello<span class="token operator">=</span>context<span class="token punctuation">.</span><span class="token function">getBean</span><span class="token punctuation">(</span>HelloService<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		hello<span class="token punctuation">.</span><span class="token function">sayHello</span><span class="token punctuation">(</span><span class="token string">"world !"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+	
+	<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">factory1</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		HelloService target<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">HelloService</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		AspectJProxyFactory factory<span class="token operator">=</span><span class="token keyword">new</span> <span class="token class-name">AspectJProxyFactory</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		factory<span class="token punctuation">.</span><span class="token function">setTarget</span><span class="token punctuation">(</span>target<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		factory<span class="token punctuation">.</span><span class="token function">addAspect</span><span class="token punctuation">(</span>LogAspect<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		
+		HelloService proxy<span class="token operator">=</span>factory<span class="token punctuation">.</span><span class="token function">getProxy</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		proxy<span class="token punctuation">.</span><span class="token function">sayHello</span><span class="token punctuation">(</span><span class="token string">"world !"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>运行程序，控制台输出：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java">how are you <span class="token operator">!</span>
+hello world <span class="token operator">!</span>
+</code></pre>
+</div><div class="cl-preview-section"><h2 id="spring-aop-aspect注解原理分析">Spring AOP @Aspect注解原理分析</h2>
+</div><div class="cl-preview-section"><h3 id="aopaspectj-autoproxy--定义">&lt;aop:aspectj-autoproxy /&gt; 定义</h3>
+</div><div class="cl-preview-section"><p>在 上面的 spring.xml 配置文件中，<a href="http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">http://www.springframework.org/schema/aop/spring-aop-3.0.xsd</a> 规范了 &lt;aop:aspectj-autoproxy /&gt; 的定义，如下所示：</p>
+</div><div class="cl-preview-section"><pre class="  language-xml"><code class="prism -dtd  language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token namespace">xsd:</span>element</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>aspectj-autoproxy<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token namespace">xsd:</span>annotation</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token namespace">xsd:</span>documentation</span> <span class="token attr-name">source</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>java:org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+<span class="token cdata">&lt;![CDATA[ Enables the use of the @AspectJ style of Spring AOP. ]]&gt;</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span><span class="token namespace">xsd:</span>documentation</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span><span class="token namespace">xsd:</span>annotation</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token namespace">xsd:</span>complexType</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token namespace">xsd:</span>sequence</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token namespace">xsd:</span>element</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>include<span class="token punctuation">"</span></span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>includeType<span class="token punctuation">"</span></span> <span class="token attr-name">minOccurs</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>0<span class="token punctuation">"</span></span> <span class="token attr-name">maxOccurs</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>unbounded<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token namespace">xsd:</span>annotation</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token namespace">xsd:</span>documentation</span><span class="token punctuation">&gt;</span></span>
+<span class="token cdata">&lt;![CDATA[ Indicates that only @AspectJ beans with names matched by the (regex) pattern will be considered as defining aspects to use for Spring autoproxying. ]]&gt;</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span><span class="token namespace">xsd:</span>documentation</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span><span class="token namespace">xsd:</span>annotation</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span><span class="token namespace">xsd:</span>element</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span><span class="token namespace">xsd:</span>sequence</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token namespace">xsd:</span>attribute</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>proxy-target-class<span class="token punctuation">"</span></span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>xsd:boolean<span class="token punctuation">"</span></span> <span class="token attr-name">default</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>false<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token namespace">xsd:</span>annotation</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token namespace">xsd:</span>documentation</span><span class="token punctuation">&gt;</span></span>
+<span class="token cdata">&lt;![CDATA[ Are class-based (CGLIB) proxies to be created? By default, standard Java interface-based proxies are created. ]]&gt;</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span><span class="token namespace">xsd:</span>documentation</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span><span class="token namespace">xsd:</span>annotation</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span><span class="token namespace">xsd:</span>attribute</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token namespace">xsd:</span>attribute</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>expose-proxy<span class="token punctuation">"</span></span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>xsd:boolean<span class="token punctuation">"</span></span> <span class="token attr-name">default</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>false<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token namespace">xsd:</span>annotation</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token namespace">xsd:</span>documentation</span><span class="token punctuation">&gt;</span></span>
+<span class="token cdata">&lt;![CDATA[ Indicate that the proxy should be exposed by the AOP framework as a ThreadLocal for retrieval via the AopContext class. Off by default, i.e. no guarantees that AopContext access will work. ]]&gt;</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span><span class="token namespace">xsd:</span>documentation</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span><span class="token namespace">xsd:</span>annotation</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span><span class="token namespace">xsd:</span>attribute</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span><span class="token namespace">xsd:</span>complexType</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span><span class="token namespace">xsd:</span>element</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>从上面可以看到在配置 &lt;aop:aspectj-autoproxy /&gt; 时，org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator 会使 @Aspect 生效。我们来 debug 到内部程序看看。</p>
+</div><div class="cl-preview-section"><h3 id="aopaspectj-autoproxy--解析">&lt;aop:aspectj-autoproxy /&gt; 解析</h3>
+</div><div class="cl-preview-section"><p>AopNamespaceHandler 解析 &lt;aop:aspectj-autoproxy /&gt; ，注册了 AnnotationAwareAspectJAutoProxyCreator。</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">AopNamespaceHandler</span> <span class="token keyword">extends</span> <span class="token class-name">NamespaceHandlerSupport</span> <span class="token punctuation">{</span>
+
+	<span class="token comment">/**
+	 * Register the {@link BeanDefinitionParser BeanDefinitionParsers} for the
+	 * '{@code config}', '{@code spring-configured}', '{@code aspectj-autoproxy}'
+	 * and '{@code scoped-proxy}' tags.
+	 */</span>
+	<span class="token annotation punctuation">@Override</span>
+	<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">init</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		<span class="token comment">// In 2.0 XSD as well as in 2.1 XSD.</span>
+		<span class="token function">registerBeanDefinitionParser</span><span class="token punctuation">(</span><span class="token string">"config"</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">ConfigBeanDefinitionParser</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">registerBeanDefinitionParser</span><span class="token punctuation">(</span><span class="token string">"aspectj-autoproxy"</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">AspectJAutoProxyBeanDefinitionParser</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">registerBeanDefinitionDecorator</span><span class="token punctuation">(</span><span class="token string">"scoped-proxy"</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">ScopedProxyBeanDefinitionDecorator</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+		<span class="token comment">// Only in 2.0 XSD: moved to context namespace as of 2.1</span>
+		<span class="token function">registerBeanDefinitionParser</span><span class="token punctuation">(</span><span class="token string">"spring-configured"</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">SpringConfiguredBeanDefinitionParser</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>AspectJAutoProxyBeanDefinitionParser 的 parse() 方法调用AopNamespaceUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary() 方法注册AnnotationAwareAspectJAutoProxyCreator，如下所示：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java">	<span class="token annotation punctuation">@Override</span>
+	<span class="token annotation punctuation">@Nullable</span>
+	<span class="token keyword">public</span> BeanDefinition <span class="token function">parse</span><span class="token punctuation">(</span>Element element<span class="token punctuation">,</span> ParserContext parserContext<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		AopNamespaceUtils<span class="token punctuation">.</span><span class="token function">registerAspectJAnnotationAutoProxyCreatorIfNecessary</span><span class="token punctuation">(</span>parserContext<span class="token punctuation">,</span> element<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">extendBeanDefinition</span><span class="token punctuation">(</span>element<span class="token punctuation">,</span> parserContext<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword">return</span> null<span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>调用实现类：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">static</span> BeanDefinition <span class="token function">registerAspectJAnnotationAutoProxyCreatorIfNecessary</span><span class="token punctuation">(</span>BeanDefinitionRegistry registry<span class="token punctuation">,</span> Object source<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token function">registerOrEscalateApcAsRequired</span><span class="token punctuation">(</span>AnnotationAwareAspectJAutoProxyCreator<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> 											registry<span class="token punctuation">,</span> source<span class="token punctuation">)</span><span class="token punctuation">;</span> 
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>那 AnnotationAwareAspectJAutoProxyCreator 如何发现 Aspect 注解，并做处理的呢？</p>
+</div><div class="cl-preview-section"><h3 id="annotationawareaspectjautoproxycreator发现aspect注解原理">AnnotationAwareAspectJAutoProxyCreator发现Aspect注解原理</h3>
+</div><div class="cl-preview-section"><p>首先看看 AnnotationAwareAspectJAutoProxyCreator 是什么？它的继承关系如下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f431ddf000115ee06400492.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>从上图可以发现，AnnotationAwareAspectJAutoProxyCreator 是一个 BeanPostProcessor，它叫后置处理器，作用是在 Bean 对象在实例化和依赖注入完毕后，在显示调用初始化方法的前后添加我们自己的逻辑。注意是 Bean 实例化完毕后及依赖注入完成后触发的。AnnotationAwareAspectJAutoProxyCreator 的 isInfrastructureClass 判断是否有 @Aspect 注解，如下所示：</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java">	<span class="token annotation punctuation">@Override</span>
+	<span class="token keyword">protected</span> <span class="token keyword">boolean</span> <span class="token function">isInfrastructureClass</span><span class="token punctuation">(</span>Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">&gt;</span> beanClass<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		<span class="token comment">// Previously we setProxyTargetClass(true) in the constructor, but that has too</span>
+		<span class="token comment">// broad an impact. Instead we now override isInfrastructureClass to avoid proxying</span>
+		<span class="token comment">// aspects. I'm not entirely happy with that as there is no good reason not</span>
+		<span class="token comment">// to advise aspects, except that it causes advice invocation to go through a</span>
+		<span class="token comment">// proxy, and if the aspect implements e.g the Ordered interface it will be</span>
+		<span class="token comment">// proxied by that interface and fail at runtime as the advice method is not</span>
+		<span class="token comment">// defined on the interface. We could potentially relax the restriction about</span>
+		<span class="token comment">// not advising aspects in the future.</span>
+		<span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">isInfrastructureClass</span><span class="token punctuation">(</span>beanClass<span class="token punctuation">)</span> <span class="token operator">||</span>
+				<span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>aspectJAdvisorFactory <span class="token operator">!=</span> null <span class="token operator">&amp;&amp;</span> <span class="token keyword">this</span><span class="token punctuation">.</span>aspectJAdvisorFactory<span class="token punctuation">.</span><span class="token function">isAspect</span><span class="token punctuation">(</span>beanClass<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="annotationawareaspectjautoproxycreator生成代理类的过程">AnnotationAwareAspectJAutoProxyCreator生成代理类的过程</h3>
+</div><div class="cl-preview-section"><p>可以通过debug程序内部，打印出生成代理的调用链：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>调用序号：1  调用类和方法 com.davidwang456.test.AspectTest$main<br>
+调用序号：2  调用类和方法 org.springframework.context.support.ClassPathXmlApplicationContext$&lt;init&gt;<br>
+调用序号：3  调用类和方法 org.springframework.context.support.ClassPathXmlApplicationContext$&lt;init&gt;<br>
+调用序号：4  调用类和方法 org.springframework.context.support.AbstractApplicationContext$refresh<br>
+调用序号：5  调用类和方法 org.springframework.context.support.AbstractApplicationContext$finishBeanFactoryInitialization<br>
+调用序号：6  调用类和方法 org.springframework.beans.factory.support.DefaultListableBeanFactory$preInstantiateSingletons<br>
+调用序号：7  调用类和方法 org.springframework.beans.factory.support.AbstractBeanFactory$getBean<br>
+调用序号：8  调用类和方法 org.springframework.beans.factory.support.AbstractBeanFactory$doGetBean<br>
+调用序号：9  调用类和方法 org.springframework.beans.factory.support.DefaultSingletonBeanRegistry$getSingleton<br>
+调用序号：10  调用类和方法 org.springframework.beans.factory.support.AbstractBeanFactory$$Lambda$9/1978869058$getObject<br>
+调用序号：11  调用类和方法 org.springframework.beans.factory.support.AbstractBeanFactory$lambda$0<br>
+调用序号：12  调用类和方法 org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory$createBean<br>
+调用序号：13  调用类和方法 org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory$doCreateBean<br>
+调用序号：14  调用类和方法 org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory$initializeBean<br>
+调用序号：15  调用类和方法 org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory$applyBeanPostProcessorsAfterInitialization<br>
+调用序号：16  调用类和方法 org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator$postProcessAfterInitialization<br>
+调用序号：17  调用类和方法 org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator$wrapIfNecessary<br>
+调用序号：18  调用类和方法 org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator$createProxy<br>
+调用序号：19  调用类和方法 org.springframework.aop.framework.ProxyFactory$getProxy<br>
+调用序号：20  调用类和方法 org.springframework.aop.framework.ProxyCreatorSupport$createAopProxy<br>
+调用序号：21  调用类和方法 org.springframework.aop.framework.DefaultAopProxyFactory$createAopProxy</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>实现重点为：AbstractAutoProxyCreator 的 postProcessAfterInitialization() 方法</p>
+</div><div class="cl-preview-section"><p>![<img src="https://img.mukewang.com/5f431e800001934306400402.jpg" alt="图片描述"><br>
+DefaultAopProxyFactory#createAopProxy() 方法</p>
+</div><div class="cl-preview-section"><pre class="  language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Override</span> <span class="token keyword">public</span> AopProxy <span class="token function">createAopProxy</span><span class="token punctuation">(</span>AdvisedSupport config<span class="token punctuation">)</span> <span class="token keyword">throws</span> AopConfigException <span class="token punctuation">{</span> 
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>config<span class="token punctuation">.</span><span class="token function">isOptimize</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">||</span> config<span class="token punctuation">.</span><span class="token function">isProxyTargetClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token function">hasNoUserSuppliedProxyInterfaces</span><span class="token punctuation">(</span>config<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span> 
+            Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">&gt;</span> targetClass <span class="token operator">=</span> config<span class="token punctuation">.</span><span class="token function">getTargetClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> 
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>targetClass <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span> 
+                <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">AopConfigException</span><span class="token punctuation">(</span><span class="token string">"TargetSource cannot determine target class: "</span> <span class="token operator">+</span> <span class="token string">"Either an interface or a target is required for proxy creation."</span><span class="token punctuation">)</span><span class="token punctuation">;</span> 
+            <span class="token punctuation">}</span> 
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>targetClass<span class="token punctuation">.</span><span class="token function">isInterface</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">||</span> Proxy<span class="token punctuation">.</span><span class="token function">isProxyClass</span><span class="token punctuation">(</span>targetClass<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span> 
+                <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">JdkDynamicAopProxy</span><span class="token punctuation">(</span>config<span class="token punctuation">)</span><span class="token punctuation">;</span> 
+            <span class="token punctuation">}</span> 
+            <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">ObjenesisCglibAopProxy</span><span class="token punctuation">(</span>config<span class="token punctuation">)</span><span class="token punctuation">;</span> 
+        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span> 
+            <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">JdkDynamicAopProxy</span><span class="token punctuation">(</span>config<span class="token punctuation">)</span><span class="token punctuation">;</span> 
+        <span class="token punctuation">}</span> 
+<span class="token punctuation">}</span>
+
+</code></pre>
+</div><div class="cl-preview-section"><p>代理生成默认使用 JDK 自带的代理，使用 CGLIG 的三种情况：</p>
+</div><div class="cl-preview-section"><ul>
+<li>ProxyConfig 中的 optimize 标识被置为 true；</li>
+<li>ProxyConfig 中的 proxyTargetClass 标识被置为 true；</li>
+<li>目标类没有可用的代理接口即目标类没有实现接口。</li>
+</ul>
+</div><div class="cl-preview-section"><h2 id="总结"><strong>总结</strong></h2>
+</div><div class="cl-preview-section"><p>实现 @Aspect 的功能有 3 种方式：</p>
+</div><div class="cl-preview-section"><ul>
+<li>一种方式是使用 XML 配置，利用配置 &lt;aop:aspectj-autoproxy /&gt; 生效注解；</li>
+<li>一种方式是使用 java config 方式，使用注解 EnableAspectJAutoProxy 配置；</li>
+<li>一种方式是直接利用代码 AspectJProxyFactory（或者ProxyFactory/ProxyFactoryBean）生成代理。</li>
+</ul>
+</div><div class="cl-preview-section"><p>前两种方式都是通过 BeanPostProcessor 的实现类 AnnotationAwareAspectJAutoProxyCreator 完成的，第三种是硬编码形式的。正在的逻辑在父类 AbstractAutoProxyCreator 实现，在 postProcessBeforeInstantiation 方法发现 Aspect 注解，在 postProcessAfterInitialization 方法中创建代理实例。</p>
+</div><div class="cl-preview-section"><p>代理生成默认使用 JDK 自带的代理，使用 CGLIG 的三种情况：</p>
+</div><div class="cl-preview-section"><ul>
+<li>ProxyConfig 中的 optimize 标识被置为 true；</li>
+<li>ProxyConfig 中的 proxyTargetClass 标识被置为 true；</li>
+<li>目标类没有可用的代理接口即目标类没有实现接口。</li>
+</ul>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5ed0c1e6000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=77">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '41 注解 @Aspect 是如何工作的？',
+					'CID': '2055',
+					'Teacher': 'David'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "41 注解 @Aspect 是如何工作的？",
+                    desc: "Java工程师提升必修课",
+                    imgUrl: 'https:https://img.mukewang.com/5ec1f3830001652c05400720.jpg',
+                    otherImgUrl: 'https://img.mukewang.com/5ec1f3830001652c05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/77',
+                    link: 'https://m.imooc.com/read/77'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

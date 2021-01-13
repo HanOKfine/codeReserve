@@ -1,0 +1,783 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>23 深度解读 Java 字符串（上）</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="学习Java很重要，学会怎么学习Java更重要">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "0";
+	var chapter_id = "1997";
+	var chapter_title = "23 深度解读 Java 字符串（上）";
+	var aid = "78";
+	var a_name = "再学经典：《Effective Java》独家解析";
+	var a_price = "68.00";
+	var a_pic = "https://img1.mukewang.com/5ecf522a00013a1d05400720.jpg";
+	var userId = 0;
+
+	var column_id = '78';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-06-29&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			23 深度解读 Java 字符串（上）
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img.mukewang.com/5ece2c5b0001cc6506400359.jpg')"></div>
+	
+	
+		<a href="/read/78">
+			<div class="course-entry">
+				<img src="https://img3.mukewang.com/54dc328d0001b75e04630463-40-40.jpg" alt="明明如月">
+				<h3>再学经典：《Effective Java》独家解析</h3>
+				<p>明明如月 · 高级JAVA开发工程师 </p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">今天应做的事没有做，明天再早也是耽误了。<p class="author">——裴斯泰洛齐</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">1. 前言</h1>
+</div><div class="cl-preview-section"><p>《Effective Java》 第 9 章的第 62 条 “如果其他类型更合适，则尽量避免使用字符串”； 63 条 “了解字符串连接的性能”。</p>
+</div><div class="cl-preview-section"><p>提出第 62 条的理由是：作者认为如果有更适合的数据类型，或者可以编写更适当的数据类型，就应该避免使用字符串表示对象。使用不当会更加笨拙，不灵活，速度更慢等。如果数据本质上确实是文本信息时，使用字符串才合理。</p>
+</div><div class="cl-preview-section"><p>提出第 63 条的理由是：字符串连接操作（+）将多个字符串合并为一个非常方便，但是由于字符串的不可变性，连接 n 个字符串重复使用字符串连接操作，需要 n 的平方级的时间。作者推荐使用 StringBuilder 来替代 String 的（+）拼接操作。</p>
+</div><div class="cl-preview-section"><p>学习的目的在于学以致用，在于可以举一反三。因此我们还要思考下面的问题：</p>
+</div><div class="cl-preview-section"><ul>
+<li>什么叫对象的不可变性？</li>
+<li>不可变又能带来哪些好处？</li>
+<li>为什么字符串要设计成不可变？</li>
+<li>如何实现不可变性？</li>
+</ul>
+</div><div class="cl-preview-section"><p>本文将重点为你解答这些问题。</p>
+</div><div class="cl-preview-section"><h1 id="字符串相关概念">2. 字符串相关概念</h1>
+</div><div class="cl-preview-section"><h2 id="字符串字面量和字符串对象">2.1 字符串字面量和字符串对象</h2>
+</div><div class="cl-preview-section"><p><strong>字符串字面量</strong>由包含被双引号包围的零个或多个字符构成。</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token string">""</span>                    <span class="token comment">// 空字符串</span>
+<span class="token string">"\""</span>                  <span class="token comment">// 只包含 " 的字符串</span>
+<span class="token string">"This is a string"</span>    <span class="token comment">// 一个包含 16 个字符的字符串</span>
+<span class="token string">"This is a "</span> <span class="token operator">+</span>        <span class="token comment">// 由两个字符串字面量组成的字符串常量值表达式,</span>
+    <span class="token string">"two-line string"</span>    
+</code></pre>
+</div><div class="cl-preview-section"><p>通过上述字符串字面量的方式创建字符串，都会返回字符串池中同一个字符串对象的引用。</p>
+</div><div class="cl-preview-section"><p>我们还可以使用 <code>new</code> 操作来创建字符串对象，通过 new 操作都会在堆中创建新的字符串对象。</p>
+</div><div class="cl-preview-section"><p>从宏观来讲字符串字面量和字符串对象都是字符串对象。主要区别在于通过 new 操作总是创建新的字符串对象；字符串字面量都是 interned（字符串池中无，则创建并返回其引用；有则直接返回其引用）。</p>
+</div><div class="cl-preview-section"><h2 id="字符串池">2.2 字符串池</h2>
+</div><div class="cl-preview-section"><p>为了实现字符串的复用，JVM 将字符串字面量放到字符串池中。</p>
+</div><div class="cl-preview-section"><p>当你创建一个字符串变量并通过字面量为其赋值，JVM 会搜索字符串池（String Pool）中是否有相同的值。</p>
+</div><div class="cl-preview-section"><p>如果找到 Java 编译器返回它的内存地址，不会占用额外的内存。如果没有找到则将其添加到字符串池中，并返回其引用。</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+     String s1 <span class="token operator">=</span> <span class="token string">"imooc"</span><span class="token punctuation">;</span>
+     String s2 <span class="token operator">=</span> <span class="token string">"imooc"</span><span class="token punctuation">;</span>
+     String s3 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">String</span><span class="token punctuation">(</span><span class="token string">"imooc"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>如执行到  <code>String s1 = "imooc";</code> JVM 会搜索字符串池是否有相同的值，发现没有创建一个字符串对象。</p>
+</div><div class="cl-preview-section"><p>执行到 <code>String s1 = "imooc";</code> 发现字符串池中已经有了相同的字面量，直接返回其引用。</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ef958d30001595913720840.png" alt="图片描述"><br>
+执行 <code>String s3 = new String("imooc");</code> 时 new 关键字在堆中创建一个新的字符串对象。</p>
+</div><div class="cl-preview-section"><h2 id="字符串池和字符串的优化">2.3 字符串池和字符串的优化</h2>
+</div><div class="cl-preview-section"><p>JDK 7 之前， JVM 将字符串池放到永久代中，永久代的长度固定，无法在运行时伸缩，也无法被垃圾回收。</p>
+</div><div class="cl-preview-section"><p>如果 intern 太多字符串很可能导致  <code>OutOfMemoryError</code>。</p>
+</div><div class="cl-preview-section"><p>从 Java 7 开始，字符串池存储到堆中，可以被垃圾回收器回收。不被引用的字符串可能被字符串池中移除掉，从而释放内存，降低了 OOM 的风险。</p>
+</div><div class="cl-preview-section"><p>在 Java 8 及以前的版本， String 的内部表示为字符串数组 char [] ，使用 UTF-16 编码，因此每个字符使用两个字节的内存。</p>
+</div><div class="cl-preview-section"><p>如 JDK 8 中 String 源码节选：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">final</span> <span class="token keyword">class</span> <span class="token class-name">String</span>
+    <span class="token keyword">implements</span> <span class="token class-name">java<span class="token punctuation">.</span>io<span class="token punctuation">.</span>Serializable</span><span class="token punctuation">,</span> Comparable<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span><span class="token punctuation">,</span> CharSequence <span class="token punctuation">{</span>
+    <span class="token comment">/** The value is used for character storage. */</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token keyword">char</span> value<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+   <span class="token comment">// 省略其他 </span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>Java 9 提供了压缩字符串（Compact String），可以根据要存储的内容在 char [] 和  byte [] 之间进行选择。</p>
+</div><div class="cl-preview-section"><p>新的字符串表示类型只在必要时选择 UTF-16 编码，对内存使用量将大大降低，减少了垃圾回收器的工作量。</p>
+</div><div class="cl-preview-section"><p>JDK 14  String 源码节选：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">final</span> <span class="token keyword">class</span> <span class="token class-name">String</span>
+    <span class="token keyword">implements</span> <span class="token class-name">java<span class="token punctuation">.</span>io<span class="token punctuation">.</span>Serializable</span><span class="token punctuation">,</span> Comparable<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span><span class="token punctuation">,</span> CharSequence<span class="token punctuation">,</span>
+               Constable<span class="token punctuation">,</span> ConstantDesc <span class="token punctuation">{</span>
+
+    <span class="token comment">/**
+     * The value is used for character storage.
+     */</span>
+    <span class="token annotation punctuation">@Stable</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> value<span class="token punctuation">;</span>
+                 
+   <span class="token comment">/**
+     * The identifier of the encoding used to encode the bytes in
+     * {@code value}. The supported values in this implementation are
+     *
+     * LATIN1
+     * UTF16
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token keyword">byte</span> coder<span class="token punctuation">;</span>
+                 
+    <span class="token comment">// 省略其他   </span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h1 id="不可变性">3. 不可变性</h1>
+</div><div class="cl-preview-section"><h2 id="定义和好处">3.1 定义和好处</h2>
+</div><div class="cl-preview-section"><p>关于 Java 不可变对象的定义，大家在其他图书或者文章上看到的会有所区别，建议大家参考最权威的资料，以免造成不必要的误解。</p>
+</div><div class="cl-preview-section"><p>Oracle 的 <a href="https://docs.oracle.com/javase/tutorial/essential/concurrency/immutable.html">Java 教程关于不可变对象的定义</a>如下：</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>An object is considered <em>immutable</em> if its state cannot change after it is constructed. Maximum reliance on immutable objects is widely accepted as a sound strategy for creating simple, reliable code.</p>
+<p>如果<strong>一个对象的状态在构造之后不能改变</strong>，那么它就被认为是不可变的。 为了<strong>创建简单、可靠的代码</strong>，最大程度地依赖不可变对象，是一种被广泛接受的合理策略。</p>
+<p>Immutable objects are particularly useful in concurrent applications. Since they cannot change state, they cannot be corrupted by thread interference or observed in an inconsistent state.</p>
+<p>不可变对象在并发应用程序中特别有用。 <strong>因为它们不能改变状态，所以它们不能被线程干扰破坏或观察到不一致的状态</strong>。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>上述描述解答了不可变对象的定义和目的。</p>
+</div><div class="cl-preview-section"><h2 id="字符串的不可变性">3.2 字符串的不可变性</h2>
+</div><div class="cl-preview-section"><p><strong>字符串的不可变性</strong>体现在字符串对象创建后无法修改内容，任何字符串的修改函数都会返回新的字符串实例。</p>
+</div><div class="cl-preview-section"><p>那么<strong>字符串的不可变性是如何实现的呢</strong>？</p>
+</div><div class="cl-preview-section"><p>我们看下 String 类的关键源码：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">final</span> <span class="token keyword">class</span> <span class="token class-name">String</span>
+    <span class="token keyword">implements</span> <span class="token class-name">java<span class="token punctuation">.</span>io<span class="token punctuation">.</span>Serializable</span><span class="token punctuation">,</span> Comparable<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span><span class="token punctuation">,</span> CharSequence <span class="token punctuation">{</span>
+  
+    <span class="token comment">// 重点1：存储数据的成员变量用 private final 修饰</span>
+    <span class="token comment">/** 存储字符值的数组. */</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token keyword">char</span> value<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/** 缓存字符串的哈希值 */</span>
+    <span class="token keyword">private</span> <span class="token keyword">int</span> hash<span class="token punctuation">;</span> <span class="token comment">// Default to 0</span>
+  
+   <span class="token keyword">public</span> <span class="token function">String</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>value <span class="token operator">=</span> <span class="token string">""</span><span class="token punctuation">.</span>value<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  
+   <span class="token keyword">public</span> <span class="token function">String</span><span class="token punctuation">(</span>String original<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>value <span class="token operator">=</span> original<span class="token punctuation">.</span>value<span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>hash <span class="token operator">=</span> original<span class="token punctuation">.</span>hash<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  
+  <span class="token keyword">public</span> <span class="token function">String</span><span class="token punctuation">(</span><span class="token keyword">char</span> value<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>value <span class="token operator">=</span> Arrays<span class="token punctuation">.</span><span class="token function">copyOf</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> value<span class="token punctuation">.</span>length<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  
+  <span class="token comment">// 将字符串连接到当前字符串的后面</span>
+   <span class="token keyword">public</span> String <span class="token function">concat</span><span class="token punctuation">(</span>String str<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">int</span> otherLen <span class="token operator">=</span> str<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>otherLen <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+          <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+      <span class="token keyword">int</span> len <span class="token operator">=</span> value<span class="token punctuation">.</span>length<span class="token punctuation">;</span>
+      <span class="token keyword">char</span> buf<span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token operator">=</span> Arrays<span class="token punctuation">.</span><span class="token function">copyOf</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> len <span class="token operator">+</span> otherLen<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      str<span class="token punctuation">.</span><span class="token function">getChars</span><span class="token punctuation">(</span>buf<span class="token punctuation">,</span> len<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token comment">// 重点2 ：返回新的字符串对象</span>
+      <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">String</span><span class="token punctuation">(</span>buf<span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+   
+  <span class="token comment">// 截取字符串</span>
+  <span class="token keyword">public</span> String <span class="token function">substring</span><span class="token punctuation">(</span><span class="token keyword">int</span> beginIndex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 省略 </span>
+        <span class="token keyword">return</span> <span class="token punctuation">(</span>beginIndex <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token operator">?</span> <span class="token keyword">this</span> <span class="token operator">:</span> <span class="token keyword">new</span> <span class="token class-name">String</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> beginIndex<span class="token punctuation">,</span> subLen<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>我们发现 String 实现不可变性的主要手段有两个：</p>
+</div><div class="cl-preview-section"><ul>
+<li>将类使用 final 修饰，不允许继承。</li>
+<li>将包含字符串内容的 value 数组设置为私有 final，让内容的引用不可修改。</li>
+<li>所有修改操作都返回新的字符串。</li>
+</ul>
+</div><div class="cl-preview-section"><p><strong>字符串的不可变性带来哪些好处</strong>？</p>
+</div><div class="cl-preview-section"><p>1、既然不可变对象因为 “不能改变状态，所以不能被多线程干扰破坏或者观察不一致的状态”，显然<strong>线程安全</strong>这也 是 Java 中 String 类被设计为不可变的原因。</p>
+</div><div class="cl-preview-section"><p>2、字符串的不可变性<strong>降低了维护字符串池的代价</strong>，可以安全地将字符串对象存储在常量池中，实现字符串的复用，减少内存开销。</p>
+</div><div class="cl-preview-section"><p>试想一下，从如果字符串是可变的，字符串池中放入一个字符串，如果其中一个引用修改了字符串的值，其他引用怎么办？</p>
+</div><div class="cl-preview-section"><p>3、 String 类的  hashCode 函数：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">hashCode</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">int</span> h <span class="token operator">=</span> hash<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>h <span class="token operator">==</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> value<span class="token punctuation">.</span>length <span class="token operator">&gt;</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">char</span> val<span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token operator">=</span> value<span class="token punctuation">;</span>
+
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> value<span class="token punctuation">.</span>length<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            h <span class="token operator">=</span> <span class="token number">31</span> <span class="token operator">*</span> h <span class="token operator">+</span> val<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        hash <span class="token operator">=</span> h<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> h<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>从上述代码我们可以看出，不可变的另外一个好处是，hashCode 计算出的值可以被 hash 成员变量缓存起来，最多只需要计算一次，<strong>提高了获取哈希值的效率</strong>。</p>
+</div><div class="cl-preview-section"><h2 id="如何定义不可变对象">3.3 如何定义不可变对象</h2>
+</div><div class="cl-preview-section"><p>定义不可变对象可以参考下面几个做法：</p>
+</div><div class="cl-preview-section"><ul>
+<li>不要提供 setter 方法，防止通过 setter 方法来修改属性或者属性引用的对象。</li>
+<li>使用 private final 来修饰所有（影响对象状态的）成员变量。</li>
+<li>不允许子类覆盖方法或者将类定义为 final 不允许继承。还可以将构造方法设置为私有，通过工厂方法来构建实例。</li>
+<li>如果成员属性中包含可变对象的引用，则不允许更改这些对象。如不要提供修改可变对象的方法。不要共享可变对象的引用。不要通过构造器传入外部对象或可变对象的引用，如果有必要创建副本，并存储对副本的引用。必要时创建内部可变对象的副本，以避免在方法中返回原始对象。</li>
+</ul>
+</div><div class="cl-preview-section"><p>因此大家如果需要定义不可变对象时，可以仿照 String 源码并参考上述建议即可。</p>
+</div><div class="cl-preview-section"><h2 id="不可编辑对象">3.4 不可编辑对象</h2>
+</div><div class="cl-preview-section"><p><strong>不可编辑对象和不可变对象非常相似，主要区别是不可编辑对象一般会在修改操作上抛出异常，来阻止被修改</strong>。</p>
+</div><div class="cl-preview-section"><p>在实际项目开发中还会遇到需要创建不可编译对象的场景，如不想某个集合在后续操作中被修改（元素被删除、添加、替换等）。</p>
+</div><div class="cl-preview-section"><p>可以使用 Collections.umodifiable 相关的工具函数：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java">    <span class="token keyword">private</span> List<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span> list <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token annotation punctuation">@Before</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">init</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        list<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"one"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        list<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"two"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Test</span><span class="token punctuation">(</span>expected <span class="token operator">=</span> UnsupportedOperationException<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">unmodifiedWithCollections</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        List<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span> unmodifiableList <span class="token operator">=</span> Collections<span class="token punctuation">.</span><span class="token function">unmodifiableList</span><span class="token punctuation">(</span>list<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        unmodifiableList<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"three"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>也可以使用 google 的 guava 提供的工具类：</p>
+</div><div class="cl-preview-section"><pre class=" language-xml"><code class="prism  language-xml"><span class="token comment">&lt;!-- https://mvnrepository.com/artifact/com.google.guava/guava --&gt;</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>com.google.guava<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>guava<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">&gt;</span></span>27.0-jre<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>用法如下：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Test</span><span class="token punctuation">(</span>expected <span class="token operator">=</span> UnsupportedOperationException<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">guavaNotModifiable</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    List<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span> unmodifiableList <span class="token operator">=</span> ImmutableList<span class="token punctuation">.</span><span class="token function">copyOf</span><span class="token punctuation">(</span>list<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    unmodifiableList<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"three"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>原理和上述的构造不可变对象的建议非常相似，不允许修改成员变量：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token comment">/**
+ * Guaranteed to throw an exception and leave the list unmodified.
+ *
+ * @throws UnsupportedOperationException always
+ * @deprecated Unsupported operation.
+ */</span>
+<span class="token annotation punctuation">@Deprecated</span>
+<span class="token annotation punctuation">@Override</span>
+<span class="token keyword">public</span> <span class="token keyword">final</span> <span class="token keyword">void</span> <span class="token function">add</span><span class="token punctuation">(</span><span class="token keyword">int</span> index<span class="token punctuation">,</span> E element<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">UnsupportedOperationException</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>还可以使用 apache 的 commons- collections4 工具类：</p>
+</div><div class="cl-preview-section"><pre class=" language-xml"><code class="prism  language-xml"><span class="token comment">&lt;!-- https://mvnrepository.com/artifact/commons-collections/commons-collections --&gt;</span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dependency</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">&gt;</span></span>org.apache.commons<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">&gt;</span></span>commons-collections4<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">&gt;</span></span>4.3<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dependency</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>用法如下：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Test</span><span class="token punctuation">(</span>expected <span class="token operator">=</span> UnsupportedOperationException<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">collectionsNotModifiable</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    List<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span> unmodifiableList <span class="token operator">=</span> ListUtils<span class="token punctuation">.</span><span class="token function">unmodifiableList</span><span class="token punctuation">(</span>list<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    unmodifiableList<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"three"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这些工具类中还提供了 Set 和 Map 相关不可变工具函数，请大家自行研究。</p>
+</div><div class="cl-preview-section"><h1 id="总结">4. 总结</h1>
+</div><div class="cl-preview-section"><p>本节重点讲述不可变对象的概念和好处，讲述了字符串如何实现不可变性，以及实现不可变性的常见方式。本文还给出项目开发中常用的创建不可变集合的方式。</p>
+</div><div class="cl-preview-section"><h1 id="思考和练习">5. 思考和练习</h1>
+</div><div class="cl-preview-section"><p>1、Integer 是如何实现不可变性的？</p>
+</div><div class="cl-preview-section"><p>2、如何实现一个可变整数对象 MutableInt， 你的思路是什么？</p>
+</div><div class="cl-preview-section"><p>3、请使用 guava 如何构造一个不可编辑 Map 的示例。</p>
+</div><div class="cl-preview-section"><p>4、字符串拼接的底层原理是什么？</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5ece2c61000109e706700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<p class="bottom-text empty">暂无精选留言</p>
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=78">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '23 深度解读 Java 字符串（上）',
+					'CID': '1997',
+					'Teacher': '明明如月'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "23 深度解读 Java 字符串（上）",
+                    desc: "学习Java很重要，学会怎么学习Java更重要",
+                    imgUrl: 'https:https://img1.mukewang.com/5ecf522a00013a1d05400720.jpg',
+                    otherImgUrl: 'https://img1.mukewang.com/5ecf522a00013a1d05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/78',
+                    link: 'https://m.imooc.com/read/78'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

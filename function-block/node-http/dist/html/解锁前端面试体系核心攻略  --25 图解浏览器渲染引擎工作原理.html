@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>25 图解浏览器渲染引擎工作原理</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="拉开你与普通面试者的差距">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "5";
+	var chapter_id = "1949";
+	var chapter_title = "25 图解浏览器渲染引擎工作原理";
+	var aid = "70";
+	var a_name = "解锁前端面试体系核心攻略  ";
+	var a_price = "78.00";
+	var a_pic = "https://img1.mukewang.com/5e5c85e1000116c505400720.jpg";
+	var userId = 0;
+
+	var column_id = '70';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-26&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			25 图解浏览器渲染引擎工作原理
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img2.mukewang.com/5eba88e80001cae906400426.jpg')"></div>
+	
+	
+		<a href="/read/70">
+			<div class="course-entry">
+				<img src="https://img4.mukewang.com/5e50a213000179ce12800720-40-40.jpg" alt="修言">
+				<h3>解锁前端面试体系核心攻略  </h3>
+				<p>修言 · 大型互联网公司业务线Owner</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">老骥伏枥，志在千里； 烈士暮年，壮心不已。 <p class="author">——曹操</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>本节我们介绍浏览器渲染引擎的运作机制。</p>
+</div><div class="cl-preview-section"><blockquote>
+<p>Tips: 这块知识非常容易出问答题/作为性能优化面试题的切入点，大家需要引起重视。</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>​</p>
+</div><div class="cl-preview-section"><h2 id="渲染引擎工作流解析">渲染引擎工作流解析</h2>
+</div><div class="cl-preview-section"><p>通过前面几节的学习，大家现在已经知道，浏览器的渲染引擎承载着把静态资源转换为可视化界面的任务。前面咱们已经明确了这样的转换关系：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eba8a370001156813220256.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>中间这个“渲染引擎处理”目前对大家来说仍然是一个黑盒。我们把这个黑盒拆开，会看到它其实包含了以下几个具体流程：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eba8a2e0001c87011440168.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>整体来看，这五个过程分别完成了以下任务：</p>
+</div><div class="cl-preview-section"><p><strong>1. HTML解析</strong></p>
+</div><div class="cl-preview-section"><p>在这一步浏览器对HTML文档进行解析，并在解析 HTML 的过程中发出了页面渲染所需的各种外部资源请求。</p>
+</div><div class="cl-preview-section"><p><strong>2. CSS解析</strong><br>
+浏览器将识别并加载所有的 CSS 样式信息。</p>
+</div><div class="cl-preview-section"><p><strong>3. 样式与结构合并</strong><br>
+将样式信息和文档结构合并，最终生成页面 render 树（:after :before 这样的伪元素会在这个环节被构建到 DOM 树中）。</p>
+</div><div class="cl-preview-section"><p><strong>4. 布局阶段</strong><br>
+页面中所有元素的相对位置信息，大小等信息均在这一步得到计算。</p>
+</div><div class="cl-preview-section"><p><strong>5. 页面绘制</strong><br>
+在这一步中浏览器会根据我们前面处理出来的结果，把每一个页面图层转换为像素，并对所有的媒体文件进行解码。<br>
+<br><br>
+这五个步骤可以说是每一步都很关键，每一步都不白干，每一步都有一个阶段性产物作为收获。这些产物是我们理解渲染过程的重要抓手：</p>
+</div><div class="cl-preview-section"><h2 id="阶段性产物分析">阶段性产物分析</h2>
+</div><div class="cl-preview-section"><p>这五个流程分别对应了以下五个产物：</p>
+</div><div class="cl-preview-section"><ul>
+<li>DOM树</li>
+<li>CSSOM树</li>
+<li>渲染树</li>
+<li>盒模型</li>
+<li>目标界面</li>
+</ul>
+</div><div class="cl-preview-section"><p>认识产物的目的是为了能够更好地掌握创造产物的过程。��物是具体的，因此咱们此处的讲解也应该是具体的。下面我就带大家来观摩一个渲染引擎的工作实例：</p>
+</div><div class="cl-preview-section"><h4 id="html解析-——-dom树">HTML解析 —— DOM树</h4>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token operator">&lt;</span><span class="token operator">!</span>DOCTYPE html<span class="token operator">&gt;</span>
+<span class="token operator">&lt;</span>html lang<span class="token operator">=</span><span class="token string">"en"</span><span class="token operator">&gt;</span>
+<span class="token operator">&lt;</span>head<span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span>meta charset<span class="token operator">=</span><span class="token string">"UTF-8"</span><span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span>meta name<span class="token operator">=</span><span class="token string">"viewport"</span> content<span class="token operator">=</span><span class="token string">"width=device-width, initial-scale=1.0"</span><span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span>meta http<span class="token operator">-</span>equiv<span class="token operator">=</span><span class="token string">"X-UA-Compatible"</span> content<span class="token operator">=</span><span class="token string">"ie=edge"</span><span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span>title<span class="token operator">&gt;</span>前端面试体系专栏<span class="token operator">&lt;</span><span class="token operator">/</span>title<span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span>style<span class="token operator">&gt;</span>
+    body <span class="token punctuation">{</span>
+      font<span class="token operator">-</span>size<span class="token punctuation">:</span> 20px；
+    <span class="token punctuation">}</span>
+    div <span class="token punctuation">{</span>
+      width<span class="token punctuation">:</span> 100px<span class="token punctuation">;</span>
+      height<span class="token punctuation">:</span> 100px<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    span <span class="token punctuation">{</span>
+      color<span class="token punctuation">:</span> #<span class="token number">000</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    p <span class="token punctuation">{</span>
+      display<span class="token punctuation">:</span> none
+    <span class="token punctuation">}</span>
+  <span class="token operator">&lt;</span><span class="token operator">/</span>style<span class="token operator">&gt;</span>
+<span class="token operator">&lt;</span><span class="token operator">/</span>head<span class="token operator">&gt;</span>
+<span class="token operator">&lt;</span>body<span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span>div <span class="token keyword">class</span><span class="token operator">=</span><span class="token string">"box1"</span><span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span>span<span class="token operator">&gt;</span>我在盒子<span class="token number">1</span>号里<span class="token operator">&lt;</span><span class="token operator">/</span>span<span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span>div <span class="token keyword">class</span><span class="token operator">=</span><span class="token string">"box2"</span><span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span>span<span class="token operator">&gt;</span>我在盒子<span class="token number">2</span>号里<span class="token operator">&lt;</span><span class="token operator">/</span>span<span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span>p<span class="token operator">&gt;</span>你看不见我<span class="token operator">&lt;</span><span class="token operator">/</span>p<span class="token operator">&gt;</span>
+<span class="token operator">&lt;</span><span class="token operator">/</span>body<span class="token operator">&gt;</span>
+<span class="token operator">&lt;</span><span class="token operator">/</span>html<span class="token operator">&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>楼上我们给出的是一段非常简单的 HTML。相信对大家来说，阅读 HTML 不是什么难事。不过对浏览器来说，这可不是什么美差——浏览器不能够直接理解 HTML，它首先会把它转化成自己能理解的 DOM 树：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eba8a21000128ba10240768.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>CSS 解析 —— CSSOM 树</p>
+</div><div class="cl-preview-section"><p>一样的道理，浏览器也是没法直接理解 CSS 代码的，需要把它处理成自己能理解的 CSSOM 树——注意，虽然我们编写 CSS 代码时不像 HTML 代码一样表现出明显的嵌套关系，<strong>但是</strong> <strong>CSSOM 也是具有树结构的</strong>。这是因为在样式计算的过程中，浏览器总是从适用于该节点的最通用规则开始（例如 div 节点是 body 元素的子项，则应用所有 body 样式），一层一层递归细化出具体的样式。这个由通用到具体的细化关系，我们也可以用树结构来描述：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eba8a0e0001fb2f10240768.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h4 id="dom树与cssom树“合体”-——渲染树">DOM树与CSSOM树“合体” ——渲染树</h4>
+</div><div class="cl-preview-section"><p>当 DOM 树和 CSSOM 树都解析完毕后，它们就会被结合在一起，构建出 Render Tree（渲染树）。</p>
+</div><div class="cl-preview-section"><p>值得注意的是，渲染树的特点是它**只包含渲染网页所需的节点。**所以在构建渲染树的过程中，除了“结合”之外，浏览器还做了一些关键的小动作，这些小动作可能作为考点出现：</p>
+</div><div class="cl-preview-section"><ul>
+<li>step1： 从 DOM 树的根节点开始遍历，筛选出所有<strong>可见</strong>的节点；</li>
+<li>step2：仅针对可见节点，为其匹配 CSSOM 中的 CSS 规则；</li>
+<li>step3：发射可见节点（连同其内容和计算的样式）。</li>
+</ul>
+</div><div class="cl-preview-section"><p>经过这么一顿操作之后，渲染树就到手了：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eba8a010001abe510240768.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h4 id="布局盒子模型">布局盒子模型</h4>
+</div><div class="cl-preview-section"><p>经过咱们不断地构建、修修剪剪，和“树”之间的故事，算是告一段落了。接下来咱们以手里这棵渲染树作为依据，进入布局阶段了。</p>
+</div><div class="cl-preview-section"><p>到现在为止，我们已经掌握了需要渲染的所有节点之间的结构关系及其样式信息。但是我们还不知道它们在渲染时，到底应该出现在浏览器视口的哪个位置上、占据多大的空间——计算这些信息，就是布局阶段要做的事情。浏览器对渲染树进行遍历，将元素间嵌套关系以盒子模型的形式写入文档流：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eba89f90001d99610240768.jpg" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>盒模型在布局过程中会计算出元素确切的大小和定位。计算完毕后，相应的信息被写回渲染树上，就形成了“布局渲染树”。同时，每一个元素盒子也都携带着自身的样式信息，作为后续绘制的依据。</p>
+</div><div class="cl-preview-section"><h4 id="目标界面">目标界面</h4>
+</div><div class="cl-preview-section"><p>大家注意，走到现在这一步，我们浏览器的视窗内实际上还是啥也没展示出来的状态。咱们上述的渲染树也好，盒模型也好，它们都乖乖地躺在内存世界里，悄无声息。</p>
+</div><div class="cl-preview-section"><p>布局阶段结束后，浏览器终于拿到了它绘制页面所需要的所有信息。此时它会将渲染树上的每一个节点转换成我们肉眼可见的像素，最终将页面呈现在我们面前，这个过程就是“绘制”。绘制完成后，目标界面也就在你眼前了：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5eba89ec0001134813760496.png" alt="图片描述"></p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5eba88ed00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6990">
+						<img src="https://img1.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">TokugawaNakashima</h4>
+						<div class="comment-text">“浏览器总是从适用于该节点的最通用规则开始（例如 div 节点是 body 元素的子项，则应用所有 body 样式），一层一层递归细化出具体的样式。” 老师，鞥不能具体说一下这个规则呢？</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-10-15</span>
+						<a href="/read/commentdetail/6990">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6990" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6531">
+						<img src="https://img3.mukewang.com/5e7a13b60001643511111109-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">再睡一会就码</h4>
+						<div class="comment-text">渲染树的时候是怎么筛选出可见节点的啊，您说遍历dom树，dom没有表示它不可见啊， 还有渲染树的时候只是匹配基础的字体，颜色等样式吗，盒模型布局不也是属于css嘛，在渲染树的时候不会加载嘛</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-14</span>
+						<a href="/read/commentdetail/6531">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6531" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6019">
+						<img src="https://img4.mukewang.com/545846690001c92702200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">慕粉3912334</h4>
+						<div class="comment-text">有次面试官问我：CSSOM树是怎么渲染的？
+看了这篇文章是否就可以说：是从通用到具体的规则。
+希望大神回答一下~</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-02</span>
+						<a href="/read/commentdetail/6019">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6019" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5605">
+						<img src="https://img.mukewang.com/539e99ba00010f8f01000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">郭风籥</h4>
+						<div class="comment-text">这篇文章写的好。</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-25</span>
+						<a href="/read/commentdetail/5605">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="5605" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5568">
+						<img src="https://img2.mukewang.com/585918490001b1bd06400640-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_aa_153386468</h4>
+						<div class="comment-text">大佬，"发射可见节点（连同其内容和计算的样式）"这句话是什么意思？没搞明白</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-22</span>
+						<a href="/read/commentdetail/5568">
+							<span class="icon r"><i class="imwap-comment"></i><em>4</em></span>
+						</a>
+						<span data-cid="5568" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥78.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=70">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '25 图解浏览器渲染引擎工作原理',
+					'CID': '1949',
+					'Teacher': '修言'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "25 图解浏览器渲染引擎工作原理",
+                    desc: "拉开你与普通面试者的差距",
+                    imgUrl: 'https:https://img1.mukewang.com/5e5c85e1000116c505400720.jpg',
+                    otherImgUrl: 'https://img1.mukewang.com/5e5c85e1000116c505400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/70',
+                    link: 'https://m.imooc.com/read/70'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

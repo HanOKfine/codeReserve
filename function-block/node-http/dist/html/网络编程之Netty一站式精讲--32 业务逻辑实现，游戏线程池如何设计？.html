@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>32 业务逻辑实现，游戏线程池如何设计？</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="全面掌握迈向高级工程师的必备技能">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "1";
+	var chapter_id = "2191";
+	var chapter_title = "32 业务逻辑实现，游戏线程池如何设计？";
+	var aid = "82";
+	var a_name = "网络编程之Netty一站式精讲";
+	var a_price = "68.00";
+	var a_pic = "https://img4.mukewang.com/5f052aa90001f15b05400720.jpg";
+	var userId = 0;
+
+	var column_id = '82';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-24&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			32 业务逻辑实现，游戏线程池如何设计？
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img4.mukewang.com/5f0596ee00011b3f06400359.jpg')"></div>
+	
+	
+		<a href="/read/82">
+			<div class="course-entry">
+				<img src="https://img3.mukewang.com/5d9c91f40001dcac05000500-40-40.jpg" alt="彤哥读源码">
+				<h3>网络编程之Netty一站式精讲</h3>
+				<p>彤哥读源码 · 互联网大厂项目经理</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">世上无难事,只要肯登攀。<p class="author">——毛泽东</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h1 id="前言">前言</h1>
+</div><div class="cl-preview-section"><p>你好，我是彤哥。</p>
+</div><div class="cl-preview-section"><p>上一节，我们一起将所有的领域模型都实现了，但是，它们都是贫血模型，还缺少了非常重要的行为，本节，我们就一起来把它们的行为实现了，当然了，我们不会直接在这些模型内部实现行为，而是把它们抽离出来，具体的原因在上一节我们已经解释过了，此处，就不再赘述了。</p>
+</div><div class="cl-preview-section"><p>好了，开始今天的学习吧。</p>
+</div><div class="cl-preview-section"><h1 id="游戏线程池的设计">游戏线程池的设计</h1>
+</div><div class="cl-preview-section"><p>在前面的章节中，我们一再提到，游戏的业务逻辑复杂，很多数据都是放在内存中进行处理的，但是，仅仅放在内存中还不能完全满足要求。</p>
+</div><div class="cl-preview-section"><p>我举个例子，房间 A 里面的四个玩家打牌，如果使用普通的 Java 线程池处理这个房间的所有信息，就会带来新的问题：</p>
+</div><div class="cl-preview-section"><ol>
+<li>所有消息对于房间信息的修改，需要使用锁，对性能有一定的影响；</li>
+<li>使用锁之后，业务实现者要时时考虑锁的使用问题，增加了业务开发的难度；</li>
+<li>有序性，我们知道 Java 线程池中任务的流转过程，先看有没有达到核心线程数，再看队列有没有满，最后看有没有达到最大线程数，我举个极端的例子，如果队列满了，此时，发来一条消息，它会去尝试创建一个新的线程（未达最大线程数）来处理当前消息，这导致该房间之前的消息可能还在队列中未处理，而这条消息却先处理了，这明显不符合要求。</li>
+</ol>
+</div><div class="cl-preview-section"><p>基于以上三点原因，使用 Java 线程池肯定是不能满足我们的要求了，那么，使用 Netty 的线程池是否可以呢？</p>
+</div><div class="cl-preview-section"><p>其实也是不行的，我们知道，Netty 线程池中每个 EventExecutor 都会绑定一个队列，不同客户端的消息是发往不同的队列，它依然会带来上面的三个问题。</p>
+</div><div class="cl-preview-section"><p>所以，我们需要重新设计一种线程池：不加锁且消息有序，这要怎么实现呢？</p>
+</div><div class="cl-preview-section"><p>我们前面提到过一个名词：房间制，那么，是不是把同一个房间的消息发到同一个线程进行处理就可以了呢？</p>
+</div><div class="cl-preview-section"><p>答案确实是这样的，但是实现起来并没有那么简单。</p>
+</div><div class="cl-preview-section"><p>首先，使用 Java 自带的线程池肯定是不行的了。</p>
+</div><div class="cl-preview-section"><p>其次，使用 Netty 的线程池，通过前面关于 Netty 线程池的源码剖析，我们知道，在 Netty 中，有两种选择线程的方式，即 PowerOfTwoEventExecutorChooser 和 GenericEventExecutorChooser，然而，它们的内部实现并没有本质上的区别，都是通过轮询的方式调用线程池中的线程来处理任务，所以，乍看之下，也不满足我们的要求。</p>
+</div><div class="cl-preview-section"><p>最后，只能自己来实现了？自己实现的话，也是每个线程维护自己的队列，且把同一个房间的消息都到同一个线程的队列中，这其实跟 Netty 还是有些像的，而且，自己实现的线程池，在稳定性、安全性等方面的考量，也是一个非常重要的问题，所以，我们能不能对 Netty 的线程池进行改造，拿过来即用呢？</p>
+</div><div class="cl-preview-section"><p>通过前面的分析，可以发现，其实 Netty 的线程池本身是满足我们的要求的，关键在于选择线程的方式这里，所以，改造的要点就在这里，我们需要自己实现一种线程选择的方式，比如，按房间号去选择线程。</p>
+</div><div class="cl-preview-section"><p>仔细观察 PowerOfTwoEventExecutorChooser 或者 GenericEventExecutorChooser 的代码：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">class</span> <span class="token class-name">PowerOfTwoEventExecutorChooser</span> <span class="token keyword">implements</span> <span class="token class-name">EventExecutorChooser</span> <span class="token punctuation">{</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> AtomicInteger idx <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AtomicInteger</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> EventExecutor<span class="token punctuation">[</span><span class="token punctuation">]</span> executors<span class="token punctuation">;</span>
+
+    <span class="token function">PowerOfTwoEventExecutorChooser</span><span class="token punctuation">(</span>EventExecutor<span class="token punctuation">[</span><span class="token punctuation">]</span> executors<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>executors <span class="token operator">=</span> executors<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> EventExecutor <span class="token function">next</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> executors<span class="token punctuation">[</span>idx<span class="token punctuation">.</span><span class="token function">getAndIncrement</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> executors<span class="token punctuation">.</span>length <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在调用 next () 方法选择线程的时候，似乎不能传递额外的参数了，但是，别忘了，我们还有终极杀器 —— 线程本地变量，在调用 next () 方法之前，可以把房间号存储在 FastThreadLocal 中，这样在 next () 中就能获取到这个房间号，然后，就可以使用房间号来做路由了，比如按房间号取模，完美 ^^</p>
+</div><div class="cl-preview-section"><p>好了，说干就干，让我们来实现之～～</p>
+</div><div class="cl-preview-section"><h1 id="游戏线程池的实现">游戏线程池的实现</h1>
+</div><div class="cl-preview-section"><p>参考 DefaultEventExecutorChooserFactory 的代码，我们实现一个自己用的 MahjongEventExecutorChooserFactory，并将其运用到自定义的线程池 MahjongEventExecutorGroup 中：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MahjongEventExecutorGroup</span> <span class="token keyword">extends</span> <span class="token class-name">MultithreadEventExecutorGroup</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">private</span> <span class="token function">MahjongEventExecutorGroup</span><span class="token punctuation">(</span><span class="token keyword">int</span> nThreads<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 使用自定义的选择器工厂</span>
+        <span class="token keyword">super</span><span class="token punctuation">(</span>nThreads<span class="token punctuation">,</span> null<span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">MahjongEventExecutorChooserFactory</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> null<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">protected</span> EventExecutor <span class="token function">newChild</span><span class="token punctuation">(</span>Executor executor<span class="token punctuation">,</span> Object<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> args<span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">DefaultEventExecutor</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> executor<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 工厂类</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">class</span> <span class="token class-name">MahjongEventExecutorChooserFactory</span> <span class="token keyword">implements</span> <span class="token class-name">EventExecutorChooserFactory</span> <span class="token punctuation">{</span>
+
+        <span class="token annotation punctuation">@Override</span>
+        <span class="token keyword">public</span> EventExecutorChooser <span class="token function">newChooser</span><span class="token punctuation">(</span>EventExecutor<span class="token punctuation">[</span><span class="token punctuation">]</span> executors<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">MahjongEventExecutorChooser</span><span class="token punctuation">(</span>executors<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+        <span class="token comment">// 真正使用的选择器</span>
+        <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">class</span> <span class="token class-name">MahjongEventExecutorChooser</span> <span class="token keyword">implements</span> <span class="token class-name">EventExecutorChooserFactory<span class="token punctuation">.</span>EventExecutorChooser</span> <span class="token punctuation">{</span>
+
+            <span class="token keyword">private</span> <span class="token keyword">final</span> AtomicInteger idx <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AtomicInteger</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">private</span> <span class="token keyword">final</span> EventExecutor<span class="token punctuation">[</span><span class="token punctuation">]</span> executors<span class="token punctuation">;</span>
+
+            <span class="token function">MahjongEventExecutorChooser</span><span class="token punctuation">(</span>EventExecutor<span class="token punctuation">[</span><span class="token punctuation">]</span> executors<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">this</span><span class="token punctuation">.</span>executors <span class="token operator">=</span> executors<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+
+            <span class="token annotation punctuation">@Override</span>
+            <span class="token keyword">public</span> EventExecutor <span class="token function">next</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token comment">// 从上下文中取出当前的房间id</span>
+                Long roomId <span class="token operator">=</span> MahjongContext<span class="token punctuation">.</span><span class="token function">currentContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getCurrentRoomId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">long</span> id<span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>roomId <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    id <span class="token operator">=</span> roomId<span class="token punctuation">;</span>
+                <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+                    <span class="token comment">// 没获取到房间号的消息轮徇扔到业务线程池中处理</span>
+                    <span class="token comment">// 他们往往跟房间信息没啥关系，比如登录请求</span>
+                    id <span class="token operator">=</span> idx<span class="token punctuation">.</span><span class="token function">getAndIncrement</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+                <span class="token comment">// 根据id取模选择线程执行</span>
+                <span class="token keyword">return</span> executors<span class="token punctuation">[</span><span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>id <span class="token operator">&amp;</span> executors<span class="token punctuation">.</span>length <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>与默认的两种选择方式不同的是，在 next () 方法中，我们先尝试从上下文中获取当前的房间号，这里的上下文自然就是线程本地变量了，如果获取到了，就使用这个房间号取模来获取执行的线程，如果没获取到就使用原来的轮询方式进行处理，为什么会有没取到的情况呢？</p>
+</div><div class="cl-preview-section"><p>比如，登录请求，它是没有房间信息的。</p>
+</div><div class="cl-preview-section"><p>好了，现在的问题变成了：在什么时候把房间号放入到上下文中呢？</p>
+</div><div class="cl-preview-section"><p>这就牵涉到要怎么使用这个线程池了，总体来说有两种方式：</p>
+</div><div class="cl-preview-section"><ol>
+<li>在 ChannelPipeline 中与 MahjongServerHandler 进行关联，即 <code>p.addLast(new MahjongEventExecutorGroup(8), new MahjongServerHandler());</code>；</li>
+<li>在 MahjongServerHandler 中手动调用，即 <code>mahjongEventExecutorGroup.execute()</code>；</li>
+</ol>
+</div><div class="cl-preview-section"><p>使用第一种方式无疑是比较友好的，但是，整个过程都是在 ChannelPipeline 中自动完成的，没有地方可以设置房间号到上下文中，所以，只能使用第二种方式了。</p>
+</div><div class="cl-preview-section"><p>第二种方式就要简单得多了，只需要在 <code>mahjongEventExecutorGroup.execute()</code> 前一刻把房间号设置到上下文中即可。</p>
+</div><div class="cl-preview-section"><p>为此，我专门在 MahjongEventExecutorGroup 中定义了一个静态方法来处理房间号相关的逻辑，给 MahjongServerHandler 调用：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MahjongEventExecutorGroup</span> <span class="token keyword">extends</span> <span class="token class-name">MultithreadEventExecutorGroup</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 实例，单例模式</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> MahjongEventExecutorGroup INSTANCE <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">MahjongEventExecutorGroup</span><span class="token punctuation">(</span>NettyRuntime<span class="token punctuation">.</span><span class="token function">availableProcessors</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 静态方法，MahjongServerHandler中直接调用该方法</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">execute</span><span class="token punctuation">(</span>Channel channel<span class="token punctuation">,</span> MahjongProtocol mahjongProtocol<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 协议头</span>
+        MahjongProtocolHeader header <span class="token operator">=</span> mahjongProtocol<span class="token punctuation">.</span><span class="token function">getHeader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 协议体</span>
+        MahjongMessage message <span class="token operator">=</span> <span class="token punctuation">(</span>MahjongMessage<span class="token punctuation">)</span> mahjongProtocol<span class="token punctuation">.</span><span class="token function">getBody</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 创建房间和加入房间需要做一些处理</span>
+        Long roomId<span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>message <span class="token keyword">instanceof</span> <span class="token class-name">CreateRoomRequest</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 如果是创建房间消息，生成一个roomId，并将当前channel与之绑定</span>
+            roomId <span class="token operator">=</span> IdUtils<span class="token punctuation">.</span><span class="token function">generateId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">// 一个channel一旦建立，始终与一个eventLoop绑定</span>
+            <span class="token comment">// 所以，可以把channel与房间号的绑定放在线程本地缓存中</span>
+            MahjongContext<span class="token punctuation">.</span><span class="token function">currentContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setChannelRoomId</span><span class="token punctuation">(</span>channel<span class="token punctuation">,</span> roomId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>message <span class="token keyword">instanceof</span> <span class="token class-name">EnterRoomRequest</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 如果是加入房间消息，将当前channel与传入的tableId绑定</span>
+            EnterRoomRequest enterRoomRequest <span class="token operator">=</span> <span class="token punctuation">(</span>EnterRoomRequest<span class="token punctuation">)</span> message<span class="token punctuation">;</span>
+            roomId <span class="token operator">=</span> enterRoomRequest<span class="token punctuation">.</span><span class="token function">getRoomId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            MahjongContext<span class="token punctuation">.</span><span class="token function">currentContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setChannelRoomId</span><span class="token punctuation">(</span>channel<span class="token punctuation">,</span> roomId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 其它消息则从context中获取当前channel对应的房间号</span>
+            <span class="token comment">// 当然，也可能没有，比如登录请求</span>
+            roomId <span class="token operator">=</span> MahjongContext<span class="token punctuation">.</span><span class="token function">currentContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getChannelRoomId</span><span class="token punctuation">(</span>channel<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token comment">// 设置房间id到context中，以便next()方法可以取到</span>
+        MahjongContext<span class="token punctuation">.</span><span class="token function">currentContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setCurrentRoomId</span><span class="token punctuation">(</span>roomId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 将消息扔到业务线程池中处理</span>
+        INSTANCE<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+            <span class="token comment">// todo 此处实现在下面</span>
+        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>到此，我们真正实现了根据房间号来选择指定线程的目标，那么，还有一个问题：这个线程池能否保证有序性呢？</p>
+</div><div class="cl-preview-section"><p>答案是肯定的，请看下面这张图：<br>
+<img src="https://img.mukewang.com/5f3dd5c5000134bc07070887.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><p>这里有个非常重要的接口 ——OrderedEventExecutor，从名字就可以知道，它就是用来保证有序性的。</p>
+</div><div class="cl-preview-section"><p>另外，根据前面 Netty 线程池源码的剖析，我们也知道，所有的任务提交的时候是第一时间放到队列中的：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">execute</span><span class="token punctuation">(</span>Runnable task<span class="token punctuation">,</span> <span class="token keyword">boolean</span> immediate<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">boolean</span> inEventLoop <span class="token operator">=</span> <span class="token function">inEventLoop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">addTask</span><span class="token punctuation">(</span>task<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>inEventLoop<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token function">startThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">// ...省略其它代码</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>而不是像 Java 那样，把提交的任务与新创建的线程绑定，优先执行这个任务：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token function">Worker</span><span class="token punctuation">(</span>Runnable firstTask<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">setState</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// inhibit interrupts until runWorker</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>firstTask <span class="token operator">=</span> firstTask<span class="token punctuation">;</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>thread <span class="token operator">=</span> <span class="token function">getThreadFactory</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">newThread</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">final</span> <span class="token keyword">void</span> <span class="token function">runWorker</span><span class="token punctuation">(</span>Worker w<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 优先执行firstTask</span>
+    Runnable task <span class="token operator">=</span> w<span class="token punctuation">.</span>firstTask<span class="token punctuation">;</span>
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span>task <span class="token operator">!=</span> null <span class="token operator">||</span> <span class="token punctuation">(</span>task <span class="token operator">=</span> <span class="token function">getTask</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                <span class="token function">beforeExecute</span><span class="token punctuation">(</span>wt<span class="token punctuation">,</span> task<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">try</span> <span class="token punctuation">{</span>
+                    task<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+                    <span class="token function">afterExecute</span><span class="token punctuation">(</span>task<span class="token punctuation">,</span> thrown<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
+        <span class="token function">processWorkerExit</span><span class="token punctuation">(</span>w<span class="token punctuation">,</span> completedAbruptly<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>所以，使用 Netty 线程池是完全可以保证任务有序执行的，而使用 Java 线程池则不行。</p>
+</div><div class="cl-preview-section"><p>好了，通过这样的线程池实现，在后续的业务处理中，完全不用考虑锁的问题了，因为同一个房间的消息都在同一个线程中有序的执行，完全不需要使用锁，极大地减轻了业务开发的难度，下面我们就来愉快地实现业务逻辑吧。</p>
+</div><div class="cl-preview-section"><h1 id="业务逻辑实现">业务逻辑实现</h1>
+</div><div class="cl-preview-section"><p>为了把代码足够地解耦，我定义了一个 MahjongProcessor 接口，每个消息都可以实现自己的处理器：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">MahjongProcessor</span><span class="token operator">&lt;</span>T <span class="token keyword">extends</span> <span class="token class-name">MahjongMessage</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+    <span class="token keyword">void</span> <span class="token function">process</span><span class="token punctuation">(</span>T message<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>比如，以 HelloRequest 为例：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Slf4j</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">HelloRequestProcessor</span> <span class="token keyword">implements</span> <span class="token class-name">MahjongProcessor</span><span class="token operator">&lt;</span>HelloRequest<span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">process</span><span class="token punctuation">(</span>HelloRequest message<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"receive hello request: {}"</span><span class="token punctuation">,</span> message<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        HelloResponse response <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HelloResponse</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        response<span class="token punctuation">.</span><span class="token function">setMessage</span><span class="token punctuation">(</span><span class="token string">"你好，"</span> <span class="token operator">+</span> message<span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        MessageUtils<span class="token punctuation">.</span><span class="token function">sendResponse</span><span class="token punctuation">(</span>response<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>有了前面的铺垫，每个消息处理器里面只需要处理自己的消息即可，非常简单。</p>
+</div><div class="cl-preview-section"><p>同样地，我们需要维护消息与处理器之间的映射，与前面消息与 cmd 的映射一样，我这里同样使用枚举的形式来实现：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">enum</span> MahjongProcessorManager <span class="token punctuation">{</span>
+    <span class="token comment">// 映射关系</span>
+    <span class="token function">HELLO_REQUEST_PROCESSOR</span><span class="token punctuation">(</span>HelloRequest<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">HelloRequestProcessor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">LOGIN_REQUEST_PROCESSOR</span><span class="token punctuation">(</span>LoginRequest<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">LoginRequestProcessor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">CREATE_ROOM_REQUEST_PROCESSOR</span><span class="token punctuation">(</span>CreateRoomRequest<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">CreateRoomRequestProcessor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">ENTER_ROOM_REQUEST_PROCESSOR</span><span class="token punctuation">(</span>EnterRoomRequest<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">EnterRoomRequestProcessor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">OPERATION_REQUEST_REQUEST_PROCESSOR</span><span class="token punctuation">(</span>OperationRequest<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">OperationRequestProcessor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token function">START_GAME_MESSAGE_PROCESSOR</span><span class="token punctuation">(</span>StartGameMessage<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">StartGameMessageProcessor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token punctuation">;</span>
+
+    <span class="token comment">// 属性</span>
+    <span class="token keyword">private</span> Class<span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">extends</span> <span class="token class-name">MahjongMessage</span><span class="token operator">&gt;</span> msgType<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> MahjongProcessor mahjongProcessor<span class="token punctuation">;</span>
+
+    <span class="token function">MahjongProcessorManager</span><span class="token punctuation">(</span>Class<span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">extends</span> <span class="token class-name">MahjongMessage</span><span class="token operator">&gt;</span> msgType<span class="token punctuation">,</span> MahjongProcessor mahjongProcessor<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>msgType <span class="token operator">=</span> msgType<span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>mahjongProcessor <span class="token operator">=</span> mahjongProcessor<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// 根据消息选择处理器</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> MahjongProcessor <span class="token function">choose</span><span class="token punctuation">(</span>MahjongMessage message<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span>MahjongProcessorManager value <span class="token operator">:</span> MahjongProcessorManager<span class="token punctuation">.</span><span class="token function">values</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>value<span class="token punctuation">.</span>msgType <span class="token operator">==</span> message<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">return</span> value<span class="token punctuation">.</span>mahjongProcessor<span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> null<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以看到，对于 MahjongProcessor 我们维护的是一个一个的实例，而不再是 Class 类，因为 MahjongProcessor 是设计成无状态的，整个系统只需要一个实例，即单例。</p>
+</div><div class="cl-preview-section"><p>OK，此时，我们就可以在 MahjongEventExecutorGroup 中补全 execute () 的逻辑了：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MahjongEventExecutorGroup</span> <span class="token keyword">extends</span> <span class="token class-name">MultithreadEventExecutorGroup</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">execute</span><span class="token punctuation">(</span>Channel channel<span class="token punctuation">,</span> MahjongProtocol mahjongProtocol<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 协议头</span>
+        MahjongProtocolHeader header <span class="token operator">=</span> mahjongProtocol<span class="token punctuation">.</span><span class="token function">getHeader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 协议体</span>
+        MahjongMessage message <span class="token operator">=</span> <span class="token punctuation">(</span>MahjongMessage<span class="token punctuation">)</span> mahjongProtocol<span class="token punctuation">.</span><span class="token function">getBody</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 创建房间和加入房间需要做一些处理</span>
+        Long roomId<span class="token punctuation">;</span>
+        <span class="token comment">// ...省略roomId的处理</span>
+
+        <span class="token comment">// 设置房间id到context中，以便next()方法可以取到</span>
+        MahjongContext<span class="token punctuation">.</span><span class="token function">currentContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setCurrentRoomId</span><span class="token punctuation">(</span>roomId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 将消息扔到业务线程池中处理</span>
+        INSTANCE<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 已经切换线程，重新设置房间号到context中</span>
+            MahjongContext<span class="token punctuation">.</span><span class="token function">currentContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setCurrentRoomId</span><span class="token punctuation">(</span>roomId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment">// 设置channel等其它线程本地变量</span>
+            MahjongContext<span class="token punctuation">.</span><span class="token function">currentContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setCurrentChannel</span><span class="token punctuation">(</span>channel<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            MahjongContext<span class="token punctuation">.</span><span class="token function">currentContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setChannelRoomId</span><span class="token punctuation">(</span>channel<span class="token punctuation">,</span> roomId<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            MahjongContext<span class="token punctuation">.</span><span class="token function">currentContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setRequestHeader</span><span class="token punctuation">(</span>header<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            MahjongContext<span class="token punctuation">.</span><span class="token function">currentContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setCurrentRoom</span><span class="token punctuation">(</span>MahjongContext<span class="token punctuation">.</span><span class="token function">currentContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getRoomById</span><span class="token punctuation">(</span>roomId<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            Player currentPlayer <span class="token operator">=</span> DataManager<span class="token punctuation">.</span><span class="token function">getChannelPlayer</span><span class="token punctuation">(</span>channel<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>currentPlayer <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                MahjongContext<span class="token punctuation">.</span><span class="token function">currentContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setCurrentPlayer</span><span class="token punctuation">(</span>currentPlayer<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                MahjongContext<span class="token punctuation">.</span><span class="token function">currentContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setPlayerChannel</span><span class="token punctuation">(</span>currentPlayer<span class="token punctuation">,</span> channel<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+            <span class="token comment">// 寻找处理器</span>
+            MahjongProcessor processor <span class="token operator">=</span> MahjongProcessorManager<span class="token punctuation">.</span><span class="token function">choose</span><span class="token punctuation">(</span>message<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>processor <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token comment">// 交给处理器处理</span>
+                processor<span class="token punctuation">.</span><span class="token function">process</span><span class="token punctuation">(</span>message<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+                <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">RuntimeException</span><span class="token punctuation">(</span><span class="token string">"not found processor, msgType="</span> <span class="token operator">+</span> message<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>可以看到，我们这里大量使用了 MahjongContext，它其实就是一个线程本地变量池，怎么实现的呢？我提供两种思路：</p>
+</div><div class="cl-preview-section"><ol>
+<li>把每一个本地变量，比如 <code>currentChannel</code>，都声明为一个 ThreadLocal 或者 FastThreadLocal；</li>
+<li>把 MahjongContext 声明为一个 ThreadLocal 或者 FastThreadLocal，其它的变量都维护在这个 MahjongContext 中；</li>
+</ol>
+</div><div class="cl-preview-section"><p>两种方式都是可以的，第一种方式实现起来有点繁琐，第二种方式实现起来相对简单一点，我参考 zuul 网关等框架采用了第二种实现方式：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MahjongContext</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 线程安全，只需要用HashMap就可以了</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Object<span class="token operator">&gt;</span> map <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token operator">&lt;</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 把MahjongContext本身放到FastThreadLocal中</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> FastThreadLocal<span class="token operator">&lt;</span>MahjongContext<span class="token operator">&gt;</span> MAHJONG_CONTEXT <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">FastThreadLocal</span><span class="token operator">&lt;</span>MahjongContext<span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token annotation punctuation">@Override</span>
+        <span class="token keyword">protected</span> MahjongContext <span class="token function">initialValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> Exception <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">MahjongContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">private</span> <span class="token function">MahjongContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 当前线程的MahjongContext</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> MahjongContext <span class="token function">currentContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> MAHJONG_CONTEXT<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 包装map的put()方法</span>
+    <span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">set</span><span class="token punctuation">(</span>String key<span class="token punctuation">,</span> Object value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        map<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 包装map的get()方法</span>
+    <span class="token keyword">private</span> <span class="token operator">&lt;</span>T<span class="token operator">&gt;</span> T <span class="token function">get</span><span class="token punctuation">(</span>String key<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token punctuation">(</span>T<span class="token punctuation">)</span> map<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 包装map的remove()方法</span>
+    <span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">remove</span><span class="token punctuation">(</span>String key<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        map<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 设置当前玩家的channel</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setCurrentChannel</span><span class="token punctuation">(</span>Channel channel<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token function">set</span><span class="token punctuation">(</span><span class="token string">"currentChannel"</span><span class="token punctuation">,</span> channel<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 获取当前玩家的channel</span>
+    <span class="token keyword">public</span> Channel <span class="token function">getCurrentChannel</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token function">get</span><span class="token punctuation">(</span><span class="token string">"currentChannel"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>好了，最后，我再介绍一个稍微复杂一点的消息处理逻辑 —— 出牌。</p>
+</div><div class="cl-preview-section"><p>出牌是通过 OperationRequest 这个消息来承载的，我们先分析一下它的主要逻辑：</p>
+</div><div class="cl-preview-section"><ol>
+<li>服务端收到出牌消息，先检查是不是轮到该玩家出牌了，出的这张牌玩家手里有没有，等等；</li>
+<li>从玩家手中移除这张牌，并添加到添加到出牌列表中；</li>
+<li>通知所有人谁出了什么牌，并刷新房间的信息；</li>
+<li>检查其他玩家是否可以操作；</li>
+<li>如果有玩家可以操作，则提醒其操作，并提醒其他玩家等待；</li>
+<li>如果没有玩家可以操作，则光标移动到下一个玩家；</li>
+<li>下一个玩家摸牌；</li>
+<li>检查下一个玩家摸完牌后是否可胡、可杠；</li>
+<li>如果其可胡、可杠，则提醒其操作；</li>
+<li>如果不可胡、可杠，则提醒其出牌；</li>
+<li>不管其他玩家是否可胡、可杠，对于其他玩家一律提示等待该玩家出牌；</li>
+</ol>
+</div><div class="cl-preview-section"><p>OK，这里只列了主要逻辑，还有一些细节的点需要注意的，我就不一一列举了，这里只贴出一小部分的代码实现：</p>
+</div><div class="cl-preview-section"><pre class=" language-java"><code class="prism  language-java"><span class="token annotation punctuation">@Slf4j</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">OperationRequestProcessor</span> <span class="token keyword">implements</span> <span class="token class-name">MahjongProcessor</span><span class="token operator">&lt;</span>OperationRequest<span class="token operator">&gt;</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">process</span><span class="token punctuation">(</span>OperationRequest message<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 获取当前房间信息</span>
+        Room room <span class="token operator">=</span> MahjongContext<span class="token punctuation">.</span><span class="token function">currentContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getCurrentRoom</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 当前操作</span>
+        <span class="token keyword">int</span> operation <span class="token operator">=</span> message<span class="token punctuation">.</span><span class="token function">getOperation</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 检查</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>room <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            log<span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"room not exist"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>room<span class="token punctuation">.</span><span class="token function">getStatus</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> Room<span class="token punctuation">.</span>STATUS_WAITING_CHU <span class="token operator">&amp;&amp;</span> room<span class="token punctuation">.</span><span class="token function">getStatus</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> Room<span class="token punctuation">.</span>STATUS_WAITING_OPERATION<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            log<span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"room status error, roomStatus={}"</span><span class="token punctuation">,</span> room<span class="token punctuation">.</span><span class="token function">getStatus</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>room<span class="token punctuation">.</span><span class="token function">getStatus</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> Room<span class="token punctuation">.</span>STATUS_WAITING_CHU <span class="token operator">&amp;&amp;</span> operation <span class="token operator">!=</span> OperationUtils<span class="token punctuation">.</span>OPERATION_CHU<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            log<span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"operation request error, roomStatus={}, operation={}"</span><span class="token punctuation">,</span> room<span class="token punctuation">.</span><span class="token function">getStatus</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> operation<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>room<span class="token punctuation">.</span><span class="token function">getStatus</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> Room<span class="token punctuation">.</span>STATUS_WAITING_OPERATION <span class="token operator">&amp;&amp;</span> operation <span class="token operator">==</span> OperationUtils<span class="token punctuation">.</span>OPERATION_CHU<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            log<span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"operation request error, roomStatus={}, operation={}"</span><span class="token punctuation">,</span> room<span class="token punctuation">.</span><span class="token function">getStatus</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> operation<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>operation <span class="token operator">==</span> OperationUtils<span class="token punctuation">.</span>OPERATION_CHU<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 如果是出牌操作</span>
+            <span class="token function">chu</span><span class="token punctuation">(</span>room<span class="token punctuation">,</span> message<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 如果是其他操作，需等待所有可操作之人操作完成之后才能判断谁的操作是有效的</span>
+            <span class="token function">operate</span><span class="token punctuation">(</span>room<span class="token punctuation">,</span> message<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">chu</span><span class="token punctuation">(</span>Room room<span class="token punctuation">,</span> OperationRequest message<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">// 当前玩家</span>
+        Player player <span class="token operator">=</span> MahjongContext<span class="token punctuation">.</span><span class="token function">currentContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getCurrentPlayer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 检查是不是当前玩家出牌</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>room<span class="token punctuation">.</span><span class="token function">getChuPos</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> player<span class="token punctuation">.</span><span class="token function">getPos</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            log<span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"not current player chu, roomChuPos={}, currentPlayerPos={}"</span><span class="token punctuation">,</span> room<span class="token punctuation">.</span><span class="token function">getChuPos</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> player<span class="token punctuation">.</span><span class="token function">getPos</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token keyword">byte</span> chuCard <span class="token operator">=</span> message<span class="token punctuation">.</span><span class="token function">getCard</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 从玩家手中移除该牌</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">removeCard</span><span class="token punctuation">(</span>player<span class="token punctuation">,</span> chuCard<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            log<span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"player has not that card, playerPos={}, chuCard={}"</span><span class="token punctuation">,</span> player<span class="token punctuation">.</span><span class="token function">getPos</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> chuCard<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token comment">// 添加到出牌列表中</span>
+        <span class="token function">addToChuCards</span><span class="token punctuation">(</span>player<span class="token punctuation">,</span> chuCard<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 通知有人出了一张牌</span>
+        OperationResultNotification operationResultNotification <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">OperationResultNotification</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        operationResultNotification<span class="token punctuation">.</span><span class="token function">setOperation</span><span class="token punctuation">(</span>OperationUtils<span class="token punctuation">.</span>OPERATION_CHU<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        operationResultNotification<span class="token punctuation">.</span><span class="token function">setPos</span><span class="token punctuation">(</span>player<span class="token punctuation">.</span><span class="token function">getPos</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        operationResultNotification<span class="token punctuation">.</span><span class="token function">setCard</span><span class="token punctuation">(</span>chuCard<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        MessageUtils<span class="token punctuation">.</span><span class="token function">sendNotification</span><span class="token punctuation">(</span>room<span class="token punctuation">,</span> operationResultNotification<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 刷新房间信息牌</span>
+        RoomRefreshNotification refreshNotification <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">RoomRefreshNotification</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        refreshNotification<span class="token punctuation">.</span><span class="token function">setOperation</span><span class="token punctuation">(</span>OperationUtils<span class="token punctuation">.</span>OPERATION_CHU<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        refreshNotification<span class="token punctuation">.</span><span class="token function">setRoom</span><span class="token punctuation">(</span>room<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        MessageUtils<span class="token punctuation">.</span><span class="token function">sendRoomRefreshNotification</span><span class="token punctuation">(</span>refreshNotification<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 检查其他玩家是否可以操作</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">checkOtherCanOperation</span><span class="token punctuation">(</span>room<span class="token punctuation">,</span> player<span class="token punctuation">,</span> chuCard<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 如果其他玩家不可以操作，移动到下一个玩家摸牌</span>
+            <span class="token function">moveToNextPlayer</span><span class="token punctuation">(</span>room<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>抛却业务本身逻辑的复杂性，代码写起来是不是非常简单，完全不用关心锁的问题，完美 ^^</p>
+</div><div class="cl-preview-section"><p>OK，到这里，游戏线程池的设计、业务逻辑实现的方法我就介绍完了。</p>
+</div><div class="cl-preview-section"><h1 id="后记">后记</h1>
+</div><div class="cl-preview-section"><p>本节，我们一起学习了 “房间制” 游戏的线程池设计，以及业务逻辑的实现方法，你觉得这种实现方式怎么样？还有没有其它更优的解法呢？欢迎留言，共同讨论。</p>
+</div><div class="cl-preview-section"><p>到此，整个服务端算是全部实现完毕了，可是，没有客户端的服务端是不完美的，所以，下一节，我们将模拟实现一个客户端，并通过这个客户端来真正的打一局，敬请期待。</p>
+</div><div class="cl-preview-section"><h1 id="思维导图">思维导图</h1>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5f3dd59100018ed114210776.png" alt="图片描述"></p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img3.mukewang.com/5f05426b00011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6665">
+						<img src="https://img2.mukewang.com/545862440001cef302200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">small_925_ant</h4>
+						<div class="comment-text">有完整代码链接吗</div>
+						<div>
+							
+								<div class="reply">讲师回复：有的，仓库地址：https://github.com/alan-tang-tt/netty-core-code</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-08-28</span>
+						<a href="/read/commentdetail/6665">
+							<span class="icon r"><i class="imwap-comment"></i><em>2</em></span>
+						</a>
+						<span data-cid="6665" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥68.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=82">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '32 业务逻辑实现，游戏线程池如何设计？',
+					'CID': '2191',
+					'Teacher': '彤哥读源码'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "32 业务逻辑实现，游戏线程池如何设计？",
+                    desc: "全面掌握迈向高级工程师的必备技能",
+                    imgUrl: 'https:https://img4.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    otherImgUrl: 'https://img4.mukewang.com/5f052aa90001f15b05400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/82',
+                    link: 'https://m.imooc.com/read/82'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

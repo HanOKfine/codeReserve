@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>19 DOM 基本功</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="拉开你与普通面试者的差距">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "5";
+	var chapter_id = "1841";
+	var chapter_title = "19 DOM 基本功";
+	var aid = "70";
+	var a_name = "解锁前端面试体系核心攻略  ";
+	var a_price = "78.00";
+	var a_pic = "https://img1.mukewang.com/5e5c85e1000116c505400720.jpg";
+	var userId = 0;
+
+	var column_id = '70';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-05-26&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			19 DOM 基本功
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img4.mukewang.com/5ea030600001aad106400426.jpg')"></div>
+	
+	
+		<a href="/read/70">
+			<div class="course-entry">
+				<img src="https://img2.mukewang.com/5e50a213000179ce12800720-40-40.jpg" alt="修言">
+				<h3>解锁前端面试体系核心攻略  </h3>
+				<p>修言 · 大型互联网公司业务线Owner</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">立志是事业的大门，工作是登堂入室的旅程。<p class="author">——巴斯德</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><p>在框架、工具琳琅满目的今天，很多同学可能会对 DOM 不屑一顾——比如说同样是 API，DOM API 能做的事情，相对于框架 API 来说太单薄、太无聊了。这么基础的玩意儿，学它干啥？</p>
+</div><div class="cl-preview-section"><p>站在面试的角度看，其实是这么回事儿：如果各位的 target team 是小型创业团队，这类团队中有一些单纯业务导向的，他们的业务需求确实可能是比较急迫。对他们来说，主要目的是招到一个“干活的”。这种情况下，你能用熟一个轮子就 OK 了。但是如果你的目标是中型、大型公司的优质团队，或者是技术意识稍微强一些的小团队，你都无法在面试环节规避开面对官对 DOM 基础 和 DOM 底层原理的考察。</p>
+</div><div class="cl-preview-section"><p>站在个人的角度，笔者也希望能在这里再次给大家强调一遍原生 JS 能力的重要性。DOM 基础说起来大家都知道一点，但能够系统掌握、面试时不露怯的人比大家想象中少太多太多了。笔者自己也万万想不到，曾经的“标配”基本功，在前端技术令人眼花缭乱的今天，竟然会被同学们抛诸脑后。如今，考察 React、Vue 相关的基础知识，甚至都没有考察原生 DOM 区分度高，实在令人唏嘘。</p>
+</div><div class="cl-preview-section"><p>​</p>
+</div><div class="cl-preview-section"><p>本节，我们首先会围绕 DOM 基础，给大家进行一轮知识点扫盲。如果在阅读完本节之后，你能够确保每个知识点都成竹于胸、问到不虚，那么下一章的《浏览器渲染原理》系列所涉及的 DOM 原理相关知识，一定会给予你更大的帮助和启发。</p>
+</div><div class="cl-preview-section"><h2 id="理解-dom">理解 DOM</h2>
+</div><div class="cl-preview-section"><blockquote>
+<p>文档对象模型 (DOM) 是HTML和XML文档的编程接口。它提供了对文档的结构化的表述，并定义了一种方式可以使从程序中对该结构进行访问，从而改变文档的结构，样式和内容。DOM 将文档解析为一个由节点和对象（包含属性和方法的对象）组成的结构集合。简言之，它会将web页面和脚本或程序语言连接起来。                                                                ——MDN</p>
+</blockquote>
+</div><div class="cl-preview-section"><p>DOM 的概念看似抽象，实则只是把 HTML 中各个标签定义出的元素以对象的形式包装起来。这样做的目的，就是确保开发者可以通过 JS 脚本来操作 HTML。</p>
+</div><div class="cl-preview-section"><h3 id="dom-不仅是一套接口，更是一套规范">DOM 不仅是一套接口，更是一套规范</h3>
+</div><div class="cl-preview-section"><p>大家知道，网页是由浏览器来渲染出来的，浏览器一定程度上可以认为是我们源代码到展示结果这个过程中���一个编译器。</p>
+</div><div class="cl-preview-section"><p>在这个世界上，有数不清的公司在做浏览器，进而也就有了数不清的浏览器品牌和型号。不同的浏览器之间存在着从内核到外壳的多重差异，如果说这些浏览器之间彼此没有办法达成共识，各出一套自己的标准的话，前端开发的适配工作量将是巨大的。</p>
+</div><div class="cl-preview-section"><p>正是为了避免这种情况，才有了大家耳熟能详的 W3C 标准。W3C 中把许多行为的准则都统一掉了，而 DOM 作为 W3C 规范的一部分，约束了浏览器中 JS 与 HTML 间交互的方式。多亏有了 DOM，我们现在在任何一个浏览器上都可以用同一套 API 去操作 HTML，而不必关系浏览器底层的实现差异。</p>
+</div><div class="cl-preview-section"><h2 id="dom-树的解析">DOM 树的解析</h2>
+</div><div class="cl-preview-section"><p><strong>DOM 结构以树的形态存在</strong>。在了解这棵树之前，我们首先应该认知的是树中的最小单元——节点。</p>
+</div><div class="cl-preview-section"><p>在 DOM 中，每个元素都是一个节点，节点类型细数起来可以有很多种，我们这里强调以下 4 种：</p>
+</div><div class="cl-preview-section"><h4 id="document">Document</h4>
+</div><div class="cl-preview-section"><p>Document 就是指这份文件，也就是这份 HTML 档的开端。当浏览器载入 HTML 文档, 它就会成为 <strong>Document 对象</strong>。</p>
+</div><div class="cl-preview-section"><h4 id="element">Element</h4>
+</div><div class="cl-preview-section"><p>Element 就是指 HTML 文件内的各个标签，像是<code>&lt;div&gt;、&lt;span&gt;</code>这样的各种 HTML 标签定义的元素都属于 Element 类型。</p>
+</div><div class="cl-preview-section"><h4 id="text">Text</h4>
+</div><div class="cl-preview-section"><p>Text 就是指被各个标籤包起来的文字，举个例子：</p>
+</div><div class="cl-preview-section"><pre class="  language-html"><code class="prism  language-html"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>span</span><span class="token punctuation">&gt;</span></span>哈哈哈<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>span</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这里的“哈哈哈”被 <code>&lt;span&gt;</code> 标签包了起来，它就是这个 Element 的 Text。</p>
+</div><div class="cl-preview-section"><h4 id="attribute">Attribute</h4>
+</div><div class="cl-preview-section"><p>Attribute 类型表示元素的特性。从技术角度讲，这里的特性就是说各个标签里的属性。</p>
+</div><div class="cl-preview-section"><h3 id="一起来解析一棵-dom-树">一起来解析一棵 DOM 树</h3>
+</div><div class="cl-preview-section"><p>咱们现在用一个 demo 来直观表达一下上面所说的事项。尝试把下面这段代码转换成一棵 DOM 树：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token operator">&lt;</span>html<span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span>head<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span>title<span class="token operator">&gt;</span>DEMO<span class="token operator">&lt;</span><span class="token operator">/</span>title<span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span><span class="token operator">/</span>head<span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span>body<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span>h1 <span class="token keyword">class</span><span class="token operator">=</span><span class="token string">"title"</span><span class="token operator">&gt;</span>我是标题<span class="token operator">&lt;</span><span class="token operator">/</span>h1<span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span><span class="token operator">/</span>body<span class="token operator">&gt;</span>
+<span class="token operator">&lt;</span><span class="token operator">/</span>html<span class="token operator">&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>在这个 DEMO 里，整个文件可以被看做是一个 document，根节点就是 HTML 这个 element。从 HTML 出发，往下走遇到了 head 和 body 这两个 element。在 head 内部，又划分出子节点 title 标签对应的 element，title 内部有一个 text 类型的子节点，值为“DEMO”；在 body 内部，又划分出子节点 h1，h1 内部也有一个 text 类型的子节点，值为“我是标题”；h1 元素同时具有一个 attribute 属性，即 class=“title” 这个键值对。我们把这一系列关系用树这种数据结构表示出来：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ea0316a0001a0a913760952.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="dom-节点间关系">DOM 节点间关系</h2>
+</div><div class="cl-preview-section"><p>在树状结构的 DOM 里，节点间关系可以划分为以下两类：</p>
+</div><div class="cl-preview-section"><ul>
+<li><strong>父子节点</strong>：表示节点间的嵌套关系</li>
+<li><strong>兄弟节点</strong>：表示节点层级的平行关系，兄弟节点共享一个父节点</li>
+</ul>
+</div><div class="cl-preview-section"><p>在上面这棵 DOM 树里，父子兄弟关系就可以表示如下：</p>
+</div><div class="cl-preview-section"><p><img src="https://img.mukewang.com/5ea031600001645a10180580.png" alt="图片描述"></p>
+</div><div class="cl-preview-section"><h2 id="常考操作一网打尽">常考操作一网打尽</h2>
+</div><div class="cl-preview-section"><p>DOM API常见操作，无非是增删改查。这块大家不用怕，背就完了。这里我为大家收敛了一部分面试时考察频率较高的 API：</p>
+</div><div class="cl-preview-section"><h4 id="查：dom-节点的获取">查：DOM 节点的获取</h4>
+</div><div class="cl-preview-section"><p>DOM 节点的获取可以说是一类使用频率最高的操作，是各种复杂操作的基础。大家关注以下 API：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token operator">-</span> getElementById <span class="token comment">// 按照 id 查询</span>
+<span class="token operator">-</span> getElementsByTagName <span class="token comment">// 按照标签名查询</span>
+<span class="token operator">-</span> getElementsByClassName <span class="token comment">// 按照类名查询</span>
+<span class="token operator">-</span> querySelectorAll <span class="token comment">// 按照 css 选择器查询</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>一起来看看具体怎么用</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token comment">// 按照 id 查询</span>
+<span class="token keyword">var</span> imooc <span class="token operator">=</span> document<span class="token punctuation">.</span><span class="token function">getElementById</span><span class="token punctuation">(</span><span class="token string">'imooc'</span><span class="token punctuation">)</span> <span class="token comment">// 查询到 id 为 imooc 的元素</span>
+
+<span class="token comment">// 按照标签名查询</span>
+<span class="token keyword">var</span> pList <span class="token operator">=</span> document<span class="token punctuation">.</span><span class="token function">getElementsByTagName</span><span class="token punctuation">(</span><span class="token string">'p'</span><span class="token punctuation">)</span>  <span class="token comment">// 查询到标签为 p 的集合</span>
+console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>divList<span class="token punctuation">.</span>length<span class="token punctuation">)</span>
+console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>divList<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+
+<span class="token comment">// 按照类名查询</span>
+<span class="token keyword">var</span> moocList <span class="token operator">=</span> document<span class="token punctuation">.</span><span class="token function">getElementsByClassName</span><span class="token punctuation">(</span><span class="token string">'mooc'</span><span class="token punctuation">)</span> <span class="token comment">// 查询到类名为 mooc 的集合</span>
+
+<span class="token comment">// 按照 css 选择器查询</span>
+<span class="token keyword">var</span> pList <span class="token operator">=</span> document<span class="token punctuation">.</span><span class="token function">querySelectorAll</span><span class="token punctuation">(</span><span class="token string">'.mooc'</span><span class="token punctuation">)</span> <span class="token comment">// 查询到类名为 mooc 的集合</span>
+</code></pre>
+</div><div class="cl-preview-section"><h4 id="增：dom-节点的创建">增：DOM 节点的创建</h4>
+</div><div class="cl-preview-section"><p><strong>真题：请你创建一个新节点，并把它添加到指定节点的后面。</strong></p>
+</div><div class="cl-preview-section"><p>假如题中已知的 HTML 结构如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-html"><code class="prism  language-html"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>html</span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>head</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>title</span><span class="token punctuation">&gt;</span></span>DEMO<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>title</span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>head</span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>body</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>div</span> <span class="token attr-name">id</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>container<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span> 
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>h1</span> <span class="token attr-name">id</span><span class="token attr-value"><span class="token punctuation">=</span><span class="token punctuation">"</span>title<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>我是标题<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>h1</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>div</span><span class="token punctuation">&gt;</span></span>   
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>body</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>html</span><span class="token punctuation">&gt;</span></span>
+</code></pre>
+</div><div class="cl-preview-section"><p>要求你添加一个有内容的 span 节点到 id 为 title 的节点后面，那么我们的做法就是：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token comment">// 首先获取父节点</span>
+<span class="token keyword">var</span> container <span class="token operator">=</span> document<span class="token punctuation">.</span><span class="token function">getElementById</span><span class="token punctuation">(</span><span class="token string">'container'</span><span class="token punctuation">)</span>
+
+<span class="token comment">// 创建新节点</span>
+<span class="token keyword">var</span> targetSpan <span class="token operator">=</span> document<span class="token punctuation">.</span><span class="token function">createElement</span><span class="token punctuation">(</span><span class="token string">'span'</span><span class="token punctuation">)</span>
+<span class="token comment">// 设置 span 节点的内容</span>
+targetSpan<span class="token punctuation">.</span>innerHTML <span class="token operator">=</span> <span class="token string">'hello world'</span>
+
+<span class="token comment">// 把新创建的元素塞进父节点里去</span>
+container<span class="token punctuation">.</span><span class="token function">appendChild</span><span class="token punctuation">(</span>targetSpan<span class="token punctuation">)</span> 
+</code></pre>
+</div><div class="cl-preview-section"><h4 id="删：dom-节点的删除">删：DOM 节点的删除</h4>
+</div><div class="cl-preview-section"><p><strong>真题节选：删除指定的 DOM 节点</strong></p>
+</div><div class="cl-preview-section"><p>假如题中已知的 HTML 结构如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token operator">&lt;</span>html<span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span>head<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span>title<span class="token operator">&gt;</span>DEMO<span class="token operator">&lt;</span><span class="token operator">/</span>title<span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span><span class="token operator">/</span>head<span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span>body<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span>div id<span class="token operator">=</span><span class="token string">"container"</span><span class="token operator">&gt;</span> 
+      <span class="token operator">&lt;</span>h1 id<span class="token operator">=</span><span class="token string">"title"</span><span class="token operator">&gt;</span>我是标题<span class="token operator">&lt;</span><span class="token operator">/</span>h1<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>   
+  <span class="token operator">&lt;</span><span class="token operator">/</span>body<span class="token operator">&gt;</span>
+<span class="token operator">&lt;</span><span class="token operator">/</span>html<span class="token operator">&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>需要删除 id 为 title 的元素，我们的做法是：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token comment">// 获取目标元素的父元素</span>
+<span class="token keyword">var</span> container <span class="token operator">=</span> document<span class="token punctuation">.</span><span class="token function">getElementById</span><span class="token punctuation">(</span><span class="token string">'container'</span><span class="token punctuation">)</span>
+<span class="token comment">// 获取目标元素</span>
+<span class="token keyword">var</span> targetNode <span class="token operator">=</span> document<span class="token punctuation">.</span><span class="token function">getElementById</span><span class="token punctuation">(</span><span class="token string">'title'</span><span class="token punctuation">)</span>
+<span class="token comment">// 删除目标元素</span>
+container<span class="token punctuation">.</span><span class="token function">removeChild</span><span class="token punctuation">(</span>targetNode<span class="token punctuation">)</span>   
+</code></pre>
+</div><div class="cl-preview-section"><p>或者通过子节点数组来完成删除：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token comment">// 获取目标元素的父元素</span>
+<span class="token keyword">var</span> container <span class="token operator">=</span> document<span class="token punctuation">.</span><span class="token function">getElementById</span><span class="token punctuation">(</span><span class="token string">'container'</span><span class="token punctuation">)</span>
+<span class="token comment">// 获取目标元素</span>
+<span class="token keyword">var</span> targetNode <span class="token operator">=</span> container<span class="token punctuation">.</span>childNodes<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span>
+<span class="token comment">// 删除目标元素</span>
+container<span class="token punctuation">.</span><span class="token function">removeChild</span><span class="token punctuation">(</span>targetNode<span class="token punctuation">)</span> 
+</code></pre>
+</div><div class="cl-preview-section"><h4 id="改：修改-dom-元素">改：修改 DOM 元素</h4>
+</div><div class="cl-preview-section"><p>修改 DOM 元素这个动作可以分很多维度，比如说移动 DOM 元素的位置，修改 DOM 元素的属性等。</p>
+</div><div class="cl-preview-section"><p><strong>真题：将指定的两个 DOM 元素交换位置</strong></p>
+</div><div class="cl-preview-section"><p>假如题中已知的 HTML 结构如下：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token operator">&lt;</span>html<span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span>head<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span>title<span class="token operator">&gt;</span>DEMO<span class="token operator">&lt;</span><span class="token operator">/</span>title<span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span><span class="token operator">/</span>head<span class="token operator">&gt;</span>
+  <span class="token operator">&lt;</span>body<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span>div id<span class="token operator">=</span><span class="token string">"container"</span><span class="token operator">&gt;</span> 
+      <span class="token operator">&lt;</span>h1 id<span class="token operator">=</span><span class="token string">"title"</span><span class="token operator">&gt;</span>我是标题<span class="token operator">&lt;</span><span class="token operator">/</span>h1<span class="token operator">&gt;</span>
+      <span class="token operator">&lt;</span>p id<span class="token operator">=</span><span class="token string">"content"</span><span class="token operator">&gt;</span>我是内容<span class="token operator">&lt;</span><span class="token operator">/</span>p<span class="token operator">&gt;</span>
+    <span class="token operator">&lt;</span><span class="token operator">/</span>div<span class="token operator">&gt;</span>   
+  <span class="token operator">&lt;</span><span class="token operator">/</span>body<span class="token operator">&gt;</span>
+<span class="token operator">&lt;</span><span class="token operator">/</span>html<span class="token operator">&gt;</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>现在需要你调换 title 和 content 的位置，我们可以考虑 insertBefore 或者 appendChild。这里我们给出 insertBefore 的操作示范：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token comment">// 获取父元素</span>
+<span class="token keyword">var</span> container <span class="token operator">=</span> document<span class="token punctuation">.</span><span class="token function">getElementById</span><span class="token punctuation">(</span><span class="token string">'container'</span><span class="token punctuation">)</span>   
+ 
+<span class="token comment">// 获取两个需要被交换的元素</span>
+<span class="token keyword">var</span> title <span class="token operator">=</span> document<span class="token punctuation">.</span><span class="token function">getElementById</span><span class="token punctuation">(</span><span class="token string">'title'</span><span class="token punctuation">)</span>
+<span class="token keyword">var</span> content <span class="token operator">=</span> document<span class="token punctuation">.</span><span class="token function">getElementById</span><span class="token punctuation">(</span><span class="token string">'content'</span><span class="token punctuation">)</span>
+
+<span class="token comment">// 交换两个元素，把 content 置于 title 前面</span>
+container<span class="token punctuation">.</span><span class="token function">insertBefore</span><span class="token punctuation">(</span>content<span class="token punctuation">,</span> title<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><strong>真题：DOM 元素属性的获取和修改</strong></p>
+</div><div class="cl-preview-section"><p>仍然是上面这个 HTML 结构，现在假如需要你获取并修改 title 元素的 id 名，我们可以让 getAttribute 和 setAttribute 来帮忙：</p>
+</div><div class="cl-preview-section"><pre class="  language-js"><code class="prism  language-js"><span class="token keyword">var</span> title <span class="token operator">=</span> document<span class="token punctuation">.</span><span class="token function">getElementById</span><span class="token punctuation">(</span><span class="token string">'title'</span><span class="token punctuation">)</span>
+
+<span class="token comment">// 获取 id 属性</span>
+<span class="token keyword">var</span> titleId <span class="token operator">=</span> title<span class="token punctuation">.</span><span class="token function">getAttribute</span><span class="token punctuation">(</span><span class="token string">'id'</span><span class="token punctuation">)</span>
+
+<span class="token comment">// 修改 id 属性</span>
+title<span class="token punctuation">.</span><span class="token function">setAttribute</span><span class="token punctuation">(</span><span class="token string">'id'</span><span class="token punctuation">,</span> <span class="token string">'anothorTitle'</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>除了 getAttribute 和 setAttribute 外，我们通过访问 DOM 对象中提供给我们的属性名，也可以达成查询并修改某一些属性的目的。考虑到本文已针对类似的基础内容作了大量的阐述，故此处不再赘述。</p>
+</div><div class="cl-preview-section"><h2 id="结语">结语</h2>
+</div><div class="cl-preview-section"><p>笔者创作专栏的初衷，是希望帮助大家用更舒服的姿势解决面试中的痛点、难点。在这样一套强调区分度的面试专栏里，穿插进像本节和下节这样极为基础的内容，我希望各位可以领悟到其中的用心——DOM 基本功，真的很重要。</p>
+</div><div class="cl-preview-section"><p>本文的目的在于帮助大家明确 DOM 的本质、明确 DOM 的考察方式与权重。碍于篇幅和专栏特性的限制，笔者无法、也不会在此处充当一个 DOM API 的搬运工。但这绝不意味着你读完这么一篇总结性的文章、或者读完网上搜罗到的任何一篇 DOM API 科普，就可以高枕无忧了——DOM 操作是前端基础能力的重中之重，也是各位绝不可忽视的面试考点。</p>
+</div><div class="cl-preview-section"><p>如果在读完本节后，你仍对自己的 DOM 基础感到不自信，想到面试考 DOM 就发怵、对 DOM 相关的考题心存侥幸而不是底气。那么强烈推荐你反复阅读《JavaScript——DOM编程艺术》这本书，对 DOM 基础做真正深入、全面、系统的学习。</p>
+</div><div class="cl-preview-section"><p>再次强调，不要小看任何一块知识，最后决定你面试结果的或许恰恰就是曾经被你忽略的短板。</p>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img.mukewang.com/5ea0306300011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6832">
+						<img src="https://img2.mukewang.com/54584db9000199ca02200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_水平面赞歌_elmBU4</h4>
+						<div class="comment-text">Dom 考核容易考倒候选人 还有个原因是因为时间 我是2018年入行的。从angular 学到vue。虚拟dom很对内置了。都是学习用法，系统了解背景原理还是工作了一年之后的 自己去看的 工作中大部分还是增删改查。dom 那个时候都淘汰了。 这个时间点开始学习dom 基本上都是忽略的</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-21</span>
+						<a href="/read/commentdetail/6832">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6832" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/6031">
+						<img src="https://img2.mukewang.com/5a55a5dc00011f1101000100-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">qq_短耳朵的兔子_0</h4>
+						<div class="comment-text">节点删除那块，如果不把targetNode置空的话，会发生内存泄漏吧。</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-07-03</span>
+						<a href="/read/commentdetail/6031">
+							<span class="icon r"><i class="imwap-comment"></i><em>0</em></span>
+						</a>
+						<span data-cid="6031" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>2</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5394">
+						<img src="https://img4.mukewang.com/545847d40001cbef02200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">_奋斗的蜗牛_</h4>
+						<div class="comment-text">这篇文章不像是作者修言大神的亲笔，代码编辑错误很多，虽然无伤大雅，但对于初学者可能会造成误导，请仔细检查代码编辑部分！！！</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-10</span>
+						<a href="/read/commentdetail/5394">
+							<span class="icon r"><i class="imwap-comment"></i><em>2</em></span>
+						</a>
+						<span data-cid="5394" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5369">
+						<img src="https://img.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">TokugawaNakashima</h4>
+						<div class="comment-text">希望笔者可以编辑的时候认真一点。</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-08</span>
+						<a href="/read/commentdetail/5369">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="5369" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+				<li class="item">
+					<a href="/read/commentdetail/5319">
+						<img src="https://img1.mukewang.com/545863570001cf3702200220-100-100.jpg" alt="" class="avatar">
+						<h4 class="nickname">宅歌</h4>
+						<div class="comment-text">删除节点和修改属性的两个代码例子都有问题。文章上线后，都不自己检查一下吗？</div>
+						<div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-05-05</span>
+						<a href="/read/commentdetail/5319">
+							<span class="icon r"><i class="imwap-comment"></i><em>3</em></span>
+						</a>
+						<span data-cid="5319" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>1</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥78.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=70">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '19 DOM 基本功',
+					'CID': '1841',
+					'Teacher': '修言'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "19 DOM 基本功",
+                    desc: "拉开你与普通面试者的差距",
+                    imgUrl: 'https:https://img1.mukewang.com/5e5c85e1000116c505400720.jpg',
+                    otherImgUrl: 'https://img1.mukewang.com/5e5c85e1000116c505400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/70',
+                    link: 'https://m.imooc.com/read/70'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>

@@ -1,0 +1,804 @@
+<!doctype html>
+<html lang="zh_CN">
+
+    
+
+    
+
+    
+    
+    
+    <head>
+        
+        <title>06 给个小提示，猜猜我在哪儿 — 散列表</title>
+        
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="夯实算法内功，打通晋升之路">
+        <meta name="keywords" content="慕课网">
+        <meta name="author" content="">
+        <meta name = "format-detection" content="telephone=no">
+        <meta http-equiv="Cache-Control" content="no-transform " />
+        <meta http-equiv="Cache-Control" content="no-siteapp" />
+        <link rel="shortcut icon" href="https://m.imooc.com/static/wap/static/favicon.ico" />
+        
+        
+        
+        <script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/flexible.js"></script>
+        
+        <script type="text/javascript">
+            var userInfo = "";
+            
+                var isApp = 0;
+            
+        </script>
+         
+<!-- 专栏首页列表模板 -->
+<script type="text/template" id="index-list-tpl">
+<ul class="list-con">
+    {@each data.data as item}
+        <li>
+            <a href="/read/${item.id}" class="item clearfix">
+                <div class="img l" style="background-image: url(${item.app_pic1})">
+                    {@if item.is_new }
+                        <div class="icon new">
+                            上新
+                        </div>
+                    {@else if item.is_marking} 
+                        <div class="icon">
+                            经典
+                        </div>
+                    {@/if} 
+                </div>
+                <div class="text-con l">
+                    <div class="title">
+                        ${item.title}
+                    </div>
+                    <div class="desc">
+                        ${item.chapter_num}节 · ${item.description}
+                    </div>
+                     <div class="user-info">
+                        ${item.nickname}
+                        {@if item.author_title }
+                        <span class="dot">
+                            ·
+                        </span>
+                        ${item.author_title}
+                        {@/if}
+                    </div>
+                    <div class="info clearfix">
+                    {@if !item.isBuy } 
+                        <!-- 未购买才显示 -->
+                        <div class="price-con l">
+                        {@if item.open_discount == "1" }
+                            <span class="now">￥${item.pay_price}</span>
+                            <span class="ori">￥${item.price}</span>
+                            <p class="sale">${item.discount_name}</p>
+                        {@else}
+                            <span class="now">￥${item.price}</span>
+                        {@/if}
+                        </div>
+                    {@/if}
+                        <div class="taste-con r">
+                            <span>${item.numbers}人订阅</span>
+                            {@if !item.isBuy }
+                                <span class="gotaste">试读</span>
+                            {@else}
+                                <span class="gotaste">学习</span>
+                            {@/if}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {@/each}
+</ul>
+</script>
+
+
+
+<!-- 专栏目录 买后目录页、 -->
+<script type="text/template" id="detail-catalog-tpl">
+<ul class="catalog-list">
+{@each data.list as item}
+    <li class="zhang">
+        {@if data.structure_mode == "1" }
+            <!--章节模式-->
+            <div class="zhang-title">
+                ${item.title}（${item.count}节）
+            </div>
+            <div class="zhang-sub-title">
+                ${item.short_introduce}
+            </div>
+        {@/if}  
+        <ul class="zhang-detail">
+            {@each item.list as it,i}
+                <li class="jie">
+                    {@if data.isLogin }
+                        <!-- 购买了  -->
+                        {@if data.isBuy }
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read">
+                        {@else}
+                        <a href="javascript:;" data-link="/read/${data.column_id}/article/${it.id}" class="js-go-read" >
+                        {@/if}
+                    {@else}
+                        <!-- 未登录  -->
+                        {@if data.isApp }
+                            <a href="javascript:;" onclick="window.nativeSupport.login();">
+                        {@else}
+                            <a href="//m.imooc.com/account/login?backurl=/read/${data.column_id}">
+                        {@/if}
+                    {@/if}
+                        <div class="jie-con {@if data.last_chapter == it.id }recent{@/if}">
+                            
+                            <div class="text-con">
+                                <div class="jie-title">
+                                    ${it.title}
+                                </div>
+                                <div class="jie-status">
+                                    {@if it.is_open == "0" }
+                                        <span class="update-time" >${it.open_time_fmt}</span>
+                                    {@/if}
+                                    {@if it.view_num > 100 }
+                                    <div class="learn-num">
+                                        <i class="imwap-set-sns"></i>
+                                        <span>${it.view_num}</span>
+                                    </div>
+                                    {@/if}
+                                    {@if it.in_24hours == "1" }
+                                        <span class="update-recent">最近更新</span>
+                                    {@/if}
+                                </div>
+                            </div>
+                        </div>
+                        {@if it.is_learned }
+                            <div class="jie-right haslearn is_learned js-learn" data-type="1">
+                                已学
+                            </div>
+                        {@else}
+                            <!-- 购买了  -->
+                            {@if data.isBuy }
+                                <div class="jie-right learn js-learn" data-type="1">
+                                    学习
+                                </div>
+                            {@else}
+                                {@if it.is_pay == "0" }
+                                <!--免费小节 不占用试读次数  -->
+                                    <div class="jie-right learn js-learn" data-type="1">
+                                        免费
+                                    </div>
+                                {@else}
+                                    <div class="jie-right learn js-learn" data-type="0">
+                                        学习
+                                    </div>
+                                {@/if}
+                            {@/if}
+                            
+                            
+                        {@/if}
+                    </a>
+                </li>
+            {@/each}
+        </ul>
+    </li>
+{@/each}
+</ul>
+</script> 
+
+<!-- 阅读页 阅读页   专栏目录  -->
+<script type="text/template" id="catalog-tpl">
+<div>
+    <h2 class="article-title">${data.a_name}</h2>
+    <ul class="catalog">
+    {@each data.list as item}
+        <li class="zhang">
+            {@if data.structure_mode == "1" }
+                <!--章节模式-->
+                <div class="zhang-title">
+                    ${item.title}
+                    <!-- <div class="num">共${item.count}节</div> -->
+                </div>
+            {@/if}  
+            <ul class="zhang-detail">
+                {@each item.list as it,i}
+                    <li class="jie">
+                        <!--买了且开放的-->
+                        <a href="/read/${data.column_id}/article/${it.id}">
+                            <div class="jie-title clearfix full">
+                                <p>
+                                    {@if data.last_chapter == it.id }
+                                        <span class="recent">最近阅读</span>
+                                    {@/if}
+                                    ${it.title}
+                                </p>
+                            </div>
+                        </a>
+                    </li>
+                {@/each}
+            </ul>
+        </li>
+    {@/each}
+    </ul>
+</div>
+</script>
+
+
+
+
+
+<script type="text/javascript">
+	var isApp = "";
+	var clientVersion = "0";
+	var count_num = "3";
+	var chapter_id = "1766";
+	var chapter_title = "06 给个小提示，猜猜我在哪儿 — 散列表";
+	var aid = "74";
+	var a_name = "数据结构与算法（前端版）";
+	var a_price = "58.00";
+	var a_pic = "https://img3.mukewang.com/5e906f08000176b005400720.jpg";
+	var userId = 0;
+
+	var column_id = '74';
+	var isLogin = 0;
+	
+
+</script>
+<!-- 引入字体 -->
+<script type="text/javascript" src="//cdn.webfont.youziku.com/wwwroot/js/wf/youziku.api.min.js"></script>
+<script type="text/javascript">
+$youziku.load(".top-con .title, .cl-preview-section h1,.cl-preview-section h2,.cl-preview-section h3,.cl-preview-section h4,.cl-preview-section h5,.cl-preview-section h6", "37af461390fa4d138f5c3d277f7286dc", "SourceHanSerifSC-Heavy"); // 思源宋体heavy
+$youziku.load(".lead-motto, .cl-preview-section blockquote", "d9a0d855583142c3b2cc3bf1646a8473", "SourceHanSerifSC-Regular"); // 思源宋体regular
+$youziku.load("#article_content, .cl-preview-section pre, .cl-preview-section code, #code-copy", "3d84aabcf9e44b6f8c6fa91c61fa926e", "HYQiHei-55S"); // 汉仪旗黑55s
+$youziku.load(".cl-preview-section strong", "fd94fff3a17546a28913a79613bddcec", "HYQiHei-77S"); // 汉仪旗黑70s
+
+$youziku.draw();
+</script>
+
+<style type="text/css">
+  header{
+    display: none!important;
+  }
+  
+  #wrapper{
+  	padding-top:0px !important;
+  }
+  
+</style>
+
+
+
+    <link rel="stylesheet" href="https://m.imooc.com/static/wap/static/common/css/common_d42b1ef.css" /><link rel="stylesheet" href="https://m.imooc.com/static/wap/static/css/read/7.2.8/article_2d28313.css" /></head>
+    <body >
+        
+          
+        
+
+        
+          
+        
+
+        
+          
+
+
+
+
+
+
+
+<header class="directory2">
+	<div class="header clearfix">
+		
+			
+				<div class="page-title clearfix">
+					<a href="//m.imooc.com" class="imwap-icon-imooc"></a>
+					<div class="page-title-name js-page-name">
+						<span>专栏</span>
+						<i class="imwap-arrow_d"></i>
+					</div>
+				</div>
+			
+
+			
+			<div class="drawer-box js-drawer-more">
+				<i class="imwap-more_vert"></i>
+				<div class="drawer-content js-drawer-content">
+					<p class="line-row"></p>
+					<a class="drawer-item" href="//m.imooc.com"><i class="imwap-center"></i>回到首页</a>
+					<a class="drawer-item" href="//www.imooc.com/m/web/user/usercenter.html"><i class="imwap-peaple"></i>个人中心</a>
+					<a class="drawer-item" href="//m.imooc.com/feedback"><i class="imwap-comment"></i>反馈问题</a>
+					
+					<a class="drawer-item" href="//m.imooc.com/account/login"><i class="imwap-out"></i>注册登录</a>
+					
+				</div>
+			</div>
+			
+
+			
+				<a id="js-appload" href="Javascript:;" class="app-load"><span>下载APP</span></a>
+			
+
+		
+	</div>
+	
+	<div class="page-tab-wrap">
+		<div class="page-tab-list">
+			<a href="//m.imooc.com" class="page-tab-item">首页</a>
+			<a href="//m.imooc.com/course/list" class="page-tab-item">课程</a>
+			<a href="//coding.m.imooc.com" class="page-tab-item">实战</a>
+			<a href="//class.m.imooc.com" class="page-tab-item">金职位</a>
+			<a href="//m.imooc.com/article" class="page-tab-item">手记</a>
+			<a href="//m.imooc.com/read" class="page-tab-item active">专栏</a>
+			<a href="//m.imooc.com/wenda" class="page-tab-item">猿问</a>
+			<a href="//m.imooc.com/wiki" class="page-tab-item">慕课教程</a>
+			
+		</div>
+	</div>
+	
+</header>
+
+
+        
+
+        <div id="wrapper">
+            <div id="middle" class="container ">
+
+                
+
+                
+	
+		
+	
+	<div class="top-con">
+		<p class="update-time"><span>2020-08-10&nbsp;&nbsp;&nbsp;更新</span></p>
+		<div class="title">
+			06 给个小提示，猜猜我在哪儿 — 散列表
+		</div>
+	</div>
+	
+		<div class="article-img" style="background-image: url('https://img1.mukewang.com/5e9d06450001359706400360.jpg')"></div>
+	
+	
+		<a href="/read/74">
+			<div class="course-entry">
+				<img src="https://img1.mukewang.com/5e8ec09400017c8502000284-40-40.jpg" alt="yancy__">
+				<h3>数据结构与算法（前端版）</h3>
+				<p>yancy__ · 高级架构师</p>
+				<i class="imwap-arrow_r"></i>
+			</div>
+		</a>
+	
+	
+		<div class="lead-motto">
+			<div class="content">构成我们学习最大障碍的是已知的东西，而不是未知的东西。 <p class="author">—— 贝尔纳</p></div>
+		</div>
+	
+	
+		<div class="content" id="article_content">
+			
+			<div class="cl-preview-section"><h2 id="故事背景：">故事背景：</h2>
+</div><div class="cl-preview-section"><h3 id="人物：">人物：</h3>
+</div><div class="cl-preview-section"><p>​	大牛</p>
+</div><div class="cl-preview-section"><p>​	小白</p>
+</div><div class="cl-preview-section"><p>​	广西某高铁站所有乘客</p>
+</div><div class="cl-preview-section"><h3 id="场景：">场景：</h3>
+</div><div class="cl-preview-section"><p>​	美食和知识 — 对话肯德基</p>
+</div><div class="cl-preview-section"><h2 id="前言：">前言：</h2>
+</div><div class="cl-preview-section"><p>散列表，是根据关键码值而直接进行访问的数据结构。它通过把关键码值（通过一系列的计算）映射到表中一个位置来访问记录，以加快查找的速度。</p>
+</div><div class="cl-preview-section"><p>随着 G250 次列车徐徐进站。原来趋于平静的广西高铁站重新热闹起来。旅客们带着大包小包的行李奔向出站口。</p>
+</div><div class="cl-preview-section"><p>“小白，你先找个地儿等我，我先去趟洗手间……”</p>
+</div><div class="cl-preview-section"><center><img src="http:https://img.mukewang.com/5e9d0b5e0001cbcb06780462.png" width="400" height=""></center>
+</div><div class="cl-preview-section"><p>“好，旁边有个肯德基，我就在肯德基等你。”</p>
+</div><div class="cl-preview-section"><p>小白到了肯德基找了个地方坐下等大牛。</p>
+</div><div class="cl-preview-section"><p>过了不久，小白就看见大牛推开肯德基的门。”牛哥，这儿！“</p>
+</div><div class="cl-preview-section"><p>“去了一趟洗手间，感觉一身轻松啊。小白啊，哥哥现在很开心，所以我决定考一考你。怎么样，现在有没有兴趣挑战一下？”。大牛刚坐下就开始一脸奸笑地看着小白。</p>
+</div><div class="cl-preview-section"><p>“不是吧牛哥，这一路你都考我三次了，就不能让我消停消停。”</p>
+</div><div class="cl-preview-section"><p>“让你学习还委屈了是吧，你将来这样怎么升职加薪，怎么走上人生巅峰。”</p>
+</div><div class="cl-preview-section"><p>“得得得，我投降，考就考呗，有什么大不了的。有什么问题放马过来吧，我接着就是了。”</p>
+</div><div class="cl-preview-section"><p>“哼，刚才我找你的时候，先去了旁边那家肯德基，但是没有看到你，到这儿之后才看见你在这儿。你说说，这种情况，跟一种数据结构相似。”</p>
+</div><div class="cl-preview-section"><p>“不就是<strong>散列表</strong>吗，我一想就想到了。”</p>
+</div><div class="cl-preview-section"><p>“为什么是散列表呢？”</p>
+</div><div class="cl-preview-section"><p>“现在就让本白给你解答一下。”</p>
+</div><div class="cl-preview-section"><h2 id="哈希��定义">1. 哈希表定义</h2>
+</div><div class="cl-preview-section"><ol>
+<li>
+<p><strong>散列表也叫哈希表（以下统称哈希表）</strong>，是根据关键码值而直接进行访问的数据结构；</p>
+</li>
+<li>
+<p>把关键码值映射到表中的方法 — <strong>哈希函数</strong>；</p>
+</li>
+<li>
+<p>存放记录的表 — <strong>实际存储结构</strong> 。</p>
+</li>
+</ol>
+</div><div class="cl-preview-section"><p>哈希表其实就是通过哈希函数来确定一个位置，然后再表中的这个位置来存储数据。</p>
+</div><div class="cl-preview-section"><p>例如：</p>
+</div><div class="cl-preview-section"><center><img src="http:https://img.mukewang.com/5e9d0c1d0001ce4e08600524.png" width="" height=""></center> 
+</div><div class="cl-preview-section"><p>“刚才你在找我的时候，首先是先查看站内肯德基的店在哪。然后就去店里找我。这种情况也只有哈希表合适嘛。”</p>
+</div><div class="cl-preview-section"><p>“嗯，讲得还可以。现在换一种方式，用代码实现一遍吧。” 说着大牛从包里拿出纸笔递给小白。</p>
+</div><div class="cl-preview-section"><p>“牛哥，这都什么时候了，还考手写代码呢。这套早就过时了。不过，既然您这出招了，我咋的也得接着不是。”</p>
+</div><div class="cl-preview-section"><p>哈希表最重要的是<strong>哈希函数</strong>，存储的过程也是计算哈希函数的过程。</p>
+</div><div class="cl-preview-section"><p>哈希表实现思路：</p>
+</div><div class="cl-preview-section"><ol>
+<li>创建存储位置 — 建立一个数组用来存放元素；</li>
+<li>创建哈希函数 — 这是哈希表最重要的一步；</li>
+<li>通过计算后的位置存储元素。</li>
+</ol>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token keyword">class</span> <span class="token class-name">HashMap</span> <span class="token punctuation">{</span>
+  <span class="token function">constructor</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 创建一个数组用来存放元素</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>list <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token comment">// 创建哈希函数 并通过传入key值 得到code值</span>
+  <span class="token function">hashCode</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> key<span class="token punctuation">.</span>length <span class="token operator">%</span> <span class="token number">10</span>
+  <span class="token punctuation">}</span>
+  <span class="token comment">// 创建存储元素的方法</span>
+  <span class="token function">put</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span>value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>list<span class="token punctuation">[</span><span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">hashCode</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">]</span> <span class="token operator">=</span> value<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token comment">// 创建获取元素的方法</span>
+  <span class="token keyword">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>list<span class="token punctuation">[</span><span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">hashCode</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token comment">// 删除表中的元素</span>
+  <span class="token function">remove</span> <span class="token punctuation">(</span>key<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>list<span class="token punctuation">[</span><span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">hashCode</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">]</span> <span class="token operator">===</span> undefined<span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token comment">// 清空表</span>
+  <span class="token function">clear</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>list <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 初始化散列表</span>
+<span class="token keyword">const</span> hashMap <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// 存入一个元素</span>
+hashMap<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span><span class="token string">'animal'</span><span class="token punctuation">,</span> <span class="token string">'dog'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// 获取元素</span>
+hashMap<span class="token punctuation">.</span><span class="token keyword">get</span><span class="token punctuation">(</span><span class="token string">'animal'</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 输出dog</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这样，一个基本的哈希表结构就实现了。</p>
+</div><div class="cl-preview-section"><p>“嗯嗯，写的不错嘛。这样确实是能实现一个简单的哈希表结构，但是不会有什么问题吗？”</p>
+</div><div class="cl-preview-section"><p>“别着急啊牛哥，我就知道您会刨根问底。请听我接着往下说。”</p>
+</div><div class="cl-preview-section"><p>上面我们也说过了，<strong>哈希函数是哈希表最重要的组成部分</strong>。对于哈希函数的定义我也知道几种方法。</p>
+</div><div class="cl-preview-section"><h2 id="哈希函数">2. 哈希函数</h2>
+</div><div class="cl-preview-section"><h3 id="直接给定地址法">2.1 直接给定地址法</h3>
+</div><div class="cl-preview-section"><p>例如：人口统计表，统计 1-100 岁的人数。这种表可以直接使用年龄作为地址，无需经过哈希计算。</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token keyword">function</span> <span class="token function">hashCode</span><span class="token punctuation">(</span>age<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">return</span> age<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="数字分析方法">2.2 数字分析方法</h3>
+</div><div class="cl-preview-section"><p>如：</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token comment">/* 一个班级的学生要统计出生日期
+年。月。日
+96.10.07
+96.12.16
+96.05.17
+96.05.11
+96.12.08
+96.11.13
+……
+*/</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>这种情况下的数据经过分析，只有前三位的重复性是比较大的，取前三位造成的冲突可能会比较大，所以我们尽量不用前三位，只用后三位会比较好。</p>
+</div><div class="cl-preview-section"><h3 id="平方取中法">2.3 平方取中法</h3>
+</div><div class="cl-preview-section"><p>如：</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token keyword">function</span> <span class="token function">hashCode</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">const</span> len <span class="token operator">=</span> <span class="token template-string"><span class="token string">`</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>key<span class="token punctuation">.</span>length <span class="token operator">*</span> key<span class="token punctuation">.</span>lenth<span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">`</span></span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> len<span class="token punctuation">.</span><span class="token function">slice</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span>len<span class="token punctuation">.</span>length <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span class="token function">hashCode</span><span class="token punctuation">(</span><span class="token string">'my name is xiaobai'</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">//得到的结果为 324取最中间的一位 === 2</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="取余法">2.4 取余法</h3>
+</div><div class="cl-preview-section"><p>这个方法我们在例子中使用了。即以哈希表存储长度作为除数取余。</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token comment">// 如果 哈希表最大存储长度为 30</span>
+<span class="token keyword">function</span> <span class="token function">hashCode</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">return</span> key <span class="token operator">%</span> <span class="token number">30</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><h3 id="随机数法">2.5 随机数法</h3>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token keyword">function</span> <span class="token function">HashCode</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">return</span> Math<span class="token punctuation">.</span><span class="token function">floor</span><span class="token punctuation">(</span>Math<span class="token punctuation">.</span><span class="token function">random</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span> key<span class="token punctuation">.</span>length<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token comment">// 得到一个随机的位置</span>
+</code></pre>
+</div><div class="cl-preview-section"><p>“一口气说这么多，我嘴都干了。”</p>
+</div><div class="cl-preview-section"><p>“不错不错，小白讲解得很透彻。来来来，喝口水，继续往下说。”</p>
+</div><div class="cl-preview-section"><h2 id="哈希冲突">3. 哈希冲突</h2>
+</div><div class="cl-preview-section"><p>剩下的一部分是哈希冲突。<strong>冲突</strong>就是两个 key 经过哈希函数处理后得到了一样的值。</p>
+</div><div class="cl-preview-section"><center><img src="http:https://img.mukewang.com/5e9d0cd20001909108380631.png" width="400" height=""></center>
+</div><div class="cl-preview-section"><p>无论我们设计得有多么精细，都逃脱不了冲突的命运。所以，我们需要一些手段来避免或者是解决这种冲突现象。</p>
+</div><div class="cl-preview-section"><h3 id="链地址法">3.1 链地址法</h3>
+</div><div class="cl-preview-section"><p>如果我们在添加元素的过程中发现要添加的位置已经有了一个元素存在，那么我们可以将这个地址的结构改变为链表存储。</p>
+</div><div class="cl-preview-section"><p>如：</p>
+</div><div class="cl-preview-section"><center><img src="http:https://img.mukewang.com/5e9d0d5d0001daf809250469.png" width="" height=""></center> 
+</div><div class="cl-preview-section"><p>可修改为：</p>
+</div><div class="cl-preview-section"><center><img src="http:https://img.mukewang.com/5e9d0d9b00016b7508290458.png" width="" height=""></center>  
+</div><div class="cl-preview-section"><h3 id="多哈希法">3.2 多哈希法</h3>
+</div><div class="cl-preview-section"><p>多设计几种哈希函数：</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token keyword">function</span> <span class="token function">hashCode1</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">;</span>
+<span class="token keyword">function</span> <span class="token function">hashCode2</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">;</span>
+<span class="token keyword">function</span> <span class="token function">hashCode3</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">;</span>
+<span class="token keyword">function</span> <span class="token function">hashCode4</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">;</span>
+……
+</code></pre>
+</div><div class="cl-preview-section"><p>一种哈希函数导致冲突的可能性比较大，但是设计两种甚至多种哈希函数虽说还是有冲突几率，但是可以将这种几率降到最低。</p>
+</div><div class="cl-preview-section"><center><img src="http:https://img.mukewang.com/5e9d0df00001b1c007790629.png" width="600" height=""></center>
+</div><div class="cl-preview-section"><h3 id="开放地址法">3.3 开放地址法</h3>
+</div><div class="cl-preview-section"><p>开放地址有一个公式： <span class="katex--inline">KaTeX parse error: Expected 'EOF', got '）' at position 40: …,2,...,k(k&lt;=m-1）̲</span></p>
+</div><div class="cl-preview-section"><p>m 为表的长度，d 为每次的增量。</p>
+</div><div class="cl-preview-section"><p>这种方式称为<strong>线性探测再散列</strong> — 每次发现冲突后向后移动一个位置。</p>
+</div><div class="cl-preview-section"><center><img src="http:https://img.mukewang.com/5e9d0e3b0001ed6e09350579.png" width="700" height=""></center>
+</div><div class="cl-preview-section"><h3 id="桶地址法">3.4 桶地址法</h3>
+</div><div class="cl-preview-section"><p>“为表中的每个地址关联一个桶，如果桶已经满了，就使用开放地址法处理。”</p>
+</div><div class="cl-preview-section"><p>“来，再说一个基本的问题，哈希表的时间和空间复杂度各是多少？”</p>
+</div><div class="cl-preview-section"><p><strong>时间复杂度：</strong><span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">O(1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathrm">1</span><span class="mclose">)</span></span></span></span></span></p>
+</div><div class="cl-preview-section"><p><strong>空间复杂度：</strong><span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">O(n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathit">n</span><span class="mclose">)</span></span></span></span></span></p>
+</div><div class="cl-preview-section"><p>哈希表的执行效率是使用空间来换取时间的。获取元素只需要知道 key对应的 hash 值，所以时间复杂度为 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">O(1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathrm">1</span><span class="mclose">)</span></span></span></span></span> 。</p>
+</div><div class="cl-preview-section"><p>如果需要添加 n 个元素到哈希表中，至少需要映射 n 次，所以一个哈希表的期望空间复杂度为 <span class="katex--inline"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow><annotation encoding="application/x-tex">O(n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height: 0.75em;"></span><span class="strut bottom" style="height: 1em; vertical-align: -0.25em;"></span><span class="base"><span class="mord mathit" style="margin-right: 0.02778em;">O</span><span class="mopen">(</span><span class="mord mathit">n</span><span class="mclose">)</span></span></span></span></span></p>
+</div><div class="cl-preview-section"><p>“不错不错，今天的回答让我很满意。现在赶快到酒店去吧，好好休息休息。这几天的工作可能会很累。”</p>
+</div><div class="cl-preview-section"><p>“革命工作一块砖，哪里需要哪里搬。工作嘛，哪有不累的。”</p>
+</div><div class="cl-preview-section"><p>“说的也是，那我们现在出发吧。”</p>
+</div><div class="cl-preview-section"><p>“……”</p>
+</div><div class="cl-preview-section"><h4 id="小结：">小结：</h4>
+</div><div class="cl-preview-section"><p><strong>本节主要讲述了</strong></p>
+</div><div class="cl-preview-section"><p><strong>1.什么是散列表</strong>；<br>
+<strong>2.哈希函数的定义方式 – 直接给定地址、数字分析、平方取中、取余、随机数</strong>；</p>
+</div><div class="cl-preview-section"><p><strong>3.哈希冲突的产生和解决方法-- 链地址法、多哈希法、开放地址法、桶地址法</strong>。</p>
+</div><div class="cl-preview-section"><p>努力学习的你，加油！！！</p>
+</div><div class="cl-preview-section"><center><img src="http:https://img.mukewang.com/5e9d0ef500012b9f18820768.png" width="300" height=""></center>
+</div><div class="cl-preview-section"><h2 id="番外篇">番外篇</h2>
+</div><div class="cl-preview-section"><p>面试题攻坚战 — 肆：</p>
+</div><div class="cl-preview-section"><p><font color="orange"><strong>替换 val 值。并且保证替换前相同的节点替换后也相同 </strong></font></p>
+</div><div class="cl-preview-section"><p>注：使用时间复杂度尽可能小的算法（解题方式不唯一）</p>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token comment">// 替换前 第4 8 24 行的val相同，替换后，这几行的val依然相同。</span>
+<span class="token keyword">let</span> data <span class="token operator">=</span> <span class="token punctuation">[</span>
+  <span class="token punctuation">{</span>
+    val<span class="token punctuation">:</span> <span class="token number">1.235464654</span><span class="token punctuation">,</span>
+    child<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+      val<span class="token punctuation">:</span> <span class="token number">0.656464848</span><span class="token punctuation">,</span>
+      child<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        val<span class="token punctuation">:</span> <span class="token number">1.235464654</span><span class="token punctuation">,</span>
+        child<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+          val<span class="token punctuation">:</span> <span class="token number">1.467487978</span><span class="token punctuation">,</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+            val<span class="token punctuation">:</span> <span class="token number">0.656464848</span><span class="token punctuation">,</span>
+            child<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+              <span class="token comment">// ………………</span>
+            <span class="token punctuation">}</span>
+          <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">]</span><span class="token punctuation">;</span>
+</code></pre>
+</div><div class="cl-preview-section"><h4 id="解：">解：</h4>
+</div><div class="cl-preview-section"><pre class="  language-javascript"><code class="prism  language-javascript"><span class="token keyword">const</span> map <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Map</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">replaceSameElement</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 遍历data</span>
+<span class="token keyword">function</span> <span class="token function">replaceSameElement</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  data<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>item <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    <span class="token function">deepReplace</span><span class="token punctuation">(</span>item<span class="token punctuation">)</span>
+  <span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">// 遍历data中每个元素的后继节点</span>
+<span class="token keyword">function</span> <span class="token function">deepReplace</span><span class="token punctuation">(</span>child<span class="token punctuation">)</span><span class="token punctuation">{</span>
+  <span class="token comment">// 首先获取map中存储的值</span>
+  <span class="token keyword">let</span> middle <span class="token operator">=</span> map<span class="token punctuation">.</span><span class="token keyword">get</span><span class="token punctuation">(</span>child<span class="token punctuation">.</span>val<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>middle<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 如果没有获取到，就重新生成一个，并且存储到map中</span>
+    middle <span class="token operator">=</span> <span class="token punctuation">(</span>Math<span class="token punctuation">.</span><span class="token function">random</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toFixed</span><span class="token punctuation">(</span><span class="token number">9</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    map<span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span>child<span class="token punctuation">.</span>val<span class="token punctuation">,</span> middle<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token comment">// 将节点的val值替换成获取到的值</span>
+  child<span class="token punctuation">.</span>val <span class="token operator">=</span> middle<span class="token punctuation">;</span>
+
+  <span class="token comment">// 如果还有后继节点，则递归替换</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>child<span class="token punctuation">.</span>child<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">deepReplace</span><span class="token punctuation">(</span>child<span class="token punctuation">.</span>child<span class="token punctuation">)</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+</div><div class="cl-preview-section"><p><strong>解题思路</strong></p>
+</div><div class="cl-preview-section"><ol>
+<li>首先需要创建一个表，用来存储生成的随机数；</li>
+<li>循环遍历 data 下第一层的子节点，由于 data 为数组，所以使用 forEach 来遍历；</li>
+<li>创建一个新的函数用来遍历第二层之后的子节点；</li>
+<li>查询节点的 val 值，如果 map 中有保存，则说明之前有生成过，此时直接拿到存储的值替换到 child.val 中即可；</li>
+<li>如果在 map 中没有获取到值，则重新生成一个，并且保存到 map 中；</li>
+<li>若还有后继的 child 节点，则递归替换。</li>
+</ol>
+</div>
+			
+		</div>
+	
+	
+	<div class="finish-learn">
+		<p class="copyright">©版权归慕课网所有，未经许可不得转载</p>
+		
+		
+		
+		<div class="ad_pic">
+			<img src="https://img4.mukewang.com/5e9d064700011d7f06700192.jpg">
+		</div>
+		
+		
+		
+		
+	</div>
+	<div class="comment-con">
+		<h4 class="title">
+			精选留言
+			
+				<a href="javascript: void(0);" class="add-comment js-comment-click"><i class="imwap-xieliuyan"></i><span>写留言</span></a>
+			
+		</h4>
+		
+			<ul class="comment-content">
+				
+				<li class="item">
+					<a href="/read/commentdetail/6869">
+						<img src="https://img1.mukewang.com/images/unknow-160.png" alt="" class="avatar">
+						<h4 class="nickname">weixin_慕九州4190220</h4>
+						<div class="comment-text">val: 1.467487978,: {   这个, 后面的:{ 是题目错了 还是说本来就是这样</div>
+						<div>
+							
+								<div class="reply">讲师回复：这里少了个child，感谢同学提醒。稍后更改下</div>
+							
+						</div>
+					</a>
+					<p class="bottom">
+						<span class="l">2020-09-25</span>
+						<a href="/read/commentdetail/6869">
+							<span class="icon r"><i class="imwap-comment"></i><em>1</em></span>
+						</a>
+						<span data-cid="6869" class="icon r js-comment-upvote "><i class="imwap-thumb_up"></i><em>0</em></span>
+					</p>
+				</li>
+				
+			</ul>
+			
+		
+	</div>
+	
+	
+
+	
+		
+	
+	
+	
+		<div class="bottom-con">
+			
+			
+				<div class="inner">
+					
+						<div class="price-con js-price-con">
+							<span class="now">￥58.00</span>
+						</div>
+							
+					
+					
+					<a class="gobuy js-gobuy" href="//m.imooc.com/account/login?backurl=//m.imooc.com/confirmorder?type=30&typeid=74">
+					
+						立即购买
+					</a>  
+				</div>
+			
+		</div>
+	
+	<div class="layer-catalog js-layer-catalog hide">
+		<div class="layer-title clearfix">
+			<div class="l">
+				课程目录
+			</div>
+			
+		</div>
+		<div class="layer-wrap">
+			<div class="js-catalog-container">
+			</div>
+		</div>
+	</div>
+	<div class="layer-comment">
+		<div class="inner">
+			<h5>
+				<span class="btn l js-cancel-comment">取消</span>
+				评论
+				<span class="btn r js-send-comment">发送</span>
+			</h5>
+			<textarea id="comment-txt" maxlength="20000" placeholder="欢迎在这里发表留言，作者筛选后可公开显示"></textarea>
+		</div>
+	</div>
+
+
+            </div>
+        </div>
+        
+            
+         
+        
+        
+        
+        
+
+
+
+
+<script>
+	// 设置字号大小及选中
+	(function() {
+			var fs = window.localStorage.getItem('font-size') || 'normal';
+			var $c = document.querySelector('#middle>.content');
+			var $points = document.querySelectorAll('.setting-box .point');
+			try{
+				// 抢读完了时 该元素不渲染 会有报错
+				$c.className = 'content ' + fs;
+				for(var i = 0; i < $points.length; i++) {
+					if($points[i].className.indexOf(fs) > -1) {
+						$points[i].className = $points[i].className + ' current';
+					}
+				}
+			} catch(e) {}
+			
+	})();
+</script>
+
+<script type="text/javascript">
+	window.onload = function() {
+			zhuge.track('LearnCourse', {
+					'Category': '专栏',
+					'Name': '06 给个小提示，猜猜我在哪儿 — 散列表',
+					'CID': '1766',
+					'Teacher': 'yancy__'
+			});
+	}
+</script>
+
+        
+            <script type="text/javascript">
+                var shareData = { 
+                    title:  "06 给个小提示，猜猜我在哪儿 — 散列表",
+                    desc: "夯实算法内功，打通晋升之路",
+                    imgUrl: 'https:https://img3.mukewang.com/5e906f08000176b005400720.jpg',
+                    otherImgUrl: 'https://img3.mukewang.com/5e906f08000176b005400720.jpg',
+                    text: '我正在参加@慕课网的课程，很不错哦！快来一起学习吧！',
+                    // url: 'https://www.imooc.com' + window.location.pathname + window.location.search
+                    url: 'https://m.imooc.com/read/74',
+                    link: 'https://m.imooc.com/read/74'
+                }
+            </script>
+            
+        
+        <div style="display:none;">
+            <!-- 百度统计 -->
+            <script>
+            var _hmt = _hmt || [];
+            (function() {
+              var hm = document.createElement("script");
+              hm.src = "https://hm.baidu.com/hm.js?c92536284537e1806a07ef3e6873f2b3";
+              var s = document.getElementsByTagName("script")[0];
+              s.parentNode.insertBefore(hm, s);
+            })();
+            </script>
+
+            <script>
+            (function(){
+                var bp = document.createElement('script');
+                var curProtocol = window.location.protocol.split(':')[0];
+                if (curProtocol === 'https') {
+                    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+                }
+                else {
+                    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+                }
+                var s = document.getElementsByTagName("script")[0];
+                s.parentNode.insertBefore(bp, s);
+            })();
+            </script>
+        </div>
+        
+    <script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/zhugeio/init_f9752c3.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/jquery-2.1.0.min_ac9f840.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/common_84429c0.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/juicer/juicer.min_8643248.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/lib/previewImage/previewImage.min_43b970d.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/common/js/msg_bed8d10.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/read/7.2.8/article_30e5762.js"></script><script type="text/javascript" src="https://m.imooc.com/static/wap/static/js/course/advertisementReport_6e58a98.js"></script></body>
+</html>
