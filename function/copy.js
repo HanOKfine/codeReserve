@@ -3,15 +3,15 @@
  * 深拷贝 - 递归复制
  * param: obj 数组/对象
  */
-function deepCopy(obj){
+function deepCopyByCycle(obj){
     let result = Array.isArray(obj) ? [] : {};
     for (var key in obj) {
         if (obj.hasOwnProperty(key)) {
-        if (typeof obj[key] === "object" && obj[key]!==null) {
-            result[key] = this.deepCopy(obj[key]);//递归复制
-        } else {
-            result[key] = obj[key];
-        }
+            if (typeof obj[key] === "object" && obj[key]!==null) {
+                result[key] = this.deepCopy(obj[key]);//递归复制
+            } else {
+                result[key] = obj[key];
+            }
         }
     }
     return result;

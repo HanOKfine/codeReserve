@@ -1,0 +1,571 @@
+﻿<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>js移动端视频播放代码-jq22.com</title>
+<script src="https://libs.baidu.com/jquery/1.11.3/jquery.min.js"></script>
+<style>
+ /* *CoolPlay视频播放器
+ * 2016年8月1日 
+ * 627314658@qq.com 
+ * */
+
+@font-face {
+	font-family:'icomoon';
+	src:url('fonts/icomoon.eot?63s28v');
+	src:url('fonts/icomoon.eot?63s28v#iefix') format('embedded-opentype'),url('fonts/icomoon.ttf?63s28v') format('truetype'),url('fonts/icomoon.woff?63s28v') format('woff'),url('fonts/icomoon.svg?63s28v#icomoon') format('svg');
+	font-weight:normal;
+	font-style:normal;
+}
+[class^="icon-"],[class*=" icon-"] {
+	/* use !important to prevent issues with browser extensions that change fonts */
+	font-family:'icomoon' !important;
+	speak:none;
+	font-style:normal;
+	font-weight:normal;
+	font-variant:normal;
+	text-transform:none;
+	line-height:1;
+	/* Better Font Rendering =========== */
+	-webkit-font-smoothing:antialiased;
+	-moz-osx-font-smoothing:grayscale;
+}
+/*一种旋转的策略*/
+@-moz-keyframes spin {
+	0% {
+	-moz-transform:rotate(0deg)
+}
+100% {
+	-moz-transform:rotate(359deg)
+}
+}@-webkit-keyframes spin {
+	0% {
+	-webkit-transform:rotate(0deg)
+}
+100% {
+	-webkit-transform:rotate(359deg)
+}
+}@-o-keyframes spin {
+	0% {
+	-o-transform:rotate(0deg)
+}
+100% {
+	-o-transform:rotate(359deg)
+}
+}@-ms-keyframes spin {
+	0% {
+	-ms-transform:rotate(0deg)
+}
+100% {
+	-ms-transform:rotate(359deg)
+}
+}@keyframes spin {
+	0% {
+	transform:rotate(0deg)
+}
+100% {
+	transform:rotate(359deg)
+}
+}* {
+	margin:0;
+	padding:0;
+}
+body {
+	font-size:16px;
+	font-family:"微软雅黑";
+}
+/*播放器区域*/
+.cool-play {
+	width:100%;
+	height:100%;
+	position:relative;
+}
+.cool-play:-webkit-full-screen {
+	width:100%;
+	height:100%;
+}
+.cool-play .cool-title {
+	width:100%;
+	height:40px;
+	background-color:rgba(130,129,129,0.8);
+	position:relative;
+	line-height:40px;
+	z-index:2;
+	color:#ff6600;
+	opacity:0;
+	transition:opacity 0.8s;
+	-webkit-transition:opacity 0.8s;
+	-moz-transition:opacity 0.8s;
+	-ms-transition:opacity 0.8s;
+}
+.cool-play .cool-title span {
+	padding-left:20px;
+}
+.cool-play .cool-video .icon-c-loading {
+	color:#FF6600;
+	top:50%;
+	left:50%;
+	position:absolute;
+	font-size:40px;
+	margin-left:-20px;
+	margin-top:-20px;
+	-moz-animation:spin 2s infinite linear;
+	-o-animation:spin 2s infinite linear;
+	-webkit-animation:spin 2s infinite linear;
+	animation:spin 2s infinite linear;
+	display:none;
+}
+.cool-play .video {
+	width:100%;
+	height:100%;
+	position:absolute;
+	top:0;
+	left:0;
+	background-color:#000;
+}
+/*播放器按钮*/
+.cool-module {
+	width:100%;
+	background-color:rgba(130,129,129,0.8);
+	bottom:0px;
+	left:0px;
+	position:absolute;
+	opacity:1;
+	/*方便调试，先定义为1，正常情况为0*/
+	
+	color:#fff;
+	transition:opacity 0.8s;
+	-webkit-transition:opacity 0.8s;
+	-moz-transition:opacity 0.8s;
+	-ms-transition:opacity 0.8s;
+}
+.cool-module a {
+	cursor:pointer;
+}
+.cool-btn {
+	height:38px;
+}
+.cool-play:hover .cool-title {
+	opacity:1;
+}
+.cool-play:hover .cool-module {
+	opacity:1;
+}
+.cool-btn .btn a {
+	font-size:24px;
+	line-height:38px;
+	padding-left:10px;
+	padding-right:10px;
+	display:inline-block;
+}
+.cool-btn .cool-btn-left {
+	display:inline-block;
+	padding-left:10px;
+	float:left;
+}
+.cool-btn .cool-btn-center {
+	display:inline-block;
+	line-height:38px;
+	float:left;
+	font-size:12px;
+	color:#FFFFFF;
+	margin-left:20px;
+}
+.cool-btn .cool-btn-right {
+	display:inline-block;
+	float:right;
+	padding-right:10px;
+}
+.cool-btn a:hover {
+	color:#ff5500;
+}
+/*进度条*/
+.cool-module .cool-progress {
+	width:100%;
+	height:4px;
+	background-color:#fff;
+	display:block;
+	position:relative;
+}
+.cool-module .cool-progress .cool-played {
+	background-color:#ff6600;
+	height:100%;
+	width:0%;
+	position:absolute;
+	/*transition:width .3s;
+	-webkit-transition:width .3s;
+	-moz-transition:width .3s;
+	-ms-transition:width .3s;
+	*/
+}
+.cool-module .cool-progress .cool-drag {
+	height:8px;
+	width:8px;
+	border-radius:100%;
+	background-color:#fff;
+	top:-2px;
+	position:relative;
+	margin-left:0%;
+	position:absolute;
+	display:none;
+}
+.voice {
+	position:relative;
+}
+.voice:hover .c-voice {
+	display:block;
+}
+.c-voice {
+	position:absolute;
+	width:40px;
+	height:120px;
+	background-color:rgba(130,129,129,0.8);
+	bottom:38px;
+	left:0;
+	display:none;
+}
+.c-voice-triangle {
+	position:absolute;
+	bottom:-6px;
+	left:12px;
+	width:0;
+	height:0;
+	border-left:8px solid transparent;
+	border-right:8px solid transparent;
+	border-top:6px solid rgba(130,129,129,0.8);
+}
+.voice-bar {
+	height:100px;
+	width:2px;
+	background-color:#000;
+	position:absolute;
+	left:50%;
+	margin-left:-1px;
+	bottom:10px;
+}
+.voice-bared {
+	height:80px;
+	width:2px;
+	background-color:#f50;
+	position:absolute;
+	left:50%;
+	margin-left:-1px;
+	bottom:0;
+}
+.voice-dot {
+	position:absolute;
+	width:10px;
+	height:10px;
+	background-color:#fff;
+	border-radius:100%;
+	left:-4px;
+	top:-5px;
+}
+.voice-mask {
+	height:100px;
+	width:20px;
+	background-color:red;
+	position:absolute;
+	bottom:10px;
+	left:50%;
+	margin-left:-10px;
+	opacity:0;
+}
+</style>
+</head>
+<body>
+<div class="" style="width:600px;height: 400px;margin: 50px auto;">
+    <div id="cool-play" class="cool-play">
+
+        <div class="cool-video">
+            <video id="video" class="video">
+						<source src="https://blz-videos.nosdn.127.net/1/OverWatch/AnimatedShots/Overwatch_AnimatedShot_Bastion_TheLastBastion.mp4" type="video/mp4">
+						您的浏览器不支持 HTML5 video 标签。
+					</video>
+            <span class="icon-c-loading"></span>
+        </div>
+
+        <div id="c-box" class="cool-module">
+            <div class="">
+                <a id="c-progress" class="cool-progress">
+                    <span id="c-played" class="cool-played"></span>
+                    <span type="range" id="c-drag" class="cool-drag"></span>
+                </a>
+            </div>
+            <div class="cool-btn">
+                <div class="cool-btn-left btn">
+                    
+                    <a id="c-play" onclick="playPause()">》</a>
+                    
+                </div>
+                <div class="cool-btn-center">
+                    <span id="c-currentTime">00:00</span>
+                    <span>/</span>
+                    <span id="c-totalTime">00:00</span>
+                </div>
+                <div class="cool-btn-right btn">
+                    <a class="icon-c-refresh"></a>
+                    <a class="voice">
+                        <span class="i-voice icon-c-voice"></span>
+                        <span class="c-voice">
+									<span class="c-voice-triangle"></span>
+                        <span class="voice-bar">
+										<span class="voice-bared">
+											<span class="voice-dot"></span>
+                        </span>
+                        </span>
+                        <span class="voice-mask"></span>
+                        </span>
+                    </a>
+                    <a id="cool-fullScreen" class="icon-c-enlarge"></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+var myVideo = document.getElementById("video"); //播放器
+var coolPlay = document.getElementById("cool-play");
+var cPlay = document.getElementById("c-play"); //播放按钮
+var cProgress = document.getElementById("c-progress");
+var cPlayed = document.getElementById("c-played"); //已经播放过的进度条
+var cDrag = document.getElementById("c-drag"); //进度条顶端的圆钮
+var cCurrentTime = document.getElementById("c-currentTime"); //当前时间span
+var cTotalTime = document.getElementById("c-totalTime"); //总时间
+var loading = document.getElementsByClassName("icon-c-loading"); //loading 旋转图标
+var refresh = document.getElementsByClassName("icon-c-refresh"); //重新加载按钮
+var voice = document.getElementsByClassName("i-voice"); //音量按钮
+var voice_mask = document.getElementsByClassName("voice-mask"); //音量总进度条
+var voice_bared = document.getElementsByClassName("voice-bared"); //现在的音量的进度条
+var voice_dot = document.getElementsByClassName("voice-dot");
+var voice_num = 0.8; //初始化当前的音量
+volume(voice_num); //把音量初始化到80
+function volume(n) {
+    myVideo.volume = n;
+    voice_bared[0].style.height = n * 100 + 'px';
+}
+
+function playPause() {
+    if (myVideo.paused) {
+        Play();
+    } else {
+        Pause();
+    }
+};
+
+function Play() {
+    cPlay.className = "icon-c-pause";
+    myVideo.play();
+}
+
+function Pause() {
+    cPlay.className = "icon-c-play";
+    myVideo.pause();
+}
+refresh[0].onclick = function() {
+    Load();
+}
+
+function Load() {
+    Pause();
+    myVideo.load();
+    cPlayed.style.width = 0 + "%";
+    cDrag.style.display = "none";
+    cCurrentTime.innerHTML = "00:00";
+    cTotalTime.innerHTML = "00:00";
+}
+//播放时间及进度条控制
+myVideo.ontimeupdate = function() {
+    var currTime = this.currentTime, //当前播放时间
+        duration = this.duration; // 视频总时长
+    if (currTime == duration) {
+        Pause();
+    }
+    //百分比
+    var pre = currTime / duration * 100 + "%";
+    //显示进度条
+    cPlayed.style.width = pre;
+    var progressWidth = cProgress.offsetWidth;
+    var leftWidth = progressWidth * (currTime / duration);
+    if (leftWidth > 8 && (progressWidth - leftWidth) > 4) {
+        cDrag.style.display = "block";
+    } else {
+        cDrag.style.display = "none";
+    }
+    cDrag.style.left = progressWidth * (currTime / duration) - 4 + "px";
+    //显示当前播放进度时间
+    cCurrentTime.innerHTML = getFormatTime(currTime, duration);
+    cTotalTime.innerHTML = getFormatTime(duration, duration);
+};
+//当浏览器可在不因缓冲而停顿的情况下进行播放时
+myVideo.oncanplaythrough = function() {
+    loading[0].style.display = "none";
+}
+//当视频由于需要缓冲下一帧而停止
+myVideo.onwaiting = function() {
+    loading[0].style.display = "block";
+}
+//当用户开始移动/跳跃到音频/视频中的新位置时
+myVideo.onseeking = function() {
+    if (myVideo.readyState == 0 || myVideo.readyState == 1) {
+        loading[0].style.display = "block";
+    }
+}
+//拖拽进度条上的园钮实现跳跃播放
+/*cDrag.onmousedown = function(e){ 
+  if(cPlay.className == 'icon-c-pause')
+    myVideo.pause();
+  loading[0].style.display="block";
+  document.onmousemove = function(e){
+    console.log("e.clientX:"+e.clientX);
+    console.log("coolPlay.offsetLeft:"+coolPlay.offsetLeft);
+
+    var leftV = e.clientX - coolPlay.offsetLeft;
+    console.log("coolPlay.offsetLeft:"+coolPlay.offsetLeft);
+    console.log("leftV:"+leftV);
+    if(leftV <= 0){
+      leftV = 0;
+    }
+    if(leftV >= coolPlay.offsetWidth){
+      leftV = coolPlay.offsetWidth-10;
+    }
+    cDrag.style.left = leftV+"px";
+//  console.log(leftV);
+  }    
+  document.onmouseup = function (){
+    var scales = cDrag.offsetLeft/cProgress.offsetWidth;
+    var du = myVideo.duration*scales;
+    console.log("scales:"+scales);
+    console.log("du:"+du);
+    myVideo.currentTime = du;
+    if(cPlay.className == 'icon-c-pause')
+      myVideo.play();     
+    document.onmousemove = null;
+    document.onmousedown = null;
+  }
+}*/
+//在进度条上点击跳跃播放
+cProgress.onclick = function(e) {
+    var event = e || window.event;
+    console.log("当前点击的位置为：" + (event.offsetX / this.offsetWidth) * myVideo.duration);
+    myVideo.currentTime = (event.offsetX / this.offsetWidth) * myVideo.duration;
+};
+//根据duration总长度返回 00 或 00:00 或 00:00:00 三种格式
+function getFormatTime(time, duration) {
+    var time = time || 0;
+
+    var h = parseInt(time / 3600),
+        m = parseInt(time % 3600 / 60),
+        s = parseInt(time % 60);
+    s = s < 10 ? "0" + s : s;
+    if (duration >= 60 && duration < 3600) {
+        m = m < 10 ? "0" + m : m;
+        return m + ":" + s;
+    }
+    if (duration >= 3600) {
+        m = m < 10 ? "0" + m : m;
+        h = h < 10 ? "0" + h : h;
+        return h + ":" + m + ":" + s;
+    }
+    return s;
+}
+//音量的控制部分
+//点击声音按钮时，把视频静音
+voice[0].onclick = function() {
+    if (myVideo.muted) {
+        voice[0].className = "i-voice icon-c-voice";
+        myVideo.muted = false;
+        if (voice_num >= 0 && voice_num <= 1) {
+            volume(voice_num);
+        } else {
+            volume(0.8);
+        }
+    } else {
+        voice_num = myVideo.volume; //记录下来静音前的音量
+        voice[0].className = 'i-voice icon-c-mute';
+        myVideo.muted = true;
+        volume(0);
+    }
+}
+//当点击进度条上的一个位置时，变化音量
+voice_mask[0].onclick = function(e) {
+    var event = e || window.event;
+    if (event.offsetY >= 100) {
+        voice[0].className = 'i-voice icon-c-mute';
+        myVideo.muted = true;
+        volume(0);
+        return;
+    }
+    volume((100 - event.offsetY) / 100);
+};
+/*voice_mask[0].onmousedown = function(e){ 
+  document.onmousemove = function(e){
+    console.log("e.clientY:"+e.clientY);
+    console.log("e.offsetY:"+e.offsetY);
+    console.log(e);
+    console.log(voice[0].offsetTop);
+    console.log(document.getElementsByClassName("voice")[0]);
+    volume((100-e.offsetY)/100);
+    if(event.offsetY == 100){
+      voice[0].className='i-voice icon-c-mute';
+      myVideo.muted=true;
+      volume(0);
+    }   
+  }    
+  document.onmouseup = function (){    
+    document.onmousemove = null;
+    document.onmousedown = null;
+  }
+}*/
+//全屏的控制部分
+var fullscreen = document.getElementById('cool-fullScreen');
+var FullScreenTF = true;
+
+function launchFullscreen(element) {
+    //此方法不能在异步中进行，否则火狐中不能全屏操作
+    if (element.requestFullscreen) {
+        element.requestFullscreen();
+    } else if (element.mozRequestFullScreen) {
+        element.mozRequestFullScreen();
+    } else if (element.msRequestFullscreen) {
+        element.msRequestFullscreen();
+    } else if (element.oRequestFullscreen) {
+        element.oRequestFullscreen();
+    } else if (element.webkitRequestFullscreen) {
+        element.webkitRequestFullScreen();
+    } else {
+        alert("您的浏览器版本太低，不支持全屏功能！");
+    }
+    FullScreenTF = false;
+};
+//退出全屏
+function exitFullscreen() {
+    if (document.exitFullscreen) {
+        document.exitFullscreen();
+    } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+    } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+    } else if (document.oRequestFullscreen) {
+        document.oCancelFullScreen();
+    } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+    } else {
+        alert("您的浏览器版本太低，不支持全屏功能！");
+    }
+    FullScreenTF = true;
+};
+fullscreen.onclick = function() {
+    if (FullScreenTF) {
+        launchFullscreen(coolPlay);
+        fullscreen.className = "icon-c-shrink";
+    } else {
+        exitFullscreen();
+        fullscreen.className = "icon-c-enlarge";
+    }
+};
+</script>
+
+</body>
+</html>
